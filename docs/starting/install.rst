@@ -78,7 +78,7 @@ Finally run Centrifuge
 
 .. code-block:: bash
 
-    centrifuge --port=8000 --zmq_port=7000 --conf=YOUR_CONFIG.json
+    centrifuge
 
 
 Go to http://localhost:8000/ and make sure that it is running.
