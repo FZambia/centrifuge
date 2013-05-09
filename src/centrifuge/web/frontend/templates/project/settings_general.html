@@ -1,0 +1,102 @@
+{% extends 'settings.html' %}
+
+{% block tab_general %}active{% end %}
+
+{% block section_active %}general{% end %}
+
+{% block section %}
+<div class="row-fluid">
+    <fieldset>
+        <legend>{{_("Client credentials")}}</legend>
+        <div class="row-fluid">
+            {% if not project_key.get('readonly', True) %}
+            <table class="table table-striped">
+                <tr>
+                    <td>{{_("Project Id")}}</td>
+                    <td><span class="credential">{{project['_id']}}</span></td>
+                </tr>
+                <tr>
+                    <td>{{_("Public Key")}}</td>
+                    <td><span class="credential">{{project_key['public_key']}}</span></td>
+                </tr>
+                <tr>
+                    <td>{{_("Secret Key")}}</td>
+                    <td><span class="credential">{{project_key['secret_key']}}</span></td>
+                </tr>
+            </table>
+            <form method="post" action="" class="pull-right">
+                {% raw xsrf_form_html() %}
+                <button type="submit" name="submit" value="regenerate_keys" class="btn btn-danger pull-right">
+                    {{_("Regenerate keys")}}
+                </button>
+            </form>
+            {% else %}
+                {{_("You are readonly here")}}
+            {% end %}
+        </div>
+    </fieldset>
+</div>
+
+<div class="row-fluid" style="margin-top: 20px;">
+    <fieldset>
+        <legend>{{_("Categories")}}</legend>
+        <div class="row-fluid">
+            {% if is_owner %}
+                <form method="post" action="" class="form-inline">
+                    {% raw xsrf_form_html() %}
+                    <input type="text" name="category_name" placeholder="{{_("Add new category")}}">
+                    <label class="checkbox">
+                        <input type="checkbox" name="bidirectional" id="bidirectional">
+                        {{_("bidirectional")}}
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" name="save_events" id="save-events">
+                        {{_("save events")}}
+                    </label>
+                    <label class="checkbox">
+                        <input type="checkbox" name="publish_to_admins" id="publish-to-admins">
+                        {{_("publish to admins")}}
+                    </label>
+                    &nbsp;
+                    <button type="submit" name="submit" value="category_add" class="btn btn-default">{{_("add")}}</button>
+                </form>
+            {% end %}
+            <table class="table table-striped">
+                {% for category in categories %}
+                    <tr class="project-category">
+                        <td>
+                            {{category['name']}}
+                        </td>
+                        <td>
+                            {% if category.get('bidirectional', False) %}
+                                {{_("bidirectional")}}
+                            {% else %}
+                                {{_("one-way")}}
+                            {% end %}
+                        </td>
+                        <td>
+                            {% if category.get('save_events', False) %}
+                                {{_("events saving")}}
+                            {% end %}
+                        </td>
+                        <td>
+                            {% if category.get('publish_to_admins', False) %}
+                                {{_("publishing to admins")}}
+                            {% end %}
+                        </td>
+                        {% if is_owner %}
+                            <td>
+                                <form action="" method="post" class="pull-right form-delete">
+                                    {% raw xsrf_form_html() %}
+                                    <input type="hidden" name="category_name" value="{{category['name']}}" />
+                                    <button type="submit" name="submit" value="category_del" class="btn btn-default">{{_("delete")}}</button>
+                                </form>
+                            </td>
+                        {% end %}
+                    </tr>
+                {% end %}
+            </table>
+        </div>
+    </fieldset>
+</div>
+{% end %}

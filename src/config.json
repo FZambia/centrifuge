@@ -1,0 +1,24 @@
+{
+	"debug": true,
+	"cookie_secret": "secret",
+    "database": {
+        "api": "centrifuge.api",
+        "settings": {
+            "host": "localhost",
+            "port": 27017,
+            "name": "centrifuge",
+            "max_pool_size": 10
+        }
+    },
+    "event_callbacks": [],
+    "sockjs_transports": [
+        "websocket",
+        "xhr-streaming",
+        "iframe-eventsource"
+    ],
+    "html": {
+        "escape": true,
+        "clean": false,
+        "allowed_domains": ["youtube.com", "www.youtube.com"]
+    }
+}

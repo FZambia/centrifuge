@@ -1,0 +1,8 @@
+# -*- conf -*-
+
+[program:centrifuge]
+process_name = centrifuge-%(process_num)s
+environment = PYTHONPATH="%(here)s/../src"
+command = %(here)s/../../env/bin/python %(here)s/../src/centrifuge/app.py --conf=%(here)s/../src/config.json --port=%(process_num)s --zmq_port_shift=1000 --log_file_prefix=/tmp/%(program_name)s-%(process_num)s.log
+numprocs = 4
+numprocs_start = 8000

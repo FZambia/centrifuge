@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+
+{% block title %}{{_("Centrifuge")}}{% end %}
+
+{% block extra_scripts %}
+    <script type="text/javascript" src="{{ static_url('libs/sockjs/sockjs-0.3.2.min.js') }}"></script>
+    <script type="text/javascript" src="{{ static_url('application/js/main.js') }}"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var js_data = {% raw js_data %};
+            $.centrifuge_main(js_data);
+        });
+    </script>
+{% end %}
+
+{% block content %}
+	<script type="text/x-jsrender" id="event_template">
+		<div class="event" id="event-{{!>event_id}}" style="display: none;">
+			<div class="event-header">
+				<span class="event-key">
+					<span class="event-key-word muted">
+						{{!>~lower(category['name'])}}
+					</span>
+					<span class="event-key-word">
+						{{!>channel}}
+					</span>
+				</span>
+			</div>
+			<div class="event-description">
+				{{!foreach data}}
+					<span class="row-key">{{!>key}}</span>
+                    <div class="row-value">
+                        {% if handler.opts.get('html', {}).get('escape', True) %}{{!>value}}{% else %}{{!:value}}{% end %}
+                    </div>
+				{{!/foreach}}
+			</div>
+		</div>
+	</script>
+
+    <script type="text/x-jsrender" id="project_template">
+        <div class="project {{!if is_owner}}project-own{{!/if}} span6" id="project-{{!>_id}}" data-project-id="{{!>_id}}" data-project-name="{{!>name}}" data-project-display="{{!>display_name}}">
+            <div class="span1 project-pill" style="min-width: 90px;">
+                <div class="pill pill-info pill-circle pill-medium pill-surrounded" {{!if description}}title="{{!>description}}"{{!/if}}>
+                    <a href="#" data-tab-open="{{!>_id}}">
+                        <i class="text-info project-event-counter">&nbsp;</i>
+                    </a>
+                </div>
+            </div>
+            <div class="container-fluid project-info">
+                <div class="project-header">
+                    <a href="#" class="project-name" data-tab-open="{{!>_id}}">{{!>display_name}}</a>
+                </div>
+                <div class="project-meta">
+                    <div>
+                    	{{!>name}}
+                    	&nbsp;
+                    	<a href="/project/{{!>name}}/settings/general" class="project-settings">{{_("settings")}}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+
+    <script type="text/x-jsrender" id="tab_pane_template">
+        <div class="tab-pane in active" id="{{!>name}}" data-id="{{!>_id}}">
+            <div class="connection-status">
+                <span class="connected">
+                    <img src="{{ static_url('application/img/loader.gif') }}">&nbsp;&nbsp;&nbsp;{{_("waiting for events...")}}
+                </span>
+                <span class="not-connected" style="display:none;">{{_("Disconnected")}}</span>
+            </div>
+            <div class="log"></div>
+        </div>
+    </script>
+
+    <script type="text/x-jsrender" id="tab_template">
+        <li>
+            <a href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-toggle="tab">{{!>~lower(tab_text)}}</a>
+        </li>
+    </script>
+
+    <script type="text/x-jsrender" id="project_list_panel_template">
+        <div class="" id="project-list-panel">
+            <ul class="nav nav-list" id="project-own-filter">
+                <li class="projects-all active"><a href="">{{_("All")}}: {{!>count_all}}</a></li>
+                <li class="projects-own"><a href="">{{_("Owned")}}: {{!>count_own}}</a></li>
+                <li class="projects-shared"><a href="">{{_("Shared")}}: {{!>count_shared}}</a></li>
+            </ul>
+            <ul class="nav nav-list panel-search">
+                <li class="nav-header">{{_("Filter name")}}</li>
+                <li><input type="text" id="project-name-filter" /></li>
+            </ul>
+        </div>
+    </script>
+
+    <script type="text/x-jsrender" id="project_panel_template">
+        <div class="project-panel" id="panel-{{!>project['_id']}}" data-project-id="{{!>project['id']}}" style="display:none;">
+
+            <ul class="nav nav-list">
+                <li class="nav-header">{{_("Filter category")}}</li>
+                {{!for categories}}
+                    <li>
+                        <a href="#" class="category" data-category-id="{{!>_id}}">
+                            {{!>name}}
+                        </a>
+                    </li>
+                {{!/for}}
+            </ul>
+
+            <ul class="nav nav-list panel-search">
+                <li class="nav-header">{{_("Filter channel")}}</li>
+                <li><input type="text" class="channel-filter" /></li>
+            </ul>
+
+            <div class="panel-buttons">
+                <button type="button" class="btn btn-info apply-event-filter">{{_("Apply")}}</button>
+                <button type="button" class="btn reset-event-filter">{{_("Reset")}}</button>
+            </div>
+        </div>
+    </script>
+
+	<div id="main-content" class="row-fluid">
+		<ul class="nav nav-tabs" id="tabs">
+		    <li><a href="#_projects" id="tab-_projects" data-id="_projects" data-name="_projects" data-toggle="tab">{{_("projects")}}</a></li>
+	    </ul>
+        <div class="row-fluid">
+            <div class="span10">
+                <div class="tab-content" id="tab-content">
+                    <div class="tab-pane" id="_projects"></div>
+                </div>
+            </div>
+            <div class="span2">
+                <div id="panel"></div>
+            </div>
+        </div>
+	</div>
+{% end %}
+
+
+

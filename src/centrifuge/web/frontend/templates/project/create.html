@@ -1,0 +1,34 @@
+{% extends '../base.html' %}
+
+{% block title %}{{_("Centrifuge")}}{% end %}
+
+{% block content %}
+<form class="baseform" method="post" action="">
+    <fieldset>
+        {% if form_data %}
+            <label class="alert alert-danger">
+                {{_("Error. Malformed project name or project with such name already exists")}}
+            </label>
+        {% end %}
+        {% raw xsrf_form_html() %}
+        <legend>{{_("Create new project")}}</legend>
+        <label>{{_("Unique Project Name (used as unique project identificator)")}}</label>
+        <input type="text" name="name" placeholder="{{_("Use ascii only")}}" value="{{form_data.get('name') or ''}}">
+        <label>{{_("Display Name (human readable project name)")}}</label>
+        <input type="text" name="display_name" value="{{form_data.get('display_name') or ''}}">
+        <label>{{_("Address to validate user's authorization")}}</label>
+        <input type="text" name="validate_url" value="{{form_data.get('validate_url') or ''}}">
+        <label>{{_("Description (optional)")}}</label>
+        <textarea placeholder="{{_("Type project description…")}}" name="description">{{form_data.get('description', '')}}</textarea>
+        <div>
+            <button type="submit" class="btn">Submit</button>
+        </div>
+    </fieldset>
+</form>
+{% end %}
+
+{% block panel %}{% end %}
+
+
+
+
