@@ -13,6 +13,10 @@ extremely fast and mature Python's async web server.
 Also Centrifuge uses `ZeroMQ <http://www.zeromq.org/>`_ sockets for internal
 communication and publish/subscribe operations.
 
+To connect to Centrifuge from browser pure Websockets or SockJS library can be
+used. Socket.io support in future plans. Please, read appropriate documentation
+chapter for better description and look at examples.
+
 
 When and why should it can be helpful
 -------------------------------------
