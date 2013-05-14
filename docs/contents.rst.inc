@@ -10,13 +10,13 @@ This part of the docs focuses on describing what Centrifuge is, installation and
    starting/install
 
 
-Architecture and capabilities
------------------------------
+Architecture
+------------
 
 This part of the doc focuses on how Centrifuge built and features it provides.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    description/architecture
 
@@ -27,15 +27,26 @@ Configuration file
 This part of the doc focuses on Centrifuge's configuration JSON file.
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    configuration/description
 
 
-Clients
--------
+Web interface
+-------------
 
-This part of the doc focuses on how clients work.
+.. toctree::
+   :maxdepth: 1
+
+   web/overview
+   web/project_create
+   web/project_settings
+
+
+Clients and events
+------------------
+
+This part of the doc focuses on how to communicate with Centrifuge from web browser.
 
 .. toctree::
    :maxdepth: 2

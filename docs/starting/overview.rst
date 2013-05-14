@@ -3,6 +3,9 @@ Overview
 
 .. _overview:
 
+What is it
+----------
+
 Centrifuge is light and simple platform for real-time message broadcasting in
 your web applications. This is something like `Pusher <http://pusher.com/>`_
 service - not so powerful yet, but open-source and easy to setup.
@@ -13,13 +16,14 @@ extremely fast and mature Python's async web server.
 Also Centrifuge uses `ZeroMQ <http://www.zeromq.org/>`_ sockets for internal
 communication and publish/subscribe operations.
 
-To connect to Centrifuge from browser pure Websockets or SockJS library can be
+To connect to Centrifuge from browser pure `Websockets <http://en.wikipedia.org/wiki/WebSocket>`_
+or `SockJS <https://github.com/sockjs/sockjs-client>`_ library can be
 used. Socket.io support in future plans. Please, read appropriate documentation
 chapter for better description and look at examples.
 
 
-When and why should it can be helpful
--------------------------------------
+When it can be helpful
+----------------------
 
 Everywhere you need realtime web page updates and do not want to use existing
 external hosted services.
