@@ -18,7 +18,7 @@ import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from .. import auth
-from ..handlers import api, BaseHandler, NAME_RE
+from ..handlers import api, BaseHandler, NAME_RE, sleep
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
 

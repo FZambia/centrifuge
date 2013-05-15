@@ -8,8 +8,10 @@ import uuid
 import logging
 import six
 import tornado.web
+import time
+from tornado.ioloop import IOLoop
 from tornado.escape import json_encode, json_decode
-from tornado.gen import coroutine, Return
+from tornado.gen import coroutine, Return, Task
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.websocket import WebSocketHandler
 from sockjs.tornado import SockJSConnection
@@ -28,6 +30,12 @@ api = None
 
 # regex pattern to match project and category names
 NAME_RE = re.compile('^[^_]+[A-z0-9]{2,}$')
+
+
+@coroutine
+def sleep(seconds):
+    yield Task(IOLoop.instance().add_timeout, time.time()+seconds)
+    raise Return((True, None))
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -143,6 +151,11 @@ class Connection(object):
     This is a base class describing a single connection of client from
     web browser.
     """
+    # maximum auth validation requests before returning error to client
+    MAX_AUTH_ATTEMPTS = 5
+
+    BACK_OFF_TIME_INTERVAL = 500
+
     def close_connection(self):
         """
         General method for closing connection.
@@ -228,14 +241,28 @@ class Connection(object):
                 request_timeout=1
             )
 
-            try:
-                response = yield http_client.fetch(request)
-            except BaseException as e:
-                logging.error(e)
-                raise Return((None, "error while validating permissions"))
-            else:
-                if response.code != 200:
-                    raise Return((None, "permission denied"))
+            attempts = 0
+            interval = 0
+
+            while attempts < self.MAX_AUTH_ATTEMPTS:
+                try:
+                    response = yield http_client.fetch(request)
+                except BaseException:
+                    # exponential back-off must be here
+                    pass
+                else:
+                    if response.code == 200:
+                        self.is_authenticated = True
+                        break
+                    elif response.code == 403:
+                        raise Return((None, "permission denied"))
+                attempts += 1
+                interval += self.BACK_OFF_TIME_INTERVAL
+                # wait before next attempt
+                yield sleep(float(interval)/1000)
+
+        if not self.is_authenticated:
+            raise Return((None, "error while validating permissions"))
 
         categories, error = yield api.get_project_categories(self.db, project)
         if error:
@@ -250,7 +277,6 @@ class Connection(object):
         self.permissions = permissions
         self.user = user
         self.channels = {}
-        self.is_authenticated = True
         self.start_heartbeat()
 
         # allow broadcast from client only into bidirectional categories
