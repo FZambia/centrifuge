@@ -16,10 +16,14 @@
         <input type="text" name="name" placeholder="{{_("Use ascii only")}}" value="{{form_data.get('name') or ''}}">
         <label>{{_("Display Name (human readable project name)")}}</label>
         <input type="text" name="display_name" value="{{form_data.get('display_name') or ''}}">
-        <label>{{_("Address to validate user's authorization")}}</label>
-        <input type="text" name="validate_url" value="{{form_data.get('validate_url') or ''}}">
         <label>{{_("Description (optional)")}}</label>
         <textarea placeholder="{{_("Type project description…")}}" name="description">{{form_data.get('description', '')}}</textarea>
+        <label>{{_("Address to validate user's authorization")}}</label>
+        <input type="text" name="validate_url" value="{{form_data.get('validate_url') or ''}}">
+        <label>{{_("Max authorization attempts, must be positive integer (5 if empty)")}}</label>
+        <input type="text" name="auth_attempts" value="{{form_data.get('auth_attempts') or ''}}">
+        <label>{{_("Back-off interval in milliseconds, must be positive integer (100 if empty)")}}</label>
+        <input type="text" name="back_off" value="{{form_data.get('back_off') or ''}}">
         <div>
             <button type="submit" class="btn">Submit</button>
         </div>

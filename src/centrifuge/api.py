@@ -380,7 +380,8 @@ def check_event_uniqueness(db, channel, event_data, unique_keys):
 
 
 @coroutine
-def project_create(db, user, project_name, display_name, validate_url, description):
+def project_create(db, user, project_name, display_name,
+                   description, validate_url, auth_attempts, back_off):
     user_id = extract_obj_id(user)
     project_id = str(ObjectId())
     to_insert = {
@@ -388,8 +389,10 @@ def project_create(db, user, project_name, display_name, validate_url, descripti
         'owner': user_id,
         'name': project_name,
         'display_name': display_name,
+        'description': description,
         'validate_url': validate_url,
-        'description': description
+        'auth_attempts': auth_attempts,
+        'back_off': back_off
     }
     result, error = yield insert(db.project, to_insert)
     if error:
@@ -425,15 +428,18 @@ def project_delete(db, project):
 
 
 @coroutine
-def project_edit(db, project, name, display_name, validate_url, description):
+def project_edit(db, project, name, display_name,
+                 description, validate_url, auth_attempts, back_off):
     """
     Edit project
     """
     to_update = {
         'name': name,
         'display_name': display_name,
+        'description': description,
         'validate_url': validate_url,
-        'description': description
+        'auth_attempts': auth_attempts,
+        'back_off': back_off
     }
     _res, error = yield update(
         db.project,

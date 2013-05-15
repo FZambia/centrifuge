@@ -155,7 +155,7 @@ class Connection(object):
     # maximum auth validation requests before returning error to client
     MAX_AUTH_ATTEMPTS = 5
 
-    BACK_OFF_TIME_INTERVAL = 50
+    BACK_OFF_INTERVAL = 100
 
     def close_connection(self):
         """
@@ -244,15 +244,19 @@ class Connection(object):
                 request_timeout=1
             )
 
+            max_auth_attempts = project.get('auth_attempts') or self.MAX_AUTH_ATTEMPTS
+
+            back_off_interval = project.get('back_off') or self.BACK_OFF_INTERVAL
+
             attempts = 0
 
-            while attempts < self.MAX_AUTH_ATTEMPTS:
+            while attempts < max_auth_attempts:
 
                 # get current timeout for project
                 current_attempts = self.application.back_off.setdefault(project_id, 0)
 
                 factor = random.randrange(0, 2**current_attempts-1)
-                timeout = factor*self.BACK_OFF_TIME_INTERVAL
+                timeout = factor*back_off_interval
 
                 # wait before next authorization request attempt
                 yield sleep(float(timeout)/1000)
