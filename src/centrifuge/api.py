@@ -458,7 +458,6 @@ def category_create(
         project,
         category_name,
         bidirectional=False,
-        save_events=False,
         publish_to_admins=False):
 
     haystack = {
@@ -466,7 +465,6 @@ def category_create(
         'project': project['_id'],
         'name': category_name,
         'bidirectional': bidirectional,
-        'save_events': save_events,
         'publish_to_admins': publish_to_admins
     }
     category, error = yield insert(db.category, haystack)
@@ -647,12 +645,3 @@ def get_categories_for_projects(db, projects):
         to_return[category['project']].append(category)
 
     raise Return((to_return, None))
-
-
-@coroutine
-def save_event(db, event):
-    result, error = yield insert(db.event, event)
-    if error:
-        on_error(error)
-
-    raise Return((result, None))

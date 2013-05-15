@@ -285,7 +285,6 @@ class ProjectSettingsHandler(BaseHandler):
 
             category_name = self.get_argument('category_name', None)
             bidirectional = bool(self.get_argument('bidirectional', False))
-            save_events = bool(self.get_argument('save_events', False))
             publish_to_admins = bool(self.get_argument('publish_to_admins', False))
 
             if category_name:
@@ -294,7 +293,6 @@ class ProjectSettingsHandler(BaseHandler):
                     self.project,
                     category_name,
                     bidirectional,
-                    save_events,
                     publish_to_admins
                 )
                 if error:

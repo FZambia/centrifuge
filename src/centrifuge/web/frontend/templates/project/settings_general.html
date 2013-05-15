@@ -50,10 +50,6 @@
                         {{_("bidirectional")}}
                     </label>
                     <label class="checkbox">
-                        <input type="checkbox" name="save_events" id="save-events">
-                        {{_("save events")}}
-                    </label>
-                    <label class="checkbox">
                         <input type="checkbox" name="publish_to_admins" id="publish-to-admins">
                         {{_("publish to admins")}}
                     </label>
@@ -72,11 +68,6 @@
                                 {{_("bidirectional")}}
                             {% else %}
                                 {{_("one-way")}}
-                            {% end %}
-                        </td>
-                        <td>
-                            {% if category.get('save_events', False) %}
-                                {{_("events saving")}}
                             {% end %}
                         </td>
                         <td>
