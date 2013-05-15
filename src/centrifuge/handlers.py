@@ -9,6 +9,7 @@ import logging
 import six
 import tornado.web
 import time
+import random
 from tornado.ioloop import IOLoop
 from tornado.escape import json_encode, json_decode
 from tornado.gen import coroutine, Return, Task
@@ -154,7 +155,7 @@ class Connection(object):
     # maximum auth validation requests before returning error to client
     MAX_AUTH_ATTEMPTS = 5
 
-    BACK_OFF_TIME_INTERVAL = 500
+    BACK_OFF_TIME_INTERVAL = 50
 
     def close_connection(self):
         """
@@ -231,6 +232,8 @@ class Connection(object):
         if error:
             self.close_connection()
 
+        project_id = self.project['_id']
+
         if user and project.get('validate_url', None):
 
             http_client = AsyncHTTPClient()
@@ -242,27 +245,37 @@ class Connection(object):
             )
 
             attempts = 0
-            interval = 0
 
             while attempts < self.MAX_AUTH_ATTEMPTS:
+
+                # get current timeout for project
+                current_attempts = self.application.back_off.setdefault(project_id, 0)
+
+                factor = random.randrange(0, 2**current_attempts-1)
+                timeout = factor*self.BACK_OFF_TIME_INTERVAL
+
+                # wait before next authorization request attempt
+                yield sleep(float(timeout)/1000)
+
                 try:
                     response = yield http_client.fetch(request)
                 except BaseException:
                     # exponential back-off must be here
                     pass
                 else:
+                    # reset back-off attempts
+                    self.application.back_off[project_id] = 0
+
                     if response.code == 200:
                         self.is_authenticated = True
                         break
                     elif response.code == 403:
                         raise Return((None, "permission denied"))
                 attempts += 1
-                interval += self.BACK_OFF_TIME_INTERVAL
-                # wait before next attempt
-                yield sleep(float(interval)/1000)
+                self.application.back_off[project_id] += 1
 
         if not self.is_authenticated:
-            raise Return((None, "error while validating permissions"))
+            raise Return((None, "permission validation error"))
 
         categories, error = yield api.get_project_categories(self.db, project)
         if error:
