@@ -20,7 +20,6 @@ from zmq.eventloop.zmqstream import ZMQStream
 from .. import auth
 from ..handlers import api, BaseHandler, NAME_RE
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
-from ..utils import GitHubMixin
 
 
 class GoogleAuthHandler(BaseHandler, tornado.auth.GoogleMixin):
@@ -47,20 +46,20 @@ class GoogleAuthHandler(BaseHandler, tornado.auth.GoogleMixin):
         self.redirect(self.reverse_url("main"))
 
 
-class GithubAuthHandler(BaseHandler, GitHubMixin):
+class GithubAuthHandler(BaseHandler, auth.GithubMixin):
 
     x_site_token = 'centrifuge'
-    client_id = '78d2c0c60dab1be7f31e'
-    client_secret = '893cbc305a0288dd417615ddc4ed39843356ddd2'
 
     @tornado.web.asynchronous
     def get(self):
         redirect_uri = "{0}://{1}{2}".format(
-            self.request.protocol, self.request.host, self.reverse_url("auth_github")
+            self.request.protocol,
+            self.request.host,
+            self.reverse_url("auth_github")
         )
         params = {
             'redirect_uri': redirect_uri,
-            'client_id':    self.client_id,
+            'client_id':    self.opts['github_client_id'],
             'state':        self.x_site_token
         }
 
@@ -71,8 +70,8 @@ class GithubAuthHandler(BaseHandler, GitHubMixin):
             # For security reason, the state value (cross-site token) will be
             # retrieved from the query string.
             params.update({
-                'client_secret': self.client_secret,
-                'success_callback': self._on_login,
+                'client_secret': self.opts['github_client_secret'],
+                'success_callback': self._on_auth,
                 'error_callback': self._on_error,
                 'code':  code,
                 'state': self.get_argument('state', None)
@@ -84,7 +83,7 @@ class GithubAuthHandler(BaseHandler, GitHubMixin):
         self.get_authenticated_user(**params)
 
     @coroutine
-    def _on_login(self, user, access_token=None):
+    def _on_auth(self, user, access_token=None):
         if not user:
             raise tornado.web.HTTPError(500, "Github auth failed")
         user_data, error = yield api.get_or_create_user(

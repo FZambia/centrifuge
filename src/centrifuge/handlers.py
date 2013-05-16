@@ -51,7 +51,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @property
     def opts(self):
-        return self.settings['options']
+        return self.settings.get('options', {})
 
 
 class RpcHandler(BaseHandler):

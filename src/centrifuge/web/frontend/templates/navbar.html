@@ -29,8 +29,10 @@
 
 			<div class="btn-group pull-right">
 				{% if not current_user %}
-                    <a class="btn btn-default" href="{{reverse_url("auth_github")}}">{{_("log in with Github")}}</a>
-					<a class="btn btn-default" href="{{reverse_url("auth_google")}}">{{_("log in with Google")}}</a>
+                    {% if handler.settings.get('options', {}).get("auth_github", False) %}
+                        <a class="btn btn-default" href="{{reverse_url("auth_github")}}">{{_("log in with Github")}}</a>
+					{% end %}
+                    <a class="btn btn-default" href="{{reverse_url("auth_google")}}">{{_("log in with Google")}}</a>
 				{% else %}
 					<a href="#" data-toggle="dropdown" class="btn dropdown-toggle user-btn">
 						<span class="hidden-phone hidden-tablet">{{current_user['email']}}</span>

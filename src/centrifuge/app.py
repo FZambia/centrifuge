@@ -132,15 +132,16 @@ class Application(tornado.web.Application):
                 r'/auth/google$', GoogleAuthHandler, name="auth_google"
             ),
             tornado.web.url(
-                r'/auth/github$', GithubAuthHandler, name="auth_github"
-            ),
-            tornado.web.url(
                 r'/logout$', LogoutHandler, name="logout"
-            ),
-            tornado.web.url(
-                r'.*', Http404Handler, name='http404'
             )
         ]
+
+        if settings.get("options", {}).get("auth_github", False):
+            handlers.append(
+                tornado.web.url(
+                    r'/auth/github$', GithubAuthHandler, name="auth_github"
+                )
+            )
 
         AdminSocketRouter = SockJSRouter(AdminSocketHandler, '/socket')
         handlers = AdminSocketRouter.urls + handlers
@@ -149,6 +150,13 @@ class Application(tornado.web.Application):
             SockjsConnection, '/connection/sockjs'
         )
         handlers = SockjsConnectionRouter.urls + handlers
+
+        # match everything else to 404 handler
+        handlers.append(
+            tornado.web.url(
+                r'.*', Http404Handler, name='http404'
+            )
+        )
 
         AdminSocketHandler.application = self
         SockjsConnection.application = self
