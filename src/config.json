@@ -1,6 +1,6 @@
 {
-	"debug": true,
-	"cookie_secret": "secret",
+    "debug": true,
+    "cookie_secret": "secret",
     "database": {
         "api": "centrifuge.api",
         "settings": {
