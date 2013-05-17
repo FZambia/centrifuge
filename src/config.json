@@ -1,6 +1,6 @@
 {
-	"debug": true,
-	"cookie_secret": "secret",
+    "debug": true,
+    "cookie_secret": "secret",
     "database": {
         "api": "centrifuge.api.mongodb",
         "settings": {
@@ -20,5 +20,8 @@
         "escape": true,
         "clean": false,
         "allowed_domains": ["youtube.com", "www.youtube.com"]
-    }
+    },
+    "auth_github": false,
+    "github_client_id": "github_client_id",
+    "github_client_secret": "github_client_secret"
 }

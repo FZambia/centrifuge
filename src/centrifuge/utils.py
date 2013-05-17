@@ -3,6 +3,8 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 #
+from __future__ import with_statement
+
 import sys
 from lxml.html import clean
 

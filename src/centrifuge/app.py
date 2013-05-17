@@ -29,6 +29,7 @@ from centrifuge.handlers import WebsocketConnection
 from centrifuge.web.handlers import MainHandler
 from centrifuge.web.handlers import AuthHandler
 from centrifuge.web.handlers import GoogleAuthHandler
+from centrifuge.web.handlers import GithubAuthHandler
 from centrifuge.web.handlers import LogoutHandler
 from centrifuge.web.handlers import AdminSocketHandler
 from centrifuge.web.handlers import Http404Handler
@@ -132,11 +133,15 @@ class Application(tornado.web.Application):
             ),
             tornado.web.url(
                 r'/logout$', LogoutHandler, name="logout"
-            ),
-            tornado.web.url(
-                r'.*', Http404Handler, name='http404'
             )
         ]
+
+        if settings.get("options", {}).get("auth_github", False):
+            handlers.append(
+                tornado.web.url(
+                    r'/auth/github$', GithubAuthHandler, name="auth_github"
+                )
+            )
 
         AdminSocketRouter = SockJSRouter(AdminSocketHandler, '/socket')
         handlers = AdminSocketRouter.urls + handlers
@@ -145,6 +150,13 @@ class Application(tornado.web.Application):
             SockjsConnection, '/connection/sockjs'
         )
         handlers = SockjsConnectionRouter.urls + handlers
+
+        # match everything else to 404 handler
+        handlers.append(
+            tornado.web.url(
+                r'.*', Http404Handler, name='http404'
+            )
+        )
 
         AdminSocketHandler.application = self
         SockjsConnection.application = self

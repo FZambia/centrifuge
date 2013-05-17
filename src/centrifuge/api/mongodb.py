@@ -181,7 +181,7 @@ def get_obj_related_items(
 
 
 @coroutine
-def get_or_create_user(db, email, first_name, last_name, locale):
+def get_or_create_user(db, email):
     """
     Get user by email and return it's data if user exists.
     Otherwise create new user using provided arguments.
@@ -193,9 +193,6 @@ def get_or_create_user(db, email, first_name, last_name, locale):
     if not user_data:
         user_data = {
             'email': email,
-            'first_name': first_name,
-            'last_name': last_name,
-            'locale': locale,
             '_id': str(ObjectId())
         }
         res, error = yield insert(db.user, user_data)

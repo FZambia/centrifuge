@@ -38,15 +38,69 @@ class GoogleAuthHandler(BaseHandler, tornado.auth.GoogleMixin):
 
         user_data, error = yield api.get_or_create_user(
             self.db,
-            user['email'],
-            user['first_name'],
-            user['last_name'],
-            user['locale']
+            user['email']
         )
         if error:
             raise tornado.web.HTTPError(500, "Auth failed")
         self.set_secure_cookie("user", tornado.escape.json_encode(user_data))
         self.redirect(self.reverse_url("main"))
+
+
+class GithubAuthHandler(BaseHandler, auth.GithubMixin):
+
+    x_site_token = 'centrifuge'
+
+    @tornado.web.asynchronous
+    def get(self):
+        redirect_uri = "{0}://{1}{2}".format(
+            self.request.protocol,
+            self.request.host,
+            self.reverse_url("auth_github")
+        )
+        params = {
+            'redirect_uri': redirect_uri,
+            'client_id':    self.opts['github_client_id'],
+            'state':        self.x_site_token
+        }
+
+        code = self.get_argument('code', None)
+
+        # Seek the authorization
+        if code:
+            # For security reason, the state value (cross-site token) will be
+            # retrieved from the query string.
+            params.update({
+                'client_secret': self.opts['github_client_secret'],
+                'success_callback': self._on_auth,
+                'error_callback': self._on_error,
+                'code':  code,
+                'state': self.get_argument('state', None)
+            })
+            self.get_authenticated_user(**params)
+            return
+
+        # Redirect for user authentication
+        self.get_authenticated_user(**params)
+
+    @coroutine
+    def _on_auth(self, user, access_token=None):
+        if not user:
+            raise tornado.web.HTTPError(500, "Github auth failed")
+        user_data, error = yield api.get_or_create_user(
+            self.db,
+            user['email']
+        )
+        if error:
+            raise tornado.web.HTTPError(500, "Auth failed")
+        self.set_secure_cookie("user", tornado.escape.json_encode(user_data))
+        self.redirect(self.reverse_url("main"))
+
+    def _on_error(self, code, body=None, error=None):
+        if body:
+            logging.error(body)
+        if error:
+            logging.error(error)
+        raise tornado.web.HTTPError(500, "Github auth failed")
 
 
 class LogoutHandler(BaseHandler):
@@ -439,13 +493,6 @@ class ProjectSettingsHandler(BaseHandler):
 
         else:
             raise tornado.web.HTTPError(404)
-
-
-class ProfileHandler(BaseHandler):
-
-    @tornado.web.authenticated
-    def get(self):
-        self.render("profile.html")
 
 
 class AdminSocketHandler(SockJSConnection):
