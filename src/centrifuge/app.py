@@ -169,7 +169,7 @@ def main():
 
     # detect and apply database api module
     api_backend = utils.import_module(
-        database_settings.get('api', 'centrifuge.api')
+        database_settings.get('api', 'centrifuge.api.mongodb')
     )
     centrifuge.handlers.api = api_backend
     centrifuge.web.handlers.api = api_backend

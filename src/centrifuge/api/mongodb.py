@@ -9,7 +9,7 @@ import logging
 import motor
 from bson import ObjectId
 from tornado.gen import Task, coroutine, Return
-from . import auth
+from .. import auth
 
 
 def on_error(error):

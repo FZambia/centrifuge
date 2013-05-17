@@ -2,7 +2,7 @@
 	"debug": true,
 	"cookie_secret": "secret",
     "database": {
-        "api": "centrifuge.api",
+        "api": "centrifuge.api.mongodb",
         "settings": {
             "host": "localhost",
             "port": 27017,
