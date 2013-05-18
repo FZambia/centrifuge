@@ -26,8 +26,8 @@
             </table>
             <form method="post" action="" class="pull-right">
                 {% raw xsrf_form_html() %}
-                <button type="submit" name="submit" value="regenerate_keys" class="btn btn-danger pull-right">
-                    {{_("Regenerate keys")}}
+                <button type="submit" name="submit" value="regenerate_secret" class="btn btn-danger pull-right">
+                    {{_("Regenerate secret key")}}
                 </button>
             </form>
             {% else %}

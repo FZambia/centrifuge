@@ -157,6 +157,8 @@ class Connection(object):
 
     BACK_OFF_INTERVAL = 100
 
+    BACK_OFF_MAX_TIMEOUT = 5000
+
     def close_connection(self):
         """
         General method for closing connection.
@@ -246,7 +248,9 @@ class Connection(object):
 
             max_auth_attempts = project.get('auth_attempts') or self.MAX_AUTH_ATTEMPTS
 
-            back_off_interval = project.get('back_off') or self.BACK_OFF_INTERVAL
+            back_off_interval = project.get('back_off_interval') or self.BACK_OFF_INTERVAL
+
+            back_off_max_timeout = project.get('back_off_max_timeout') or self.BACK_OFF_MAX_TIMEOUT
 
             attempts = 0
 
@@ -257,6 +261,9 @@ class Connection(object):
 
                 factor = random.randint(0, 2**current_attempts-1)
                 timeout = factor*back_off_interval
+
+                if timeout > back_off_max_timeout:
+                    timeout = back_off_max_timeout
 
                 # wait before next authorization request attempt
                 yield sleep(float(timeout)/1000)

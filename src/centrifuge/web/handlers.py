@@ -187,7 +187,8 @@ class ProjectCreateHandler(BaseHandler):
         description = self.get_argument("description", "")
         validate_url = self.get_argument("validate_url", "")
         auth_attempts = self.get_argument("auth_attempts", None)
-        back_off = self.get_argument("back_off", None)
+        back_off_interval = self.get_argument("back_off_interval", None)
+        back_off_max_timeout = self.get_argument("back_off_max_timeout", None)
 
         if name:
             name = name.lower()
@@ -198,11 +199,17 @@ class ProjectCreateHandler(BaseHandler):
             except ValueError:
                 auth_attempts = None
 
-        if back_off:
+        if back_off_interval:
             try:
-                back_off = abs(int(float(back_off)))
+                back_off_interval = abs(int(float(back_off_interval)))
             except ValueError:
-                back_off = None
+                back_off_interval = None
+
+        if back_off_max_timeout:
+            try:
+                back_off_max_timeout = abs(int(float(back_off_max_timeout)))
+            except ValueError:
+                back_off_max_timeout = None
 
         if not name or not NAME_RE.search(name):
             validation_error = True
@@ -223,7 +230,8 @@ class ProjectCreateHandler(BaseHandler):
                 'validate_url': validate_url,
                 'description': description,
                 'auth_attempts': auth_attempts,
-                'back_off': back_off
+                'back_off_interval': back_off_interval,
+                'back_off_max_timeout': back_off_max_timeout
             }
             self.render(
                 'project/create.html', form_data=form_data
@@ -241,7 +249,8 @@ class ProjectCreateHandler(BaseHandler):
             description,
             validate_url,
             auth_attempts,
-            back_off
+            back_off_interval,
+            back_off_max_timeout
         )
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")
@@ -364,9 +373,9 @@ class ProjectSettingsHandler(BaseHandler):
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
 
-        elif submit == 'regenerate_keys':
+        elif submit == 'regenerate_secret':
             # regenerate public and secret key
-            res, error = yield api.regenerate_project_keys(
+            res, error = yield api.regenerate_secret_key(
                 self.db, self.user, self.project
             )
             if error:
@@ -451,7 +460,12 @@ class ProjectSettingsHandler(BaseHandler):
                 description = self.get_argument('description', "")
                 validate_url = self.get_argument('validate_url', "")
                 auth_attempts = self.get_argument("auth_attempts", None)
-                back_off = self.get_argument("back_off", None)
+                back_off_interval = self.get_argument(
+                    "back_off_interval", None
+                )
+                back_off_max_timeout = self.get_argument(
+                    'back_off_max_timeout', None
+                )
 
                 if name:
                     name = name.lower()
@@ -462,18 +476,25 @@ class ProjectSettingsHandler(BaseHandler):
                     except ValueError:
                         auth_attempts = None
 
-                if back_off:
+                if back_off_interval:
                     try:
-                        back_off = abs(int(float(back_off)))
+                        back_off_interval = abs(int(float(back_off_interval)))
                     except ValueError:
-                        back_off = None
+                        back_off_interval = None
+
+                if back_off_max_timeout:
+                    try:
+                        back_off_max_timeout = abs(int(float(back_off_max_timeout)))
+                    except ValueError:
+                        back_off_max_timeout = None
 
                 if not display_name:
                     display_name = name
 
                 res, error = yield api.project_edit(
                     self.db, self.project, name, display_name,
-                    description, validate_url, auth_attempts, back_off
+                    description, validate_url, auth_attempts,
+                    back_off_interval, back_off_max_timeout
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))

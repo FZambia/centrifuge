@@ -20,7 +20,9 @@
         <label>{{_("Max authorization attempts, must be positive integer (5 if empty)")}}</label>
         <input type="text" name="auth_attempts" value="{{project.get('auth_attempts') or ''}}">
         <label>{{_("Back-off interval in milliseconds, must be positive integer (100 if empty)")}}</label>
-        <input type="text" name="back_off" value="{{project.get('back_off') or ''}}">
+        <input type="text" name="back_off_interval" value="{{project.get('back_off_interval') or ''}}">
+        <label>{{_("Back-off max timeout in milliseconds, must be positive integer (5000 if empty)")}}</label>
+        <input type="text" name="back_off_max_timeout" value="{{project.get('back_off_max_timeout') or ''}}">
         <div>
             <button type="submit" name="submit" value="project_edit" class="btn">Submit</button>
         </div>

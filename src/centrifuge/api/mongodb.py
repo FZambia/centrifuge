@@ -378,7 +378,8 @@ def check_event_uniqueness(db, channel, event_data, unique_keys):
 
 @coroutine
 def project_create(db, user, project_name, display_name,
-                   description, validate_url, auth_attempts, back_off):
+                   description, validate_url, auth_attempts,
+                   back_off_interval, back_off_max_timeout):
     user_id = extract_obj_id(user)
     project_id = str(ObjectId())
     to_insert = {
@@ -389,7 +390,8 @@ def project_create(db, user, project_name, display_name,
         'description': description,
         'validate_url': validate_url,
         'auth_attempts': auth_attempts,
-        'back_off': back_off
+        'back_off_interval': back_off_interval,
+        'back_off_max_timeout': back_off_max_timeout
     }
     result, error = yield insert(db.project, to_insert)
     if error:
@@ -426,7 +428,8 @@ def project_delete(db, project):
 
 @coroutine
 def project_edit(db, project, name, display_name,
-                 description, validate_url, auth_attempts, back_off):
+                 description, validate_url, auth_attempts,
+                 back_off_interval, back_off_max_timeout):
     """
     Edit project
     """
@@ -436,7 +439,8 @@ def project_edit(db, project, name, display_name,
         'description': description,
         'validate_url': validate_url,
         'auth_attempts': auth_attempts,
-        'back_off': back_off
+        'back_off_interval': back_off_interval,
+        'back_off_max_timeout': back_off_max_timeout
     }
     _res, error = yield update(
         db.project,
@@ -528,7 +532,7 @@ def generate_project_keys(db, user_id, project_id, readonly):
 
 
 @coroutine
-def regenerate_project_keys(db, user, project):
+def regenerate_secret_key(db, user, project):
     """
     Create new secret and public keys for user in specified project.
     """
@@ -539,7 +543,6 @@ def regenerate_project_keys(db, user, project):
         'project': project_id
     }
     update_data = {
-        'public_key': uuid.uuid4().hex,
         'secret_key': uuid.uuid4().hex
     }
     result, error = yield update(db.projectkey, haystack, update_data)
