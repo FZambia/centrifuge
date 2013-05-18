@@ -24,6 +24,10 @@ define(
 )
 
 
+# let it be your application's user ID
+USER_ID = '2694'
+
+
 def get_client_token(secret_key, public_key, user):
     """
     Create token to validate information provided by new connection.
@@ -42,7 +46,7 @@ class SockjsHandler(tornado.web.RequestHandler):
         Render template with data required to authenticate connection
         in Centrifuge.
         """
-        user = ''
+        user = USER_ID
 
         token = get_client_token(
             options.secret_key, options.public_key, user
@@ -68,7 +72,7 @@ class WebsocketHandler(tornado.web.RequestHandler):
         Render template with data required to authenticate connection
         in Centrifuge.
         """
-        user = ''
+        user = USER_ID
 
         token = get_client_token(
             options.secret_key, options.public_key, user

@@ -232,7 +232,7 @@ class Connection(object):
         if error:
             self.close_connection()
 
-        project_id = self.project['_id']
+        project_id = project['_id']
 
         if user and project.get('validate_url', None):
 
@@ -255,7 +255,7 @@ class Connection(object):
                 # get current timeout for project
                 current_attempts = self.application.back_off.setdefault(project_id, 0)
 
-                factor = random.randrange(0, 2**current_attempts-1)
+                factor = random.randint(0, 2**current_attempts-1)
                 timeout = factor*back_off_interval
 
                 # wait before next authorization request attempt
@@ -277,6 +277,8 @@ class Connection(object):
                         raise Return((None, "permission denied"))
                 attempts += 1
                 self.application.back_off[project_id] += 1
+        else:
+            self.is_authenticated = True
 
         if not self.is_authenticated:
             raise Return((None, "permission validation error"))
