@@ -11,6 +11,7 @@ the client ID and secret. After this add following settings to your configuratio
 file
 
 .. code-block:: bash
+
     {
         ...
         "auth_github": true,
