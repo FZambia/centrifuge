@@ -10,7 +10,7 @@ your Centrifuge installation at https://github.com/settings/applications/new to 
 the client ID and secret. After this add following settings to your configuration
 file
 
-.. code-block:: javascript
+.. code-block:: bash
     {
         ...
         "auth_github": true,
