@@ -13,10 +13,14 @@
         <input type="text" name="name" value="{{project.get('name', '')}}" placeholder="{{_("Type new project identity")}}">
         <label>{{_("Display Name (human readable project name)")}}</label>
         <input type="text" name="display_name" value="{{project.get('display_name', '')}}">
-        <label>{{_("Address to validate user's authorization")}}</label>
-        <input type="text" name="validate_url" value="{{project.get('validate_url') or ''}}">
         <label>{{_("Description (optional)")}}</label>
         <textarea placeholder="{{_("Type project description…")}}" name="description">{{project['description']}}</textarea>
+        <label>{{_("Address to validate user's authorization")}}</label>
+        <input type="text" name="validate_url" value="{{project.get('validate_url') or ''}}">
+        <label>{{_("Max authorization attempts, must be positive integer (5 if empty)")}}</label>
+        <input type="text" name="auth_attempts" value="{{project.get('auth_attempts') or ''}}">
+        <label>{{_("Back-off interval in milliseconds, must be positive integer (100 if empty)")}}</label>
+        <input type="text" name="back_off" value="{{project.get('back_off') or ''}}">
         <div>
             <button type="submit" name="submit" value="project_edit" class="btn">Submit</button>
         </div>

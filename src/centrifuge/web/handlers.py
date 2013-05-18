@@ -18,7 +18,7 @@ import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from .. import auth
-from ..handlers import api, BaseHandler, NAME_RE
+from ..handlers import api, BaseHandler, NAME_RE, sleep
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
 
@@ -184,8 +184,26 @@ class ProjectCreateHandler(BaseHandler):
         validation_error = False
         name = self.get_argument("name", None)
         display_name = self.get_argument("display_name", "")
-        validate_url = self.get_argument("validate_url", "")
         description = self.get_argument("description", "")
+        validate_url = self.get_argument("validate_url", "")
+        auth_attempts = self.get_argument("auth_attempts", None)
+        back_off = self.get_argument("back_off", None)
+
+        if name:
+            name = name.lower()
+
+        if auth_attempts:
+            try:
+                auth_attempts = abs(int(float(auth_attempts)))
+            except ValueError:
+                auth_attempts = None
+
+        if back_off:
+            try:
+                back_off = abs(int(float(back_off)))
+            except ValueError:
+                back_off = None
+
         if not name or not NAME_RE.search(name):
             validation_error = True
 
@@ -203,7 +221,9 @@ class ProjectCreateHandler(BaseHandler):
                 'name': name,
                 'display_name': display_name,
                 'validate_url': validate_url,
-                'description': description
+                'description': description,
+                'auth_attempts': auth_attempts,
+                'back_off': back_off
             }
             self.render(
                 'project/create.html', form_data=form_data
@@ -218,8 +238,10 @@ class ProjectCreateHandler(BaseHandler):
             user,
             name,
             display_name,
+            description,
             validate_url,
-            description
+            auth_attempts,
+            back_off
         )
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")
@@ -317,7 +339,6 @@ class ProjectSettingsHandler(BaseHandler):
 
             category_name = self.get_argument('category_name', None)
             bidirectional = bool(self.get_argument('bidirectional', False))
-            save_events = bool(self.get_argument('save_events', False))
             publish_to_admins = bool(self.get_argument('publish_to_admins', False))
 
             if category_name:
@@ -326,7 +347,6 @@ class ProjectSettingsHandler(BaseHandler):
                     self.project,
                     category_name,
                     bidirectional,
-                    save_events,
                     publish_to_admins
                 )
                 if error:
@@ -428,12 +448,32 @@ class ProjectSettingsHandler(BaseHandler):
             name = self.get_argument('name', None)
             if name and NAME_RE.search(name):
                 display_name = self.get_argument('display_name', None)
-                validate_url = self.get_argument('validate_url', "")
                 description = self.get_argument('description', "")
+                validate_url = self.get_argument('validate_url', "")
+                auth_attempts = self.get_argument("auth_attempts", None)
+                back_off = self.get_argument("back_off", None)
+
+                if name:
+                    name = name.lower()
+
+                if auth_attempts:
+                    try:
+                        auth_attempts = abs(int(float(auth_attempts)))
+                    except ValueError:
+                        auth_attempts = None
+
+                if back_off:
+                    try:
+                        back_off = abs(int(float(back_off)))
+                    except ValueError:
+                        back_off = None
+
                 if not display_name:
                     display_name = name
+
                 res, error = yield api.project_edit(
-                    self.db, self.project, name, display_name, validate_url, description
+                    self.db, self.project, name, display_name,
+                    description, validate_url, auth_attempts, back_off
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))

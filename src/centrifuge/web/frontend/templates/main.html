@@ -95,7 +95,7 @@
 
     <script type="text/x-jsrender" id="project_panel_template">
         <div class="project-panel" id="panel-{{!>project['_id']}}" data-project-id="{{!>project['id']}}" style="display:none;">
-
+            {{!if categories}}
             <ul class="nav nav-list">
                 <li class="nav-header">{{_("Filter category")}}</li>
                 {{!for categories}}
@@ -106,6 +106,7 @@
                     </li>
                 {{!/for}}
             </ul>
+            {{!/if}}
 
             <ul class="nav nav-list panel-search">
                 <li class="nav-header">{{_("Filter channel")}}</li>

@@ -385,9 +385,6 @@
 
             var render_panel_for_project = function(project) {
                 var categories = options.categories[project['_id']];
-                if (!categories) {
-                    return;
-                }
                 var data = {
                     'project': project,
                     'categories': categories

@@ -257,12 +257,6 @@ def prepare_event(application, project, allowed_categories, params, user=None):
         'data': event_data,
     }
 
-    if category.get('save_events', False):
-
-        result, error = yield api.save_event(db, event)
-        if error:
-            raise Return((None, error))
-
     to_process = {
         'project_id': project['_id'],
         'project': project['name'],
