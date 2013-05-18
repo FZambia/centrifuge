@@ -20,35 +20,35 @@ def on_error(error):
     raise Return((None, error))
 
 
-def ensure_indexes(sync_db, drop=False):
+def ensure_indexes(db, drop=False):
     if drop:
         logging.info('dropping indexes...')
-        sync_db.user.drop_indexes()
-        sync_db.project.drop_indexes()
-        sync_db.category.drop_indexes()
+        db.user.drop_indexes()
+        db.project.drop_indexes()
+        db.category.drop_indexes()
 
     logging.info('ensuring indexes...')
 
-    sync_db.user.ensure_index([('email', 1)], unique=True)
-    sync_db.project.ensure_index([('name', 1)], unique=True)
-    sync_db.category.ensure_index([('name', 1), ('project', 1)], unique=True)
+    db.user.ensure_index([('email', 1)], unique=True)
+    db.project.ensure_index([('name', 1)], unique=True)
+    db.category.ensure_index([('name', 1), ('project', 1)], unique=True)
 
     logging.info('ensuring indexes DONE')
 
 
-def prepare_db_backend(settings):
+def get_db(settings):
     """
     Create MongoDB connection, ensure indexes
     """
-    mongo = motor.MotorClient(
+    db = motor.MotorClient(
         host=settings.get("host", "localhost"),
         port=settings.get("port", 27017),
         max_pool_size=settings.get("max_pool_size", 10)
     ).open_sync()[settings.get("name", "centrifuge")]
 
-    ensure_indexes(mongo)
+    ensure_indexes(db)
 
-    return mongo
+    return db
 
 
 def extract_obj_id(obj):

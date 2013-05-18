@@ -1,13 +1,21 @@
 {
     "debug": true,
     "cookie_secret": "secret",
-    "database": {
+    "databasem": {
         "api": "centrifuge.api.mongodb",
         "settings": {
             "host": "localhost",
             "port": 27017,
             "name": "centrifuge",
             "max_pool_size": 10
+        }
+    },
+    "database": {
+        "api": "centrifuge.api.postgresql",
+        "prepare_async": true,
+        "settings": {
+            "user": "fz",
+            "password": "postgres"
         }
     },
     "event_callbacks": [],

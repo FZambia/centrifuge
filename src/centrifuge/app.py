@@ -6,6 +6,7 @@
 import os
 import sys
 import json
+import time
 import logging
 import functools
 import tornado
@@ -187,12 +188,22 @@ def main():
     centrifuge.web.handlers.api = api_backend
     centrifuge.rpc.api = api_backend
 
+    ioloop_instance = tornado.ioloop.IOLoop.instance()
+
     try:
-        backend_db = api_backend.prepare_db_backend(
+        backend_db = api_backend.get_db(
             database_settings.get('settings', {})
         )
     except Exception as e:
         return stop_running(str(e))
+
+    ioloop_instance.add_timeout(
+        time.time() + 1,
+        functools.partial(
+            api_backend.on_app_started,
+            backend_db,
+        )
+    )
 
     settings = dict(
         cookie_secret=custom_settings.get("cookie_secret", "bad secret"),
@@ -216,7 +227,6 @@ def main():
         app = Application(settings)
         server = tornado.httpserver.HTTPServer(app)
         server.listen(options.port)
-        ioloop_instance = tornado.ioloop.IOLoop.instance()
     except Exception as e:
         return stop_running(str(e))
 
