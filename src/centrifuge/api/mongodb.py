@@ -353,30 +353,6 @@ def get_project_categories(db, project):
 
 
 @coroutine
-def check_event_uniqueness(db, channel, event_data, unique_keys):
-    """
-    Sometimes we should avoid creating duplicate events. For this
-    purpose every incoming event can have `unique_keys` key. This
-    is a list event_data's keys which must be unique for specified
-    event key.
-    """
-    haystack = {
-        'channel': channel
-    }
-    for key in unique_keys:
-        if key in event_data:
-            haystack['data.%s' % key] = event_data[key]
-    matches, error = yield find(db.event, haystack)
-    if error:
-        on_error(error)
-        return
-    if matches:
-        raise Return((False, None))
-
-    raise Return((True, None))
-
-
-@coroutine
 def project_create(db, user, project_name, display_name,
                    description, validate_url, auth_attempts,
                    back_off_interval, back_off_max_timeout):
@@ -454,12 +430,8 @@ def project_edit(db, project, name, display_name,
 
 
 @coroutine
-def category_create(
-        db,
-        project,
-        category_name,
-        bidirectional=False,
-        publish_to_admins=False):
+def category_create(db, project, category_name,
+                    bidirectional=False, publish_to_admins=False):
 
     haystack = {
         '_id': str(ObjectId()),

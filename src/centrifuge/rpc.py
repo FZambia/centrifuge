@@ -213,13 +213,11 @@ def prepare_event(application, project, allowed_categories, params, user=None):
     """
     Prepare event before actual broadcasting.
     """
-    db = application.settings['db']
     opts = application.settings['options']
 
     category_name = params.get('category')
     channel = params.get('channel')
     event_data = params.get('data')
-    unique_keys = params.get('unique_keys', [])
 
     # clean html if necessary
     html = opts.get('html', {})
@@ -237,16 +235,6 @@ def prepare_event(application, project, allowed_categories, params, user=None):
     category = allowed_categories.get(category_name, None)
     if not category:
         raise Return(("category not found", None))
-
-    if unique_keys:
-        is_new, error = yield api.check_event_uniqueness(
-            db, channel, event_data, unique_keys
-        )
-        if error:
-            raise Return((None, error))
-        if not is_new:
-            # we've already have such event in database
-            raise Return(('duplicate', None))
 
     event = {
         '_id': str(ObjectId()),
