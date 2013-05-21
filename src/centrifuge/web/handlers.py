@@ -351,15 +351,22 @@ class ProjectSettingsHandler(BaseHandler):
             publish_to_admins = bool(self.get_argument('publish_to_admins', False))
 
             if category_name:
-                res, error = yield api.category_create(
-                    self.db,
-                    self.project,
-                    category_name,
-                    bidirectional,
-                    publish_to_admins
+
+                category, error = yield api.get_project_category(
+                    self.db, self.project, category_name
                 )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
+
+                if not category:
+                    # create new category with unique name
+                    res, error = yield api.category_create(
+                        self.db,
+                        self.project,
+                        category_name,
+                        bidirectional,
+                        publish_to_admins
+                    )
+                    if error:
+                        raise tornado.web.HTTPError(500, log_message=str(error))
 
         elif submit == 'category_del':
             # delete category
