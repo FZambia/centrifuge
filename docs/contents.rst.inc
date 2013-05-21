@@ -39,6 +39,7 @@ Web interface
    :maxdepth: 1
 
    web/overview
+   web/login
    web/project_create
    web/project_settings
 

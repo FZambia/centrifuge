@@ -299,6 +299,10 @@ def main():
         # initialize dict to keep client's connections
         app.connections = {}
 
+    if not hasattr(app, 'back_off'):
+        # initialize dict to keep back-off information for projects
+        app.back_off = {}
+
     if app.zmq_pub_sub_proxy:
         logging.info(
             "Started: Tornado - {0}, ZeroMQ XPUB: {1}, XSUB: {2}".format(

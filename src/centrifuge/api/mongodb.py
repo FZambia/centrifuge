@@ -353,31 +353,9 @@ def get_project_categories(db, project):
 
 
 @coroutine
-def check_event_uniqueness(db, channel, event_data, unique_keys):
-    """
-    Sometimes we should avoid creating duplicate events. For this
-    purpose every incoming event can have `unique_keys` key. This
-    is a list event_data's keys which must be unique for specified
-    event key.
-    """
-    haystack = {
-        'channel': channel
-    }
-    for key in unique_keys:
-        if key in event_data:
-            haystack['data.%s' % key] = event_data[key]
-    matches, error = yield find(db.event, haystack)
-    if error:
-        on_error(error)
-        return
-    if matches:
-        raise Return((False, None))
-
-    raise Return((True, None))
-
-
-@coroutine
-def project_create(db, user, project_name, display_name, validate_url, description):
+def project_create(db, user, project_name, display_name,
+                   description, validate_url, auth_attempts,
+                   back_off_interval, back_off_max_timeout):
     user_id = extract_obj_id(user)
     project_id = str(ObjectId())
     to_insert = {
@@ -385,8 +363,11 @@ def project_create(db, user, project_name, display_name, validate_url, descripti
         'owner': user_id,
         'name': project_name,
         'display_name': display_name,
+        'description': description,
         'validate_url': validate_url,
-        'description': description
+        'auth_attempts': auth_attempts,
+        'back_off_interval': back_off_interval,
+        'back_off_max_timeout': back_off_max_timeout
     }
     result, error = yield insert(db.project, to_insert)
     if error:
@@ -422,15 +403,20 @@ def project_delete(db, project):
 
 
 @coroutine
-def project_edit(db, project, name, display_name, validate_url, description):
+def project_edit(db, project, name, display_name,
+                 description, validate_url, auth_attempts,
+                 back_off_interval, back_off_max_timeout):
     """
     Edit project
     """
     to_update = {
         'name': name,
         'display_name': display_name,
+        'description': description,
         'validate_url': validate_url,
-        'description': description
+        'auth_attempts': auth_attempts,
+        'back_off_interval': back_off_interval,
+        'back_off_max_timeout': back_off_max_timeout
     }
     _res, error = yield update(
         db.project,
@@ -444,20 +430,14 @@ def project_edit(db, project, name, display_name, validate_url, description):
 
 
 @coroutine
-def category_create(
-        db,
-        project,
-        category_name,
-        bidirectional=False,
-        save_events=False,
-        publish_to_admins=False):
+def category_create(db, project, category_name,
+                    bidirectional=False, publish_to_admins=False):
 
     haystack = {
         '_id': str(ObjectId()),
         'project': project['_id'],
         'name': category_name,
         'bidirectional': bidirectional,
-        'save_events': save_events,
         'publish_to_admins': publish_to_admins
     }
     category, error = yield insert(db.category, haystack)
@@ -524,7 +504,7 @@ def generate_project_keys(db, user_id, project_id, readonly):
 
 
 @coroutine
-def regenerate_project_keys(db, user, project):
+def regenerate_secret_key(db, user, project):
     """
     Create new secret and public keys for user in specified project.
     """
@@ -535,7 +515,6 @@ def regenerate_project_keys(db, user, project):
         'project': project_id
     }
     update_data = {
-        'public_key': uuid.uuid4().hex,
         'secret_key': uuid.uuid4().hex
     }
     result, error = yield update(db.projectkey, haystack, update_data)
@@ -638,12 +617,3 @@ def get_categories_for_projects(db, projects):
         to_return[category['project']].append(category)
 
     raise Return((to_return, None))
-
-
-@coroutine
-def save_event(db, event):
-    result, error = yield insert(db.event, event)
-    if error:
-        on_error(error)
-
-    raise Return((result, None))
