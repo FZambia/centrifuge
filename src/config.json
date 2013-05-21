@@ -12,7 +12,6 @@
     },
     "database": {
         "api": "centrifuge.api.postgresql",
-        "prepare_async": true,
         "settings": {
             "user": "fz",
             "password": "postgres"
