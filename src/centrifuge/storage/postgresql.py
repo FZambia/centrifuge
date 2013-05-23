@@ -123,6 +123,8 @@ def get_user_projects(db, user):
 @coroutine
 def get_categories_for_projects(db, projects):
 
+    categories = []
+
     project_ids = [extract_obj_id(x) for x in projects]
     query = "SELECT * FROM categories WHERE project_id IN %s"
     if project_ids:
@@ -135,8 +137,6 @@ def get_categories_for_projects(db, projects):
             on_error(e)
         else:
             categories = cursor.fetchall()
-    else:
-        categories = []
 
     to_return = {}
     for category in categories:
