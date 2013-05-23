@@ -312,7 +312,7 @@ def get_project_users(db, project):
         on_error(error)
 
     for user in users:
-        user['project_key'] = entry_dict[user['_id']]
+        user['readonly'] = entry_dict[user['_id']].get('readonly')
 
     raise Return((users, None))
 

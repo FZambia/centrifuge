@@ -4,7 +4,7 @@
 # All rights reserved.
 #
 import logging
-from tornado.gen import Task, coroutine, Return, engine
+from tornado.gen import coroutine, Return
 import momoko
 import psycopg2.extras
 import uuid
