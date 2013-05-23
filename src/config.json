@@ -1,8 +1,8 @@
 {
     "debug": true,
     "cookie_secret": "secret",
-    "databasem": {
-        "api": "centrifuge.api.mongodb",
+    "storage": {
+        "module": "centrifuge.storage.mongodb",
         "settings": {
             "host": "localhost",
             "port": 27017,
@@ -10,7 +10,7 @@
             "max_pool_size": 10
         }
     },
-    "storage": {
+    "storage2": {
         "module": "centrifuge.storage.postgresql",
         "settings": {
             "user": "fz",

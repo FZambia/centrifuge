@@ -36,7 +36,7 @@ def ensure_indexes(db, drop=False):
     logging.info('ensuring indexes DONE')
 
 
-def get_db(settings):
+def init_db(app, settings):
     """
     Create MongoDB connection, ensure indexes
     """
@@ -46,9 +46,9 @@ def get_db(settings):
         max_pool_size=settings.get("max_pool_size", 10)
     ).open_sync()[settings.get("name", "centrifuge")]
 
-    ensure_indexes(db)
+    app.db = db
 
-    return db
+    ensure_indexes(db)
 
 
 def extract_obj_id(obj):

@@ -56,7 +56,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @property
     def db(self):
-        return self.settings['db']
+        return self.application.db
 
     @property
     def opts(self):
@@ -212,7 +212,7 @@ class Connection(object):
         if not permissions:
             raise Return((None, "empty permissions"))
 
-        self.db = self.application.settings['db']
+        self.db = self.application.db
 
         project_key, error = yield storage.get_project_key_by_public_key(
             self.db, public_key

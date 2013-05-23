@@ -10,6 +10,7 @@ import psycopg2.extras
 import uuid
 from bson import ObjectId
 from .. import auth
+from functools import partial
 
 
 def on_error(error):
@@ -20,8 +21,25 @@ def on_error(error):
     raise Return((None, error))
 
 
+def init_db(app, settings):
+    dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
+        settings.get('name', 'centrifuge'),
+        settings.get('user', 'postgres'),
+        settings.get('password', ''),
+        settings.get('host', 'localhost'),
+        settings.get('port', 5432)
+    )
+    callback = partial(on_connection_ready, app)
+    db = momoko.Pool(
+        dsn=dsn, size=settings.get('size', 10), callback=callback
+    )
+    app.db = db
+
+
 @coroutine
-def on_app_started(db, drop=False):
+def on_connection_ready(app):
+
+    db = app.db
 
     user = 'CREATE TABLE IF NOT EXISTS users (id SERIAL, ' \
            '_id varchar(24), email varchar(150) NOT NULL)'
@@ -46,21 +64,6 @@ def on_app_started(db, drop=False):
     yield momoko.Op(db.execute, project_key, ())
     yield momoko.Op(db.execute, category, ())
     logging.info("database ready")
-
-
-def get_db(settings):
-    """
-    Create connection, ensure indexes
-    """
-    dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
-        settings.get('name', 'centrifuge'),
-        settings.get('user', 'postgres'),
-        settings.get('password', ''),
-        settings.get('host', 'localhost'),
-        settings.get('port', 5432)
-    )
-    db = momoko.Pool(dsn=dsn, size=10)
-    return db
 
 
 def extract_obj_id(obj):

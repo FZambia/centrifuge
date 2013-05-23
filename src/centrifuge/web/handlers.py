@@ -667,6 +667,5 @@ class AdminSocketHandler(SockJSConnection):
 class Http404Handler(BaseHandler):
 
     def get(self):
-        print 111
         self.render("http404.html")
 

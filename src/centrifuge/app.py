@@ -6,7 +6,6 @@
 import os
 import sys
 import json
-import time
 import logging
 import functools
 import tornado
@@ -178,32 +177,25 @@ def main():
     except IOError:
         custom_settings = {}
 
-    database_settings = custom_settings.get('database', {})
+    database_settings = custom_settings.get('storage', {})
 
     # detect and apply database storage module
-    storage = utils.import_module(
-        database_settings.get('module', 'centrifuge.storage.mongodb')
+    storage_module = database_settings.get(
+        'module', 'centrifuge.storage.mongodb'
     )
+    storage = utils.import_module(storage_module)
     centrifuge.handlers.storage = storage
     centrifuge.web.handlers.storage = storage
     centrifuge.rpc.storage = storage
 
     ioloop_instance = tornado.ioloop.IOLoop.instance()
 
-    try:
-        backend_db = storage.get_db(
-            database_settings.get('settings', {})
-        )
-    except Exception as e:
-        return stop_running(str(e))
-
-    ioloop_instance.add_timeout(
-        time.time() + 1,
-        functools.partial(
-            storage.on_app_started,
-            backend_db,
-        )
-    )
+    #try:
+    #    storage.get_db(
+    #        app, database_settings.get('settings', {})
+    #    )
+    #except Exception as e:
+    #    return stop_running(str(e))
 
     settings = dict(
         cookie_secret=custom_settings.get("cookie_secret", "bad secret"),
@@ -219,7 +211,6 @@ def main():
         xsrf_cookies=True,
         autoescape="xhtml_escape",
         debug=custom_settings.get('debug', False),
-        db=backend_db,
         options=custom_settings
     )
 
@@ -229,6 +220,14 @@ def main():
         server.listen(options.port)
     except Exception as e:
         return stop_running(str(e))
+
+    ioloop_instance.add_callback(
+        functools.partial(
+            storage.init_db,
+            app,
+            database_settings.get('settings', {})
+        )
+    )
 
     app.zmq_pub_sub_proxy = options.zmq_pub_sub_proxy
 
@@ -303,18 +302,21 @@ def main():
         # initialize dict to keep back-off information for projects
         app.back_off = {}
 
+    logging.info("Application started")
+    logging.info("Tornado port: {0}".format(options.port))
     if app.zmq_pub_sub_proxy:
         logging.info(
-            "Started: Tornado - {0}, ZeroMQ XPUB: {1}, XSUB: {2}".format(
-                options.port, app.zmq_xpub, app.zmq_xsub
+            "ZeroMQ XPUB: {0}, XSUB: {1}".format(
+                app.zmq_xpub, app.zmq_xsub,
             )
         )
     else:
         logging.info(
-            "Started: Tornado - {0}, ZeroMQ PUB - {1}; subscribed to {2}".format(
-                options.port, app.zmq_pub_port, app.zmq_sub_address
+            "ZeroMQ PUB - {0}; subscribed to {1}".format(
+                app.zmq_pub_port, app.zmq_sub_address
             )
         )
+    logging.info("Storage module: {0}".format(storage_module))
 
     # finally, let's go
     try:
