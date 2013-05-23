@@ -296,30 +296,56 @@ def get_user_projects(db, user):
     """
     Get all projects user can see.
     """
-    projects, error = yield get_obj_related_items(
+    obj_id = extract_obj_id(user)
+    project_keys, error = yield find(
         db.projectkey,
-        db.project,
-        user,
-        'user',
-        'project',
-        'project_key'
+        {'user': obj_id, 'is_active': True}
     )
-    raise Return((projects, error))
+    if error:
+        on_error(error)
+
+    entry_dict = {}
+    for entry in project_keys:
+        entry_dict[entry['project']] = entry
+
+    projects, error = yield find(
+        db.project,
+        {'_id': {'$in': entry_dict.keys()}}
+    )
+    if error:
+        on_error(error)
+
+    for project in projects:
+        project['project_key'] = entry_dict[project['_id']]
+
+    raise Return((projects, None))
 
 
 @coroutine
 def get_project_users(db, project):
-    users, error = yield get_obj_related_items(
+
+    obj_id = extract_obj_id(project)
+    project_keys, error = yield find(
         db.projectkey,
-        db.user,
-        project,
-        'project',
-        'user',
-        'project_key'
+        {'project': obj_id, 'is_active': True}
     )
     if error:
         on_error(error)
-        return
+
+    entry_dict = {}
+    for entry in project_keys:
+        entry_dict[entry['user']] = entry
+
+    users, error = yield find(
+        db.user,
+        {'_id': {'$in': entry_dict.keys()}}
+    )
+    if error:
+        on_error(error)
+
+    for user in users:
+        user['project_key'] = entry_dict[user['_id']]
+
     raise Return((users, None))
 
 
