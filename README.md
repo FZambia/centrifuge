@@ -4,8 +4,9 @@ CENTRIFUGE
 Light and simple open-source platform for real-time message broadcasting in
 your web applications.
 
-This is something like [Pusher](http://pusher.com/) service - not so
-powerful yet, but open-source and easy to setup.
+The main goal of Centrifuge is the same as in [Pusher](http://pusher.com/) or
+[Pubnub](http://www.pubnub.com/) services. The main difference is that Centrifuge is
+open-source and requires installation (it is worth noting that installation is rather simple).
 
 It is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) -
 extremely fast and mature Python's async web server.
