@@ -53,6 +53,18 @@ Install Centrifuge from pip
 
     pip install centrifuge
 
+If you get exception like:
+
+.. code-block:: bash
+
+    Error: pg_config executable not found.
+
+Then you don't have `libpq-dev` package installed on your machine. For example, for Debian:
+
+.. code-block:: bash
+
+    sudo apt-get install libpq-dev
+
 
 Install and run MongoDB
 ~~~~~~~~~~~~~~~~~~~~~~~
