@@ -42,22 +42,23 @@ def on_connection_ready(app):
     db = app.db
 
     user = 'CREATE TABLE IF NOT EXISTS users (id SERIAL, ' \
-           '_id varchar(24), email varchar(150) NOT NULL)'
+           '_id varchar(24) UNIQUE, email varchar(150) NOT NULL UNIQUE)'
 
-    project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24), ' \
-              'owner varchar(24), name varchar(100) NOT NULL, display_name ' \
+    project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24) UNIQUE, ' \
+              'owner varchar(24), name varchar(100) NOT NULL UNIQUE, display_name ' \
               'varchar(100) NOT NULL, description text, validate_url varchar(255), ' \
               'auth_attempts integer, back_off_interval integer, ' \
               'back_off_max_timeout integer)'
 
     project_key = 'CREATE TABLE IF NOT EXISTS project_keys (id SERIAL, ' \
-                  '_id varchar(24), project_id varchar(24), user_id varchar(24), ' \
-                  'public_key varchar(32), secret_key varchar(32), readonly bool, ' \
+                  '_id varchar(24) UNIQUE, project_id varchar(24), user_id varchar(24), ' \
+                  'public_key varchar(32) UNIQUE, secret_key varchar(32), readonly bool, ' \
                   'is_active bool default True)'
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
-               '_id varchar(24), project_id varchar(24), name varchar(100), ' \
-               'bidirectional bool, publish_to_admins bool)'
+               '_id varchar(24) UNIQUE, project_id varchar(24), ' \
+               'name varchar(100) NOT NULL UNIQUE, bidirectional bool, ' \
+               'publish_to_admins bool)'
 
     yield momoko.Op(db.execute, user, ())
     yield momoko.Op(db.execute, project, ())
