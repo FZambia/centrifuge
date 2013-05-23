@@ -66,14 +66,22 @@ Then you don't have `libpq-dev` package installed on your machine. For example, 
     sudo apt-get install libpq-dev
 
 
-Install and run MongoDB
+Install and run database
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Centrifuge uses `MongoDB <http://docs.mongodb.org/manual/>`_ as data
+Centrifuge by default uses `MongoDB <http://docs.mongodb.org/manual/>`_ as data
 store.
 
 `Here <http://docs.mongodb.org/manual/installation/>`_ is explanation
 how to install it on your system.
+
+You can also run Centrifuge with `PostgreSQL <http://www.postgresql.org/>`_ as storage.
+
+Read `this <http://wiki.postgresql.org/wiki/Detailed_installation_guides>`_ for help with
+PostgreSQL installation.
+
+To use custom connection settings to storage you should fill appropriate section of
+configuration file.
 
 
 Fill centrifuge's configuration file

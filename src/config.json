@@ -10,8 +10,8 @@
             "max_pool_size": 10
         }
     },
-    "database": {
-        "api": "centrifuge.api.postgresql",
+    "storage": {
+        "module": "centrifuge.storage.postgresql",
         "settings": {
             "user": "fz",
             "password": "postgres"

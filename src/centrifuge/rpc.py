@@ -13,7 +13,7 @@ import zmq
 from . import utils
 
 
-api = None
+storage = None
 
 
 CHANNEL_PREFIX = 'centrifuge'
@@ -118,7 +118,7 @@ def unsubscribe_connection(app, project, params):
     if not user_connections:
         raise Return((True, None))
 
-    categories, error = yield api.get_project_categories(db, project)
+    categories, error = yield storage.get_project_categories(db, project)
     if error:
         raise Return((None, error))
 
@@ -298,7 +298,7 @@ def process_call(application, project, user, method, params):
 
         db = application.settings['db']
 
-        project_categories, error = yield api.get_project_categories(
+        project_categories, error = yield storage.get_project_categories(
             db, project
         )
         if error:

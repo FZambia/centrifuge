@@ -180,18 +180,18 @@ def main():
 
     database_settings = custom_settings.get('database', {})
 
-    # detect and apply database api module
-    api_backend = utils.import_module(
-        database_settings.get('api', 'centrifuge.api.mongodb')
+    # detect and apply database storage module
+    storage = utils.import_module(
+        database_settings.get('module', 'centrifuge.storage.mongodb')
     )
-    centrifuge.handlers.api = api_backend
-    centrifuge.web.handlers.api = api_backend
-    centrifuge.rpc.api = api_backend
+    centrifuge.handlers.storage = storage
+    centrifuge.web.handlers.storage = storage
+    centrifuge.rpc.storage = storage
 
     ioloop_instance = tornado.ioloop.IOLoop.instance()
 
     try:
-        backend_db = api_backend.get_db(
+        backend_db = storage.get_db(
             database_settings.get('settings', {})
         )
     except Exception as e:
@@ -200,7 +200,7 @@ def main():
     ioloop_instance.add_timeout(
         time.time() + 1,
         functools.partial(
-            api_backend.on_app_started,
+            storage.on_app_started,
             backend_db,
         )
     )

@@ -12,8 +12,8 @@ Example
     {
         "debug": true,
         "cookie_secret": "secret",
-        "database": {
-            "api": "centrifuge.api",
+        "storage": {
+            "module": "centrifuge.storage.mongodb",
             "settings": {
                 "host": "localhost",
                 "port": 27017,
@@ -41,7 +41,7 @@ Description
 
 - **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
 
-- **database** - section with database backend settings. No alternatives except default MongoDB for this moment.
+- **storage** - section with database backend settings. No alternatives except default MongoDB for this moment.
 
 - **sockjs-transports** - SockJS transports to use in admin web interface. Only persistent connection transports allowed.
 

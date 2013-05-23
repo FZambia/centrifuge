@@ -26,7 +26,7 @@ from . import auth
 from .schema import req_schema, admin_params_schema, client_params_schema
 
 
-api = None
+storage = None
 
 
 # regex pattern to match project and category names
@@ -90,7 +90,7 @@ class RpcHandler(BaseHandler):
         public_key = auth_info['public_key']
         sign = auth_info['sign']
 
-        project, error = yield api.get_project_by_id(self.db, project_id)
+        project, error = yield storage.get_project_by_id(self.db, project_id)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not project:
@@ -100,7 +100,7 @@ class RpcHandler(BaseHandler):
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no request body")
 
-        user, error = yield api.check_auth(
+        user, error = yield storage.check_auth(
             self.db, project, public_key, sign, encoded_data
         )
         if error:
@@ -214,7 +214,7 @@ class Connection(object):
 
         self.db = self.application.settings['db']
 
-        project_key, error = yield api.get_project_key_by_public_key(
+        project_key, error = yield storage.get_project_key_by_public_key(
             self.db, public_key
         )
         if error:
@@ -228,7 +228,7 @@ class Connection(object):
         if token != auth.get_client_token(secret_key, public_key, user):
             raise Return((None, "invalid token"))
 
-        project, error = yield api.get_project_by_id(
+        project, error = yield storage.get_project_by_id(
             self.db, project_key['project']
         )
         if error:
@@ -290,7 +290,7 @@ class Connection(object):
         if not self.is_authenticated:
             raise Return((None, "permission validation error"))
 
-        categories, error = yield api.get_project_categories(self.db, project)
+        categories, error = yield storage.get_project_categories(self.db, project)
         if error:
             self.close_connection()
 

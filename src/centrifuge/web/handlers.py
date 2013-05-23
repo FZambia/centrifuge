@@ -18,7 +18,7 @@ import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from .. import auth
-from ..handlers import api, BaseHandler, NAME_RE, sleep
+from ..handlers import storage, BaseHandler, NAME_RE
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
 
@@ -36,7 +36,7 @@ class GoogleAuthHandler(BaseHandler, tornado.auth.GoogleMixin):
         if not user:
             raise tornado.web.HTTPError(500, "Google auth failed")
 
-        user_data, error = yield api.get_or_create_user(
+        user_data, error = yield storage.get_or_create_user(
             self.db,
             user['email']
         )
@@ -86,7 +86,7 @@ class GithubAuthHandler(BaseHandler, auth.GithubMixin):
     def _on_auth(self, user, access_token=None):
         if not user:
             raise tornado.web.HTTPError(500, "Github auth failed")
-        user_data, error = yield api.get_or_create_user(
+        user_data, error = yield storage.get_or_create_user(
             self.db,
             user['email']
         )
@@ -129,11 +129,11 @@ class MainHandler(BaseHandler):
         """
         user = self.current_user
 
-        projects, error = yield api.get_user_projects(self.db, user)
+        projects, error = yield storage.get_user_projects(self.db, user)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        project_categories, error = yield api.get_categories_for_projects(
+        project_categories, error = yield storage.get_categories_for_projects(
             self.db,
             projects
         )
@@ -214,7 +214,7 @@ class ProjectCreateHandler(BaseHandler):
         if not name or not NAME_RE.search(name):
             validation_error = True
 
-        existing_project, error = yield api.get_project_by_name(
+        existing_project, error = yield storage.get_project_by_name(
             self.db,
             name
         )
@@ -241,7 +241,7 @@ class ProjectCreateHandler(BaseHandler):
         if not display_name:
             display_name = name
 
-        project, error = yield api.project_create(
+        project, error = yield storage.project_create(
             self.db,
             user,
             name,
@@ -256,7 +256,7 @@ class ProjectCreateHandler(BaseHandler):
             raise tornado.web.HTTPError(500, log_message="error creating project")
 
         readonly = False
-        project_key, error = yield api.add_user_into_project(
+        project_key, error = yield storage.add_user_into_project(
             self.db, user, project, readonly
         )
         if error:
@@ -274,13 +274,13 @@ class ProjectSettingsHandler(BaseHandler):
     def get_project_essentials(self, project_name):
         user = self.current_user
 
-        project, error = yield api.get_project_by_name(
+        project, error = yield storage.get_project_by_name(
             self.db, project_name
         )
         if not project:
             raise tornado.web.HTTPError(404)
 
-        project_key, error = yield api.get_user_project_key(
+        project_key, error = yield storage.get_user_project_key(
             self.db, user, project
         )
         if not project_key:
@@ -292,7 +292,7 @@ class ProjectSettingsHandler(BaseHandler):
 
     @coroutine
     def get_general(self):
-        categories, error = yield api.get_project_categories(
+        categories, error = yield storage.get_project_categories(
             self.db, self.project
         )
         if error:
@@ -311,7 +311,7 @@ class ProjectSettingsHandler(BaseHandler):
     def get_users(self):
         project_users = None
         if self.is_owner:
-            project_users, error = yield api.get_project_users(
+            project_users, error = yield storage.get_project_users(
                 self.db, self.project
             )
             if error:
@@ -352,13 +352,13 @@ class ProjectSettingsHandler(BaseHandler):
 
             if category_name:
 
-                category, error = yield api.get_project_category(
+                category, error = yield storage.get_project_category(
                     self.db, self.project, category_name
                 )
 
                 if not category:
                     # create new category with unique name
-                    res, error = yield api.category_create(
+                    res, error = yield storage.category_create(
                         self.db,
                         self.project,
                         category_name,
@@ -374,7 +374,7 @@ class ProjectSettingsHandler(BaseHandler):
                 raise tornado.web.HTTPError(403)
             category_name = self.get_argument('category_name', None)
             if category_name:
-                res, error = yield api.category_delete(
+                res, error = yield storage.category_delete(
                     self.db, self.project, category_name
                 )
                 if error:
@@ -382,7 +382,7 @@ class ProjectSettingsHandler(BaseHandler):
 
         elif submit == 'regenerate_secret':
             # regenerate public and secret key
-            res, error = yield api.regenerate_secret_key(
+            res, error = yield storage.regenerate_secret_key(
                 self.db, self.user, self.project
             )
             if error:
@@ -405,12 +405,12 @@ class ProjectSettingsHandler(BaseHandler):
             readonly = bool(
                 self.get_argument('readonly', False)
             )
-            user_to_add, error = yield api.get_user_by_email(self.db, email)
+            user_to_add, error = yield storage.get_user_by_email(self.db, email)
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
 
             if user_to_add and user_to_add['email'] != self.user['email']:
-                res, error = yield api.add_user_into_project(
+                res, error = yield storage.add_user_into_project(
                     self.db, user_to_add,
                     self.project,
                     readonly
@@ -424,14 +424,14 @@ class ProjectSettingsHandler(BaseHandler):
                 raise tornado.web.HTTPError(403)
 
             email = self.get_argument('email', None)
-            user_to_delete, error = yield api.get_user_by_email(
+            user_to_delete, error = yield storage.get_user_by_email(
                 self.db, email
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
 
             if user_to_delete and user_to_delete['email'] != self.user['email']:
-                res, error = yield api.del_user_from_project(
+                res, error = yield storage.del_user_from_project(
                     self.db, user_to_delete, self.project
                 )
                 if error:
@@ -451,7 +451,7 @@ class ProjectSettingsHandler(BaseHandler):
             # completely remove project
             confirm = self.get_argument('confirm', None)
             if confirm == self.project['name']:
-                res, error = yield api.project_delete(
+                res, error = yield storage.project_delete(
                     self.db, self.project
                 )
                 if error:
@@ -498,7 +498,7 @@ class ProjectSettingsHandler(BaseHandler):
                 if not display_name:
                     display_name = name
 
-                res, error = yield api.project_edit(
+                res, error = yield storage.project_edit(
                     self.db, self.project, name, display_name,
                     description, validate_url, auth_attempts,
                     back_off_interval, back_off_max_timeout
