@@ -664,21 +664,6 @@ class AdminSocketHandler(SockJSConnection):
         self.unsubscribe()
 
 
-class AdminValidateHandler(BaseHandler):
-
-    def check_xsrf_cookie(self):
-        pass
-
-    @tornado.web.asynchronous
-    @coroutine
-    def post(self):
-        user_id = self.get_argument('user_id')
-        user, error = api.get_user_by_id(self.db, user_id)
-        if error or not user:
-            raise tornado.web.HTTPError(403)
-        return self.json_response('ok')
-
-
 class Http404Handler(BaseHandler):
 
     def get(self):

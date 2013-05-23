@@ -260,14 +260,6 @@ def get_user_by_email(db, email):
 
 
 @coroutine
-def get_user_by_id(db, user_id):
-    user, error = yield find_one(db.user, {'_id': user_id})
-    if error:
-        on_error(error)
-    raise Return((user, None))
-
-
-@coroutine
 def get_project_by_name(db, project_name):
     project, error = yield find_one(db.project, {'name': project_name})
     if error:
@@ -297,17 +289,6 @@ def get_user_project_key(db, user, project):
         on_error(error)
         return
     raise Return((project_key, None))
-
-
-@coroutine
-def get_project_owner(db, project):
-    assert isinstance(project, dict)
-    user_id = project['user']
-    owner, error = yield find_one(db.user, {'_id': user_id})
-    if error:
-        on_error(error)
-        return
-    raise Return((owner, None))
 
 
 @coroutine
@@ -467,19 +448,6 @@ def category_delete(db, project, category_name):
         on_error(error)
 
     raise Return((True, None))
-
-
-@coroutine
-def is_user_in_project(db, user, project):
-    user_projects, error = yield get_user_projects(db, user)
-    if error:
-        on_error(error)
-
-    for user_project in user_projects:
-        if user_project['name'] == project['name']:
-            raise Return((True, None))
-
-    raise Return((False, None))
 
 
 @coroutine

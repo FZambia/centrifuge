@@ -9,6 +9,7 @@ import momoko
 import psycopg2.extras
 import uuid
 from bson import ObjectId
+from .. import auth
 
 
 def on_error(error):
@@ -33,7 +34,8 @@ def on_app_started(db, drop=False):
 
     project_key = 'CREATE TABLE IF NOT EXISTS project_keys (id SERIAL, ' \
                   '_id varchar(24), project_id varchar(24), user_id varchar(24), ' \
-                  'public_key varchar(32), secret_key varchar(32), readonly bool)'
+                  'public_key varchar(32), secret_key varchar(32), readonly bool, ' \
+                  'is_active bool default True)'
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24), project_id varchar(24), name varchar(100), ' \
@@ -194,6 +196,78 @@ def project_create(db, user, project_name, display_name,
 
 
 @coroutine
+def project_edit(db, project, name, display_name,
+                 description, validate_url, auth_attempts,
+                 back_off_interval, back_off_max_timeout):
+    """
+    Edit project
+    """
+    to_update = {
+        '_id': extract_obj_id(project),
+        'name': name,
+        'display_name': display_name,
+        'description': description,
+        'validate_url': validate_url,
+        'auth_attempts': auth_attempts or None,
+        'back_off_interval': back_off_interval or None,
+        'back_off_max_timeout': back_off_max_timeout or None
+    }
+
+    query = "UPDATE projects SET name=%(name)s, display_name=%(display_name)s, " \
+            "description=%(description)s, validate_url=%(validate_url)s, " \
+            "auth_attempts=%(auth_attempts)s, back_off_interval=%(back_off_interval)s, " \
+            "back_off_max_timeout=%(back_off_max_timeout)s WHERE " \
+            "_id=%(_id)s"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, to_update
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((to_update, None))
+
+
+@coroutine
+def project_delete(db, project):
+    """
+    Delete project. Also delete all related categories and events.
+    """
+    haystack = {
+        'project_id': project['_id']
+    }
+
+    query = "DELETE FROM projects WHERE _id=%(project_id)s"
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack
+        )
+    except Exception as e:
+        import pdb
+        pdb.set_trace()
+        on_error(e)
+
+    query = "DELETE FROM categories WHERE project_id=%(project_id)s"
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack
+        )
+    except Exception as e:
+        on_error(e)
+
+    query = "DELETE FROM project_keys WHERE project_id=%(project_id)s"
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack
+        )
+    except Exception as e:
+        on_error(e)
+
+    raise Return((True, None))
+
+
+@coroutine
 def add_user_into_project(db, user, project, readonly):
 
     user_id = extract_obj_id(user)
@@ -231,7 +305,7 @@ def add_user_into_project(db, user, project, readonly):
             }
             to_update.update(haystack)
 
-            query = "UPDATE TABLE project_keys SET is_active=%(is_active), " \
+            query = "UPDATE project_keys SET is_active=%(is_active)s, " \
                     "readonly=%(readonly)s WHERE user_id=%(user_id)s AND " \
                     "project_id=%(project_id)s"
 
@@ -299,6 +373,31 @@ def get_user_project_key(db, user, project):
 
 
 @coroutine
+def del_user_from_project(db, user, project):
+    user_id = extract_obj_id(user)
+    project_id = extract_obj_id(project)
+    to_update = {
+        'project_id': project_id,
+        'user_id': user_id,
+        'is_active': False,
+        'readonly': True
+    }
+
+    query = "UPDATE project_keys SET is_active=%(is_active)s, " \
+            "readonly=%(readonly)s WHERE project_id=%(project_id)s AND " \
+            "user_id=%(user_id)s"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, to_update
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((True, None))
+
+
+@coroutine
 def get_project_categories(db, project):
     project_id = extract_obj_id(project)
 
@@ -319,13 +418,13 @@ def get_project_categories(db, project):
 @coroutine
 def get_project_users(db, project):
 
-    query = "SELECT t1._id, t1.email, t2.public_key, t2.secret_key, t2.readonly " \
+    query = "SELECT t1._id, t1.email, t2.is_active, t2.public_key, t2.secret_key, t2.readonly " \
             "FROM users t1 JOIN project_keys t2 on t1._id=t2.user_id WHERE " \
-            "project_id=%(project_id)s"
+            "project_id=%(project_id)s AND is_active=%(is_active)s"
 
     try:
         cursor = yield momoko.Op(
-            db.execute, query, {'project_id': extract_obj_id(project)},
+            db.execute, query, {'project_id': extract_obj_id(project), 'is_active': True},
             cursor_factory=psycopg2.extras.RealDictCursor
         )
     except Exception as e:
@@ -333,3 +432,184 @@ def get_project_users(db, project):
     else:
         users = cursor.fetchall()
         raise Return((users, None))
+
+
+@coroutine
+def regenerate_secret_key(db, user, project):
+    """
+    Create new secret and public keys for user in specified project.
+    """
+    user_id = extract_obj_id(user)
+    project_id = extract_obj_id(project)
+    secret_key = uuid.uuid4().hex
+    haystack = {
+        'user_id': user_id,
+        'project_id': project_id,
+        'secret_key': secret_key
+    }
+
+    query = "UPDATE project_keys * SET secret_key=%(secret_key)s " \
+            "WHERE project_id=%(project_id)s AND user_id=%(user_id)s"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((secret_key, None))
+
+
+@coroutine
+def get_project_category(db, project, category_name):
+    """
+    Find category by name for project.
+    """
+    haystack = {
+        'project_id': project['_id'],
+        'name': category_name
+    }
+
+    query = "SELECT * FROM categories WHERE name=%(name)s AND " \
+            "project_id=%(project_id)s LIMIT 1"
+
+    try:
+        cursor = yield momoko.Op(
+            db.execute, query, haystack,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        category = cursor.fetchone()
+        raise Return((category, None))
+
+
+@coroutine
+def category_create(db, project, category_name,
+                    bidirectional=False, publish_to_admins=False):
+
+    to_insert = {
+        '_id': str(ObjectId()),
+        'project_id': project['_id'],
+        'name': category_name,
+        'bidirectional': bidirectional,
+        'publish_to_admins': publish_to_admins
+    }
+
+    query = "INSERT INTO categories (_id, project_id, name, bidirectional, " \
+            "publish_to_admins) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
+            "%(bidirectional)s, %(publish_to_admins)s)"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, to_insert
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((to_insert, None))
+
+
+@coroutine
+def category_delete(db, project, category_name):
+    """
+    Delete category from project. Also delete all related entries from
+    event collection.
+    """
+    category, error = yield get_project_category(db, project, category_name)
+
+    if not category:
+        raise Return((True, None))
+
+    haystack = {
+        'project_id': project['_id'],
+        '_id': category['_id']
+    }
+
+    query = "DELETE FROM categories WHERE _id=%(_id)s AND project_id=%(project_id)s"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((True, None))
+
+
+@coroutine
+def get_user_by_email(db, email):
+
+    query = "SELECT * FROM users WHERE email=%(email)s"
+
+    try:
+        cursor = yield momoko.Op(
+            db.execute, query, {'email': email},
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        user = cursor.fetchone()
+        raise Return((user, None))
+
+
+@coroutine
+def get_project_key_by_public_key(db, public_key):
+
+    query = "SELECT * FROM project_keys WHERE public_key=%(public_key)s LIMIT 1"
+
+    try:
+        cursor = yield momoko.Op(
+            db.execute, query, {'public_key': public_key},
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        project_key = cursor.fetchone()
+        raise Return((project_key, None))
+
+
+@coroutine
+def check_auth(db, project, public_key, sign, encoded_data):
+    """
+    Authenticate incoming request. Make sure that it has all rights
+    to create new events in specified project.
+    """
+    assert isinstance(project, dict)
+
+    project_key, error = yield get_project_key_by_public_key(
+        db, public_key
+    )
+    if error:
+        on_error(error)
+
+    if not project_key or not project_key.get('is_active') or project_key.get('readonly', True):
+        raise Return((None, 'permission denied'))
+
+    is_authenticated = auth.check_sign(
+        project_key['secret_key'],
+        project['_id'],
+        encoded_data,
+        sign
+    )
+    if not is_authenticated:
+        raise Return((None, None))
+
+    user_id = project_key['user_id']
+    query = "SELECT * FROM users WHERE _id=%(user_id)s LIMIT 1"
+    try:
+        cursor = yield momoko.Op(
+            db.execute, query, {'user_id': user_id},
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        user = cursor.fetchone()
+        raise Return((user, None))

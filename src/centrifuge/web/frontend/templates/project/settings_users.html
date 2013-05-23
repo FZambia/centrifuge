@@ -24,7 +24,7 @@
                     <td>
                         {{project_user.get('email', None)}}
                         &nbsp;
-                        {% if project_user['project_key'].get('readonly', True) %}
+                        {% if project_user.get('readonly', True) %}
                             {{_("readonly")}}
                         {% end %}
                         {% if project_user['_id'] != user['_id'] %}
