@@ -244,11 +244,17 @@ class Connection(object):
                 request_timeout=1
             )
 
-            max_auth_attempts = project.get('auth_attempts') or self.MAX_AUTH_ATTEMPTS
+            max_auth_attempts = project.get(
+                'auth_attempts'
+            ) or self.MAX_AUTH_ATTEMPTS
 
-            back_off_interval = project.get('back_off_interval') or self.BACK_OFF_INTERVAL
+            back_off_interval = project.get(
+                'back_off_interval'
+            ) or self.BACK_OFF_INTERVAL
 
-            back_off_max_timeout = project.get('back_off_max_timeout') or self.BACK_OFF_MAX_TIMEOUT
+            back_off_max_timeout = project.get(
+                'back_off_max_timeout'
+            ) or self.BACK_OFF_MAX_TIMEOUT
 
             attempts = 0
 
