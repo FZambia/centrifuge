@@ -179,12 +179,10 @@ class Connection(object):
 
         to_return = {
             'ack': True,
-            'data': {
-                'id': msg_id,
-                'method': method,
-                'result': result,
-                'error': error
-            }
+            'id': msg_id,
+            'method': method,
+            'result': result,
+            'error': error
         }
         return json_encode(to_return)
 

@@ -66,9 +66,9 @@
                             // ack message
                             message(event.data, false);
                             console.log('ack received');
-                            var method = data['data']['method'];
-                            var error = data['data']['error'];
-                            var result = data['data']['result'];
+                            var method = data['method'];
+                            var error = data['error'];
+                            var result = data['result'];
                             if (method === 'auth' && error === null) {
                                 is_authenticated = true;
                                 var subscribe_message = {
