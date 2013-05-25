@@ -35,6 +35,9 @@ NAME_RE = re.compile('^[^_]+[A-z0-9]{2,}$')
 
 @coroutine
 def sleep(seconds):
+    """
+    Non-blocking sleep
+    """
     yield Task(IOLoop.instance().add_timeout, time.time()+seconds)
     raise Return((True, None))
 
@@ -207,9 +210,6 @@ class Connection(object):
         public_key = params['public_key']
         permissions = params["permissions"]
 
-        if not permissions:
-            raise Return((None, "empty permissions"))
-
         self.db = self.application.db
 
         project_key, error = yield storage.get_project_key_by_public_key(
@@ -298,9 +298,10 @@ class Connection(object):
         if error:
             self.close_connection()
 
-        self.categories = dict(
-            (x['name'], x) for x in categories if x['name'] in permissions
-        )
+        self.categories = {}
+        for category in categories:
+            if not permissions or (permissions and category['name'] in permissions):
+                self.categories[category['name']] = category
 
         self.uid = uuid.uuid4().hex
         self.project = project
@@ -364,9 +365,9 @@ class Connection(object):
 
             category_id = self.categories[category_name]['_id']
 
-            for channel in channels:
+            allowed_channels = self.permissions.get(category_name) if self.permissions else []
 
-                allowed_channels = self.permissions[category_name]
+            for channel in channels:
 
                 if not isinstance(allowed_channels, list):
                     continue
@@ -413,7 +414,7 @@ class Connection(object):
 
             for channel in channels:
 
-                allowed_channels = self.permissions[category_name]
+                allowed_channels = self.permissions[category_name] if self.permissions else []
 
                 if allowed_channels and channel not in allowed_channels:
                     # attempt to unsubscribe from not allowed channel
@@ -447,7 +448,7 @@ class Connection(object):
         if category not in self.bidirectional_categories:
             raise Return((None, 'one-way category'))
 
-        allowed_channels = self.permissions[category]
+        allowed_channels = self.permissions.get(category) if self.permissions else []
 
         if allowed_channels and channel not in allowed_channels:
             # attempt to broadcast into not allowed channel
