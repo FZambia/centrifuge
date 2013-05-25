@@ -21,13 +21,15 @@ install_requires = [
 
 
 def long_description():
-    return "broadcast messages in web applications"
+    return "Light and simple open-source platform for real-time message " \
+           "broadcasting in your web applications"
 
 
 setup(
     name='centrifuge',
     version='0.0.2',
-    description="broadcast messages in web applications",
+    description="Light and simple open-source platform for real-time message "
+                "broadcasting in your web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
     download_url='https://github.com/FZambia/centrifuge',

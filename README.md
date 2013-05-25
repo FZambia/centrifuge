@@ -20,6 +20,7 @@ used. Socket.io support in future plans.
 
 Centrifuge comes with administrative web interface and by default requires
 [MongoDB](http://www.mongodb.org/) to keep information about users, projects, categories etc.
+You can also use [PostgreSQL](http://www.postgresql.org/) instead of MongoDB.
 
 Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/) and look
 at examples for more information.
