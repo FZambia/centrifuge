@@ -14,6 +14,7 @@ install_requires = [
     'sockjs-tornado==1.0.0',
     'pyzmq==13.1.0',
     'motor==0.1',
+    'Momoko==1.0.0',
     'jsonschema==1.2.0',
     'lxml==3.1.0',
 ]
@@ -25,7 +26,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.0.1',
+    version='0.0.2',
     description="broadcast messages in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
