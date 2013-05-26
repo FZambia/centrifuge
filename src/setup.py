@@ -27,7 +27,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.0.2',
+    version='0.0.3',
     description="Light and simple open-source platform for real-time message "
                 "broadcasting in your web applications",
     long_description=long_description(),
@@ -37,7 +37,7 @@ setup(
     author_email='frvzmb@gmail.com',
     license='BSD',
     include_package_data=True,
-    packages=['centrifuge', 'centrifuge/web'],
+    packages=['centrifuge', 'centrifuge/web', 'centrifuge/storage'],
     entry_points={
         'console_scripts': [
             'centrifuge = centrifuge.app:main',
