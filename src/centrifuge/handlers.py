@@ -275,7 +275,8 @@ class Connection(object):
                 try:
                     response = yield http_client.fetch(request)
                 except BaseException:
-                    # exponential back-off must be here
+                    # let it fail and try again after some timeout
+                    # until we have auth attempts
                     pass
                 else:
                     # reset back-off attempts

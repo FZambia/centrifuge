@@ -16,7 +16,7 @@ communication and publish/subscribe operations.
 
 To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be
-used. Socket.io support in future plans.
+used.
 
 Centrifuge comes with administrative web interface and by default requires
 [MongoDB](http://www.mongodb.org/) to keep information about users, projects, categories etc.

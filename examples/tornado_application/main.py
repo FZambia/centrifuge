@@ -39,6 +39,12 @@ def get_client_token(secret_key, public_key, user):
     return token
 
 
+class IndexHandler(tornado.web.RequestHandler):
+
+    def get(self):
+        self.render('index.html')
+
+
 class SockjsHandler(tornado.web.RequestHandler):
 
     def get(self):
@@ -106,7 +112,8 @@ def run():
     options.parse_command_line()
     app = tornado.web.Application(
         [
-            (r'/', SockjsHandler),
+            (r'/', IndexHandler),
+            (r'/sockjs', SockjsHandler),
             (r'/ws', WebsocketHandler),
             (r'/validate', ValidateHandler),
         ],

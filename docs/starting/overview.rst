@@ -18,7 +18,7 @@ communication and publish/subscribe operations.
 
 To connect to Centrifuge from browser pure `Websockets <http://en.wikipedia.org/wiki/WebSocket>`_
 or `SockJS <https://github.com/sockjs/sockjs-client>`_ library can be
-used. Socket.io support in future plans. Please, read appropriate documentation
+used. Please, read appropriate documentation
 chapter for better description and look at examples.
 
 
