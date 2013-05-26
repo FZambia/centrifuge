@@ -132,9 +132,9 @@ def unsubscribe_connection(app, project, params):
             # unsubscribe from all channels
             for category_name, channels in six.iteritems(connection.channels):
                 for channel_to_unsubscribe in channels:
-                    connection.sub_stream.setsockopt(
+                    connection.sub_stream.setsockopt_string(
                         zmq.UNSUBSCRIBE,
-                        channel_to_unsubscribe
+                        six.u(channel_to_unsubscribe)
                     )
             raise Return((True, None))
 
@@ -154,9 +154,9 @@ def unsubscribe_connection(app, project, params):
                 if not category_channels:
                     continue
                 for channel_to_unsubscribe in category_channels:
-                    connection.sub_stream.setsockopt(
+                    connection.sub_stream.setsockopt_string(
                         zmq.UNSUBSCRIBE,
-                        channel_to_unsubscribe
+                        six.u(channel_to_unsubscribe)
                     )
                 try:
                     del connection.channels[category_name]
@@ -170,9 +170,9 @@ def unsubscribe_connection(app, project, params):
                         project_id, category_id, channel
                     )
 
-                    connection.sub_stream.setsockopt(
+                    connection.sub_stream.setsockopt_string(
                         zmq.UNSUBSCRIBE,
-                        channel_to_unsubscribe
+                        six.u(channel_to_unsubscribe)
                     )
 
                     try:
@@ -296,7 +296,7 @@ def process_call(application, project, user, method, params):
 
     if method == "broadcast":
 
-        db = application.settings['db']
+        db = application.db
 
         project_categories, error = yield storage.get_project_categories(
             db, project

@@ -278,7 +278,7 @@ def get_user_projects(db, user):
 
     projects, error = yield find(
         db.project,
-        {'_id': {'$in': entry_dict.keys()}}
+        {'_id': {'$in': list(entry_dict.keys())}}
     )
     if error:
         on_error(error)
@@ -306,7 +306,7 @@ def get_project_users(db, project):
 
     users, error = yield find(
         db.user,
-        {'_id': {'$in': entry_dict.keys()}}
+        {'_id': {'$in': list(entry_dict.keys())}}
     )
     if error:
         on_error(error)

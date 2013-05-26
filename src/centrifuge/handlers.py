@@ -382,8 +382,8 @@ class Connection(object):
                     category_id,
                     channel
                 )
-                self.sub_stream.setsockopt(
-                    zmq.SUBSCRIBE, channel_to_subscribe
+                self.sub_stream.setsockopt_string(
+                    zmq.SUBSCRIBE, six.u(channel_to_subscribe)
                 )
 
                 if category_name not in self.channels:
@@ -426,8 +426,8 @@ class Connection(object):
                     category_id,
                     channel
                 )
-                self.sub_stream.setsockopt(
-                    zmq.UNSUBSCRIBE, channel_to_unsubscribe
+                self.sub_stream.setsockopt_string(
+                    zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
                 )
 
                 try:
@@ -526,7 +526,12 @@ class Connection(object):
         """
         Called when message received from one of channels client subscribed to.
         """
-        self.send_message(message[0].split(rpc.CHANNEL_DATA_SEPARATOR, 1)[1])
+        actual_message = message[0]
+        if six.PY3:
+            actual_message = actual_message.decode()
+        self.send_message(
+            actual_message.split(rpc.CHANNEL_DATA_SEPARATOR, 1)[1]
+        )
 
     def clean_up(self):
         """

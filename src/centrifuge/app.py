@@ -39,6 +39,8 @@ from centrifuge.web.handlers import ProjectSettingsHandler
 from centrifuge.rpc import create_control_channel_name
 from centrifuge.rpc import handle_control_message
 
+import six
+
 import zmq
 from zmq.eventloop import ioloop
 from zmq.eventloop.zmqstream import ZMQStream
@@ -270,9 +272,9 @@ def main():
         for address in app.zmq_sub_address:
             subscribe_socket.connect(address)
 
-    subscribe_socket.setsockopt(
+    subscribe_socket.setsockopt_string(
         zmq.SUBSCRIBE,
-        create_control_channel_name()
+        six.u(create_control_channel_name())
     )
 
     def listen_control_channel():

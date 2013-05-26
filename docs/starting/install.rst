@@ -66,6 +66,16 @@ Then you don't have `libpq-dev` package installed on your machine. For example, 
     sudo apt-get install libpq-dev
 
 
+Also if you have problems with installing Centrifuge on Python 3, make sure you have `distribute`
+installed:
+
+.. code-block:: bash
+
+    curl -O http://python-distribute.org/distribute_setup.py
+    python distribute_setup.py
+    easy_install pip
+
+
 Install and run database
 ~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -1,8 +1,8 @@
 Centrifuge client's application example
 =======================================
 
-First, run Centrifuge, create new project and then run this app with
-correct Centrifuge address, secret and public project keys:
+First, run Centrifuge, create new project and bidirectional category "bee" in it
+and then run this app with correct Centrifuge address, secret and public project keys:
 
 ```bash
 python main.py --port=3000 --centrifuge=localhost:8000 --public_key=PUBLIC --secret_key=SECRET

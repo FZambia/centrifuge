@@ -14,6 +14,8 @@ import tornado.gen
 from tornado.gen import Task, coroutine, Return
 from sockjs.tornado import SockJSConnection
 
+import six
+
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
@@ -612,7 +614,12 @@ class AdminSocketHandler(SockJSConnection):
             self.close()
 
     def on_message_published(self, message):
-        self.send(message[0].split(CHANNEL_DATA_SEPARATOR, 1)[1])
+        actual_message = message[0]
+        if six.PY3:
+            actual_message = actual_message.decode()
+        self.send(
+            actual_message.split(CHANNEL_DATA_SEPARATOR, 1)[1]
+        )
 
     def subscribe(self):
 
@@ -633,7 +640,9 @@ class AdminSocketHandler(SockJSConnection):
             self.connections[project_id][self.user_id][self.uid] = self
 
             channel_to_subscribe = create_project_channel_name(project_id)
-            subscribe_socket.setsockopt(zmq.SUBSCRIBE, channel_to_subscribe)
+            subscribe_socket.setsockopt_string(
+                zmq.SUBSCRIBE, six.u(channel_to_subscribe)
+            )
 
         self.subscribe_stream = ZMQStream(subscribe_socket)
         self.subscribe_stream.on_recv(self.on_message_published)

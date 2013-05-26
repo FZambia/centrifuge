@@ -6,11 +6,12 @@
 from tornado.escape import json_decode
 import base64
 import hmac
-import zlib
 
 import codecs
 import json
 import re
+
+import six
 
 try:
     from urllib import urlencode
@@ -30,10 +31,10 @@ def create_admin_token(secret, timestamp, user_id, projects):
     Create token to confirm administrator's subscription on project's
     real-time updates.
     """
-    token = hmac.new(str(secret))
-    token.update(str(timestamp))
-    token.update(str(user_id))
-    [token.update(project) for project in projects]
+    token = hmac.new(six.b(str(secret)))
+    token.update(six.b(str(timestamp)))
+    token.update(six.b(user_id))
+    [token.update(six.b(project)) for project in projects]
     return token.hexdigest()
 
 
@@ -41,9 +42,9 @@ def get_client_token(secret_key, public_key, user):
     """
     Create token to validate information provided by new connection.
     """
-    sign = hmac.new(str(secret_key))
-    sign.update(user)
-    sign.update(public_key)
+    sign = hmac.new(six.b(str(secret_key)))
+    sign.update(six.b(user))
+    sign.update(six.b(public_key))
     token = sign.hexdigest()
     return token
 
@@ -87,8 +88,8 @@ def extract_auth_info(request):
 
 
 def check_sign(secret_key, project_id, encoded_data, auth_sign):
-    sign = hmac.new(str(secret_key))
-    sign.update(project_id)
+    sign = hmac.new(six.b(str(secret_key)))
+    sign.update(six.b(project_id))
     sign.update(encoded_data)
     return sign.hexdigest() == auth_sign
 
@@ -98,7 +99,7 @@ def decode_data(data):
     Decode string received from client.
     """
     try:
-        return json_decode(base64.b64decode(zlib.decompress(data)))
+        return json_decode(base64.b64decode(data))
     except BaseException:
         return None
 

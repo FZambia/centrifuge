@@ -1,5 +1,6 @@
-v0.0.2
+v0.0.4
 ======
+* changes to run on Python 3
 * authentication via Github OAuth2.
 * exponential backoff within tornado process.
 * allow empty permissions while authentication to give full rights to client.
@@ -9,4 +10,4 @@ v0.0.2
 
 v0.0.1
 =====
-Initial release.
+Initial non-stable release.
