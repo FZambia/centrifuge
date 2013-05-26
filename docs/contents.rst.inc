@@ -44,6 +44,17 @@ Web interface
    web/project_settings
 
 
+Cent
+----
+
+This part of the doc focuses on Cent - python tools to communicate with Centrifuge.
+
+.. toctree::
+   :maxdepth: 2
+
+   cent/overview
+
+
 Clients and events
 ------------------
 
@@ -69,18 +80,6 @@ This part of the doc focuses on deploying Centrifuge in production environment.
    deployment/supervisord
 
 
-Extending
----------
-
-This part of the doc focuses on ways to extend standard behaviour.
-
-.. toctree::
-   :maxdepth: 2
-
-  	extending/backend
-  	extending/callbacks
-
-
 License, Contribution etc
 -------------------------
 
@@ -91,7 +90,6 @@ Contribution notes and legal information are here (for those interested).
 
    marketing/license
    marketing/contribute
-   marketing/author
 
 
 

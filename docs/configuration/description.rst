@@ -7,6 +7,8 @@ Centrifuge's configuration file
 Example
 ~~~~~~~
 
+Here is minimal configuration file required:
+
 .. code-block:: bash
 
     {
@@ -20,16 +22,6 @@ Example
                 "name": "centrifuge",
                 "max_pool_size": 10
             }
-        },
-        "sockjs_transports": [
-            "websocket",
-            "xhr-streaming",
-            "iframe-eventsource"
-        ],
-        "html": {
-            "escape": true,
-            "clean": false,
-            "allowed_domains": ["youtube.com", "www.youtube.com"]
         }
     }
 
@@ -42,7 +34,3 @@ Description
 - **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
 
 - **storage** - section with database backend settings. No alternatives except default MongoDB for this moment.
-
-- **sockjs-transports** - SockJS transports to use in admin web interface. Only persistent connection transports allowed.
-
-- **html** - section with HTML sanitizing/escaping options.
