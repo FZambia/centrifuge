@@ -192,13 +192,6 @@ def main():
 
     ioloop_instance = tornado.ioloop.IOLoop.instance()
 
-    #try:
-    #    storage.get_db(
-    #        app, database_settings.get('settings', {})
-    #    )
-    #except Exception as e:
-    #    return stop_running(str(e))
-
     settings = dict(
         cookie_secret=custom_settings.get("cookie_secret", "bad secret"),
         login_url="/auth",
