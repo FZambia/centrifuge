@@ -167,6 +167,21 @@ def get_project_by_name(db, project_name):
 
 
 @coroutine
+def get_project_by_id(db, project_id):
+    query = "SELECT * FROM projects WHERE _id=%(project_id)s LIMIT 1"
+    try:
+        cursor = yield momoko.Op(
+            db.execute, query, {'project_id': project_id},
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        project = cursor.fetchone()
+        raise Return((project, None))
+
+
+@coroutine
 def project_create(db, user, project_name, display_name,
                    description, validate_url, auth_attempts,
                    back_off_interval, back_off_max_timeout):
