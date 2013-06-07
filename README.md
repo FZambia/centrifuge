@@ -24,3 +24,5 @@ You can also use [PostgreSQL](http://www.postgresql.org/) instead of MongoDB.
 
 Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/) and look
 at examples for more information.
+
+![home](https://github.com/FZambia/centrifuge/blob/master/docs/description/centrifuge_architecture.png "centrifuge")
