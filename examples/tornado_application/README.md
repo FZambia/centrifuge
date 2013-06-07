@@ -8,4 +8,4 @@ and then run this app with correct Centrifuge address, project id and project se
 python main.py --port=3000 --centrifuge=localhost:8000 --project_id=PROJECT_ID --secret_key=SECRET
 ```
 
-Go to `http://localhost:3000` and select SockJS or pure websocket example.
+Then visit `http://localhost:3000` and select SockJS or pure websocket example.
