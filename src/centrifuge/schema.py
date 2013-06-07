@@ -102,6 +102,6 @@ client_params_schema = {
                 "type": "object",
             }
         },
-        "required": ["token", "user", "public_key", "permissions"]
+        "required": ["token", "user", "project_id", "permissions"]
     }
 }
