@@ -1,8 +1,8 @@
 {
     "debug": true,
-    "password": "admin",
+    "password": "",
     "cookie_secret": "secret",
-    "storage2": {
+    "storage": {
         "module": "centrifuge.storage.mongodb",
         "settings": {
             "host": "localhost",
@@ -11,25 +11,16 @@
             "max_pool_size": 10
         }
     },
-    "storage": {
+    "storage_alternative": {
         "module": "centrifuge.storage.postgresql",
         "settings": {
             "user": "fz",
             "password": "postgres"
         }
     },
-    "event_callbacks": [],
-    "sockjs_transports": [
-        "websocket",
-        "xhr-streaming",
-        "iframe-eventsource"
-    ],
     "html": {
         "escape": true,
         "clean": false,
         "allowed_domains": ["youtube.com", "www.youtube.com"]
-    },
-    "auth_github": false,
-    "github_client_id": "github_client_id",
-    "github_client_secret": "github_client_secret"
+    }
 }
