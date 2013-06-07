@@ -95,7 +95,7 @@ client_params_schema = {
             "user": {
                 "type": "string"
             },
-            "public_key": {
+            "project_id": {
                 "type": "string"
             },
             "permissions": {

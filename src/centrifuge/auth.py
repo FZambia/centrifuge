@@ -23,13 +23,13 @@ def create_admin_token(secret, timestamp, projects):
     return token.hexdigest()
 
 
-def get_client_token(secret_key, public_key, user):
+def get_client_token(secret_key, project_id, user):
     """
     Create token to validate information provided by new connection.
     """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(user))
-    sign.update(six.b(public_key))
+    sign.update(six.b(str(project_id)))
     token = sign.hexdigest()
     return token
 

@@ -157,8 +157,10 @@ class Connection(object):
     # maximum auth validation requests before returning error to client
     MAX_AUTH_ATTEMPTS = 5
 
+    # interval unit in milliseconds for back off
     BACK_OFF_INTERVAL = 100
 
+    # maximum timeout between authorization attempts in back off
     BACK_OFF_MAX_TIMEOUT = 5000
 
     def close_connection(self):
@@ -206,32 +208,23 @@ class Connection(object):
 
         token = params["token"]
         user = params["user"]
-        public_key = params['public_key']
+        project_id = params['project_id']
         permissions = params["permissions"]
 
         self.db = self.application.db
 
-        project_key, error = yield storage.get_project_key_by_public_key(
-            self.db, public_key
-        )
-        if error:
-            self.close_connection()
-
-        if not project_key:
-            raise Return((None, "invalid public key"))
-
-        secret_key = project_key['secret_key']
-
-        if token != auth.get_client_token(secret_key, public_key, user):
-            raise Return((None, "invalid token"))
-
         project, error = yield storage.get_project_by_id(
-            self.db, project_key['project']
+            self.db, project_id
         )
         if error:
             self.close_connection()
+        if not project:
+            raise Return((None, "project not found"))
 
-        project_id = project['_id']
+        secret_key = project['secret_key']
+
+        if token != auth.get_client_token(secret_key, project_id, user):
+            raise Return((None, "invalid token"))
 
         if user and project.get('validate_url', None):
 

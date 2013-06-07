@@ -41,7 +41,7 @@
                             'params': {
                                 'token': '{{auth_data["token"]}}',
                                 'user': '{{auth_data["user"]}}',
-                                'public_key': '{{auth_data["public_key"]}}',
+                                'project_id': '{{auth_data["project_id"]}}',
                                 'permissions': {}
                             }
                         };
@@ -72,7 +72,7 @@
                                     'method': 'subscribe',
                                     'params': {
                                         'to': {
-                                            'bee': ['mu']
+                                            'python': ['django']
                                         }
                                     }
                                 };
@@ -93,8 +93,8 @@
                         var broadcast_message = {
                             'method': 'broadcast',
                             'params': {
-                                'category': 'bee',
-                                'channel': 'mu',
+                                'category': 'python',
+                                'channel': 'django',
                                 'data': {'input': input.val()}
                             }
                         };

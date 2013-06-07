@@ -17,7 +17,7 @@ define(
     help="centrifuge address without url scheme", type=str
 )
 define(
-    "public_key", default='', help="project public key", type=str
+    "project_id", default='', help="project id", type=str
 )
 define(
     "secret_key", default='', help="project secret key", type=str
@@ -28,13 +28,13 @@ define(
 USER_ID = '2694'
 
 
-def get_client_token(secret_key, public_key, user):
+def get_client_token(secret_key, project_id, user):
     """
     Create token to validate information provided by new connection.
     """
     sign = hmac.new(str(secret_key))
     sign.update(user)
-    sign.update(public_key)
+    sign.update(project_id)
     token = sign.hexdigest()
     return token
 
@@ -55,13 +55,13 @@ class SockjsHandler(tornado.web.RequestHandler):
         user = USER_ID
 
         token = get_client_token(
-            options.secret_key, options.public_key, user
+            options.secret_key, options.project_id, user
         )
 
         auth_data = {
             'token': token,
             'user': user,
-            'public_key': options.public_key
+            'project_id': options.project_id
         }
 
         self.render(
@@ -81,13 +81,13 @@ class WebsocketHandler(tornado.web.RequestHandler):
         user = USER_ID
 
         token = get_client_token(
-            options.secret_key, options.public_key, user
+            options.secret_key, options.project_id, user
         )
 
         auth_data = {
             'token': token,
             'user': user,
-            'public_key': options.public_key
+            'project_id': options.project_id
         }
 
         self.render(
