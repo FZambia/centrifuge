@@ -23,6 +23,6 @@ Centrifuge comes with administrative web interface and by default requires
 You can also use [PostgreSQL](http://www.postgresql.org/) instead of MongoDB.
 
 Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/) and look
-at examples for more information.
+at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
 
 ![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/description/centrifuge_architecture.png "centrifuge")
