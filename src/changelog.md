@@ -1,3 +1,7 @@
+v0.0.6
+======
+* completely remove user management
+
 v0.0.4
 ======
 * changes to run on Python 3
