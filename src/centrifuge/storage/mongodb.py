@@ -23,17 +23,13 @@ def on_error(error):
 def ensure_indexes(db, drop=False):
     if drop:
         logging.info('dropping indexes...')
-        db.user.drop_indexes()
         db.project.drop_indexes()
         db.category.drop_indexes()
 
-    logging.info('ensuring indexes...')
-
-    db.user.ensure_index([('email', 1)], unique=True)
     db.project.ensure_index([('name', 1)], unique=True)
     db.category.ensure_index([('name', 1), ('project', 1)], unique=True)
 
-    logging.info('ensuring indexes DONE')
+    logging.info('Database ready')
 
 
 def init_db(app, settings):
@@ -149,58 +145,15 @@ def find_one_or_create(collection, haystack):
 
 
 @coroutine
-def get_or_create_user(db, email):
-    """
-    Get user by email and return it's data if user exists.
-    Otherwise create new user using provided arguments.
-    """
-    user_data, error = yield find_one(db.user, {'email': email})
-    if error:
-        on_error(error)
-
-    if not user_data:
-        user_data = {
-            'email': email,
-            '_id': str(ObjectId())
-        }
-        res, error = yield insert(db.user, user_data)
-        if error:
-            on_error(error)
-
-    raise Return((user_data, None))
-
-
-@coroutine
-def get_project_key_by_public_key(db, public_key):
-
-    project_key, error = yield find_one(
-        db.projectkey,
-        {'public_key': public_key}
-    )
-    if error:
-        on_error(error)
-    raise Return((project_key, None))
-
-
-@coroutine
-def check_auth(db, project, public_key, sign, encoded_data):
+def check_auth(db, project, sign, encoded_data):
     """
     Authenticate incoming request. Make sure that it has all rights
     to create new events in specified project.
     """
     assert isinstance(project, dict)
 
-    project_key, error = yield get_project_key_by_public_key(
-        db, public_key
-    )
-    if error:
-        on_error(error)
-
-    if not project_key or project_key.get('readonly', True):
-        raise Return((None, 'permission denied'))
-
     is_authenticated = auth.check_sign(
-        project_key['secret_key'],
+        project['secret_key'],
         project['_id'],
         encoded_data,
         sign
@@ -208,23 +161,19 @@ def check_auth(db, project, public_key, sign, encoded_data):
     if not is_authenticated:
         raise Return((None, None))
 
-    user_id = project_key['user']
-    user, error = yield find_one(db.user, {'_id': user_id})
-    if error:
-        on_error(error)
-
-    if not user:
-        raise Return((None, None))
-
-    raise Return((user, None))
+    raise Return((True, None))
 
 
 @coroutine
-def get_user_by_email(db, email):
-    user, error = yield find_one(db.user, {'email': email})
+def project_list(db):
+    """
+    Get all projects
+    """
+    projects, error = yield find(db.project, {})
     if error:
         on_error(error)
-    raise Return((user, None))
+
+    raise Return((projects, None))
 
 
 @coroutine
@@ -245,79 +194,6 @@ def get_project_by_id(db, project_id):
 
 
 @coroutine
-def get_user_project_key(db, user, project):
-    user_id = extract_obj_id(user)
-    project_id = extract_obj_id(project)
-    haystack = {
-        'project': project_id,
-        'user': user_id
-    }
-    project_key, error = yield find_one(db.projectkey, haystack)
-    if error:
-        on_error(error)
-        return
-    raise Return((project_key, None))
-
-
-@coroutine
-def get_user_projects(db, user):
-    """
-    Get all projects user can see.
-    """
-    obj_id = extract_obj_id(user)
-    project_keys, error = yield find(
-        db.projectkey,
-        {'user': obj_id, 'is_active': True}
-    )
-    if error:
-        on_error(error)
-
-    entry_dict = {}
-    for entry in project_keys:
-        entry_dict[entry['project']] = entry
-
-    projects, error = yield find(
-        db.project,
-        {'_id': {'$in': list(entry_dict.keys())}}
-    )
-    if error:
-        on_error(error)
-
-    for project in projects:
-        project['project_key'] = entry_dict[project['_id']]
-
-    raise Return((projects, None))
-
-
-@coroutine
-def get_project_users(db, project):
-
-    obj_id = extract_obj_id(project)
-    project_keys, error = yield find(
-        db.projectkey,
-        {'project': obj_id, 'is_active': True}
-    )
-    if error:
-        on_error(error)
-
-    entry_dict = {}
-    for entry in project_keys:
-        entry_dict[entry['user']] = entry
-
-    users, error = yield find(
-        db.user,
-        {'_id': {'$in': list(entry_dict.keys())}}
-    )
-    if error:
-        on_error(error)
-
-    for user in users:
-        user['readonly'] = entry_dict[user['_id']].get('readonly')
-
-    raise Return((users, None))
-
-
-@coroutine
 def get_project_categories(db, project):
     project_id = extract_obj_id(project)
     categories, error = yield find(db.category, {'project': project_id})
@@ -328,27 +204,45 @@ def get_project_categories(db, project):
 
 
 @coroutine
-def project_create(db, user, project_name, display_name,
+def project_create(db, project_name, display_name,
                    description, validate_url, auth_attempts,
                    back_off_interval, back_off_max_timeout):
-    user_id = extract_obj_id(user)
     project_id = str(ObjectId())
     to_insert = {
         '_id': project_id,
-        'owner': user_id,
         'name': project_name,
         'display_name': display_name,
         'description': description,
         'validate_url': validate_url,
         'auth_attempts': auth_attempts,
         'back_off_interval': back_off_interval,
-        'back_off_max_timeout': back_off_max_timeout
+        'back_off_max_timeout': back_off_max_timeout,
+        'secret_key': uuid.uuid4().hex
     }
     result, error = yield insert(db.project, to_insert)
     if error:
         on_error(error)
         return
     raise Return((to_insert, None))
+
+
+@coroutine
+def regenerate_project_secret_key(db, project):
+    """
+    Create new secret key for specified project.
+    """
+    project_id = extract_obj_id(project)
+    haystack = {
+        '_id': project_id
+    }
+    update_data = {
+        'secret_key': uuid.uuid4().hex
+    }
+    result, error = yield update(db.project, haystack, update_data)
+    if error:
+        on_error(error)
+
+    raise Return((update_data, None))
 
 
 @coroutine
@@ -367,10 +261,6 @@ def project_delete(db, project):
         'project': project['_id']
     }
     _res, error = yield remove(db.category, haystack)
-    if error:
-        on_error(error)
-
-    _res, error = yield remove(db.projectkey, haystack)
     if error:
         on_error(error)
 
@@ -442,103 +332,6 @@ def category_delete(db, project, category_name):
         on_error(error)
 
     raise Return((True, None))
-
-
-@coroutine
-def generate_project_keys(db, user_id, project_id, readonly):
-    """
-    Create secret and public keys for user in specified project.
-    """
-    project_key_id = str(ObjectId())
-    to_insert = {
-        '_id': project_key_id,
-        'project': project_id,
-        'user': user_id,
-        'public_key': uuid.uuid4().hex,
-        'secret_key': uuid.uuid4().hex,
-        'readonly': readonly
-    }
-    result, error = yield insert(db.projectkey, to_insert)
-    if error:
-        on_error(error)
-
-    raise Return((to_insert, None))
-
-
-@coroutine
-def regenerate_secret_key(db, user, project):
-    """
-    Create new secret and public keys for user in specified project.
-    """
-    user_id = extract_obj_id(user)
-    project_id = extract_obj_id(project)
-    haystack = {
-        'user': user_id,
-        'project': project_id
-    }
-    update_data = {
-        'secret_key': uuid.uuid4().hex
-    }
-    result, error = yield update(db.projectkey, haystack, update_data)
-    if error:
-        on_error(error)
-
-    raise Return((update_data, None))
-
-
-@coroutine
-def add_user_into_project(db, user, project, readonly):
-
-    user_id = extract_obj_id(user)
-    project_id = extract_obj_id(project)
-
-    haystack = {
-        'project': project_id,
-        'user': user_id
-    }
-
-    project_key, error = yield find_one(db.projectkey, haystack)
-    if error:
-        on_error(error)
-
-    if not project_key:
-        project_key, error = yield generate_project_keys(
-            db, user_id, project_id, readonly
-        )
-        if error:
-            on_error(error)
-
-    elif not project_key.get('is_active', False):
-        to_update = {
-            'is_active': True,
-            'readonly': readonly
-        }
-        _res, error = yield update(db.projectkey, haystack, to_update)
-        if error:
-            on_error(error)
-
-    raise Return((project_key, None))
-
-
-@coroutine
-def del_user_from_project(db, user, project):
-    user_id = extract_obj_id(user)
-    project_id = extract_obj_id(project)
-    haystack = {
-        'project': project_id,
-        'user': user_id
-    }
-    project_key, error = yield find_one(db.projectkey, haystack)
-    if error:
-        on_error(error)
-
-    if project_key:
-        update_data = {'is_active': False, 'readonly': True}
-        res, error = yield update(db.projectkey, haystack, update_data)
-        if error:
-            on_error(error)
-
-    raise Return((project_key, None))
 
 
 @coroutine

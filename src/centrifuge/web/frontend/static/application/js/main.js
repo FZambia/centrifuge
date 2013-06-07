@@ -13,7 +13,6 @@
                 socket_url: '/socket/',
                 auth_timestamp: '',
                 auth_token: '',
-                auth_user_id: '',
                 global_content_element: '#main-content',
                 global_panel_element: '#panel',
                 global_tabs_element: '#tabs',
@@ -192,7 +191,6 @@
                 var message = {
                     'auth_token': options.auth_token,
                     'auth_timestamp': options.auth_timestamp,
-                    'auth_user_id': options.auth_user_id,
                     'projects': subscribe_projects
                 };
 
@@ -277,34 +275,10 @@
 
             var render_panel_for_project_list = function() {
                 var projects_all = $('.project');
-                var projects_own = projects_all.filter(function() {return $(this).hasClass('project-own')});
-                var projects_shared = projects_all.filter(function() {return !$(this).hasClass('project-own')});
 
-                var html = project_list_panel_template.render({
-                    'count_all': projects_own.length + projects_shared.length,
-                    'count_own': projects_own.length,
-                    'count_shared': projects_shared.length
-                });
+
+                var html = project_list_panel_template.render({});
                 global_panel.append(html);
-
-                $('#project-own-filter').on('click', 'li', function() {
-                    var self = $(this);
-                    if (self.hasClass('active')) {
-                        return false;
-                    }
-                    if (self.hasClass('projects-all')) {
-                        projects_all.removeClass('project-own-filtered');
-                    } else if (self.hasClass('projects-own')) {
-                        projects_shared.addClass('project-own-filtered');
-                        projects_own.removeClass('project-own-filtered');
-                    } else if (self.hasClass('projects-shared')) {
-                        projects_own.addClass('project-own-filtered');
-                        projects_shared.removeClass('project-own-filtered');
-                    }
-                    self.parent().find('li.active').removeClass('active');
-                    self.addClass('active');
-                    return false;
-                });
 
                 $('#project-name-filter').on('keyup', function() {
                     var self = $(this);
@@ -323,9 +297,7 @@
                             project.addClass('project-name-filtered');
                         }
                     });
-
                 });
-
             };
 
             var render_project = function(project, container) {

@@ -6,7 +6,7 @@
 				<span class="icon-bar"></span>
 				<span class="icon-bar"></span>
 			</a>
-			<a href="{{reverse_url("main")}}" class="brand">
+			<a href="{{reverse_url('main')}}" class="brand">
 				Centrifuge
 			</a>
 
@@ -28,19 +28,8 @@
 			</ul>
 
 			<div class="btn-group pull-right">
-				{% if not current_user %}
-                    {% if handler.settings.get('options', {}).get("auth_github", False) %}
-                        <a class="btn btn-default" href="{{reverse_url("auth_github")}}">{{_("log in with Github")}}</a>
-					{% end %}
-                    <a class="btn btn-default" href="{{reverse_url("auth_google")}}">{{_("log in with Google")}}</a>
-				{% else %}
-					<a href="#" data-toggle="dropdown" class="btn dropdown-toggle user-btn">
-						<span class="hidden-phone hidden-tablet">{{current_user['email']}}</span>
-						<span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu">
-						<li><a href="{{handler.reverse_url("logout")}}">{{_("Logout")}}</a></li>
-					</ul>
+				{% if current_user %}
+                    <a class="btn btn-default" href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
 				{% end %}
 			</div>
 

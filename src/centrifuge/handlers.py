@@ -45,10 +45,10 @@ def sleep(seconds):
 class BaseHandler(tornado.web.RequestHandler):
 
     def get_current_user(self):
-        user_json = self.get_secure_cookie("user")
-        if not user_json:
+        user = self.get_secure_cookie("user")
+        if not user:
             return None
-        return tornado.escape.json_decode(user_json)
+        return user
 
     def json_response(self, to_return):
         """
@@ -90,7 +90,6 @@ class RpcHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(401, log_message=error)
 
-        public_key = auth_info['public_key']
         sign = auth_info['sign']
 
         project, error = yield storage.get_project_by_id(self.db, project_id)
@@ -103,12 +102,12 @@ class RpcHandler(BaseHandler):
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no request body")
 
-        user, error = yield storage.check_auth(
-            self.db, project, public_key, sign, encoded_data
+        result, error = yield storage.check_auth(
+            self.db, project, sign, encoded_data
         )
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
-        if not user:
+        if not result:
             raise tornado.web.HTTPError(401, log_message="unauthorized")
 
         data = auth.decode_data(encoded_data)
@@ -141,7 +140,7 @@ class RpcHandler(BaseHandler):
                     context['error'] = str(e)
                 else:
                     result, error = yield rpc.process_call(
-                        self.application, project, user, method, params
+                        self.application, project, method, params
                     )
 
                     context['error'] = error

@@ -209,7 +209,7 @@ def broadcast_event(event, app, allowed_categories):
 
 
 @coroutine
-def prepare_event(application, project, allowed_categories, params, user=None):
+def prepare_event(application, project, allowed_categories, params):
     """
     Prepare event before actual broadcasting.
     """
@@ -240,7 +240,6 @@ def prepare_event(application, project, allowed_categories, params, user=None):
         '_id': str(ObjectId()),
         'project': project['_id'],
         'category': category['_id'],
-        'user': user['_id'] if isinstance(user, dict) else None,
         'channel': channel,
         'data': event_data,
     }
@@ -259,10 +258,10 @@ def prepare_event(application, project, allowed_categories, params, user=None):
 
 
 @coroutine
-def process_broadcast(application, project, allowed_categories, params, user=None):
+def process_broadcast(application, project, allowed_categories, params):
 
     result, error = yield prepare_event(
-        application, project, allowed_categories, params, user=user
+        application, project, allowed_categories, params
     )
     if error:
         raise Return((None, 'internal server error'))
@@ -285,14 +284,13 @@ def process_broadcast(application, project, allowed_categories, params, user=Non
 
 
 @coroutine
-def process_call(application, project, user, method, params):
+def process_call(application, project, method, params):
     """
     Process request from project's administrators - broadcast new
     event or share control message between all tornado instances
     running.
     """
     assert isinstance(project, dict)
-    assert isinstance(user, dict)
 
     if method == "broadcast":
 
@@ -307,14 +305,13 @@ def process_call(application, project, user, method, params):
         allowed_categories = dict((x['name'], x) for x in project_categories)
 
         result, error = yield process_broadcast(
-            application, project, allowed_categories, params, user=user
+            application, project, allowed_categories, params
         )
     else:
         to_publish = {
             "method": method,
             "params": params,
             "project": project,
-            "user": user
         }
         publish(
             application.pub_stream,

@@ -1,7 +1,8 @@
 {
     "debug": true,
+    "password": "admin",
     "cookie_secret": "secret",
-    "storage": {
+    "storage2": {
         "module": "centrifuge.storage.mongodb",
         "settings": {
             "host": "localhost",
@@ -10,7 +11,7 @@
             "max_pool_size": 10
         }
     },
-    "storage2": {
+    "storage": {
         "module": "centrifuge.storage.postgresql",
         "settings": {
             "user": "fz",

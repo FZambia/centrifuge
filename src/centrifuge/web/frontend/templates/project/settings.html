@@ -16,10 +16,7 @@
 <div class="row-fluid">
     <ul class="nav nav-tabs" id="tabs">
         <li class="{% block tab_general %}{% end %}"><a href="{{reverse_url("project_settings", project['name'], 'general')}}">{{_("General")}}</a></li>
-        {% if is_owner %}
-            <li class="{% block tab_users %}{% end %}"><a href="{{reverse_url("project_settings", project['name'], 'users')}}">{{_("Users")}}</a></li>
-            <li class="{% block tab_edit %}{% end %}"><a href="{{reverse_url("project_settings", project['name'], 'edit')}}">{{_("Edit")}}</a></li>
-        {% end %}
+        <li class="{% block tab_edit %}{% end %}"><a href="{{reverse_url("project_settings", project['name'], 'edit')}}">{{_("Edit")}}</a></li>
     </ul>
     <div class="row-fluid">
         <div class="span12">

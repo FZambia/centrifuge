@@ -11,7 +11,7 @@ import tornado.escape
 import tornado.auth
 import tornado.httpclient
 import tornado.gen
-from tornado.gen import Task, coroutine, Return
+from tornado.gen import coroutine, Return
 from sockjs.tornado import SockJSConnection
 
 import six
@@ -24,87 +24,6 @@ from ..handlers import storage, BaseHandler, NAME_RE
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
 
-class GoogleAuthHandler(BaseHandler, tornado.auth.GoogleMixin):
-
-    @tornado.web.asynchronous
-    def get(self):
-        if self.get_argument("openid.mode", None):
-            self.get_authenticated_user(self.async_callback(self._on_auth))
-            return
-        self.authenticate_redirect()
-
-    @coroutine
-    def _on_auth(self, user):
-        if not user:
-            raise tornado.web.HTTPError(500, "Google auth failed")
-
-        user_data, error = yield storage.get_or_create_user(
-            self.db,
-            user['email']
-        )
-        if error:
-            raise tornado.web.HTTPError(500, "Auth failed")
-        self.set_secure_cookie("user", tornado.escape.json_encode(user_data))
-        self.redirect(self.reverse_url("main"))
-
-
-class GithubAuthHandler(BaseHandler, auth.GithubMixin):
-
-    x_site_token = 'centrifuge'
-
-    @tornado.web.asynchronous
-    def get(self):
-        redirect_uri = "{0}://{1}{2}".format(
-            self.request.protocol,
-            self.request.host,
-            self.reverse_url("auth_github")
-        )
-        params = {
-            'redirect_uri': redirect_uri,
-            'client_id':    self.opts['github_client_id'],
-            'state':        self.x_site_token
-        }
-
-        code = self.get_argument('code', None)
-
-        # Seek the authorization
-        if code:
-            # For security reason, the state value (cross-site token) will be
-            # retrieved from the query string.
-            params.update({
-                'client_secret': self.opts['github_client_secret'],
-                'success_callback': self._on_auth,
-                'error_callback': self._on_error,
-                'code':  code,
-                'state': self.get_argument('state', None)
-            })
-            self.get_authenticated_user(**params)
-            return
-
-        # Redirect for user authentication
-        self.get_authenticated_user(**params)
-
-    @coroutine
-    def _on_auth(self, user, access_token=None):
-        if not user:
-            raise tornado.web.HTTPError(500, "Github auth failed")
-        user_data, error = yield storage.get_or_create_user(
-            self.db,
-            user['email']
-        )
-        if error:
-            raise tornado.web.HTTPError(500, "Auth failed")
-        self.set_secure_cookie("user", tornado.escape.json_encode(user_data))
-        self.redirect(self.reverse_url("main"))
-
-    def _on_error(self, code, body=None, error=None):
-        if body:
-            logging.error(body)
-        if error:
-            logging.error(error)
-        raise tornado.web.HTTPError(500, "Github auth failed")
-
-
 class LogoutHandler(BaseHandler):
 
     def get(self):
@@ -114,8 +33,22 @@ class LogoutHandler(BaseHandler):
 
 class AuthHandler(BaseHandler):
 
+    def authorize(self):
+        self.set_secure_cookie("user", "authorized")
+        self.redirect(self.reverse_url("main"))
+
     def get(self):
-        self.render('index.html')
+        if not self.opts.get("password"):
+            self.authorize()
+        else:
+            self.render('index.html')
+
+    def post(self):
+        password = self.get_argument("password", None)
+        if password and password == self.opts.get("password"):
+            self.authorize()
+        else:
+            self.render('index.html')
 
 
 class MainHandler(BaseHandler):
@@ -131,7 +64,7 @@ class MainHandler(BaseHandler):
         """
         user = self.current_user
 
-        projects, error = yield storage.get_user_projects(self.db, user)
+        projects, error = yield storage.project_list(self.db)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -147,7 +80,6 @@ class MainHandler(BaseHandler):
         auth_token = auth.create_admin_token(
             self.settings['cookie_secret'],
             timestamp,
-            user['_id'],
             (x.get("_id") for x in projects)
         )
 
@@ -163,7 +95,6 @@ class MainHandler(BaseHandler):
                 'socket_url': '/socket/',
                 'auth_timestamp': timestamp,
                 'auth_token': auth_token,
-                'auth_user_id': user['_id'],
                 'projects': projects,
                 'categories': project_categories
             })
@@ -179,10 +110,10 @@ class ProjectCreateHandler(BaseHandler):
             'project/create.html', form_data={}
         )
 
+    @tornado.web.authenticated
     @tornado.web.asynchronous
     @coroutine
     def post(self):
-        user = self.current_user
         validation_error = False
         name = self.get_argument("name", None)
         display_name = self.get_argument("display_name", "")
@@ -245,7 +176,6 @@ class ProjectCreateHandler(BaseHandler):
 
         project, error = yield storage.project_create(
             self.db,
-            user,
             name,
             display_name,
             description,
@@ -257,13 +187,6 @@ class ProjectCreateHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")
 
-        readonly = False
-        project_key, error = yield storage.add_user_into_project(
-            self.db, user, project, readonly
-        )
-        if error:
-            raise tornado.web.HTTPError(500, log_message="error creating project key")
-
         self.redirect(self.reverse_url('main'))
 
 
@@ -273,8 +196,7 @@ class ProjectSettingsHandler(BaseHandler):
     This part of application requires more careful implementation.
     """
     @coroutine
-    def get_project_essentials(self, project_name):
-        user = self.current_user
+    def get_project(self, project_name):
 
         project, error = yield storage.get_project_by_name(
             self.db, project_name
@@ -282,15 +204,7 @@ class ProjectSettingsHandler(BaseHandler):
         if not project:
             raise tornado.web.HTTPError(404)
 
-        project_key, error = yield storage.get_user_project_key(
-            self.db, user, project
-        )
-        if not project_key:
-            raise tornado.web.HTTPError(403)
-
-        is_owner = user['_id'] == project['owner']
-
-        raise Return(((project, project_key, is_owner), None))
+        raise Return((project, None))
 
     @coroutine
     def get_general(self):
@@ -303,28 +217,7 @@ class ProjectSettingsHandler(BaseHandler):
         data = {
             'user': self.current_user,
             'project': self.project,
-            'project_key': self.project_key,
-            'categories': categories,
-            'is_owner': self.is_owner
-        }
-        raise Return((data, None))
-
-    @coroutine
-    def get_users(self):
-        project_users = None
-        if self.is_owner:
-            project_users, error = yield storage.get_project_users(
-                self.db, self.project
-            )
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-
-        data = {
-            'user': self.current_user,
-            'project': self.project,
-            'project_users': project_users,
-            'project_key': self.project_key,
-            'is_owner': self.is_owner
+            'categories': categories
         }
         raise Return((data, None))
 
@@ -334,7 +227,6 @@ class ProjectSettingsHandler(BaseHandler):
         data = {
             'user': self.current_user,
             'project': self.project,
-            'is_owner': self.is_owner
         }
         raise Return((data, None))
 
@@ -345,8 +237,6 @@ class ProjectSettingsHandler(BaseHandler):
 
         if submit == 'category_add':
             # add category
-            if not self.is_owner:
-                raise tornado.web.HTTPError(403)
 
             category_name = self.get_argument('category_name', None)
             bidirectional = bool(self.get_argument('bidirectional', False))
@@ -372,8 +262,6 @@ class ProjectSettingsHandler(BaseHandler):
 
         elif submit == 'category_del':
             # delete category
-            if not self.is_owner:
-                raise tornado.web.HTTPError(403)
             category_name = self.get_argument('category_name', None)
             if category_name:
                 res, error = yield storage.category_delete(
@@ -384,60 +272,11 @@ class ProjectSettingsHandler(BaseHandler):
 
         elif submit == 'regenerate_secret':
             # regenerate public and secret key
-            res, error = yield storage.regenerate_secret_key(
-                self.db, self.user, self.project
+            res, error = yield storage.regenerate_project_secret_key(
+                self.db, self.project
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
-
-        self.redirect(url)
-
-    @coroutine
-    def post_users(self, submit):
-        """
-        pass
-        """
-        url = self.reverse_url("project_settings", self.project['name'], 'users')
-
-        if submit == 'user_add':
-            if not self.is_owner:
-                raise tornado.web.HTTPError(403)
-
-            email = self.get_argument('email', None)
-            readonly = bool(
-                self.get_argument('readonly', False)
-            )
-            user_to_add, error = yield storage.get_user_by_email(self.db, email)
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-
-            if user_to_add and user_to_add['email'] != self.user['email']:
-                res, error = yield storage.add_user_into_project(
-                    self.db, user_to_add,
-                    self.project,
-                    readonly
-                )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
-
-        elif submit == 'user_del':
-
-            if not self.is_owner:
-                raise tornado.web.HTTPError(403)
-
-            email = self.get_argument('email', None)
-            user_to_delete, error = yield storage.get_user_by_email(
-                self.db, email
-            )
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-
-            if user_to_delete and user_to_delete['email'] != self.user['email']:
-                res, error = yield storage.del_user_from_project(
-                    self.db, user_to_delete, self.project
-                )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
 
         self.redirect(url)
 
@@ -445,9 +284,6 @@ class ProjectSettingsHandler(BaseHandler):
     def post_edit(self, submit):
 
         url = self.reverse_url("project_settings", self.project['name'], 'edit')
-
-        if not self.is_owner:
-            raise tornado.web.HTTPError(403)
 
         if submit == 'project_del':
             # completely remove project
@@ -517,17 +353,11 @@ class ProjectSettingsHandler(BaseHandler):
     @coroutine
     def get(self, project_name, section):
 
-        (self.project, self.project_key, self.is_owner), error = yield self.get_project_essentials(
-            project_name
-        )
+        self.project, error = yield self.get_project(project_name)
 
         if section == 'general':
             template_name = 'project/settings_general.html'
             func = self.get_general
-
-        elif section == 'users':
-            template_name = 'project/settings_users.html'
-            func = self.get_users
 
         elif section == 'edit':
             template_name = 'project/settings_edit.html'
@@ -544,22 +374,18 @@ class ProjectSettingsHandler(BaseHandler):
     @tornado.web.asynchronous
     @coroutine
     def post(self, project_name, section):
-        self.user = self.current_user
 
-        (self.project, self.project_key, self.is_owner), error = yield self.get_project_essentials(
+        self.project, error = yield self.get_project(
             project_name
         )
 
         submit = self.get_argument('submit', None)
 
         if section == 'general':
-            yield Task(self.post_general, submit)
-
-        elif section == 'users':
-            yield Task(self.post_users, submit)
+            yield self.post_general(submit)
 
         elif section == 'edit':
-            yield Task(self.post_edit, submit)
+            yield self.post_edit(submit)
 
         else:
             raise tornado.web.HTTPError(404)
@@ -576,7 +402,6 @@ class AdminSocketHandler(SockJSConnection):
 
         auth_token = data.get("auth_token", None)
         auth_timestamp = data.get("auth_timestamp", None)
-        auth_user_id = data.get("auth_user_id", '')
         projects = data.get("projects", None)
 
         if not auth_token or not auth_timestamp:
@@ -593,14 +418,12 @@ class AdminSocketHandler(SockJSConnection):
         token = auth.create_admin_token(
             self.application.settings['cookie_secret'],
             auth_timestamp,
-            auth_user_id,
             projects
         )
         if token != auth_token:
             self.close()
 
         self.projects = projects
-        self.user_id = auth_user_id
         self.is_authenticated = True
         self.uid = uuid.uuid4().hex
         self.connections = self.application.admin_connections
@@ -635,9 +458,7 @@ class AdminSocketHandler(SockJSConnection):
         for project_id in self.projects:
             if project_id not in self.connections:
                 self.connections[project_id] = {}
-            if self.user_id not in self.connections[project_id]:
-                self.connections[project_id][self.user_id] = {}
-            self.connections[project_id][self.user_id][self.uid] = self
+            self.connections[project_id][self.uid] = self
 
             channel_to_subscribe = create_project_channel_name(project_id)
             subscribe_socket.setsockopt_string(
@@ -651,14 +472,12 @@ class AdminSocketHandler(SockJSConnection):
         for project_id in self.projects:
             if not project_id in self.connections:
                 continue
-            if not self.user_id in self.connections[project_id]:
-                continue
             try:
-                del self.connections[project_id][self.user_id][self.uid]
+                del self.connections[project_id][self.uid]
             except KeyError:
                 pass
-            if not self.connections[project_id][self.user_id]:
-                del self.connections[project_id][self.user_id]
+            if not self.connections[project_id]:
+                del self.connections[project_id]
 
         self.subscribe_stream.on_recv(None)
         self.subscribe_stream.close()
