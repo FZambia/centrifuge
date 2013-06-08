@@ -1,3 +1,6 @@
+v0.0.7
+* use Websockets in admin interface instead of SockJS
+
 v0.0.6
 ======
 * completely remove user management
