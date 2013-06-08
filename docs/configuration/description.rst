@@ -13,6 +13,7 @@ Here is minimal configuration file required:
 
     {
         "debug": true,
+        "password": "admin",
         "cookie_secret": "secret",
         "storage": {
             "module": "centrifuge.storage.mongodb",

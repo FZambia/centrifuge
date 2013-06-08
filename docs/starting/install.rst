@@ -21,15 +21,6 @@ You can find nice guide about how to install Python on Mac OS X and Linux
 `here <https://python-guide.readthedocs.org/en/latest/starting/install/linux/>`_ respectively
 
 
-Clone repo
-~~~~~~~~~~
-
-.. code-block:: bash
-
-    mkdir centrifuge
-    git clone https://github.com/FZambia/centrifuge.git centrifuge/src/
-
-
 Use Python's virtualenv
 ~~~~~~~~~~~~~~~~~~~~~~~
 
