@@ -1,7 +1,7 @@
 Centrifuge's configuration file
 ===============================
 
-.. _configuration file:
+.. _configuration_file:
 
 
 Example

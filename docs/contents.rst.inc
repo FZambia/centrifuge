@@ -29,7 +29,8 @@ This part of the doc focuses on Centrifuge's configuration JSON file.
 .. toctree::
    :maxdepth: 1
 
-   configuration/description
+   configuration/file
+   configuration/cli
 
 
 Web interface
