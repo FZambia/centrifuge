@@ -11,12 +11,9 @@
                 projects: [],
                 categories: {},
                 socket_url: '/socket/',
-                auth_timestamp: '',
-                auth_token: '',
                 global_content_element: '#main-content',
                 global_panel_element: '#panel',
-                global_tabs_element: '#tabs',
-                transports: ["websocket", "xhr-streaming", "iframe-eventsource"]
+                global_tabs_element: '#tabs'
             };
 
             var options = $.extend(defaults, custom_options);
@@ -45,15 +42,11 @@
 
 			var global_projects = {};
 
-            var subscribe_projects = [];
-
             for (var index in options.projects) {
             	//noinspection JSUnfilteredForInLoop
                 var project = options.projects[index];
 
                 var project_id = project['_id'];
-
-                subscribe_projects.push(project_id);
 
                 global_offset[project_id] = 0;
 
@@ -184,19 +177,6 @@
                 set_project_event_counter_value(counter, new_value);
             };
 
-            var subscribe = function() {
-                if (connection == null) {
-                    return;
-                }
-                var message = {
-                    'auth_token': options.auth_token,
-                    'auth_timestamp': options.auth_timestamp,
-                    'projects': subscribe_projects
-                };
-
-                connection.send(JSON.stringify(message));
-            };
-
             var handle_event_message = function(data) {
                 var category = {
                     '_id': data['category_id'],
@@ -228,10 +208,9 @@
             var connect = function() {
                 disconnect();
 
-                connection = new SockJS(window.location.protocol + '//' + window.location.host + options.socket_url, options.transports);
+                connection = new WebSocket('ws://' + window.location.host + options.socket_url);
 
                 connection.onopen = function() {
-                    subscribe();
                     console.log('Connected.');
                     $('.not-connected').hide();
                     $('.connected').show();

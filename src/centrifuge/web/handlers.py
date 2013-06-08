@@ -3,7 +3,6 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 #
-import time
 import uuid
 import logging
 import tornado.web
@@ -12,14 +11,13 @@ import tornado.auth
 import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
-from sockjs.tornado import SockJSConnection
+from tornado.websocket import WebSocketHandler
 
 import six
 
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
-from .. import auth
 from ..handlers import storage, BaseHandler, NAME_RE
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
@@ -75,26 +73,10 @@ class MainHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        timestamp = str(int(time.time()))
-        projects = list(projects)
-        auth_token = auth.create_admin_token(
-            self.settings['cookie_secret'],
-            timestamp,
-            (x.get("_id") for x in projects)
-        )
-
-        transports = self.opts.get(
-            'sockjs_transports',
-            ["websocket", "xhr-streaming", "iframe-eventsource"]
-        )
-
         context = {
             'js_data': tornado.escape.json_encode({
                 'current_user': user,
-                'transports': transports,
-                'socket_url': '/socket/',
-                'auth_timestamp': timestamp,
-                'auth_token': auth_token,
+                'socket_url': self.reverse_url("admin_connection"),
                 'projects': projects,
                 'categories': project_categories
             })
@@ -391,60 +373,23 @@ class ProjectSettingsHandler(BaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-class AdminSocketHandler(SockJSConnection):
-
-    def on_message(self, message):
-
-        if self.is_closed:
-            return
-
-        data = tornado.escape.json_decode(message)
-
-        auth_token = data.get("auth_token", None)
-        auth_timestamp = data.get("auth_timestamp", None)
-        projects = data.get("projects", None)
-
-        if not auth_token or not auth_timestamp:
-            self.close()
-
-        try:
-            auth_timestamp = int(auth_timestamp)
-        except ValueError:
-            self.close()
-
-        if abs(time.time() - auth_timestamp) > self.opts.get("max_token_delay", 5):
-            self.close()
-
-        token = auth.create_admin_token(
-            self.application.settings['cookie_secret'],
-            auth_timestamp,
-            projects
-        )
-        if token != auth_token:
-            self.close()
-
-        self.projects = projects
-        self.is_authenticated = True
-        self.uid = uuid.uuid4().hex
-        self.connections = self.application.admin_connections
-
-        self.subscribe()
-
-        if self.session:
-            if self.session.transport_name != 'websocket':
-                self.session.start_heartbeat()
-        else:
-            self.close()
+class AdminSocketHandler(BaseHandler, WebSocketHandler):
 
     def on_message_published(self, message):
         actual_message = message[0]
         if six.PY3:
             actual_message = actual_message.decode()
-        self.send(
+        self.write_message(
             actual_message.split(CHANNEL_DATA_SEPARATOR, 1)[1]
         )
 
+    @coroutine
     def subscribe(self):
+
+        projects, error = yield storage.project_list(self.db)
+        self.projects = [x['_id'] for x in projects]
+        self.uid = uuid.uuid4().hex
+        self.connections = self.application.admin_connections
 
         context = zmq.Context()
         subscribe_socket = context.socket(zmq.SUB)
@@ -468,7 +413,11 @@ class AdminSocketHandler(SockJSConnection):
         self.subscribe_stream = ZMQStream(subscribe_socket)
         self.subscribe_stream.on_recv(self.on_message_published)
 
+        logging.info('admin connected')
+
     def unsubscribe(self):
+        if not hasattr(self, 'uid'):
+            return
         for project_id in self.projects:
             if not project_id in self.connections:
                 continue
@@ -481,14 +430,15 @@ class AdminSocketHandler(SockJSConnection):
 
         self.subscribe_stream.on_recv(None)
         self.subscribe_stream.close()
+        logging.info('admin disconnected')
 
-    def on_open(self, info):
-        logging.info('admin connected')
-        self.is_authenticated = False
-        self.opts = self.application.settings['options']
+    def open(self):
+        if not self.current_user:
+            self.close()
+        else:
+            self.subscribe()
 
     def on_close(self):
-        logging.info('admin disconnected')
         self.unsubscribe()
 
 

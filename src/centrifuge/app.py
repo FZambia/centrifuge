@@ -108,6 +108,11 @@ class Application(tornado.web.Application):
                 r'/', MainHandler, name="main"
             ),
             tornado.web.url(
+                r'/socket',
+                AdminSocketHandler,
+                name="admin_connection"
+            ),
+            tornado.web.url(
                 r'/connection/websocket',
                 WebsocketConnection,
                 name="connection_websocket"
@@ -132,9 +137,6 @@ class Application(tornado.web.Application):
                 r'/logout$', LogoutHandler, name="logout"
             )
         ]
-
-        AdminSocketRouter = SockJSRouter(AdminSocketHandler, '/socket')
-        handlers = AdminSocketRouter.urls + handlers
 
         SockjsConnectionRouter = SockJSRouter(
             SockjsConnection, '/connection/sockjs'

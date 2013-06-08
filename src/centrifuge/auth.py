@@ -12,17 +12,6 @@ import six
 AUTH_HEADER_NAME = 'X-Centrifuge-Auth'
 
 
-def create_admin_token(secret, timestamp, projects):
-    """
-    Create token to confirm administrator's subscription on project's
-    real-time updates.
-    """
-    token = hmac.new(six.b(str(secret)))
-    token.update(six.b(str(timestamp)))
-    [token.update(six.b(project)) for project in projects]
-    return token.hexdigest()
-
-
 def get_client_token(secret_key, project_id, user):
     """
     Create token to validate information provided by new connection.
