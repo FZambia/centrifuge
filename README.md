@@ -19,7 +19,7 @@ or [SockJS](https://github.com/sockjs/sockjs-client) library can be
 used.
 
 Centrifuge comes with administrative web interface and by default requires
-[MongoDB](http://www.mongodb.org/) to keep information about users, projects, categories etc.
+[MongoDB](http://www.mongodb.org/) to keep information about projects, categories etc.
 You can also use [PostgreSQL](http://www.postgresql.org/) instead of MongoDB.
 
 Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/) and look
