@@ -34,4 +34,6 @@ Description
 
 - **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
 
+- **password** - administrator's password. Can be omitted during development.
+
 - **storage** - section with database backend settings. No alternatives except default MongoDB for this moment.
