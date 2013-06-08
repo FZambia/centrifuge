@@ -64,8 +64,6 @@ This part of the doc focuses on how to communicate with Centrifuge from web brow
    :maxdepth: 2
 
    clients/starting
-   clients/writing
-   clients/sending
 
 
 Deployment
