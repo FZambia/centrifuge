@@ -1,5 +1,4 @@
 {
-    "debug": true,
     "password": "",
     "cookie_secret": "secret",
     "storage": {
@@ -8,7 +7,7 @@
             "host": "localhost",
             "port": 27017,
             "name": "centrifuge",
-            "max_pool_size": 10
+            "pool_size": 10
         }
     },
     "storage_alternative": {

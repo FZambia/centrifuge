@@ -12,7 +12,6 @@ Here is minimal configuration file required:
 .. code-block:: bash
 
     {
-        "debug": true,
         "password": "admin",
         "cookie_secret": "secret",
         "storage": {
@@ -21,16 +20,36 @@ Here is minimal configuration file required:
                 "host": "localhost",
                 "port": 27017,
                 "name": "centrifuge",
-                "max_pool_size": 10
+                "pool_size": 10
             }
         }
     }
 
 
+With PostgreSQL this file look like:
+
+.. code-block:: bash
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "storage": {
+            "module": "centrifuge.storage.postgresql",
+            "settings": {
+                "host": "localhost",
+                "port": 27017,
+                "name": "centrifuge",
+                "password": "",
+                "user": "postgres",
+                "pool_size": 10
+            }
+        }
+    }
+
+
+
 Description
 ~~~~~~~~~~~
-
-- **debug** - turn it to false in production environment and keep true while developing.
 
 - **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
 

@@ -31,7 +31,7 @@ def init_db(app, settings):
     )
     callback = partial(on_connection_ready, app)
     db = momoko.Pool(
-        dsn=dsn, size=settings.get('size', 10), callback=callback
+        dsn=dsn, size=settings.get('pool_size', 10), callback=callback
     )
     app.db = db
 

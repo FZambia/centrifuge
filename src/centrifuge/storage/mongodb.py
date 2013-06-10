@@ -39,7 +39,7 @@ def init_db(app, settings):
     db = motor.MotorClient(
         host=settings.get("host", "localhost"),
         port=settings.get("port", 27017),
-        max_pool_size=settings.get("max_pool_size", 10)
+        max_pool_size=settings.get("pool_size", 10)
     ).open_sync()[settings.get("name", "centrifuge")]
 
     app.db = db

@@ -50,6 +50,10 @@ ioloop.install()
 
 
 define(
+    "debug", default=False, help="tornado debug mode", type=bool
+)
+
+define(
     "port", default=8000, help="app port", type=int
 )
 
@@ -195,7 +199,7 @@ def main():
         ),
         xsrf_cookies=True,
         autoescape="xhtml_escape",
-        debug=custom_settings.get('debug', False),
+        debug=options.debug,
         options=custom_settings
     )
 
