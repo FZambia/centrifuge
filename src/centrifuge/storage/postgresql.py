@@ -13,11 +13,14 @@ from .. import auth
 from functools import partial
 
 
+logger = logging.getLogger('centrifuge')
+
+
 def on_error(error):
     """
     General error wrapper.
     """
-    logging.error(str(error))
+    logger.error(str(error))
     raise Return((None, error))
 
 
@@ -54,7 +57,7 @@ def on_connection_ready(app):
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, category, ())
-    logging.info("Database ready")
+    logger.info("Database ready")
 
 
 def extract_obj_id(obj):

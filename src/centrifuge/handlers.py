@@ -26,6 +26,9 @@ from . import auth
 from .schema import req_schema, admin_params_schema, client_params_schema
 
 
+logger = logging.getLogger('centrifuge')
+
+
 storage = None
 
 
@@ -566,11 +569,11 @@ class Connection(object):
                     pass
 
     def on_centrifuge_connection_open(self):
-        logging.info('client connected')
+        logger.info('client connected')
         self.is_authenticated = False
 
     def on_centrifuge_connection_close(self):
-        logging.info('client disconnected')
+        logger.info('client disconnected')
         self.clean_up()
 
 

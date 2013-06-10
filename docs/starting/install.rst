@@ -89,16 +89,11 @@ Fill centrifuge's configuration file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Configuration is a JSON file. You can find example of those file in
-Centrifuge's repository. For example, with MongoDB (installed with
-default settings) configuration file can look like this:
-
-.. code-block:: bash
-
-    {
-        "password": "admin",
-        "cookie_secret": "secret"
-    }
-
+Centrifuge's repository. With MongoDB (installed with
+default settings) configuration file can be omitted during development.
+But in production environment it must be used because it contains
+important security settings like cookie_secret and administator's
+password.
 
 More about configuration see in special documentation chapter.
 
@@ -108,7 +103,7 @@ Finally run Centrifuge
 
 .. code-block:: bash
 
-    centrifuge --conf=/path/to/your/configuration/json/file
+    centrifuge --config=/path/to/your/configuration/json/file
 
 
 Go to http://localhost:8000/ and make sure that it is running.

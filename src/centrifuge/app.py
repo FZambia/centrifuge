@@ -95,11 +95,14 @@ define(
 )
 
 
+logger = logging.getLogger('centrifuge')
+
+
 def stop_running(msg):
     """
     Called only during initialization when critical error occurred.
     """
-    logging.error(msg)
+    logger.error(msg)
     sys.exit(1)
 
 
@@ -171,6 +174,11 @@ def main():
     try:
         custom_settings = json.load(open(options.config, 'r'))
     except IOError:
+        logger.warning(
+            "Application started without configuration file.\n"
+            "This is normal only during development and if you\n"
+            "want to use MongoDB as data storage.\n"
+        )
         custom_settings = {}
 
     database_settings = custom_settings.get('storage', {})
@@ -291,27 +299,27 @@ def main():
         # initialize dict to keep back-off information for projects
         app.back_off = {}
 
-    logging.info("Application started")
-    logging.info("Tornado port: {0}".format(options.port))
+    logger.info("Application started")
+    logger.info("Tornado port: {0}".format(options.port))
     if app.zmq_pub_sub_proxy:
-        logging.info(
+        logger.info(
             "ZeroMQ XPUB: {0}, XSUB: {1}".format(
                 app.zmq_xpub, app.zmq_xsub,
             )
         )
     else:
-        logging.info(
+        logger.info(
             "ZeroMQ PUB - {0}; subscribed to {1}".format(
                 app.zmq_pub_port, app.zmq_sub_address
             )
         )
-    logging.info("Storage module: {0}".format(storage_module))
+    logger.info("Storage module: {0}".format(storage_module))
 
     # finally, let's go
     try:
         ioloop_instance.start()
     except KeyboardInterrupt:
-        logging.info('interrupted')
+        logger.info('interrupted')
     finally:
         # clean
         if hasattr(app, 'pub_stream'):

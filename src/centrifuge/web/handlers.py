@@ -22,6 +22,9 @@ from ..handlers import storage, BaseHandler, NAME_RE
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
 
+logger = logging.getLogger('centrifuge')
+
+
 class LogoutHandler(BaseHandler):
 
     def get(self):
@@ -413,7 +416,7 @@ class AdminSocketHandler(BaseHandler, WebSocketHandler):
         self.subscribe_stream = ZMQStream(subscribe_socket)
         self.subscribe_stream.on_recv(self.on_message_published)
 
-        logging.info('admin connected')
+        logger.info('admin connected')
 
     def unsubscribe(self):
         if not hasattr(self, 'uid'):
@@ -430,7 +433,7 @@ class AdminSocketHandler(BaseHandler, WebSocketHandler):
 
         self.subscribe_stream.on_recv(None)
         self.subscribe_stream.close()
-        logging.info('admin disconnected')
+        logger.info('admin disconnected')
 
     def open(self):
         if not self.current_user:

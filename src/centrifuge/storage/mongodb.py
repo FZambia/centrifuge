@@ -12,24 +12,27 @@ from tornado.gen import Task, coroutine, Return
 from .. import auth
 
 
+logger = logging.getLogger('centrifuge')
+
+
 def on_error(error):
     """
     General error wrapper.
     """
-    logging.error(str(error))
+    logger.error(str(error))
     raise Return((None, error))
 
 
 def ensure_indexes(db, drop=False):
     if drop:
-        logging.info('dropping indexes...')
+        logger.info('dropping indexes...')
         db.project.drop_indexes()
         db.category.drop_indexes()
 
     db.project.ensure_index([('name', 1)], unique=True)
     db.category.ensure_index([('name', 1), ('project', 1)], unique=True)
 
-    logging.info('Database ready')
+    logger.info('Database ready')
 
 
 def init_db(app, settings):
