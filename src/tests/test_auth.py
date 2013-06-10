@@ -1,7 +1,6 @@
 # coding: utf-8
 import sys
 import os
-import zlib
 import json
 import base64
 from unittest import TestCase, main
@@ -32,7 +31,7 @@ class AuthTest(TestCase):
         self.wrong_request.headers = {}
 
         self.data = 'test'
-        self.encoded_data = zlib.compress(base64.b64encode(json.dumps(self.data)))
+        self.encoded_data = base64.b64encode(json.dumps(self.data))
 
     def test_get_auth_header(self):
         self.assertEqual(

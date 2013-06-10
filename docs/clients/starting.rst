@@ -7,6 +7,9 @@ There are two ways to communicate with Centrifuge from browser. First, you can u
 pure Websockets. Second, SockJS library. But only streaming transports of SockJS (
 websockets, eventsource and xhr-streaming).
 
+At this moment there are no javascript libraries to wrap communication routine
+with Centrifuge. But communication is rather simple.
+
 You should know only 4 basic commands:
 
 1) auth
