@@ -25,6 +25,8 @@ You can also use [PostgreSQL](http://www.postgresql.org/) instead of MongoDB.
 Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/) and look
 at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
 
+P.S. If BSD license of Centrifuge does not allow you to use it, tell me and I'll consider to change license.
+
 ![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/starting/main.png "admin web interface")
 
 ![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/description/centrifuge_architecture.png "centrifuge")
