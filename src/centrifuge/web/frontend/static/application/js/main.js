@@ -214,6 +214,7 @@
                     console.log('Connected.');
                     $('.not-connected').hide();
                     $('.connected').show();
+                    $('.pill').removeClass('pill-danger');
                 };
 
                 connection.onmessage = function(e) {
@@ -229,6 +230,7 @@
                         $('.connected').hide();
                         $('.not-connected').show();
                         $('.pill').addClass('pill-danger');
+                        window.setTimeout(connect, 1000);
                     }, 3000);
                 };
             };

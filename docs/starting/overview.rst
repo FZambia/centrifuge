@@ -22,6 +22,10 @@ used. Please, read appropriate documentation
 chapter for better description and look at examples.
 
 
+.. image:: main.png
+    :width: 650 px
+
+
 When it can be helpful
 ----------------------
 
