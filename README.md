@@ -28,8 +28,8 @@ at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for mo
 P.S. If BSD license of Centrifuge does not allow you to use it, tell me and I'll consider to change license.
 
 
-Admin web interface:
-![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/starting/main.png "admin web interface")
-
 Architecture diagram:
 ![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/description/centrifuge_architecture.png "centrifuge")
+
+Admin web interface:
+![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/starting/main.png "admin web interface")
