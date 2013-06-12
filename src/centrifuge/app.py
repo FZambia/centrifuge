@@ -232,6 +232,8 @@ def main():
 
     # create PUB socket to publish instance events into it
     publish_socket = context.socket(zmq.PUB)
+    # do not try to send messages after closing
+    publish_socket.setsockopt(zmq.LINGER, 0)
 
     if app.zmq_pub_sub_proxy:
         # application started with XPUB/XSUB proxy
