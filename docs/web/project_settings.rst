@@ -19,10 +19,6 @@ Every category must have unique name and can be one-way or bidirectional. In
 bidirectional categories authorized clients can broadcast new events themselves.
 This is important for chat-like applications.
 
-Also you can add or delete users to your project. Just write email to input and if
-user registered in Centrifuge - he will receive permissions to view your project.
-Also you can give him a permission to send events and commands into project.
-
 You can change project settings which you set during creating project.
 
 Finally, you can delete project.
