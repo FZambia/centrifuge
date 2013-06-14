@@ -9,7 +9,6 @@ import momoko
 import psycopg2.extras
 import uuid
 from bson import ObjectId
-from .. import auth
 from functools import partial
 
 
@@ -24,7 +23,7 @@ def on_error(error):
     raise Return((None, error))
 
 
-def init_db(app, settings):
+def init_db(state, settings):
     dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
         settings.get('name', 'centrifuge'),
         settings.get('user', 'postgres'),
@@ -32,17 +31,17 @@ def init_db(app, settings):
         settings.get('host', 'localhost'),
         settings.get('port', 5432)
     )
-    callback = partial(on_connection_ready, app)
+    callback = partial(on_connection_ready, state)
     db = momoko.Pool(
         dsn=dsn, size=settings.get('pool_size', 10), callback=callback
     )
-    app.db = db
+    state.set_db(db)
 
 
 @coroutine
-def on_connection_ready(app):
+def on_connection_ready(state):
 
-    db = app.db
+    db = state.db
 
     project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24) UNIQUE, ' \
               'name varchar(100) NOT NULL UNIQUE, display_name ' \
@@ -84,63 +83,6 @@ def project_list(db):
     else:
         projects = cursor.fetchall()
         raise Return((projects, None))
-
-
-@coroutine
-def get_categories_for_projects(db, projects):
-
-    categories = []
-
-    project_ids = [extract_obj_id(x) for x in projects]
-    query = "SELECT * FROM categories WHERE project_id IN %s"
-    if project_ids:
-        try:
-            cursor = yield momoko.Op(
-                db.execute, query, (tuple(project_ids),),
-                cursor_factory=psycopg2.extras.RealDictCursor
-            )
-        except Exception as e:
-            on_error(e)
-        else:
-            categories = cursor.fetchall()
-
-    to_return = {}
-    for category in categories:
-        if category['project_id'] not in to_return:
-            to_return[category['project_id']] = []
-        to_return[category['project_id']].append(category)
-
-    raise Return((to_return, None))
-
-
-@coroutine
-def get_project_by_name(db, project_name):
-    query = "SELECT * FROM projects WHERE name=%(name)s LIMIT 1"
-    try:
-        cursor = yield momoko.Op(
-            db.execute, query, {'name': project_name},
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    except Exception as e:
-        on_error(e)
-    else:
-        project = cursor.fetchone()
-        raise Return((project, None))
-
-
-@coroutine
-def get_project_by_id(db, project_id):
-    query = "SELECT * FROM projects WHERE _id=%(project_id)s LIMIT 1"
-    try:
-        cursor = yield momoko.Op(
-            db.execute, query, {'project_id': project_id},
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    except Exception as e:
-        on_error(e)
-    else:
-        project = cursor.fetchone()
-        raise Return((project, None))
 
 
 @coroutine
@@ -238,14 +180,14 @@ def project_delete(db, project):
 
 
 @coroutine
-def get_project_categories(db, project):
-    project_id = extract_obj_id(project)
-
-    query = "SELECT * FROM categories WHERE project_id=%(project_id)s"
-
+def category_list(db):
+    """
+    Get all categories
+    """
+    query = "SELECT * FROM categories"
     try:
         cursor = yield momoko.Op(
-            db.execute, query, {'project_id': project_id},
+            db.execute, query, {},
             cursor_factory=psycopg2.extras.RealDictCursor
         )
     except Exception as e:
@@ -253,76 +195,6 @@ def get_project_categories(db, project):
     else:
         categories = cursor.fetchall()
         raise Return((categories, None))
-
-
-@coroutine
-def get_project_users(db, project):
-
-    query = "SELECT t1._id, t1.email, t2.is_active, t2.public_key, t2.secret_key, t2.readonly " \
-            "FROM users t1 JOIN project_keys t2 on t1._id=t2.user_id WHERE " \
-            "project_id=%(project_id)s AND is_active=%(is_active)s"
-
-    try:
-        cursor = yield momoko.Op(
-            db.execute, query, {'project_id': extract_obj_id(project), 'is_active': True},
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    except Exception as e:
-        on_error(e)
-    else:
-        users = cursor.fetchall()
-        raise Return((users, None))
-
-
-@coroutine
-def regenerate_project_secret_key(db, project):
-    """
-    Create new secret and public keys for user in specified project.
-    """
-    project_id = extract_obj_id(project)
-    secret_key = uuid.uuid4().hex
-    haystack = {
-        'project_id': project_id,
-        'secret_key': secret_key
-    }
-
-    query = "UPDATE projects * SET secret_key=%(secret_key)s " \
-            "WHERE _id=%(project_id)s"
-
-    try:
-        yield momoko.Op(
-            db.execute, query, haystack,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    except Exception as e:
-        on_error(e)
-    else:
-        raise Return((secret_key, None))
-
-
-@coroutine
-def get_project_category(db, project, category_name):
-    """
-    Find category by name for project.
-    """
-    haystack = {
-        'project_id': project['_id'],
-        'name': category_name
-    }
-
-    query = "SELECT * FROM categories WHERE name=%(name)s AND " \
-            "project_id=%(project_id)s LIMIT 1"
-
-    try:
-        cursor = yield momoko.Op(
-            db.execute, query, haystack,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    except Exception as e:
-        on_error(e)
-    else:
-        category = cursor.fetchone()
-        raise Return((category, None))
 
 
 @coroutine
@@ -357,17 +229,12 @@ def category_delete(db, project, category_name):
     Delete category from project. Also delete all related entries from
     event collection.
     """
-    category, error = yield get_project_category(db, project, category_name)
-
-    if not category:
-        raise Return((True, None))
-
     haystack = {
         'project_id': project['_id'],
-        '_id': category['_id']
+        'name': category_name
     }
 
-    query = "DELETE FROM categories WHERE _id=%(_id)s AND project_id=%(project_id)s"
+    query = "DELETE FROM categories WHERE name=%(name)s AND project_id=%(project_id)s"
 
     try:
         yield momoko.Op(
@@ -380,20 +247,65 @@ def category_delete(db, project, category_name):
 
 
 @coroutine
-def check_auth(db, project, sign, encoded_data):
+def regenerate_project_secret_key(db, project):
     """
-    Authenticate incoming request. Make sure that it has all rights
-    to create new events in specified project.
+    Create new secret and public keys for user in specified project.
     """
-    assert isinstance(project, dict)
+    project_id = extract_obj_id(project)
+    secret_key = uuid.uuid4().hex
+    haystack = {
+        'project_id': project_id,
+        'secret_key': secret_key
+    }
 
-    is_authenticated = auth.check_sign(
-        project['secret_key'],
-        project['_id'],
-        encoded_data,
-        sign
-    )
-    if not is_authenticated:
-        raise Return((None, None))
+    query = "UPDATE projects * SET secret_key=%(secret_key)s " \
+            "WHERE _id=%(project_id)s"
 
-    raise Return((True, None))
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((secret_key, None))
+
+
+def projects_by_id(projects):
+    to_return = {}
+    for project in projects:
+        to_return[project['_id']] = project
+    return to_return
+
+
+def projects_by_name(projects):
+    to_return = {}
+    for project in projects:
+        to_return[project['name']] = project
+    return to_return
+
+
+def categories_by_id(categories):
+    to_return = {}
+    for category in categories:
+        to_return[category['_id']] = category
+    return to_return
+
+
+def categories_by_name(categories):
+    to_return = {}
+    for category in categories:
+        if category['project_id'] not in to_return:
+            to_return[category['project_id']] = {}
+        to_return[category['project_id']][category['name']] = category
+    return to_return
+
+
+def project_categories(categories):
+    to_return = {}
+    for category in categories:
+        if category['project_id'] not in to_return:
+            to_return[category['project_id']] = []
+        to_return[category['project_id']].append(category)
+    return to_return

@@ -22,6 +22,7 @@ import centrifuge.rpc
 import centrifuge.handlers
 import centrifuge.web.handlers
 
+from centrifuge.state import State
 from centrifuge.handlers import RpcHandler
 from centrifuge.handlers import SockjsConnection
 from centrifuge.handlers import WebsocketConnection
@@ -188,9 +189,6 @@ def main():
         'module', 'centrifuge.storage.mongodb'
     )
     storage = utils.import_module(storage_module)
-    centrifuge.handlers.storage = storage
-    centrifuge.web.handlers.storage = storage
-    centrifuge.rpc.storage = storage
 
     ioloop_instance = tornado.ioloop.IOLoop.instance()
 
@@ -218,13 +216,24 @@ def main():
     except Exception as e:
         return stop_running(str(e))
 
+    state = State(app)
+
+    centrifuge.handlers.state = state
+    centrifuge.web.handlers.state = state
+    centrifuge.rpc.storage = state
+
     ioloop_instance.add_callback(
         functools.partial(
             storage.init_db,
-            app,
+            state,
             database_settings.get('settings', {})
         )
     )
+
+    periodic_state_update = tornado.ioloop.PeriodicCallback(
+        state.update, custom_settings.get('state_update_interval', 30)
+    )
+    periodic_state_update.start()
 
     app.zmq_pub_sub_proxy = options.zmq_pub_sub_proxy
 

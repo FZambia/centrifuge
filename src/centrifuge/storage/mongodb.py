@@ -9,7 +9,6 @@ import logging
 import motor
 from bson import ObjectId
 from tornado.gen import Task, coroutine, Return
-from .. import auth
 
 
 logger = logging.getLogger('centrifuge')
@@ -35,7 +34,7 @@ def ensure_indexes(db, drop=False):
     logger.info('Database ready')
 
 
-def init_db(app, settings):
+def init_db(state, settings):
     """
     Create MongoDB connection, ensure indexes
     """
@@ -45,7 +44,7 @@ def init_db(app, settings):
         max_pool_size=settings.get("pool_size", 10)
     ).open_sync()[settings.get("name", "centrifuge")]
 
-    app.db = db
+    state.set_db(db)
 
     ensure_indexes(db)
 
@@ -65,8 +64,6 @@ def insert(collection, data):
     """
     if 'created_at' not in data:
         data['created_at'] = int(time.time())
-    if 'is_active' not in data:
-        data['is_active'] = True
     (result, error), _ = yield Task(collection.insert, data)
     if error:
         on_error(error)
@@ -128,46 +125,6 @@ def remove(collection, haystack):
 
 
 @coroutine
-def find_one_or_create(collection, haystack):
-    """
-    First try to find object by haystack, create new if not found.
-    """
-    obj, error = yield find_one(collection, haystack)
-    if error:
-        on_error(error)
-
-    if not obj:
-        obj_id = str(ObjectId())
-        haystack['_id'] = obj_id
-        result, error = yield insert(collection, haystack)
-        if error:
-            on_error(error)
-        obj = haystack
-
-    raise Return((obj, None))
-
-
-@coroutine
-def check_auth(db, project, sign, encoded_data):
-    """
-    Authenticate incoming request. Make sure that it has all rights
-    to create new events in specified project.
-    """
-    assert isinstance(project, dict)
-
-    is_authenticated = auth.check_sign(
-        project['secret_key'],
-        project['_id'],
-        encoded_data,
-        sign
-    )
-    if not is_authenticated:
-        raise Return((None, None))
-
-    raise Return((True, None))
-
-
-@coroutine
 def project_list(db):
     """
     Get all projects
@@ -177,33 +134,6 @@ def project_list(db):
         on_error(error)
 
     raise Return((projects, None))
-
-
-@coroutine
-def get_project_by_name(db, project_name):
-    project, error = yield find_one(db.project, {'name': project_name})
-    if error:
-        on_error(error)
-    raise Return((project, None))
-
-
-@coroutine
-def get_project_by_id(db, project_id):
-    project, error = yield find_one(db.project, {'_id': project_id})
-    if error:
-        on_error(error)
-        return
-    raise Return((project, None))
-
-
-@coroutine
-def get_project_categories(db, project):
-    project_id = extract_obj_id(project)
-    categories, error = yield find(db.category, {'project': project_id})
-    if error:
-        on_error(error)
-        return
-    raise Return((categories, None))
 
 
 @coroutine
@@ -227,47 +157,6 @@ def project_create(db, project_name, display_name,
         on_error(error)
         return
     raise Return((to_insert, None))
-
-
-@coroutine
-def regenerate_project_secret_key(db, project):
-    """
-    Create new secret key for specified project.
-    """
-    project_id = extract_obj_id(project)
-    haystack = {
-        '_id': project_id
-    }
-    update_data = {
-        'secret_key': uuid.uuid4().hex
-    }
-    result, error = yield update(db.project, haystack, update_data)
-    if error:
-        on_error(error)
-
-    raise Return((update_data, None))
-
-
-@coroutine
-def project_delete(db, project):
-    """
-    Delete project. Also delete all related categories and events.
-    """
-    haystack = {
-        '_id': project['_id']
-    }
-    _res, error = yield remove(db.project, haystack)
-    if error:
-        on_error(error)
-
-    haystack = {
-        'project': project['_id']
-    }
-    _res, error = yield remove(db.category, haystack)
-    if error:
-        on_error(error)
-
-    raise Return((True, None))
 
 
 @coroutine
@@ -298,6 +187,40 @@ def project_edit(db, project, name, display_name,
 
 
 @coroutine
+def project_delete(db, project):
+    """
+    Delete project. Also delete all related categories and events.
+    """
+    haystack = {
+        '_id': project['_id']
+    }
+    _res, error = yield remove(db.project, haystack)
+    if error:
+        on_error(error)
+
+    haystack = {
+        'project': project['_id']
+    }
+    _res, error = yield remove(db.category, haystack)
+    if error:
+        on_error(error)
+
+    raise Return((True, None))
+
+
+@coroutine
+def category_list(db):
+    """
+    Get all categories
+    """
+    categories, error = yield find(db.category, {})
+    if error:
+        on_error(error)
+
+    raise Return((categories, None))
+
+
+@coroutine
 def category_create(db, project, category_name,
                     bidirectional=False, publish_to_admins=False):
 
@@ -321,14 +244,9 @@ def category_delete(db, project, category_name):
     Delete category from project. Also delete all related entries from
     event collection.
     """
-    category, error = yield get_project_category(db, project, category_name)
-
-    if not category:
-        raise Return((True, None))
-
     haystack = {
         'project': project['_id'],
-        '_id': category['_id']
+        'name': category_name
     }
     _res, error = yield remove(db.category, haystack)
     if error:
@@ -338,40 +256,58 @@ def category_delete(db, project, category_name):
 
 
 @coroutine
-def get_project_category(db, project, category_name):
+def regenerate_project_secret_key(db, project):
     """
-    Find category by name for project.
+    Create new secret key for specified project.
     """
+    project_id = extract_obj_id(project)
     haystack = {
-        'project': project['_id'],
-        'name': category_name
+        '_id': project_id
     }
-    category, error = yield find_one(db.category, haystack)
+    update_data = {
+        'secret_key': uuid.uuid4().hex
+    }
+    result, error = yield update(db.project, haystack, update_data)
     if error:
         on_error(error)
 
-    raise Return((category, None))
+    raise Return((update_data, None))
 
 
-@coroutine
-def get_categories_for_projects(db, projects):
-    """
-    pass
-    """
-    project_ids = [extract_obj_id(x) for x in projects]
-    haystack = {
-        "project": {"$in": project_ids}
-    }
-
-    categories, error = yield find(db.category, haystack)
-    if error:
-        on_error(error)
-
+def projects_by_id(projects):
     to_return = {}
+    for project in projects:
+        to_return[project['_id']] = project
+    return to_return
 
+
+def projects_by_name(projects):
+    to_return = {}
+    for project in projects:
+        to_return[project['name']] = project
+    return to_return
+
+
+def categories_by_id(categories):
+    to_return = {}
+    for category in categories:
+        to_return[category['_id']] = category
+    return to_return
+
+
+def categories_by_name(categories):
+    to_return = {}
+    for category in categories:
+        if category['project'] not in to_return:
+            to_return[category['project']] = {}
+        to_return[category['project']][category['name']] = category
+    return to_return
+
+
+def project_categories(categories):
+    to_return = {}
     for category in categories:
         if category['project'] not in to_return:
             to_return[category['project']] = []
         to_return[category['project']].append(category)
-
-    raise Return((to_return, None))
+    return to_return

@@ -13,7 +13,7 @@ import zmq
 from . import utils
 
 
-storage = None
+state = None
 
 
 CHANNEL_PREFIX = 'centrifuge'
@@ -78,6 +78,9 @@ def create_control_channel_name():
     ]))
 
 
+CONTROL_CHANNEL_NAME = create_control_channel_name()
+
+
 @coroutine
 def handle_control_message(application, message):
     """
@@ -103,7 +106,6 @@ def unsubscribe_connection(app, project, params):
     """
     Unsubscribe client from certain channels provided in `block` call.
     """
-    db = app.settings['db']
     user = params.get("user")
     unsubscribe_from = params.get("from")
 
@@ -118,7 +120,7 @@ def unsubscribe_connection(app, project, params):
     if not user_connections:
         raise Return((True, None))
 
-    categories, error = yield storage.get_project_categories(db, project)
+    categories, error = yield state.get_project_categories(project)
     if error:
         raise Return((None, error))
 
@@ -294,11 +296,7 @@ def process_call(application, project, method, params):
 
     if method == "broadcast":
 
-        db = application.db
-
-        project_categories, error = yield storage.get_project_categories(
-            db, project
-        )
+        project_categories, error = yield state.get_project_categories(project)
         if error:
             raise Return((None, error))
 
@@ -315,7 +313,7 @@ def process_call(application, project, method, params):
         }
         publish(
             application.pub_stream,
-            create_control_channel_name(),
+            CONTROL_CHANNEL_NAME,
             json_encode(to_publish)
         )
         result, error = True, None

@@ -29,7 +29,7 @@ from .schema import req_schema, admin_params_schema, client_params_schema
 logger = logging.getLogger('centrifuge')
 
 
-storage = None
+state = None
 
 
 # regex pattern to match project and category names
@@ -59,10 +59,6 @@ class BaseHandler(tornado.web.RequestHandler):
         """
         self.set_header('Content-Type', 'application/json; charset=utf-8')
         self.finish(tornado.escape.json_encode(to_return))
-
-    @property
-    def db(self):
-        return self.application.db
 
     @property
     def opts(self):
@@ -95,7 +91,7 @@ class RpcHandler(BaseHandler):
 
         sign = auth_info['sign']
 
-        project, error = yield storage.get_project_by_id(self.db, project_id)
+        project, error = yield state.get_project_by_id(project_id)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not project:
@@ -105,9 +101,7 @@ class RpcHandler(BaseHandler):
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no request body")
 
-        result, error = yield storage.check_auth(
-            self.db, project, sign, encoded_data
-        )
+        result, error = yield state.check_auth(project, sign, encoded_data)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not result:
@@ -182,6 +176,16 @@ class Connection(object):
         elif isinstance(self, WebSocketHandler):
             self.write_message(message)
 
+    def send_ack(self, msg_id=None, method=None, result=None, error=None):
+        self.send_message(
+            self.make_ack(
+                msg_id=msg_id,
+                method=method,
+                result=result,
+                error=error
+            )
+        )
+
     def make_ack(self, msg_id=None, method=None, result=None, error=None):
 
         to_return = {
@@ -192,16 +196,6 @@ class Connection(object):
             'error': error
         }
         return json_encode(to_return)
-
-    def send_ack(self, msg_id=None, method=None, result=None, error=None):
-        self.send_message(
-            self.make_ack(
-                msg_id=msg_id,
-                method=method,
-                result=result,
-                error=error
-            )
-        )
 
     @coroutine
     def handle_auth(self, params):
@@ -214,11 +208,7 @@ class Connection(object):
         project_id = params['project_id']
         permissions = params["permissions"]
 
-        self.db = self.application.db
-
-        project, error = yield storage.get_project_by_id(
-            self.db, project_id
-        )
+        project, error = yield state.get_project_by_id(project_id)
         if error:
             self.close_connection()
         if not project:
@@ -290,7 +280,7 @@ class Connection(object):
         if not self.is_authenticated:
             raise Return((None, "permission validation error"))
 
-        categories, error = yield storage.get_project_categories(self.db, project)
+        categories, error = yield state.get_project_categories(project)
         if error:
             self.close_connection()
 
