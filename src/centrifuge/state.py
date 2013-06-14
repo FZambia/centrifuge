@@ -4,7 +4,6 @@
 # All rights reserved.
 #
 import logging
-
 from tornado.gen import coroutine, Return
 from toro import Lock
 
@@ -18,7 +17,9 @@ lock = Lock()
 
 
 class InconsistentStateError(Exception):
-    pass
+
+    def __str__(self):
+        return 'inconsistent state error'
 
 
 class State:
@@ -66,11 +67,11 @@ class State:
 
         with (yield lock.acquire()):
 
-            projects, error = yield self.storage.project_list()
+            projects, error = yield self.storage.project_list(self.db)
             if error:
                 self.on_error(error)
 
-            categories, error = yield self.storage.category_list()
+            categories, error = yield self.storage.category_list(self.db)
             if error:
                 self.on_error(error)
 
@@ -92,17 +93,19 @@ class State:
 
             self._CONSISTENT = True
 
-            log.info('state updated')
+            log.info('State updated')
+
+            raise Return((True, None))
 
     @coroutine
-    def get_project_list(self):
+    def project_list(self):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStateError()))
             raise Return((self._data['projects'], None))
 
     @coroutine
-    def get_category_list(self):
+    def category_list(self):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStateError()))

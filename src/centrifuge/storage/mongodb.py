@@ -34,7 +34,7 @@ def ensure_indexes(db, drop=False):
     logger.info('Database ready')
 
 
-def init_db(state, settings):
+def init_db(state, settings, callback):
     """
     Create MongoDB connection, ensure indexes
     """
@@ -47,6 +47,8 @@ def init_db(state, settings):
     state.set_db(db)
 
     ensure_indexes(db)
+
+    callback()
 
 
 def extract_obj_id(obj):

@@ -16,6 +16,15 @@ import tornado.options
 from tornado.options import define, options
 from sockjs.tornado import SockJSRouter
 
+import zmq
+from zmq.eventloop import ioloop
+from zmq.eventloop.zmqstream import ZMQStream
+
+
+# Install ZMQ ioloop instead of a tornado ioloop
+# http://zeromq.github.com/pyzmq/eventloop.html
+ioloop.install()
+
 from centrifuge import utils
 
 import centrifuge.rpc
@@ -39,15 +48,6 @@ from centrifuge.rpc import create_control_channel_name
 from centrifuge.rpc import handle_control_message
 
 import six
-
-import zmq
-from zmq.eventloop import ioloop
-from zmq.eventloop.zmqstream import ZMQStream
-
-
-# Install ZMQ ioloop instead of a tornado ioloop
-# http://zeromq.github.com/pyzmq/eventloop.html
-ioloop.install()
 
 
 define(
@@ -220,20 +220,25 @@ def main():
 
     centrifuge.handlers.state = state
     centrifuge.web.handlers.state = state
-    centrifuge.rpc.storage = state
+    centrifuge.rpc.state = state
+
+    state.set_storage(storage)
+
+    def run_periodic_state_update():
+        state.update()
+        periodic_state_update = tornado.ioloop.PeriodicCallback(
+            state.update, custom_settings.get('state_update_interval', 30000)
+        )
+        periodic_state_update.start()
 
     ioloop_instance.add_callback(
         functools.partial(
             storage.init_db,
             state,
-            database_settings.get('settings', {})
+            database_settings.get('settings', {}),
+            run_periodic_state_update
         )
     )
-
-    periodic_state_update = tornado.ioloop.PeriodicCallback(
-        state.update, custom_settings.get('state_update_interval', 30)
-    )
-    periodic_state_update.start()
 
     app.zmq_pub_sub_proxy = options.zmq_pub_sub_proxy
 

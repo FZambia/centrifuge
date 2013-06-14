@@ -23,7 +23,7 @@ def on_error(error):
     raise Return((None, error))
 
 
-def init_db(state, settings):
+def init_db(state, settings, ready_callback):
     dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
         settings.get('name', 'centrifuge'),
         settings.get('user', 'postgres'),
@@ -31,7 +31,7 @@ def init_db(state, settings):
         settings.get('host', 'localhost'),
         settings.get('port', 5432)
     )
-    callback = partial(on_connection_ready, state)
+    callback = partial(on_connection_ready, state, ready_callback)
     db = momoko.Pool(
         dsn=dsn, size=settings.get('pool_size', 10), callback=callback
     )
@@ -39,7 +39,7 @@ def init_db(state, settings):
 
 
 @coroutine
-def on_connection_ready(state):
+def on_connection_ready(state, ready_callback):
 
     db = state.db
 
@@ -56,6 +56,7 @@ def on_connection_ready(state):
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, category, ())
+    ready_callback()
     logger.info("Database ready")
 
 
