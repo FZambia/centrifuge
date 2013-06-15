@@ -1,3 +1,7 @@
+v0.0.8
+======
+* small admin web interface improvements
+
 v0.0.7
 ======
 * use Websockets in admin interface instead of SockJS
