@@ -10,7 +10,7 @@
                 project_tab: '_projects',
                 projects: [],
                 categories: {},
-                socket_url: '/socket/',
+                socket_url: '/socket',
                 global_content_element: '#main-content',
                 global_panel_element: '#panel',
                 global_tabs_element: '#tabs'
@@ -219,7 +219,6 @@
 
                 connection.onmessage = function(e) {
                     var body = $.parseJSON(e.data);
-                    console.log(body);
                     handle_event_message(body);
                 };
 

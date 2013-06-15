@@ -65,7 +65,7 @@ for dir_path, dir_names, file_names in os.walk(project_dir):
 
 install_requires = [
     'six==1.3.0',
-    'tornado==3.0.1',
+    'tornado==3.1',
     'sockjs-tornado==1.0.0',
     'pyzmq==13.1.0',
     'motor==0.1',

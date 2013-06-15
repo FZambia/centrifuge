@@ -4,7 +4,6 @@
 # All rights reserved.
 #
 import uuid
-import logging
 import tornado.web
 import tornado.escape
 import tornado.auth
@@ -18,11 +17,9 @@ import six
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
+from ..log import logger
 from ..handlers import state, BaseHandler, NAME_RE
 from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
-
-
-logger = logging.getLogger('centrifuge')
 
 
 class LogoutHandler(BaseHandler):

@@ -3,14 +3,13 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 #
-import logging
 from tornado.gen import coroutine, Return
+from tornado.escape import json_encode
 from toro import Lock
 
 from . import auth
-
-
-log = logging.getLogger('centrifuge')
+from .log import logger
+from .rpc import publish, CONTROL_CHANNEL_NAME
 
 
 lock = Lock()
@@ -30,6 +29,7 @@ class State:
         self.application = application
         self.storage = None
         self.db = None
+        self._uid = None
         self._data = {
             'projects': [],
             'categories': [],
@@ -47,7 +47,7 @@ class State:
         self.db = db
 
     def on_error(self, error):
-        log.error(str(error))
+        logger.error(str(error))
         self._CONSISTENT = False
         raise Return((None, error))
 
@@ -93,7 +93,7 @@ class State:
 
             self._CONSISTENT = True
 
-            log.info('State updated')
+            logger.debug('State updated')
 
             raise Return((True, None))
 
@@ -172,11 +172,25 @@ class State:
 
     @coroutine
     def call_and_update_state(self, func_name, *args, **kwargs):
+
+        # call storage function
         func = getattr(self.storage, func_name, None)
         assert func, 'function {0} not found in storage' % func_name
         result, error = yield func(self.db, *args, **kwargs)
         if error:
             self.on_error(error)
+
+        # share knowledge about required state update with all system
+        message = json_encode({
+            "app_id": self.application.uid,
+            "method": "update_state",
+            "params": {}
+        })
+        publish(
+            self.application.pub_stream, CONTROL_CHANNEL_NAME, message
+        )
+
+        # update state of current instance
         success, error = yield self.update()
         if error:
             self.on_error(error)

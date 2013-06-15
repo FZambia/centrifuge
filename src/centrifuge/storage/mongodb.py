@@ -5,13 +5,10 @@
 #
 import uuid
 import time
-import logging
 import motor
 from bson import ObjectId
 from tornado.gen import Task, coroutine, Return
-
-
-logger = logging.getLogger('centrifuge')
+from ..log import logger
 
 
 def on_error(error):

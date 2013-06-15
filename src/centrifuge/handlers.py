@@ -5,7 +5,6 @@
 #
 import re
 import uuid
-import logging
 import six
 import tornado.web
 import time
@@ -21,12 +20,10 @@ import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 from jsonschema import validate, ValidationError
 
+from .log import logger
 from . import rpc
 from . import auth
 from .schema import req_schema, admin_params_schema, client_params_schema
-
-
-logger = logging.getLogger('centrifuge')
 
 
 state = None

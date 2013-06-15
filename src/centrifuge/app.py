@@ -6,7 +6,7 @@
 import os
 import sys
 import json
-import logging
+import uuid
 import functools
 import tornado
 import tornado.web
@@ -26,7 +26,7 @@ from zmq.eventloop.zmqstream import ZMQStream
 ioloop.install()
 
 from centrifuge import utils
-
+from centrifuge.log import logger
 import centrifuge.rpc
 import centrifuge.handlers
 import centrifuge.web.handlers
@@ -94,9 +94,6 @@ define(
 define(
     "config", default='config.json', help="JSON config file", type=str
 )
-
-
-logger = logging.getLogger('centrifuge')
 
 
 def stop_running(msg):
@@ -215,6 +212,9 @@ def main():
         server.listen(options.port)
     except Exception as e:
         return stop_running(str(e))
+
+    # create unique uid for this application
+    app.uid = uuid.uuid4().hex
 
     state = State(app)
 

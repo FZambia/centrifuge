@@ -3,16 +3,13 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 #
-import logging
 from tornado.gen import coroutine, Return
 import momoko
 import psycopg2.extras
 import uuid
 from bson import ObjectId
 from functools import partial
-
-
-logger = logging.getLogger('centrifuge')
+from ..log import logger
 
 
 def on_error(error):

@@ -91,21 +91,32 @@ def handle_control_message(application, message):
 
     message = json_decode(message)
 
+    app_id = message.get("app_id")
     method = message.get("method")
-    project = message.get("project")
     params = message.get("params")
 
+    if app_id and app_id == application.uid:
+        # application id must be set when we don't want to do
+        # make things twice for the same application. Setting
+        # app_id means that we don't want to process control
+        # message when it is appear in application instance if
+        # application uid matches app_id
+        raise Return((True, None))
+
     if method == "unsubscribe":
-        yield unsubscribe_connection(application, project, params)
+        yield handle_unsubscribe(application, params)
+    elif method == "update_state":
+        yield handle_update_state()
 
     raise Return((True, None))
 
 
 @coroutine
-def unsubscribe_connection(app, project, params):
+def handle_unsubscribe(app, params):
     """
     Unsubscribe client from certain channels provided in `block` call.
     """
+    project = params.get("project")
     user = params.get("user")
     unsubscribe_from = params.get("from")
 
@@ -183,6 +194,12 @@ def unsubscribe_connection(app, project, params):
                         pass
 
     raise Return((True, None))
+
+
+@coroutine
+def handle_update_state():
+    result, error = yield state.update()
+    raise Return((result, error))
 
 
 @coroutine
@@ -306,10 +323,10 @@ def process_call(application, project, method, params):
             application, project, allowed_categories, params
         )
     else:
+        params["project"] = project
         to_publish = {
             "method": method,
-            "params": params,
-            "project": project,
+            "params": params
         }
         publish(
             application.pub_stream,
