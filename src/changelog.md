@@ -1,3 +1,9 @@
+v0.0.9
+======
+* State class to keep current application's data in memory instead of
+using database queries every time.
+* Small code refactoring in rpc.py
+
 v0.0.8
 ======
 * small admin web interface improvements
