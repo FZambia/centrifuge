@@ -215,7 +215,7 @@ class ProjectSettingsHandler(BaseHandler):
 
             if category_name:
 
-                category, error = yield state.get_project_category(
+                category, error = yield state.get_category_by_name(
                     self.project, category_name
                 )
 
