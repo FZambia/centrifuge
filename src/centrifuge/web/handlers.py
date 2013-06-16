@@ -52,7 +52,6 @@ class AuthHandler(BaseHandler):
 class MainHandler(BaseHandler):
 
     @tornado.web.authenticated
-    @tornado.web.asynchronous
     @coroutine
     def get(self):
         """
@@ -90,7 +89,6 @@ class ProjectCreateHandler(BaseHandler):
         )
 
     @tornado.web.authenticated
-    @tornado.web.asynchronous
     @coroutine
     def post(self):
         validation_error = False
@@ -315,7 +313,6 @@ class ProjectSettingsHandler(BaseHandler):
         self.redirect(url)
 
     @tornado.web.authenticated
-    @tornado.web.asynchronous
     @coroutine
     def get(self, project_name, section):
 
@@ -337,7 +334,6 @@ class ProjectSettingsHandler(BaseHandler):
         self.render(template_name, **data)
 
     @tornado.web.authenticated
-    @tornado.web.asynchronous
     @coroutine
     def post(self, project_name, section):
 

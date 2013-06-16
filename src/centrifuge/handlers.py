@@ -73,7 +73,6 @@ class RpcHandler(BaseHandler):
         """
         pass
 
-    @tornado.web.asynchronous
     @coroutine
     def post(self, project_id):
         """
