@@ -22,8 +22,8 @@ Centrifuge comes with administrative web interface and by default requires
 [MongoDB](http://www.mongodb.org/) to keep information about projects, categories etc.
 You can also use [PostgreSQL](http://www.postgresql.org/) instead of MongoDB.
 
-Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/) and look
-at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
+Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/), watch [screencast](http://www.youtube.com/watch?v=RCLnCexzfOk)
+and look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
 
 P.S. If BSD license of Centrifuge does not allow you to use it, tell me and I'll consider to change license.
 
