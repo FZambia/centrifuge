@@ -425,7 +425,7 @@ class Connection(object):
         channel = params.get('channel')
 
         if category not in self.categories:
-            raise Return((None, 'category permission denied'))
+            raise Return((None, 'category does not exist or permission denied'))
 
         if category not in self.bidirectional_categories:
             raise Return((None, 'one-way category'))
