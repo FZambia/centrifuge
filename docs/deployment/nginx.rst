@@ -72,20 +72,26 @@ Here is an example Nginx configuration to deploy Centrifuge.
                 proxy_set_header X-Scheme $scheme;
                 proxy_pass http://centrifuge;
             }
-            location /socket/ {
+            location /socket {
                 proxy_buffering off;
                 proxy_pass http://centrifuge;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection $connection_upgrade;
             }
-            location /connection/sockjs/ {
+            location /connection/sockjs {
                 proxy_buffering off;
                 proxy_pass http://centrifuge;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
                 proxy_set_header Connection $connection_upgrade;
             }
-
+            location /connection/websocket {
+                proxy_buffering off;
+                proxy_pass http://centrifuge;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection $connection_upgrade;
+            }
         }
     }
