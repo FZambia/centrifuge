@@ -1,3 +1,8 @@
+v0.1.0
+======
+* As SockJS-Tornado can handle raw websockets - WebsocketConnection class
+was removed, examples and Nginx configuration updated.
+
 v0.0.9
 ======
 * State class to keep current application's data in memory instead of
