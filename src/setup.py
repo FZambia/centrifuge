@@ -68,7 +68,7 @@ install_requires = [
     'tornado==3.1',
     'sockjs-tornado==1.0.0',
     'pyzmq==13.1.0',
-    'motor==0.1',
+    'motor==0.1.1',
     'Momoko==1.0.0',
     'jsonschema==1.2.0',
     'lxml==3.1.0',
