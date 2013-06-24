@@ -32,7 +32,7 @@
                 }
 
                 function connect() {
-                    connection = new SockJS('http://{{centrifuge_address}}/connection/sockjs');
+                    connection = new SockJS('http://{{centrifuge_address}}/connection');
 
                     connection.onopen = function() {
                         message('Connecting…');

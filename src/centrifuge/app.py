@@ -34,7 +34,6 @@ import centrifuge.web.handlers
 from centrifuge.state import State
 from centrifuge.handlers import RpcHandler
 from centrifuge.handlers import SockjsConnection
-from centrifuge.handlers import WebsocketConnection
 
 from centrifuge.web.handlers import MainHandler
 from centrifuge.web.handlers import AuthHandler
@@ -118,11 +117,6 @@ class Application(tornado.web.Application):
                 name="admin_connection"
             ),
             tornado.web.url(
-                r'/connection/websocket',
-                WebsocketConnection,
-                name="connection_websocket"
-            ),
-            tornado.web.url(
                 r'/project/create$',
                 ProjectCreateHandler,
                 name="project_create"
@@ -144,7 +138,7 @@ class Application(tornado.web.Application):
         ]
 
         SockjsConnectionRouter = SockJSRouter(
-            SockjsConnection, '/connection/sockjs'
+            SockjsConnection, '/connection'
         )
         handlers = SockjsConnectionRouter.urls + handlers
 

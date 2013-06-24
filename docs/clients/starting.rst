@@ -8,6 +8,20 @@ pure Websockets. Second, SockJS library - ['websocket', 'xdr-streaming', 'xhr-st
 'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling',
 'jsonp-polling'] can be used.
 
+To use pure WebSocket endpoint you should initialize connection like this:
+
+.. code-block:: js
+
+    connection = new WebSocket('ws://{{centrifuge_address}}/connection/websocket');
+
+
+When using SockJS library initialize connection like this:
+
+.. code-block:: js
+
+    connection = new SockJS('http://{{centrifuge_address}}/connection');
+
+
 At this moment there are no javascript libraries to wrap communication routine
 with Centrifuge. But communication is rather simple.
 

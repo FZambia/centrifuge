@@ -13,7 +13,6 @@ from tornado.ioloop import IOLoop
 from tornado.escape import json_encode, json_decode
 from tornado.gen import coroutine, Return, Task
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from tornado.websocket import WebSocketHandler
 from sockjs.tornado import SockJSConnection
 
 import zmq
@@ -160,7 +159,7 @@ class Connection(object):
         """
         General method for closing connection.
         """
-        if isinstance(self, (SockJSConnection, WebSocketHandler)):
+        if isinstance(self, (SockJSConnection, )):
             self.close()
 
     def send_message(self, message):
@@ -169,8 +168,6 @@ class Connection(object):
         """
         if isinstance(self, SockJSConnection):
             self.send(message)
-        elif isinstance(self, WebSocketHandler):
-            self.write_message(message)
 
     def send_ack(self, msg_id=None, method=None, result=None, error=None):
         self.send_message(
@@ -498,7 +495,7 @@ class Connection(object):
         """
         if isinstance(self, SockJSConnection):
             if self.session:
-                if self.session.transport_name != 'websocket':
+                if self.session.transport_name != 'rawwebsocket':
                     self.session.start_heartbeat()
             else:
                 self.close_connection()
@@ -573,15 +570,3 @@ class SockjsConnection(Connection, SockJSConnection):
 
     def on_close(self):
         self.on_centrifuge_connection_close()
-
-
-class WebsocketConnection(Connection, WebSocketHandler):
-
-    def open(self):
-        self.on_centrifuge_connection_open()
-
-    def on_close(self):
-        self.on_centrifuge_connection_close()
-
-    def on_message(self, message):
-        self.on_centrifuge_connection_message(message)
