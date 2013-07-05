@@ -21,6 +21,7 @@ Here is an example Nginx configuration to deploy Centrifuge.
     http {
         # Enumerate all the Tornado servers here
         upstream centrifuge {
+            #sticky;
             server 127.0.0.1:8000;
             #server 127.0.0.1:8001;
             #server 127.0.0.1:8002;
