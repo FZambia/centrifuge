@@ -14,7 +14,7 @@ Centrifuge also requires python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Python 2.6 and Python 2.7 are optimal. It's designed to run on python 3.3 too,
-but not tested yet.
+but not heavily tested yet.
 
 You can find nice guide about how to install Python on Mac OS X and Linux 
 `here <https://python-guide.readthedocs.org/en/latest/starting/install/osx/>`_ and
@@ -88,11 +88,10 @@ configuration file.
 Fill centrifuge's configuration file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Configuration is a JSON file. You can find example of those file in
-Centrifuge's repository. With MongoDB (installed with
-default settings) configuration file can be omitted during development.
-But in production environment it must be used because it contains
-important security settings like cookie_secret and administator's
+Configuration is a JSON file. You can find example of those file in Centrifuge's
+repository. With MongoDB (installed with default settings) configuration file
+can be omitted during development. But in production environment it must be used
+because it contains important security settings like cookie_secret and administrative
 password.
 
 More about configuration see in special documentation chapter.

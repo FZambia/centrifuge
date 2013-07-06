@@ -19,7 +19,19 @@ When using SockJS library initialize connection like this:
 
 .. code-block:: js
 
-    connection = new SockJS('http://{{centrifuge_address}}/connection');
+    connection = new SockJS('http://{{centrifuge_address}}/connection', null, {
+        protocols_whitelist: [
+            'websocket',
+            'xdr-streaming',
+            'xhr-streaming',
+            'iframe-eventsource',
+            'iframe-htmlfile',
+            'xdr-polling',
+            'xhr-polling',
+            'iframe-xhr-polling',
+            'jsonp-polling'
+        ]
+    });
 
 
 At this moment there are no javascript libraries to wrap communication routine
@@ -73,7 +85,7 @@ Subscribe
 ---------
 
 After successful authentication client can subscribe on channel he is interested
-in
+in:
 
 .. code-block:: js
 
@@ -100,7 +112,7 @@ If you want to unsubscribe from some channels - send message like this:
 .. code-block:: js
 
     var unsubscribe_message = {
-        'method': 'subscribe',
+        'method': 'unsubscribe',
         'params': {
             'from': {
                 'python': ['django']

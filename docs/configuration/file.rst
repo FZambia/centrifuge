@@ -9,7 +9,7 @@ Example
 
 Here is minimal configuration file required:
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
         "password": "admin",
@@ -28,7 +28,7 @@ Here is minimal configuration file required:
 
 With PostgreSQL this file look like:
 
-.. code-block:: bash
+.. code-block:: javascript
 
     {
         "password": "admin",
@@ -47,12 +47,11 @@ With PostgreSQL this file look like:
     }
 
 
-
 Description
 ~~~~~~~~~~~
 
-- **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
-
 - **password** - administrator's password. Can be omitted during development.
+
+- **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
 
 - **storage** - section with database backend settings. No alternatives except default MongoDB for this moment.
