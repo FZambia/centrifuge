@@ -1,3 +1,11 @@
+v0.1.2
+======
+* use SockJS for admin connections instead of pure Websockets(lol, see v0.0.7)
+
+v0.1.1
+======
+* Update Motor version
+
 v0.1.0
 ======
 * As SockJS-Tornado can handle raw websockets - WebsocketConnection class

@@ -5,5 +5,5 @@
 #
 
 
-version = "0.0.7"
-version_info = (0, 0, 7)
+version = "0.1.2"
+version_info = (0, 1, 2)
