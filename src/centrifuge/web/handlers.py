@@ -10,7 +10,9 @@ import tornado.auth
 import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
-from tornado.websocket import WebSocketHandler
+
+from tornado.web import decode_signed_value
+from sockjs.tornado import SockJSConnection
 
 import six
 
@@ -72,7 +74,7 @@ class MainHandler(BaseHandler):
         context = {
             'js_data': tornado.escape.json_encode({
                 'current_user': user,
-                'socket_url': self.reverse_url("admin_connection"),
+                'socket_url': '/socket',
                 'projects': projects,
                 'categories': project_categories
             })
@@ -353,15 +355,13 @@ class ProjectSettingsHandler(BaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-class AdminSocketHandler(BaseHandler, WebSocketHandler):
+class AdminSocketHandler(SockJSConnection):
 
     def on_message_published(self, message):
         actual_message = message[0]
         if six.PY3:
             actual_message = actual_message.decode()
-        self.write_message(
-            actual_message.split(CHANNEL_DATA_SEPARATOR, 1)[1]
-        )
+        self.send(actual_message.split(CHANNEL_DATA_SEPARATOR, 1)[1])
 
     @coroutine
     def subscribe(self):
@@ -412,11 +412,19 @@ class AdminSocketHandler(BaseHandler, WebSocketHandler):
         self.subscribe_stream.close()
         logger.info('admin disconnected')
 
-    def open(self):
-        if not self.current_user:
+    def on_open(self, info):
+        try:
+            value = info.cookies['user'].value
+        except (KeyError, AttributeError):
             self.close()
         else:
-            self.subscribe()
+            user = decode_signed_value(
+                self.application.settings['cookie_secret'], 'user', value
+            )
+            if user:
+                self.subscribe()
+            else:
+                self.close()
 
     def on_close(self):
         self.unsubscribe()

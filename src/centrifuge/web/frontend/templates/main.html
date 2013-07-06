@@ -3,6 +3,7 @@
 {% block title %}{{_("Centrifuge")}}{% end %}
 
 {% block extra_scripts %}
+<script type="text/javascript" src="{{ static_url('libs/sockjs/sockjs-0.3.4.min.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('application/js/main.js') }}"></script>
 <script type="text/javascript">
     $(document).ready(function() {

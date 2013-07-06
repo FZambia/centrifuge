@@ -13,7 +13,18 @@
                 socket_url: '/socket',
                 global_content_element: '#main-content',
                 global_panel_element: '#panel',
-                global_tabs_element: '#tabs'
+                global_tabs_element: '#tabs',
+                transports: [
+                    'websocket',
+                    'xdr-streaming',
+                    'xhr-streaming',
+                    'iframe-eventsource',
+                    'iframe-htmlfile',
+                    'xdr-polling',
+                    'xhr-polling',
+                    'iframe-xhr-polling',
+                    'jsonp-polling'
+                ]
             };
 
             var options = $.extend(defaults, custom_options);
@@ -208,7 +219,9 @@
             var connect = function() {
                 disconnect();
 
-                connection = new WebSocket('ws://' + window.location.host + options.socket_url);
+                connection = new SockJS(window.location.protocol + '//' + window.location.host + options.socket_url, null, {
+                    protocols_whitelist: options.transports
+                });
 
                 connection.onopen = function() {
                     console.log('Connected.');

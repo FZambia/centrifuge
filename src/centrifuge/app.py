@@ -112,11 +112,6 @@ class Application(tornado.web.Application):
                 r'/', MainHandler, name="main"
             ),
             tornado.web.url(
-                r'/socket',
-                AdminSocketHandler,
-                name="admin_connection"
-            ),
-            tornado.web.url(
                 r'/project/create$',
                 ProjectCreateHandler,
                 name="project_create"
@@ -137,6 +132,13 @@ class Application(tornado.web.Application):
             )
         ]
 
+        # create SockJS route for admin connections
+        AdminConnectionRouter = SockJSRouter(
+            AdminSocketHandler, '/socket'
+        )
+        handlers = AdminConnectionRouter.urls + handlers
+
+        # create SockJS route for client connections
         SockjsConnectionRouter = SockJSRouter(
             SockjsConnection, '/connection'
         )

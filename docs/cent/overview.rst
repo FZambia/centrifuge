@@ -50,8 +50,7 @@ It is easy enough:
 - *cent* is the name of program
 - *python* is the name of section in configuration file
 - *broadcast* is the method name you want to call
-- *--params* is a JSON string with method parameters, in this case of broadcast you should provide
-category, channel and data parameters.
+- *--params* is a JSON string with method parameters, in this case of broadcast you should provide category, channel and data parameters.
 
 
 If request was successful you'll get something like this in response:
