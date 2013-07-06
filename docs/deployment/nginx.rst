@@ -3,6 +3,7 @@ Nginx configuration
 
 .. _Nginx configuration:
 
+Minimal Nginx version - 1.3.13
 
 Here is an example Nginx configuration to deploy Centrifuge.
 
@@ -22,6 +23,7 @@ Here is an example Nginx configuration to deploy Centrifuge.
         # Enumerate all the Tornado servers here
         upstream centrifuge {
             #sticky;
+            ip_hash;
             server 127.0.0.1:8000;
             #server 127.0.0.1:8001;
             #server 127.0.0.1:8002;
@@ -96,3 +98,19 @@ Here is an example Nginx configuration to deploy Centrifuge.
             }
         }
     }
+
+
+Look carefully at commented ``sticky;`` directive in upstream section.
+
+In this configuration example we use ``ip_hash`` directive to proxy client with the same ip
+address to the same backend process. This is very important when we have several processes.
+
+When client connects to Centrifuge - session created - and to communicate those client must
+send all next requests to the same backend process. But ``ip_hash`` is not the best choice
+in this case, because there could be situations where a lot of different browsers are coming
+with the same IP address (behind proxies) and the load balancing system won't be fair.
+Also fair load balancing does not work during development - when all clients connecting from
+localhost.
+
+So best solution would be using something like `nginx-sticky-module <http://code.google.com/p/nginx-sticky-module/>`_
+which uses a cookie to track the upstream server for making each client unique.
