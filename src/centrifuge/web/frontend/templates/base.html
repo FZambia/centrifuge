@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<title>{% block title %}{% end %}</title>
-		<meta name="description" content=""/>
-		<meta name="author" content=""/>
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-        	<meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0" />
-		{% include 'staticbase.html' %}
-		{% block extra_head %}{% end %}
-	</head>
-	<body>
-		{% include 'navbar.html' %}
-		<div id="wrap">
-			<div class="row-fluid">
-				<div class="span12">
-					<div class="content">
-						{% block content %}{% end %}
-					</div>
-				</div>
-			</div>
-			<div id="push"></div>
-		</div>
-		<div id="footer">
-			<div class="container">
-				<p class="muted credit">
-					Developed by <a href="https://github.com/FZambia">Alexandr Emelin</a>, 2013, under BSD license.
-				</p>
-			</div>
-		</div>
-		{% block extra_scripts %}{% end %}
-	</body>
+    <head>
+        <title>{% block title %}{% end %}</title>
+        <meta name="description" content=""/>
+        <meta name="author" content=""/>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="initial-scale = 1.0,maximum-scale = 1.0"/>
+        {% include 'staticbase.html' %}
+        {% block extra_head %}{% end %}
+    </head>
+    <body>
+        {% include 'navbar.html' %}
+        <div id="wrap">
+            <div class="row-fluid">
+                <div class="span12">
+                    <div class="content">
+                        {% block content %}{% end %}
+                    </div>
+                </div>
+            </div>
+            <div id="push"></div>
+        </div>
+        <div id="footer">
+            <div class="container">
+                <p class="muted credit">
+                    Developed by <a href="https://github.com/FZambia">Alexandr Emelin</a>, 2013, under BSD license.
+                </p>
+            </div>
+        </div>
+        {% block extra_scripts %}{% end %}
+    </body>
 </html>

@@ -9,7 +9,6 @@
 			<a href="{{reverse_url('main')}}" class="brand">
 				Centrifuge
 			</a>
-
 			<ul class="nav">
                 {% if handler.get_current_user() %}
                 <li class="">
@@ -26,13 +25,11 @@
 					<a href="https://github.com/FZambia/centrifuge" target="_blank">{{_("Source code")}}</a>
 				</li>
 			</ul>
-
 			<div class="btn-group pull-right">
 				{% if current_user and handler.opts.get("password") %}
                     <a class="btn btn-default" href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
 				{% end %}
 			</div>
-
 		</div>
 	</div>
 </div>
