@@ -38,3 +38,5 @@ But in case of using XPUB/XSUB proxy you should actually start this proxy:
 
 Using XPUB/XSUB proxy is nice because you don't need to restart all your Centrifuge processes
 when you add new one, but it's a single point of failure. Remember about it.
+
+There is also XPUB/XSUB proxy implemented in Go lang: `gist on Github <https://gist.github.com/FZambia/5955032>`_
