@@ -6,7 +6,6 @@
 import os
 import sys
 import json
-import uuid
 import functools
 import tornado
 import tornado.web
@@ -16,23 +15,19 @@ import tornado.options
 from tornado.options import define, options
 from sockjs.tornado import SockJSRouter
 
-import zmq
 from zmq.eventloop import ioloop
-from zmq.eventloop.zmqstream import ZMQStream
 
 
 # Install ZMQ ioloop instead of a tornado ioloop
 # http://zeromq.github.com/pyzmq/eventloop.html
 ioloop.install()
 
+from centrifuge.core import Application
 from centrifuge import utils
 from centrifuge.log import logger
-import centrifuge.rpc
-import centrifuge.handlers
-import centrifuge.web.handlers
 
 from centrifuge.state import State
-from centrifuge.handlers import RpcHandler
+from centrifuge.handlers import CommandHandler
 from centrifuge.handlers import SockjsConnection
 
 from centrifuge.web.handlers import MainHandler
@@ -42,11 +37,6 @@ from centrifuge.web.handlers import AdminSocketHandler
 from centrifuge.web.handlers import Http404Handler
 from centrifuge.web.handlers import ProjectCreateHandler
 from centrifuge.web.handlers import ProjectSettingsHandler
-
-from centrifuge.rpc import create_control_channel_name
-from centrifuge.rpc import handle_control_message
-
-import six
 
 
 define(
@@ -103,62 +93,53 @@ def stop_running(msg):
     sys.exit(1)
 
 
-class Application(tornado.web.Application):
+def create_application_handlers():
 
-    def __init__(self, settings):
-
-        handlers = [
-            tornado.web.url(
-                r'/', MainHandler, name="main"
-            ),
-            tornado.web.url(
-                r'/project/create$',
-                ProjectCreateHandler,
-                name="project_create"
-            ),
-            tornado.web.url(
-                r'/project/([^/]+)/settings/([^/]+)$',
-                ProjectSettingsHandler,
-                name="project_settings"
-            ),
-            tornado.web.url(
-                r'/rpc/([^/]+)$', RpcHandler, name="store"
-            ),
-            tornado.web.url(
-                r'/auth$', AuthHandler, name="auth"
-            ),
-            tornado.web.url(
-                r'/logout$', LogoutHandler, name="logout"
-            )
-        ]
-
-        # create SockJS route for admin connections
-        AdminConnectionRouter = SockJSRouter(
-            AdminSocketHandler, '/socket'
+    handlers = [
+        tornado.web.url(
+            r'/', MainHandler, name="main"
+        ),
+        tornado.web.url(
+            r'/project/create$',
+            ProjectCreateHandler,
+            name="project_create"
+        ),
+        tornado.web.url(
+            r'/project/([^/]+)/settings/([^/]+)$',
+            ProjectSettingsHandler,
+            name="project_settings"
+        ),
+        tornado.web.url(
+            r'/rpc/([^/]+)$', CommandHandler, name="store"
+        ),
+        tornado.web.url(
+            r'/auth$', AuthHandler, name="auth"
+        ),
+        tornado.web.url(
+            r'/logout$', LogoutHandler, name="logout"
         )
-        handlers = AdminConnectionRouter.urls + handlers
+    ]
 
-        # create SockJS route for client connections
-        SockjsConnectionRouter = SockJSRouter(
-            SockjsConnection, '/connection'
+    # create SockJS route for admin connections
+    AdminConnectionRouter = SockJSRouter(
+        AdminSocketHandler, '/socket'
+    )
+    handlers = AdminConnectionRouter.urls + handlers
+
+    # create SockJS route for client connections
+    SockjsConnectionRouter = SockJSRouter(
+        SockjsConnection, '/connection'
+    )
+    handlers = SockjsConnectionRouter.urls + handlers
+
+    # match everything else to 404 handler
+    handlers.append(
+        tornado.web.url(
+            r'.*', Http404Handler, name='http404'
         )
-        handlers = SockjsConnectionRouter.urls + handlers
+    )
 
-        # match everything else to 404 handler
-        handlers.append(
-            tornado.web.url(
-                r'.*', Http404Handler, name='http404'
-            )
-        )
-
-        AdminSocketHandler.application = self
-        SockjsConnection.application = self
-
-        tornado.web.Application.__init__(
-            self,
-            handlers,
-            **settings
-        )
+    return handlers
 
 
 def main():
@@ -202,23 +183,22 @@ def main():
         options=custom_settings
     )
 
+    handlers = create_application_handlers()
+
     try:
-        app = Application(settings)
+        app = Application(handlers=handlers, **settings)
         server = tornado.httpserver.HTTPServer(app)
         server.listen(options.port)
     except Exception as e:
         return stop_running(str(e))
 
-    # create unique uid for this application
-    app.uid = uuid.uuid4().hex
+    # create references to application from SockJS handlers
+    AdminSocketHandler.application = app
+    SockjsConnection.application = app
 
     state = State(app)
-
-    centrifuge.handlers.state = state
-    centrifuge.web.handlers.state = state
-    centrifuge.rpc.state = state
-
     state.set_storage(storage)
+    app.state = state
 
     def run_periodic_state_update():
         state.update()
@@ -236,81 +216,9 @@ def main():
         )
     )
 
-    app.zmq_pub_sub_proxy = options.zmq_pub_sub_proxy
+    app.init_sockets(options)
 
-    context = zmq.Context()
-
-    # create PUB socket to publish instance events into it
-    publish_socket = context.socket(zmq.PUB)
-    # do not try to send messages after closing
-    publish_socket.setsockopt(zmq.LINGER, 0)
-
-    if app.zmq_pub_sub_proxy:
-        # application started with XPUB/XSUB proxy
-        app.zmq_xsub = options.zmq_xsub
-        publish_socket.connect(app.zmq_xsub)
-    else:
-        # application started without XPUB/XSUB proxy
-        if options.zmq_pub_port_shift:
-            # calculate zmq pub port number
-            zmq_pub_port = options.port + options.zmq_pub_port_shift
-        else:
-            zmq_pub_port = options.zmq_pub_port
-
-        app.zmq_pub_port = zmq_pub_port
-
-        publish_socket.bind(
-            "tcp://%s:%s" % (options.zmq_pub_listen, str(app.zmq_pub_port))
-        )
-
-    # wrap pub socket into ZeroMQ stream
-    app.pub_stream = ZMQStream(publish_socket)
-
-    # create SUB socket listening to all events from all app instances
-    subscribe_socket = context.socket(zmq.SUB)
-
-    if app.zmq_pub_sub_proxy:
-        # application started with XPUB/XSUB proxy
-        app.zmq_xpub = options.zmq_xpub
-        subscribe_socket.connect(app.zmq_xpub)
-    else:
-        # application started without XPUB/XSUB proxy
-        app.zmq_sub_address = options.zmq_sub_address
-        for address in app.zmq_sub_address:
-            subscribe_socket.connect(address)
-
-    subscribe_socket.setsockopt_string(
-        zmq.SUBSCRIBE,
-        six.u(create_control_channel_name())
-    )
-
-    def listen_control_channel():
-        # wrap sub socket into ZeroMQ stream and set its on_recv callback
-        app.sub_stream = ZMQStream(subscribe_socket)
-        handle = functools.partial(handle_control_message, app)
-        app.sub_stream.on_recv(handle)
-
-    ioloop_instance.add_callback(listen_control_channel)
-
-    app.event_callbacks = []
-    callbacks = custom_settings.get('event_callbacks', [])
-
-    for callback in callbacks:
-        event_callback = utils.namedAny(callback)
-        app.event_callbacks.append(event_callback)
-
-    if not hasattr(app, 'admin_connections'):
-        # initialize dict to keep admin connections
-        app.admin_connections = {}
-
-    if not hasattr(app, 'connections'):
-        # initialize dict to keep client's connections
-        app.connections = {}
-
-    if not hasattr(app, 'back_off'):
-        # initialize dict to keep back-off information for projects
-        app.back_off = {}
-
+    # summarize run configuration writing it into logger
     logger.info("Application started")
     logger.info("Tornado port: {0}".format(options.port))
     if app.zmq_pub_sub_proxy:
@@ -337,7 +245,7 @@ def main():
         if hasattr(app, 'pub_stream'):
             app.pub_stream.close()
         if hasattr(app, 'sub_stream'):
-            app.sub_stream.on_recv(None)
+            app.sub_stream.stop_on_recv()
             app.sub_stream.close()
 
 

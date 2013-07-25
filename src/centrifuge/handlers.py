@@ -61,7 +61,7 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.settings.get('options', {})
 
 
-class RpcHandler(BaseHandler):
+class CommandHandler(BaseHandler):
     """
     Listen for incoming POST request, authorize it and in case off
     successful authorization process requested action for project.
@@ -131,8 +131,8 @@ class RpcHandler(BaseHandler):
                 except ValidationError as e:
                     context['error'] = str(e)
                 else:
-                    result, error = yield rpc.process_call(
-                        self.application, project, method, params
+                    result, error = yield self.application.process_call(
+                        project, method, params
                     )
 
                     context['error'] = error
@@ -201,7 +201,7 @@ class Connection(object):
         project_id = params['project_id']
         permissions = params["permissions"]
 
-        project, error = yield state.get_project_by_id(project_id)
+        project, error = yield self.application.state.get_project_by_id(project_id)
         if error:
             self.close_connection()
         if not project:
@@ -355,7 +355,7 @@ class Connection(object):
                     # attempt to subscribe on not allowed channel
                     continue
 
-                channel_to_subscribe = rpc.create_channel_name(
+                channel_to_subscribe = self.application.create_channel_name(
                     project_id,
                     category_id,
                     channel
@@ -399,7 +399,7 @@ class Connection(object):
                     # attempt to unsubscribe from not allowed channel
                     continue
 
-                channel_to_unsubscribe = rpc.create_channel_name(
+                channel_to_unsubscribe = self.application.create_channel_name(
                     project_id,
                     category_id,
                     channel
@@ -504,12 +504,10 @@ class Connection(object):
         """
         Called when message received from one of channels client subscribed to.
         """
-        actual_message = message[0]
+        actual_message = message[1]
         if six.PY3:
             actual_message = actual_message.decode()
-        self.send_message(
-            actual_message.split(rpc.CHANNEL_DATA_SEPARATOR, 1)[1]
-        )
+        self.send_message(actual_message)
 
     def clean_up(self):
         """

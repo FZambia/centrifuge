@@ -20,8 +20,8 @@ import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from ..log import logger
-from ..handlers import state, BaseHandler, NAME_RE
-from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
+from ..handlers import BaseHandler, NAME_RE
+from ..core import create_project_channel_name, CHANNEL_DATA_SEPARATOR
 
 
 class LogoutHandler(BaseHandler):
@@ -63,11 +63,11 @@ class MainHandler(BaseHandler):
         """
         user = self.current_user
 
-        projects, error = yield state.project_list()
+        projects, error = yield self.application.state.project_list()
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        project_categories, error = yield state.get_categories_for_projects()
+        project_categories, error = yield self.application.state.get_categories_for_projects()
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -126,7 +126,7 @@ class ProjectCreateHandler(BaseHandler):
         if not name or not NAME_RE.search(name):
             validation_error = True
 
-        existing_project, error = yield state.get_project_by_name(name)
+        existing_project, error = yield self.application.state.get_project_by_name(name)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if existing_project:
@@ -150,7 +150,7 @@ class ProjectCreateHandler(BaseHandler):
         if not display_name:
             display_name = name
 
-        project, error = yield state.project_create(
+        project, error = yield self.application.state.project_create(
             name,
             display_name,
             description,
@@ -173,7 +173,7 @@ class ProjectSettingsHandler(BaseHandler):
     @coroutine
     def get_project(self, project_name):
 
-        project, error = yield state.get_project_by_name(project_name)
+        project, error = yield self.application.state.get_project_by_name(project_name)
         if not project:
             raise tornado.web.HTTPError(404)
 
@@ -181,7 +181,7 @@ class ProjectSettingsHandler(BaseHandler):
 
     @coroutine
     def get_general(self):
-        categories, error = yield state.get_project_categories(self.project)
+        categories, error = yield self.application.state.get_project_categories(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -215,13 +215,13 @@ class ProjectSettingsHandler(BaseHandler):
 
             if category_name:
 
-                category, error = yield state.get_category_by_name(
+                category, error = yield self.application.state.get_category_by_name(
                     self.project, category_name
                 )
 
                 if not category:
                     # create new category with unique name
-                    res, error = yield state.category_create(
+                    res, error = yield self.application.state.category_create(
                         self.project,
                         category_name,
                         bidirectional,
@@ -234,7 +234,7 @@ class ProjectSettingsHandler(BaseHandler):
             # delete category
             category_name = self.get_argument('category_name', None)
             if category_name:
-                res, error = yield state.category_delete(
+                res, error = yield self.application.state.category_delete(
                     self.project, category_name
                 )
                 if error:
@@ -242,7 +242,7 @@ class ProjectSettingsHandler(BaseHandler):
 
         elif submit == 'regenerate_secret':
             # regenerate public and secret key
-            res, error = yield state.regenerate_project_secret_key(self.project)
+            res, error = yield self.application.state.regenerate_project_secret_key(self.project)
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -257,7 +257,7 @@ class ProjectSettingsHandler(BaseHandler):
             # completely remove project
             confirm = self.get_argument('confirm', None)
             if confirm == self.project['name']:
-                res, error = yield state.project_delete(self.project)
+                res, error = yield self.application.state.project_delete(self.project)
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 self.redirect(self.reverse_url("main"))
@@ -302,7 +302,7 @@ class ProjectSettingsHandler(BaseHandler):
                 if not display_name:
                     display_name = name
 
-                res, error = yield state.project_edit(
+                res, error = yield self.application.state.project_edit(
                     self.project, name, display_name,
                     description, validate_url, auth_attempts,
                     back_off_interval, back_off_max_timeout
@@ -366,7 +366,7 @@ class AdminSocketHandler(SockJSConnection):
     @coroutine
     def subscribe(self):
 
-        projects, error = yield state.project_list()
+        projects, error = yield self.application.state.project_list()
         self.projects = [x['_id'] for x in projects]
         self.uid = uuid.uuid4().hex
         self.connections = self.application.admin_connections
@@ -434,4 +434,3 @@ class Http404Handler(BaseHandler):
 
     def get(self):
         self.render("http404.html")
-
