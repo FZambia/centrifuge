@@ -289,7 +289,7 @@ class Connection(object):
         self.channels = {}
         self.start_heartbeat()
 
-        # allow broadcast from client only into bidirectional categories
+        # allow publish from client only into bidirectional categories
         self.bidirectional_categories = {}
         for category_name, category in six.iteritems(self.categories):
             if category.get('bidirectional', False):
@@ -416,7 +416,7 @@ class Connection(object):
         raise Return((True, None))
 
     @coroutine
-    def handle_broadcast(self, params):
+    def handle_publish(self, params):
 
         category = params.get('category')
         channel = params.get('channel')
@@ -430,14 +430,14 @@ class Connection(object):
         allowed_channels = self.permissions.get(category) if self.permissions else []
 
         if allowed_channels and channel not in allowed_channels:
-            # attempt to broadcast into not allowed channel
+            # attempt to publish into not allowed channel
             raise Return((None, 'channel permission denied'))
 
-        result, error = yield rpc.process_broadcast(
+        result, error = yield self.application.process_publish(
             self.application,
             self.project,
-            self.bidirectional_categories,
-            params
+            params,
+            allowed_categories=self.bidirectional_categories
         )
 
         raise Return((result, error))

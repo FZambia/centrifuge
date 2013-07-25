@@ -15,15 +15,12 @@ from tornado.escape import json_decode, json_encode
 from . import utils
 
 
-CHANNEL_PREFIX = 'centrifuge'
-
-
+# separate important parts of channel name by this
 CHANNEL_NAME_SEPARATOR = ':'
 
 
-CHANNEL_DATA_SEPARATOR = ' '
-
-
+# add sequence of symbols to the end of each channel name to
+# prevent name overlapping
 CHANNEL_SUFFIX = '>>>'
 
 
@@ -31,15 +28,12 @@ def publish(stream, channel, message):
     """
     Publish message into channel of stream.
     """
-    to_publish = "{0}{1}{2}".format(
-        channel, CHANNEL_DATA_SEPARATOR, message
-    )
-    stream.send_unicode(to_publish)
+    to_publish = [channel, message]
+    stream.send_multipart(to_publish)
 
 
 def create_channel_name(project_id, category_id, channel):
     return str(CHANNEL_NAME_SEPARATOR.join([
-        CHANNEL_PREFIX,
         'event',
         project_id,
         category_id,
@@ -50,14 +44,13 @@ def create_channel_name(project_id, category_id, channel):
 
 def parse_channel_name(channel):
     project_id, category_id, channel = channel.split(
-        CHANNEL_NAME_SEPARATOR, 5
-    )[2:5]
+        CHANNEL_NAME_SEPARATOR, 4
+    )[1:4]
     return project_id, category_id, channel
 
 
 def create_project_channel_name(project_id):
     return str(CHANNEL_NAME_SEPARATOR.join([
-        CHANNEL_PREFIX,
         'project',
         project_id,
         CHANNEL_SUFFIX
@@ -65,21 +58,14 @@ def create_project_channel_name(project_id):
 
 
 def parse_project_channel_name(channel):
-    project_id = channel.split(CHANNEL_NAME_SEPARATOR, 3)[2]
+    project_id = channel.split(CHANNEL_NAME_SEPARATOR, 2)[1]
     return project_id
 
 
-def create_control_channel_name():
-    return str(CHANNEL_NAME_SEPARATOR.join([
-        CHANNEL_PREFIX,
-        'control',
-        CHANNEL_SUFFIX
-    ]))
+CONTROL_CHANNEL_NAME = '_control' + CHANNEL_SUFFIX
 
 
 class Application(tornado.web.Application):
-
-    CONTROL_CHANNEL_NAME = '_control'
 
     def __init__(self, *args, **kwargs):
 
@@ -160,7 +146,7 @@ class Application(tornado.web.Application):
 
         subscribe_socket.setsockopt_string(
             zmq.SUBSCRIBE,
-            six.u(self.CONTROL_CHANNEL_NAME)
+            six.u(CONTROL_CHANNEL_NAME)
         )
 
         def listen_control_channel():
@@ -194,12 +180,18 @@ class Application(tornado.web.Application):
             # application uid matches app_id
             raise Return((True, None))
 
-        if method == "unsubscribe":
-            yield self.handle_unsubscribe(params)
-        elif method == "update_state":
-            yield self.handle_update_state()
+        handle_func = None
 
-        raise Return((True, None))
+        if method == "unsubscribe":
+            handle_func = self.handle_unsubscribe
+        elif method == "update_state":
+            handle_func = self.handle_update_state
+
+        if handle_func:
+            result, error = yield handle_func(params)
+            raise Return((result, error))
+        else:
+            raise Return((True, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
@@ -286,7 +278,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def handle_update_state(self):
+    def handle_update_state(self, params):
         """
         Handle request to update state.
         """
@@ -308,17 +300,17 @@ class Application(tornado.web.Application):
         """
         assert isinstance(project, dict)
 
+        handle_func = None
+
         if method == "publish":
-
-            project_categories, error = yield self.state.get_project_categories(project)
-            if error:
-                raise Return((None, error))
-
-            allowed_categories = dict((x['name'], x) for x in project_categories)
-
+            handle_func = self.process_publish
             result, error = yield self.process_publish(
-                project, allowed_categories, params
+                project, params
             )
+        elif method == "presence":
+            handle_func = self.process_presence
+        elif method == "history":
+            handle_func = self.process_history
         else:
             params["project"] = project
             to_publish = {
@@ -327,7 +319,7 @@ class Application(tornado.web.Application):
             }
             publish(
                 self.pub_stream,
-                self.CONTROL_CHANNEL_NAME,
+                CONTROL_CHANNEL_NAME,
                 json_encode(to_publish)
             )
             result, error = True, None
@@ -399,7 +391,14 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, allowed_categories, params):
+    def process_publish(self, project, params, allowed_categories=None):
+
+        if allowed_categories is None:
+            project_categories, error = yield self.state.get_project_categories(project)
+            if error:
+                raise Return((None, error))
+
+            allowed_categories = dict((x['name'], x) for x in project_categories)
 
         message, error = yield self.prepare_message(
             project, allowed_categories, params
