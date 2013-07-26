@@ -304,26 +304,26 @@ class Application(tornado.web.Application):
 
         if method == "publish":
             handle_func = self.process_publish
-            result, error = yield self.process_publish(
-                project, params
-            )
         elif method == "presence":
             handle_func = self.process_presence
         elif method == "history":
             handle_func = self.process_history
-        else:
-            params["project"] = project
-            to_publish = {
-                "method": method,
-                "params": params
-            }
-            publish(
-                self.pub_stream,
-                CONTROL_CHANNEL_NAME,
-                json_encode(to_publish)
-            )
-            result, error = True, None
 
+        if handle_func:
+            result, error = yield handle_func(project, params)
+            raise Return((result, error))
+
+        params["project"] = project
+        to_publish = {
+            "method": method,
+            "params": params
+        }
+        publish(
+            self.pub_stream,
+            CONTROL_CHANNEL_NAME,
+            json_encode(to_publish)
+        )
+        result, error = True, None
         raise Return((result, error))
 
     @coroutine
@@ -418,3 +418,9 @@ class Application(tornado.web.Application):
             raise Return((None, message))
 
         raise Return((True, None))
+
+    def process_history(self, project, params):
+        pass
+
+    def process_presence(self, project, params):
+        pass
