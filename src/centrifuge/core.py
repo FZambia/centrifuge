@@ -1,7 +1,8 @@
 # coding: utf-8
 import six
 import uuid
-from bson import ObjectId
+import time
+from functools import partial
 
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
@@ -11,8 +12,11 @@ import tornado.ioloop
 from tornado.gen import coroutine, Return
 from tornado.escape import json_decode, json_encode
 
-
 from . import utils
+from .state import State
+from .log import logger
+
+import socket
 
 
 # separate important parts of channel name by this
@@ -32,9 +36,12 @@ def publish(stream, channel, message):
     stream.send_multipart(to_publish)
 
 
-def create_channel_name(project_id, category_id, channel):
+def create_subscription_name(project_id, category_id, channel):
+    """
+    Create subscription name to catch messages from specific
+    project, category and channel.
+    """
     return str(CHANNEL_NAME_SEPARATOR.join([
-        'event',
         project_id,
         category_id,
         channel,
@@ -42,30 +49,41 @@ def create_channel_name(project_id, category_id, channel):
     ]))
 
 
-def parse_channel_name(channel):
-    project_id, category_id, channel = channel.split(
-        CHANNEL_NAME_SEPARATOR, 4
-    )[1:4]
-    return project_id, category_id, channel
+# channel for administrative interface - watch for messages travelling around.
+ADMIN_CHANNEL = '_admin' + CHANNEL_SUFFIX
 
 
-def create_project_channel_name(project_id):
-    return str(CHANNEL_NAME_SEPARATOR.join([
-        'project',
-        project_id,
-        CHANNEL_SUFFIX
-    ]))
+# channel for sharing commands among all nodes.
+CONTROL_CHANNEL = '_control' + CHANNEL_SUFFIX
 
 
-def parse_project_channel_name(channel):
-    project_id = channel.split(CHANNEL_NAME_SEPARATOR, 2)[1]
-    return project_id
+class Response(object):
 
+    def __init__(self, uid=None, method=None, error=None, body=None):
+        self.uid = uid
+        self.method = method
+        self.error = error
+        self.body = body
 
-CONTROL_CHANNEL_NAME = '_control' + CHANNEL_SUFFIX
+    def as_message(self):
+        return {
+            'uid': self.uid,
+            'method': self.method,
+            'error': self.error,
+            'body': self.body
+        }
 
 
 class Application(tornado.web.Application):
+
+    # milliseconds
+    PING_INTERVAL = 5000
+
+    # seconds
+    PING_MAX_DELAY = 10
+
+    # milliseconds
+    PING_REVIEW_INTERVAL = 10000
 
     def __init__(self, *args, **kwargs):
 
@@ -99,10 +117,46 @@ class Application(tornado.web.Application):
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
-    def init_sockets(self, options):
+    def init_state(self):
+
+        custom_settings = self.settings['config']
+
+        database_settings = custom_settings.get('storage', {})
+
+        # detect and apply database storage module
+        storage_module = database_settings.get(
+            'module', 'centrifuge.storage.mongodb'
+        )
+        storage = utils.import_module(storage_module)
+
+        state = State(self)
+        state.set_storage(storage)
+        self.state = state
+
+        def run_periodic_state_update():
+            state.update()
+            periodic_state_update = tornado.ioloop.PeriodicCallback(
+                state.update, custom_settings.get('state_update_interval', 30000)
+            )
+            periodic_state_update.start()
+
+        tornado.ioloop.IOLoop.instance().add_callback(
+            partial(
+                storage.init_db,
+                state,
+                database_settings.get('settings', {}),
+                run_periodic_state_update
+            )
+        )
+
+        logger.info("Storage module: {0}".format(storage_module))
+
+    def init_sockets(self):
         """
         Routine to create all application-wide ZeroMQ sockets.
         """
+        options = self.settings['options']
+
         self.zmq_pub_sub_proxy = options.zmq_pub_sub_proxy
 
         # create PUB socket to publish instance events into it
@@ -146,7 +200,7 @@ class Application(tornado.web.Application):
 
         subscribe_socket.setsockopt_string(
             zmq.SUBSCRIBE,
-            six.u(CONTROL_CHANNEL_NAME)
+            six.u(CONTROL_CHANNEL)
         )
 
         def listen_control_channel():
@@ -157,6 +211,49 @@ class Application(tornado.web.Application):
         tornado.ioloop.IOLoop.instance().add_callback(
             listen_control_channel
         )
+
+    def send_ping(self, message):
+        publish(self.pub_stream, CONTROL_CHANNEL, message)
+
+    def review_ping(self):
+        now = time.time()
+        outdated = []
+        for node, updated_at in self.nodes.items():
+            if now - updated_at > self.PING_MAX_DELAY:
+                outdated.append(node)
+        for node in outdated:
+            try:
+                del self.nodes[node]
+            except KeyError:
+                pass
+        print self.nodes
+
+    def init_ping(self):
+        options = self.settings['options']
+        scheme = 'http' if not options.ssl else 'https'
+        address = '%s://%s:%s' % (
+            scheme,
+            socket.gethostbyname(socket.gethostname()),
+            options.port
+        )
+        message = {
+            'app_id': self.uid,
+            'method': 'ping',
+            'params': {'address': address}
+        }
+        send_ping = partial(publish, self.pub_stream, CONTROL_CHANNEL, json_encode(message))
+        ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
+        tornado.ioloop.IOLoop.instance().add_timeout(
+            self.PING_INTERVAL, ping.start
+        )
+
+        review_ping = tornado.ioloop.PeriodicCallback(self.review_ping, self.PING_REVIEW_INTERVAL)
+        tornado.ioloop.IOLoop.instance().add_timeout(
+            self.PING_INTERVAL, review_ping.start
+        )
+
+    def send_control_message(self, message):
+        publish(self.pub_stream, CONTROL_CHANNEL, message)
 
     @coroutine
     def handle_control_message(self, multipart_message):
@@ -180,18 +277,16 @@ class Application(tornado.web.Application):
             # application uid matches app_id
             raise Return((True, None))
 
-        handle_func = None
+        func = getattr(self, 'handle_%s' % method, None)
+        if not func:
+            raise Return((None, 'method not found'))
 
-        if method == "unsubscribe":
-            handle_func = self.handle_unsubscribe
-        elif method == "update_state":
-            handle_func = self.handle_update_state
+        result, error = yield func(params)
+        raise Return((result, error))
 
-        if handle_func:
-            result, error = yield handle_func(params)
-            raise Return((result, error))
-        else:
-            raise Return((True, None))
+    @coroutine
+    def handle_ping(self, params):
+        self.nodes[params.get('address')] = time.time()
 
     @coroutine
     def handle_unsubscribe(self, params):
@@ -261,7 +356,7 @@ class Application(tornado.web.Application):
                     for channel in channels:
                         # unsubscribe from certain channel
 
-                        channel_to_unsubscribe = create_channel_name(
+                        channel_to_unsubscribe = create_subscription_name(
                             project_id, category_id, channel
                         )
 
@@ -320,7 +415,7 @@ class Application(tornado.web.Application):
         }
         publish(
             self.pub_stream,
-            CONTROL_CHANNEL_NAME,
+            CONTROL_CHANNEL,
             json_encode(to_publish)
         )
         result, error = True, None
@@ -338,12 +433,11 @@ class Application(tornado.web.Application):
         message = json_encode(message)
 
         if allowed_categories[category_name]['publish_to_admins']:
-            # send to project channel (only for admin use)
-            channel = create_project_channel_name(project_id)
-            publish(self.pub_stream, channel, message)
+            # send to admin channel
+            publish(self.pub_stream, ADMIN_CHANNEL, message)
 
         # send to event channel
-        channel = create_channel_name(
+        channel = create_subscription_name(
             project_id, category_id, message['channel']
         )
         publish(self.pub_stream, channel, message)
@@ -383,7 +477,7 @@ class Application(tornado.web.Application):
             'project': project['name'],
             'category_id': category['_id'],
             'category': category['name'],
-            'event_id': str(ObjectId()),
+            'event_id': uuid.uuid4().hex,
             'channel': channel,
             'data': event_data
         }

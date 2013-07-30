@@ -9,7 +9,6 @@ from toro import Lock
 
 from . import auth
 from .log import logger
-from .rpc import publish, CONTROL_CHANNEL_NAME
 
 
 lock = Lock()
@@ -186,9 +185,7 @@ class State:
             "method": "update_state",
             "params": {}
         })
-        publish(
-            self.application.pub_stream, CONTROL_CHANNEL_NAME, message
-        )
+        self.application.send_control_message(message)
 
         # update state of current instance
         success, error = yield self.update()

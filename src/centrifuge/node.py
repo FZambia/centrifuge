@@ -6,7 +6,6 @@
 import os
 import sys
 import json
-import functools
 import tornado
 import tornado.web
 import tornado.httpserver
@@ -23,12 +22,11 @@ from zmq.eventloop import ioloop
 ioloop.install()
 
 from centrifuge.core import Application
-from centrifuge import utils
 from centrifuge.log import logger
 
-from centrifuge.state import State
 from centrifuge.handlers import CommandHandler
 from centrifuge.handlers import SockjsConnection
+from centrifuge.handlers import Client
 
 from centrifuge.web.handlers import MainHandler
 from centrifuge.web.handlers import AuthHandler
@@ -82,6 +80,10 @@ define(
 
 define(
     "config", default='config.json', help="JSON config file", type=str
+)
+
+define(
+    "ssl", default=False, help="run with this flag when using HTTPS", type=bool
 )
 
 
@@ -156,14 +158,6 @@ def main():
         )
         custom_settings = {}
 
-    database_settings = custom_settings.get('storage', {})
-
-    # detect and apply database storage module
-    storage_module = database_settings.get(
-        'module', 'centrifuge.storage.mongodb'
-    )
-    storage = utils.import_module(storage_module)
-
     ioloop_instance = tornado.ioloop.IOLoop.instance()
 
     settings = dict(
@@ -180,7 +174,8 @@ def main():
         xsrf_cookies=True,
         autoescape="xhtml_escape",
         debug=options.debug,
-        options=custom_settings
+        options=options,
+        config=custom_settings
     )
 
     handlers = create_application_handlers()
@@ -194,29 +189,13 @@ def main():
 
     # create references to application from SockJS handlers
     AdminSocketHandler.application = app
-    SockjsConnection.application = app
+    Client.application = app
 
-    state = State(app)
-    state.set_storage(storage)
-    app.state = state
+    app.init_state()
 
-    def run_periodic_state_update():
-        state.update()
-        periodic_state_update = tornado.ioloop.PeriodicCallback(
-            state.update, custom_settings.get('state_update_interval', 30000)
-        )
-        periodic_state_update.start()
+    app.init_sockets()
 
-    ioloop_instance.add_callback(
-        functools.partial(
-            storage.init_db,
-            state,
-            database_settings.get('settings', {}),
-            run_periodic_state_update
-        )
-    )
-
-    app.init_sockets(options)
+    app.init_ping()
 
     # summarize run configuration writing it into logger
     logger.info("Application started")
@@ -233,7 +212,6 @@ def main():
                 app.zmq_pub_port, app.zmq_sub_address
             )
         )
-    logger.info("Storage module: {0}".format(storage_module))
 
     # finally, let's go
     try:

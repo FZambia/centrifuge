@@ -21,7 +21,7 @@ from zmq.eventloop.zmqstream import ZMQStream
 
 from ..log import logger
 from ..handlers import BaseHandler, NAME_RE
-from ..core import create_project_channel_name, CHANNEL_DATA_SEPARATOR
+from ..core import ADMIN_CHANNEL
 
 
 class LogoutHandler(BaseHandler):
@@ -358,10 +358,10 @@ class ProjectSettingsHandler(BaseHandler):
 class AdminSocketHandler(SockJSConnection):
 
     def on_message_published(self, message):
-        actual_message = message[0]
+        actual_message = message[1]
         if six.PY3:
             actual_message = actual_message.decode()
-        self.send(actual_message.split(CHANNEL_DATA_SEPARATOR, 1)[1])
+        self.send(actual_message)
 
     @coroutine
     def subscribe(self):
@@ -380,15 +380,11 @@ class AdminSocketHandler(SockJSConnection):
             for address in self.application.zmq_sub_address:
                 subscribe_socket.connect(address)
 
-        for project_id in self.projects:
-            if project_id not in self.connections:
-                self.connections[project_id] = {}
-            self.connections[project_id][self.uid] = self
+        self.connections[self.uid] = self
 
-            channel_to_subscribe = create_project_channel_name(project_id)
-            subscribe_socket.setsockopt_string(
-                zmq.SUBSCRIBE, six.u(channel_to_subscribe)
-            )
+        subscribe_socket.setsockopt_string(
+            zmq.SUBSCRIBE, six.u(ADMIN_CHANNEL)
+        )
 
         self.subscribe_stream = ZMQStream(subscribe_socket)
         self.subscribe_stream.on_recv(self.on_message_published)

@@ -62,6 +62,9 @@ def extract_auth_info(request):
 
 
 def check_sign(secret_key, project_id, encoded_data, auth_sign):
+    """
+    Check that data from client was properly signed.
+    """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(project_id))
     sign.update(encoded_data)
@@ -74,5 +77,5 @@ def decode_data(data):
     """
     try:
         return json_decode(base64.b64decode(data))
-    except BaseException:
+    except:
         return None
