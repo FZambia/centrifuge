@@ -12,7 +12,6 @@
                 categories: {},
                 socket_url: '/socket',
                 global_content_element: '#main-content',
-                global_panel_element: '#panel',
                 global_tabs_element: '#tabs',
                 transports: [
                     'websocket',
@@ -43,13 +42,7 @@
 			// set all event handlers on this element
             var global_content = $(options.global_content_element);
 
-            var global_panel = $(options.global_panel_element);
-
             var global_tabs = $(options.global_tabs_element);
-
-            var global_filter = {};
-
-            var global_offset = {};
 
 			var global_projects = {};
 
@@ -59,14 +52,8 @@
 
                 var project_id = project['_id'];
 
-                global_offset[project_id] = 0;
-
                 global_projects[project_id] = project;
 
-                global_filter[project_id] = {
-                    'category': [],
-                    'channel': null
-                }
             }
 
             global_projects[options.project_tab] = {
@@ -79,8 +66,6 @@
             var project_template = $('#project_template');
             var tab_template = $('#tab_template');
             var tab_pane_template = $('#tab_pane_template');
-            var project_list_panel_template = $('#project_list_panel_template');
-            var project_panel_template = $('#project_panel_template');
 
             var show_hashed_tab = function() {
                 var hash = document.location.hash;
@@ -118,11 +103,6 @@
 
             var get_content_for_project = function(project) {
                 return $('#' + project['name']);
-            };
-
-            var get_panel_for_project = function(project) {
-                var panel_selector = '#panel-'+ project['_id'];
-                return $(panel_selector);
             };
 
             var get_current_user_id = function() {
@@ -266,33 +246,6 @@
                 return project;
             };
 
-            var render_panel_for_project_list = function() {
-                var projects_all = $('.project');
-
-
-                var html = project_list_panel_template.render({});
-                global_panel.append(html);
-
-                $('#project-name-filter').on('keyup', function() {
-                    var self = $(this);
-                    var value = self.val();
-                    if (value == '') {
-                        projects_all.removeClass('project-name-filtered');
-                    }
-
-                    projects_all.each(function(){
-                        var project = $(this);
-                        var name = project.attr('data-project-name');
-                        var display_name = project.attr('data-project-display');
-                        if (name.toLowerCase().indexOf(value.toLowerCase()) > -1 || display_name.toLowerCase().indexOf(value.toLowerCase()) > -1 ) {
-                            project.removeClass('project-name-filtered');
-                        } else {
-                            project.addClass('project-name-filtered');
-                        }
-                    });
-                });
-            };
-
             var render_project = function(project, container) {
                 var prepared_project = prepare_project(project);
                 var html = project_template.render(prepared_project);
@@ -333,29 +286,9 @@
 
                 var fade = true;
 
-                var project_filter = global_filter[project['_id']];
-
-                if (project_filter['category'].length > 0 && project_filter['category'].indexOf(category['_id']) == -1) {
-                    return;
-                }
-
-                if (project_filter['channel'] && event['channel'].toLowerCase().indexOf(project_filter['channel'].toLowerCase()) == -1) {
-                    return;
-                }
-
                 show_event(event_id, fade);
 
                 container.find('.event:gt(' + options.max_events_amount + ')').remove();
-            };
-
-            var render_panel_for_project = function(project) {
-                var categories = options.categories[project['_id']];
-                var data = {
-                    'project': project,
-                    'categories': categories
-                };
-                var html = project_panel_template.render(data);
-                global_panel.append(html);
             };
 
             var create_tab = function(project) {
@@ -396,67 +329,16 @@
                 }
             });
 
-            global_content.on('click', '.apply-event-filter', function() {
-                var project_id = get_active_tab_id();
-                var project = get_project_by_id(project_id);
-                global_offset[project_id] = 0;
-
-                var panel = get_panel_for_project(project);
-
-                var channel_val = panel.find('.channel-filter').val();
-                var category_list_active = [];
-                var category_list_all = [];
-                panel.find('[data-category-id]').each(function() {
-                    var self = $(this);
-                    var category_id = self.attr('data-category-id');
-                    category_list_all.push(category_id);
-                    if (self.parents('li:first').hasClass('active')) {
-                        category_list_active.push(category_id);
-                    }
-                });
-                var category_list;
-                if (category_list_active.length > 0) {
-                    category_list = category_list_active;
-                } else {
-                    category_list = category_list_all;
-                }
-                global_filter[project_id] = {
-                    'category': category_list,
-                    'channel': channel_val
-                };
-
-                return false;
-            });
-
-            global_content.on('click', '.reset-event-filter', function() {
-                var project_id = get_active_tab_id();
-                var project = get_project_by_id(project_id);
-                global_offset[project_id] = 0;
-                var panel = get_panel_for_project(project);
-                panel.find('[data-category-id]').each(function() {
-                    $(this).parents('li:first').removeClass('active');
-                });
-                panel.find('.channel-filter').val('');
-                panel.find('.apply-event-filter').trigger('click');
-                return false;
-            });
-
 			var route = function(tab) {
 				var project_id = tab.attr('data-id');
                 var project = get_project_by_id(project_id);
                 highlight_tab(project, false);
                 clear_project_event_counter(project);
-                $('.project-panel').hide();
-                var project_list_panel = $('#project-list-panel');
                 switch (project_id) {
                     case options.project_tab:
-                        // display list of projects available for current user
-                        project_list_panel.fadeIn();
                         break;
                     default:
-                        // here we have an attempt to view project events
-                        project_list_panel.hide();
-                        $('#panel-' + project['_id']).fadeIn();
+                        $.noop();
                 }
 			};
 
@@ -465,13 +347,11 @@
                 create_socket_connection();
 
                 render_project_list();
-                render_panel_for_project_list();
 
                 if (options.projects) {
                     for (var index in options.projects) {
                         var project = options.projects[index];
                         create_tab(project);
-                        render_panel_for_project(project);
                     }
                 }
 

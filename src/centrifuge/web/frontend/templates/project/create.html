@@ -12,22 +12,36 @@
         {% end %}
         {% raw xsrf_form_html() %}
         <legend>{{_("Create new project")}}</legend>
-        <label>{{_("Unique Project Name (used as unique project identificator)")}}</label>
-        <input type="text" name="name" placeholder="{{_("Use ascii only")}}" value="{{form_data.get('name') or ''}}">
-        <label>{{_("Display Name (human readable project name)")}}</label>
-        <input type="text" name="display_name" value="{{form_data.get('display_name') or ''}}">
-        <label>{{_("Description (optional)")}}</label>
-        <textarea placeholder="{{_("Type project description…")}}" name="description">{{form_data.get('description', '')}}</textarea>
-        <label>{{_("Address to validate user's authorization")}}</label>
-        <input type="text" name="validate_url" value="{{form_data.get('validate_url') or ''}}">
-        <label>{{_("Max authorization attempts, must be positive integer (5 if empty)")}}</label>
-        <input type="text" name="auth_attempts" value="{{form_data.get('auth_attempts') or ''}}">
-        <label>{{_("Back-off interval in milliseconds, must be positive integer (100 if empty)")}}</label>
-        <input type="text" name="back_off_interval" value="{{form_data.get('back_off_interval') or ''}}">
-        <label>{{_("Back-off max timeout in milliseconds, must be positive integer (5000 if empty)")}}</label>
-        <input type="text" name="back_off_max_timeout" value="{{form_data.get('back_off_max_timeout') or ''}}">
-        <div>
-            <button type="submit" class="btn">Submit</button>
+        <div class="form-group">
+            <label>{{_("Unique Project Name (used as unique project identificator)")}}</label>
+            <input type="text" class="form-control" name="name" placeholder="{{_("Use ascii only")}}" value="{{form_data.get('name') or ''}}">
+        </div>
+        <div class="form-group">
+            <label>{{_("Display Name (human readable project name)")}}</label>
+            <input type="text" class="form-control" name="display_name" value="{{form_data.get('display_name') or ''}}">
+        </div>
+        <div class="form-group">
+            <label>{{_("Description (optional)")}}</label>
+            <textarea class="form-control" placeholder="{{_("Type project description…")}}" name="description">{{form_data.get('description', '')}}</textarea>
+        </div>
+        <div class="form-group">
+            <label>{{_("Address to validate user's authorization")}}</label>
+            <input type="text" class="form-control" name="validate_url" value="{{form_data.get('validate_url') or ''}}">
+        </div>
+        <div class="form-group">
+            <label>{{_("Max authorization attempts, must be positive integer (5 if empty)")}}</label>
+            <input type="text" class="form-control" name="auth_attempts" value="{{form_data.get('auth_attempts') or ''}}">
+        </div>
+        <div class="form-group">
+            <label>{{_("Back-off interval in milliseconds, must be positive integer (100 if empty)")}}</label>
+            <input type="text" class="form-control" name="back_off_interval" value="{{form_data.get('back_off_interval') or ''}}">
+        </div>
+        <div class="form-group">
+            <label>{{_("Back-off max timeout in milliseconds, must be positive integer (5000 if empty)")}}</label>
+            <input type="text" class="form-control" name="back_off_max_timeout" value="{{form_data.get('back_off_max_timeout') or ''}}">
+        </div>
+        <div class="form-group">
+            <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </fieldset>
 </form>

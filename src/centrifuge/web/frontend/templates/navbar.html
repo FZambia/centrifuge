@@ -1,35 +1,35 @@
-<div class="navbar">
-	<div class="navbar-inner">
-		<div class="container-fluid">
-			<a data-target=".top-nav.nav-collapse,.sidebar-nav.nav-collapse" data-toggle="collapse" class="btn btn-navbar">
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-				<span class="icon-bar"></span>
-			</a>
-			<a href="{{reverse_url('main')}}" class="brand">
-				Centrifuge
-			</a>
-			<ul class="nav">
-                {% if handler.get_current_user() %}
-                <li class="">
-                    <a href="{{reverse_url('main')}}">{{_("Projects")}}</a>
-                </li>
-                <li class="">
-                    <a href="{{reverse_url('project_create')}}">{{_("Create project")}}</a>
-                </li>
-                {% end %}
-				<li class="">
-					<a href="http://centrifuge.readthedocs.org/en/latest/" target="_blank">{{_("Documentation")}}</a>
-				</li>
-				<li class="">
-					<a href="https://github.com/FZambia/centrifuge" target="_blank">{{_("Source code")}}</a>
-				</li>
-			</ul>
-			<div class="btn-group pull-right">
-				{% if current_user and handler.opts.get("password") %}
-                    <a class="btn btn-default" href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
-				{% end %}
-			</div>
-		</div>
-	</div>
+<div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <button data-target=".navbar-inverse-collapse" data-toggle="collapse" class="navbar-toggle" type="button">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a href="{{reverse_url('main')}}" class="navbar-brand">Centrifuge</a>
+      <div class="nav-collapse collapse navbar-inverse-collapse">
+        <ul class="nav navbar-nav">
+            {% if handler.get_current_user() %}
+            <li class="">
+                <a href="{{reverse_url('main')}}">{{_("Projects")}}</a>
+            </li>
+            <li class="">
+                <a href="{{reverse_url('project_create')}}">{{_("Create project")}}</a>
+            </li>
+            {% end %}
+            <li class="">
+                <a href="http://centrifuge.readthedocs.org/en/latest/" target="_blank">{{_("Documentation")}}</a>
+            </li>
+            <li class="">
+                <a href="https://github.com/FZambia/centrifuge" target="_blank">{{_("Source code")}}</a>
+            </li>
+        </ul>
+        <ul class="nav navbar-nav pull-right">
+          <li>
+            {% if current_user and handler.opts.get("password") %}
+                <a class="btn btn-default" href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
+            {% end %}
+          </li>
+        </ul>
+      </div><!-- /.nav-collapse -->
+    </div><!-- /.container -->
 </div>

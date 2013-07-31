@@ -37,7 +37,7 @@ class BaseHandler(tornado.web.RequestHandler):
 
     @property
     def opts(self):
-        return self.settings.get('options', {})
+        return self.settings.get('config', {})
 
 
 class CommandHandler(BaseHandler):

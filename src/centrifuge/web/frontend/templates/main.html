@@ -38,7 +38,7 @@
 </script>
 
 <script type="text/x-jsrender" id="project_template">
-    <div class="project {{!if is_owner}}project-own{{!/if}} span6" id="project-{{!>_id}}" data-project-id="{{!>_id}}" data-project-name="{{!>name}}" data-project-display="{{!>display_name}}">
+    <div class="project {{!if is_owner}}project-own{{!/if}} col-lg-4" id="project-{{!>_id}}" data-project-id="{{!>_id}}" data-project-name="{{!>name}}" data-project-display="{{!>display_name}}">
         <div class="span1 project-pill" style="min-width: 90px;">
             <div class="pill pill-info pill-circle pill-medium pill-surrounded" {{!if description}}title="{{!>description}}"{{!/if}}>
                 <a href="#" data-tab-open="{{!>_id}}">
@@ -119,14 +119,11 @@
     <ul class="nav nav-tabs" id="tabs">
         <li><a href="#_projects" id="tab-_projects" data-id="_projects" data-name="_projects" data-toggle="tab">{{_("projects")}}</a></li>
     </ul>
-    <div class="row-fluid">
-        <div class="span10">
+    <div class="row">
+        <div class="col-lg-12">
             <div class="tab-content" id="tab-content">
                 <div class="tab-pane" id="_projects"></div>
             </div>
-        </div>
-        <div class="span2">
-            <div id="panel"></div>
         </div>
     </div>
 </div>
