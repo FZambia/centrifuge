@@ -197,7 +197,7 @@ class Client(object):
 
             try:
                 response = yield http_client.fetch(request)
-            except BaseException:
+            except:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
                 pass

@@ -11,6 +11,7 @@ import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
 from tornado.escape import json_decode, json_encode
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 from . import utils
 from .state import State
@@ -34,6 +35,26 @@ def publish(stream, channel, message):
     """
     to_publish = [channel, message]
     stream.send_multipart(to_publish)
+
+
+@coroutine
+def node_request(node_address, message, timeout=1):
+
+    http_client = AsyncHTTPClient()
+    request = HTTPRequest(
+        node_address,
+        method="POST",
+        body=json_encode(message),
+        request_timeout=timeout
+    )
+    try:
+        response = yield http_client.fetch(request)
+    except Exception as e:
+        # let it fail and try again after some timeout
+        # until we have auth attempts
+        raise Return((None, e))
+
+    raise Return((response, None))
 
 
 def create_subscription_name(project_id, category_id, channel):
@@ -226,7 +247,6 @@ class Application(tornado.web.Application):
                 del self.nodes[node]
             except KeyError:
                 pass
-        print self.nodes
 
     def init_ping(self):
         options = self.settings['options']
