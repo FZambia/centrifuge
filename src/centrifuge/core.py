@@ -11,7 +11,6 @@ import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
 from tornado.escape import json_decode, json_encode
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 from . import utils
 from .structure import Structure
@@ -115,6 +114,8 @@ class Application(tornado.web.Application):
         # initialize dict to keep back-off information for projects
         self.back_off = {}
 
+        self.pre_publish_callbacks = []
+
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
@@ -213,11 +214,21 @@ class Application(tornado.web.Application):
             listen_control_channel
         )
 
+    def init_callbacks(self):
+        """
+        Fill custom callbacks with callable objects provided in config.
+        """
+        config = self.settings['config']
+        pre_publish_callbacks = config.get('pre_publish_callbacks', [])
+
+        for callable_path in pre_publish_callbacks:
+            callback = utils.namedAny(callable_path)
+            self.pre_publish_callbacks.append(callback)
+
     def send_ping(self, message):
         publish(self.pub_stream, CONTROL_CHANNEL, message)
 
     def review_ping(self):
-        print self.presence
         now = time.time()
         outdated = []
         for node, updated_at in self.nodes.items():
@@ -428,7 +439,6 @@ class Application(tornado.web.Application):
         Publish event into PUB socket stream
         """
         project_id = message['project_id']
-        #category_id = message['category_id']
         category_name = message['category']
         channel = message['channel']
 
@@ -452,27 +462,11 @@ class Application(tornado.web.Application):
         """
         Prepare message before actual publishing.
         """
-        opts = self.settings['config']
-
         category_name = params.get('category')
-        channel = params.get('channel')
-        event_data = params.get('data')
 
-        # clean html if necessary
-        html = opts.get('html', {})
-        clean = html.get('clean', False)
-        if clean:
-            allowed_domains = html.get('allowed_domains', ())
-            for key, value in six.iteritems(event_data):
-                if not isinstance(value, six.string_types):
-                    continue
-                cleaned_value = utils.clean_html(
-                    value, host_whitelist=allowed_domains
-                )
-                event_data[key] = cleaned_value
         category = allowed_categories.get(category_name, None)
         if not category:
-            raise Return(("category not found", None))
+            raise Return(("category not found in allowed categories", None))
 
         message = {
             'project_id': project['_id'],
@@ -480,9 +474,17 @@ class Application(tornado.web.Application):
             'category_id': category['_id'],
             'category': category['name'],
             'event_id': uuid.uuid4().hex,
-            'channel': channel,
-            'data': event_data
+            'channel': params.get('channel'),
+            'data': params.get('data')
         }
+
+        for callback in self.pre_publish_callbacks:
+            message, error = yield callback(message)
+            if error:
+                raise Return((message, error))
+            if message is None:
+                raise Return(('message discarded', None))
+
         raise Return((message, None))
 
     @coroutine
@@ -519,49 +521,14 @@ class Application(tornado.web.Application):
         project_id = project['_id']
         category = params.get("category")
         channel = params.get("channel")
-        history_info = self.history.get(project_id, {}).get(category, {}).get(channel, {})
-        result, error = yield self.request_other_nodes(project, "history", params)
-        if error:
-            raise Return((None, error))
-        print result
-        raise Return((result, None))
+        data, error = self.state.get_history(project_id, category, channel)
+        raise Return((data, error))
 
     @coroutine
     def process_presence(self, project, params):
         project_id = project['_id']
         category = params.get("category")
         channel = params.get("channel")
-        channel_info = self.presence.get(project_id, {}).get(category, {}).get(channel, {})
-        result, error = yield self.request_other_nodes(project, "presence", params)
-        if error:
-            raise Return((None, error))
-        print result
-        raise Return((result, None))
+        data, error = self.state.get_presence(project_id, category, channel)
+        raise Return((data, error))
 
-    @coroutine
-    def request_other_nodes(self, project, method, params):
-
-        client = tornado.httpclient.AsyncHTTPClient()
-
-        keys = []
-        for i, url in enumerate(self.nodes.keys()):
-            key = 'key_%s' % i
-            keys.append(key)
-
-            params = {
-                'url': url,
-                'method': 'POST',
-                'connect_timeout': 1,
-                'request_timeout': 1,
-                'body': json_encode({
-                    'method': method,
-                    'params': params,
-                    'project': project
-                })
-            }
-            request = tornado.httpclient.HTTPRequest(**params)
-            client.fetch(request, callback=(yield tornado.gen.Callback(key)))
-
-        responses = yield tornado.gen.WaitAll(keys)
-
-        raise Return((responses, None))

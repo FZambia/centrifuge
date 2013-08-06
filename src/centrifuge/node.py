@@ -195,6 +195,8 @@ def main():
     AdminSocketHandler.application = app
     Client.application = app
 
+    app.init_callbacks()
+
     app.init_structure()
 
     app.init_sockets()
