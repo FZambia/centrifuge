@@ -102,81 +102,30 @@ class ProjectCreateHandler(BaseHandler):
     @coroutine
     def post(self):
         form = ProjectForm(self)
-        if form.validate():
-            params = {}
-            form.populate_obj(params)
-            print params
-            self.finish('ok')
-        else:
+        if not form.validate():
             self.render(
                 'project/create.html', form=form, render_control=render_control
             )
             return
-        validation_error = False
-        name = self.get_argument("name", None)
-        display_name = self.get_argument("display_name", "")
-        description = self.get_argument("description", "")
-        validate_url = self.get_argument("validate_url", "")
-        auth_attempts = self.get_argument("auth_attempts", None)
-        back_off_interval = self.get_argument("back_off_interval", None)
-        back_off_max_timeout = self.get_argument("back_off_max_timeout", None)
 
-        if name:
-            name = name.lower()
-
-        if auth_attempts:
-            try:
-                auth_attempts = abs(int(float(auth_attempts)))
-            except ValueError:
-                auth_attempts = None
-
-        if back_off_interval:
-            try:
-                back_off_interval = abs(int(float(back_off_interval)))
-            except ValueError:
-                back_off_interval = None
-
-        if back_off_max_timeout:
-            try:
-                back_off_max_timeout = abs(int(float(back_off_max_timeout)))
-            except ValueError:
-                back_off_max_timeout = None
-
-        if not name or not NAME_RE.search(name):
-            validation_error = True
-
-        existing_project, error = yield self.application.structure.get_project_by_name(name)
+        existing_project, error = yield self.application.structure.get_project_by_name(form.name.data)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if existing_project:
-            validation_error = True
-
-        if validation_error:
-            form_data = {
-                'name': name,
-                'display_name': display_name,
-                'validate_url': validate_url,
-                'description': description,
-                'auth_attempts': auth_attempts,
-                'back_off_interval': back_off_interval,
-                'back_off_max_timeout': back_off_max_timeout
-            }
+            form.name.errors.append('duplicate name')
             self.render(
-                'project/create.html', form_data=form_data
+                'project/create.html', form=form, render_control=render_control
             )
             return
 
-        if not display_name:
-            display_name = name
-
         project, error = yield self.application.structure.project_create(
-            name,
-            display_name,
-            description,
-            validate_url,
-            auth_attempts,
-            back_off_interval,
-            back_off_max_timeout
+            form.name.data,
+            form.display_name.data,
+            '',
+            form.auth_address.data,
+            form.max_auth_attempts.data,
+            form.back_off_interval.data,
+            form.back_off_max_timeout.data
         )
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")

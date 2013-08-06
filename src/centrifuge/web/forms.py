@@ -27,7 +27,7 @@ class ProjectForm(Form):
     display_name = TextField(
         label='display name',
         validators=[
-            validators.Optional()
+            validators.Length(min=3, max=50)
         ],
         description="human readable project name"
     )
@@ -44,7 +44,8 @@ class ProjectForm(Form):
     max_auth_attempts = IntegerField(
         label='maximum auth attempts',
         validators=[
-            validators.Optional()
+            validators.Optional(),
+            validators.NumberRange(min=1, max=100)
         ],
         default=DEFAULT_MAX_AUTH_ATTEMPTS
     )
@@ -52,7 +53,8 @@ class ProjectForm(Form):
     back_off_interval = IntegerField(
         label='back-off interval in milliseconds',
         validators=[
-            validators.Optional()
+            validators.Optional(),
+            validators.NumberRange(min=50, max=10000)
         ],
         default=DEFAULT_BACK_OFF_INTERVAL
     )
@@ -60,7 +62,11 @@ class ProjectForm(Form):
     back_off_max_timeout = IntegerField(
         label='Back-off max timeout in milliseconds',
         validators=[
-            validators.Optional()
+            validators.Optional(),
+            validators.NumberRange(min=50, max=120000)
         ],
         default=DEFAULT_BACK_OFF_MAX_TIMEOUT
     )
+
+    def validate_name(self, field):
+        field.data = field.data.lower()
