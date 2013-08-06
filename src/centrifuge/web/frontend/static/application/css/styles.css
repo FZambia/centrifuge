@@ -182,3 +182,23 @@ a.brand {
     margin-bottom: -1px;
     padding: 3px 10px 3px 20px;
 }
+
+.bs-callout {
+    border-left: 5px solid #EEEEEE;
+    margin: 4px 0;
+    padding: 5px 30px 5px 5px;
+    width: 50%;
+}
+.bs-callout h4 {
+    margin-top: 0;
+}
+.bs-callout p:last-child {
+    margin-bottom: 0;
+}
+.bs-callout code, .bs-callout .highlight {
+    background-color: #FFFFFF;
+}
+.bs-callout-danger {
+    background-color: #FCF2F2;
+    border-color: #DFB5B4;
+}
