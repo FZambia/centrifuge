@@ -37,34 +37,14 @@ def publish(stream, channel, message):
     stream.send_multipart(to_publish)
 
 
-@coroutine
-def node_request(node_address, message, timeout=1):
-
-    http_client = AsyncHTTPClient()
-    request = HTTPRequest(
-        node_address,
-        method="POST",
-        body=json_encode(message),
-        request_timeout=timeout
-    )
-    try:
-        response = yield http_client.fetch(request)
-    except Exception as e:
-        # let it fail and try again after some timeout
-        # until we have auth attempts
-        raise Return((None, e))
-
-    raise Return((response, None))
-
-
-def create_subscription_name(project_id, category_id, channel):
+def create_subscription_name(project_id, category, channel):
     """
     Create subscription name to catch messages from specific
     project, category and channel.
     """
     return str(CHANNEL_NAME_SEPARATOR.join([
         project_id,
-        category_id,
+        category,
         channel,
         CHANNEL_SUFFIX
     ]))
@@ -237,6 +217,7 @@ class Application(tornado.web.Application):
         publish(self.pub_stream, CONTROL_CHANNEL, message)
 
     def review_ping(self):
+        print self.presence
         now = time.time()
         outdated = []
         for node, updated_at in self.nodes.items():
@@ -377,7 +358,7 @@ class Application(tornado.web.Application):
                         # unsubscribe from certain channel
 
                         channel_to_unsubscribe = create_subscription_name(
-                            project_id, category_id, channel
+                            project_id, category_name, channel
                         )
 
                         connection.sub_stream.setsockopt_string(
@@ -447,8 +428,9 @@ class Application(tornado.web.Application):
         Publish event into PUB socket stream
         """
         project_id = message['project_id']
-        category_id = message['category_id']
+        #category_id = message['category_id']
         category_name = message['category']
+        channel = message['channel']
 
         message = json_encode(message)
 
@@ -458,8 +440,9 @@ class Application(tornado.web.Application):
 
         # send to event channel
         channel = create_subscription_name(
-            project_id, category_id, message['channel']
+            project_id, category_name, channel
         )
+
         publish(self.pub_stream, channel, message)
 
         raise Return((True, None))
@@ -469,7 +452,7 @@ class Application(tornado.web.Application):
         """
         Prepare message before actual publishing.
         """
-        opts = self.settings['options']
+        opts = self.settings['config']
 
         category_name = params.get('category')
         channel = params.get('channel')
@@ -487,7 +470,6 @@ class Application(tornado.web.Application):
                     value, host_whitelist=allowed_domains
                 )
                 event_data[key] = cleaned_value
-
         category = allowed_categories.get(category_name, None)
         if not category:
             raise Return(("category not found", None))
@@ -501,7 +483,6 @@ class Application(tornado.web.Application):
             'channel': channel,
             'data': event_data
         }
-
         raise Return((message, None))
 
     @coroutine
@@ -533,8 +514,54 @@ class Application(tornado.web.Application):
 
         raise Return((True, None))
 
+    @coroutine
     def process_history(self, project, params):
-        pass
+        project_id = project['_id']
+        category = params.get("category")
+        channel = params.get("channel")
+        history_info = self.history.get(project_id, {}).get(category, {}).get(channel, {})
+        result, error = yield self.request_other_nodes(project, "history", params)
+        if error:
+            raise Return((None, error))
+        print result
+        raise Return((result, None))
 
+    @coroutine
     def process_presence(self, project, params):
-        pass
+        project_id = project['_id']
+        category = params.get("category")
+        channel = params.get("channel")
+        channel_info = self.presence.get(project_id, {}).get(category, {}).get(channel, {})
+        result, error = yield self.request_other_nodes(project, "presence", params)
+        if error:
+            raise Return((None, error))
+        print result
+        raise Return((result, None))
+
+    @coroutine
+    def request_other_nodes(self, project, method, params):
+
+        client = tornado.httpclient.AsyncHTTPClient()
+
+        keys = []
+        for i, url in enumerate(self.nodes.keys()):
+            key = 'key_%s' % i
+            keys.append(key)
+
+            params = {
+                'url': url,
+                'method': 'POST',
+                'connect_timeout': 1,
+                'request_timeout': 1,
+                'body': json_encode({
+                    'method': method,
+                    'params': params,
+                    'project': project
+                })
+            }
+            request = tornado.httpclient.HTTPRequest(**params)
+            client.fetch(request, callback=(yield tornado.gen.Callback(key)))
+
+        responses = yield tornado.gen.WaitAll(keys)
+
+        raise Return((responses, None))

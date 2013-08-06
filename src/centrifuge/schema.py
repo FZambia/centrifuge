@@ -22,7 +22,7 @@ req_schema = {
 }
 
 admin_params_schema = {
-    "broadcast": {
+    "publish": {
         "type": "object",
         "properties": {
             "category": {
@@ -67,7 +67,7 @@ admin_params_schema = {
 }
 
 client_params_schema = {
-    "broadcast": admin_params_schema["broadcast"],
+    "publish": admin_params_schema["publish"],
     "subscribe": {
         "type": "object",
         "properties": {

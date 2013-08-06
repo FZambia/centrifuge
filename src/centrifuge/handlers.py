@@ -41,6 +41,10 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class CommandHandler(BaseHandler):
+    pass
+
+
+class ApiHandler(BaseHandler):
     """
     Listen for incoming POST request, authorize it and in case off
     successful authorization process requested action for project.

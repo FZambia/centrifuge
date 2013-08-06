@@ -59,7 +59,7 @@
                         console.log(event);
 
                         var data = $.parseJSON(event.data);
-                        if (data["ack"] === true) {
+                        if (data["method"] != "message") {
                             // ack message
                             message(event.data, false);
                             console.log('ack received');
@@ -90,15 +90,15 @@
                     var input = $(this).find('input[type="text"]');
 
                     if (is_authenticated === true) {
-                        var broadcast_message = {
-                            'method': 'broadcast',
+                        var publish_message = {
+                            'method': 'publish',
                             'params': {
                                 'category': 'python',
                                 'channel': 'django',
                                 'data': {'input': input.val()}
                             }
                         };
-                        connection.send(JSON.stringify(broadcast_message));
+                        connection.send(JSON.stringify(publish_message));
                     }
 
                     input.val('');

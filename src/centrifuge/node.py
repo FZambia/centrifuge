@@ -25,6 +25,7 @@ from centrifuge.core import Application
 from centrifuge.log import logger
 
 from centrifuge.handlers import CommandHandler
+from centrifuge.handlers import ApiHandler
 from centrifuge.handlers import SockjsConnection
 from centrifuge.handlers import Client
 
@@ -112,7 +113,10 @@ def create_application_handlers():
             name="project_settings"
         ),
         tornado.web.url(
-            r'/rpc/([^/]+)$', CommandHandler, name="store"
+            r'/rpc/([^/]+)$', ApiHandler, name="api"
+        ),
+        tornado.web.url(
+            r'/command/$', CommandHandler, name="command"
         ),
         tornado.web.url(
             r'/auth$', AuthHandler, name="auth"

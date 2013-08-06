@@ -107,13 +107,15 @@ class Client(object):
         actual_message = message[1]
         if six.PY3:
             actual_message = actual_message.decode()
-        response = Response(method="publish", body=actual_message)
+        response = Response(method="message", body=actual_message)
         self.send(response)
 
     @coroutine
     def message_received(self, message):
 
         response = Response()
+
+        print message
 
         try:
             data = json_decode(message)
@@ -222,16 +224,16 @@ class Client(object):
 
         token = params["token"]
         user = params["user"]
-        project_id = params["project"]
+        project_id = params["project_id"]
         permissions = params["permissions"]
-
-        secret_key = self.application.settings['secret_key']
 
         project, error = yield self.application.state.get_project_by_id(project_id)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         if not project:
             raise Return((None, "project not found"))
+
+        secret_key = project['secret_key']
 
         if token != auth.get_client_token(secret_key, project_id, user):
             raise Return((None, "invalid token"))
@@ -313,7 +315,7 @@ class Client(object):
                 # attempt to subscribe without channels provided
                 continue
 
-            category_id = self.categories[category_name]['_id']
+            #category_id = self.categories[category_name]['_id']
 
             allowed_channels = self.permissions.get(category_name) if self.permissions else []
 
@@ -328,9 +330,10 @@ class Client(object):
 
                 channel_to_subscribe = create_subscription_name(
                     project_id,
-                    category_id,
+                    category_name,
                     channel
                 )
+
                 self.sub_stream.setsockopt_string(
                     zmq.SUBSCRIBE, six.u(channel_to_subscribe)
                 )
@@ -339,6 +342,8 @@ class Client(object):
                     self.channels[category_name] = {}
 
                 self.channels[category_name][channel_to_subscribe] = True
+
+                self.add_presence(project_id, category_name, channel)
 
         raise Return((True, None))
 
@@ -364,7 +369,7 @@ class Client(object):
                 # attempt to unsubscribe from unknown channels
                 continue
 
-            category_id = self.categories[category_name]['_id']
+            #category_id = self.categories[category_name]['_id']
 
             for channel in channels:
 
@@ -376,7 +381,7 @@ class Client(object):
 
                 channel_to_unsubscribe = self.application.create_subscription_name(
                     project_id,
-                    category_id,
+                    category_name,
                     channel
                 )
                 self.sub_stream.setsockopt_string(
@@ -410,7 +415,6 @@ class Client(object):
             raise Return((None, 'channel permission denied'))
 
         result, error = yield self.application.process_publish(
-            self.application,
             self.project,
             params,
             allowed_categories=self.bidirectional_categories
@@ -418,3 +422,48 @@ class Client(object):
 
         raise Return((result, error))
 
+    def add_presence(self, project_id, category, channel):
+
+        if not self.user:
+            return
+
+        self.application.presence.setdefault(project_id, {})
+        self.application.presence[project_id].setdefault(category, {})
+        self.application.presence[project_id][category].setdefault(channel, {})
+        self.application.presence[project_id][category][channel].setdefault(self.user, self.user)
+        self.application.presence[project_id][category][channel][self.user]['connects'].append(self.uid)
+
+    def remove_presence(self, project_id, category, channel):
+
+        if not self.user:
+            return
+
+        try:
+            self.application.presence[project_id][category][channel][self.user]['connects'].remove(self.uid)
+        except (KeyError, ValueError):
+            # already done
+            pass
+
+        try:
+            if not self.application.presence[project_id][category][channel][self.user]['connects']:
+                del self.application.presence[project_id][category][channel][self.user]
+        except KeyError:
+            pass
+
+        try:
+            if not self.application.presence[project_id][category][channel]:
+                del self.application.presence[project_id][category][channel]
+        except KeyError:
+            pass
+
+        try:
+            if not self.application.presence[project_id][category]:
+                del self.application.presence[project_id][category]
+        except KeyError:
+            pass
+
+        try:
+            if not self.application.presence[project_id]:
+                del self.application.presence[project_id]
+        except KeyError:
+            pass
