@@ -14,7 +14,7 @@ from tornado.escape import json_decode, json_encode
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 from . import utils
-from .state import State
+from .structure import Structure
 from .log import logger
 
 import socket
@@ -103,8 +103,8 @@ class Application(tornado.web.Application):
         # key - node address, value - timestamp of last ping
         self.nodes = {}
 
-        # application structure state (projects, categories etc)
-        self.state = None
+        # application structure (projects, categories etc)
+        self.structure = None
 
         # initialize dict to keep channel presence
         self.presence = {}
@@ -118,35 +118,35 @@ class Application(tornado.web.Application):
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
-    def init_state(self):
+    def init_structure(self):
 
         custom_settings = self.settings['config']
 
-        database_settings = custom_settings.get('storage', {})
+        structure_settings = custom_settings.get('structure', {})
 
         # detect and apply database storage module
-        storage_module = database_settings.get(
-            'module', 'centrifuge.storage.mongodb'
+        storage_module = structure_settings.get(
+            'storage', 'centrifuge.structure.mongodb'
         )
         storage = utils.import_module(storage_module)
 
-        state = State(self)
-        state.set_storage(storage)
-        self.state = state
+        structure = Structure(self)
+        structure.set_storage(storage)
+        self.structure = structure
 
-        def run_periodic_state_update():
-            state.update()
-            periodic_state_update = tornado.ioloop.PeriodicCallback(
-                state.update, custom_settings.get('state_update_interval', 30000)
+        def run_periodic_structure_update():
+            structure.update()
+            periodic_structure_update = tornado.ioloop.PeriodicCallback(
+                structure.update, custom_settings.get('structure_update_interval', 30000)
             )
-            periodic_state_update.start()
+            periodic_structure_update.start()
 
         tornado.ioloop.IOLoop.instance().add_callback(
             partial(
-                storage.init_db,
-                state,
-                database_settings.get('settings', {}),
-                run_periodic_state_update
+                storage.init_storage,
+                structure,
+                structure_settings.get('settings', {}),
+                run_periodic_structure_update
             )
         )
 
@@ -309,7 +309,7 @@ class Application(tornado.web.Application):
         if not user_connections:
             raise Return((True, None))
 
-        categories, error = yield self.state.get_project_categories(project)
+        categories, error = yield self.structure.get_project_categories(project)
         if error:
             raise Return((None, error))
 
@@ -374,11 +374,11 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def handle_update_state(self, params):
+    def handle_update_structure(self, params):
         """
-        Handle request to update state.
+        Handle request to update structure.
         """
-        result, error = yield self.state.update()
+        result, error = yield self.structure.update()
         raise Return((result, error))
 
     @coroutine
@@ -489,7 +489,7 @@ class Application(tornado.web.Application):
     def process_publish(self, project, params, allowed_categories=None):
 
         if allowed_categories is None:
-            project_categories, error = yield self.state.get_project_categories(project)
+            project_categories, error = yield self.structure.get_project_categories(project)
             if error:
                 raise Return((None, error))
 

@@ -1,256 +1,98 @@
-# coding: utf-8
-#
-# Copyright (c) Alexandr Emelin. BSD license.
-# All rights reserved.
-#
-from tornado.gen import coroutine, Return
-from tornado.escape import json_encode
-from toro import Lock
-
-from . import auth
-from .log import logger
+import toredis
+import time
+from tornado.gen import coroutine, Return, Task
+from six import PY3
 
 
-lock = Lock()
+if PY3:
+    range_func = range
+else:
+    range_func = xrange
 
 
-class InconsistentStateError(Exception):
-
-    def __str__(self):
-        return 'inconsistent state error'
+def dict_from_list(key_value_list):
+    return dict(key_value_list[i:i+2] for i in range_func(0, len(key_value_list), 2))
 
 
-class State:
+class State(object):
 
-    _CONSISTENT = False
+    def __init__(self, host="localhost", port=6379, io_loop=None, presence_timeout=60, history_size=20):
+        self.host = host
+        self.port = port
+        self.io_loop = io_loop
+        self.connected = False
+        self.presence_timeout = presence_timeout
+        self.history_size = history_size
+        self.client = toredis.Client(io_loop=self.io_loop)
+        self.client.connect()
 
-    def __init__(self, application):
-        self.application = application
-        self.storage = None
-        self.db = None
-        self._uid = None
-        self._data = {
-            'projects': [],
-            'categories': [],
-            'projects_by_id': {},
-            'projects_by_name': {},
-            'categories_by_id': {},
-            'categories_by_name': {},
-            'project_categories': {}
-        }
+    def get_presence_hash_key(self, project_id, category, channel):
+        return "presence:hash:%s:%s:%s" % (project_id, category, channel)
 
-    def set_storage(self, storage):
-        self.storage = storage
+    def get_presence_set_key(self, project_id, category, channel):
+        return "presence:set:%s:%s:%s" % (project_id, category, channel)
 
-    def set_db(self, db):
-        self.db = db
-
-    def on_error(self, error):
-        logger.error(str(error))
-        self._CONSISTENT = False
-        raise Return((None, error))
-
-    def on_update_success(self):
-        self._CONSISTENT = True
-
-    def is_consistent(self):
-        return self._CONSISTENT
+    def get_history_list_key(self, project_id, category, channel):
+        return "history:%s:%s:%s" % (project_id, category, channel)
 
     @coroutine
-    def update(self):
+    def add_presence(self, project_id, category, channel, user_id, user_info=None):
         """
-        Call this method periodically to keep state consistency
+        Add user's presence with appropriate expiration time.
+        Must be called when user subscribes on channel.
         """
-        if not self.storage or not self.db:
-            raise Return((True, None))
-
-        with (yield lock.acquire()):
-
-            projects, error = yield self.storage.project_list(self.db)
-            if error:
-                self.on_error(error)
-
-            categories, error = yield self.storage.category_list(self.db)
-            if error:
-                self.on_error(error)
-
-            projects_by_id = self.storage.projects_by_id(projects)
-            projects_by_name = self.storage.projects_by_name(projects)
-            categories_by_id = self.storage.categories_by_id(categories)
-            categories_by_name = self.storage.categories_by_name(categories)
-            project_categories = self.storage.project_categories(categories)
-
-            self._data = {
-                'projects': projects,
-                'categories': categories,
-                'projects_by_id': projects_by_id,
-                'projects_by_name': projects_by_name,
-                'categories_by_id': categories_by_id,
-                'categories_by_name': categories_by_name,
-                'project_categories': project_categories
-            }
-
-            self._CONSISTENT = True
-
-            logger.debug('State updated')
-
-            raise Return((True, None))
-
-    @coroutine
-    def project_list(self):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((self._data['projects'], None))
-
-    @coroutine
-    def category_list(self):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((self._data['categories'], None))
-
-    @coroutine
-    def get_categories_for_projects(self):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((self._data['project_categories'], None))
-
-    @coroutine
-    def get_project_categories(self, project):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((
-                self._data['project_categories'].get(project['_id'], []),
-                None
-            ))
-
-    @coroutine
-    def get_project_by_id(self, project_id):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((
-                self._data['projects_by_id'].get(project_id),
-                None
-            ))
-
-    @coroutine
-    def get_project_by_name(self, project_name):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((
-                self._data['projects_by_name'].get(project_name),
-                None
-            ))
-
-    @coroutine
-    def get_category_by_id(self, category_id):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((
-                self._data['categories_by_id'].get(category_id),
-                None
-            ))
-
-    @coroutine
-    def get_category_by_name(self, project, category_name):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStateError()))
-            raise Return((
-                self._data['categories_by_name'].get(
-                    project['_id'], {}
-                ).get(category_name),
-                None
-            ))
-
-    @coroutine
-    def call_and_update_state(self, func_name, *args, **kwargs):
-
-        # call storage function
-        func = getattr(self.storage, func_name, None)
-        assert func, 'function {0} not found in storage' % func_name
-        result, error = yield func(self.db, *args, **kwargs)
-        if error:
-            self.on_error(error)
-
-        # share knowledge about required state update with all system
-        message = json_encode({
-            "app_id": self.application.uid,
-            "method": "update_state",
-            "params": {}
-        })
-        self.application.send_control_message(message)
-
-        # update state of current instance
-        success, error = yield self.update()
-        if error:
-            self.on_error(error)
-        raise Return((result, error))
-
-    @coroutine
-    def project_create(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'project_create', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def project_edit(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'project_edit', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def project_delete(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'project_delete', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def category_create(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'category_create', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def category_edit(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'category_edit', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def category_delete(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'category_delete', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def regenerate_project_secret_key(self, *args, **kwargs):
-        result, error = yield self.call_and_update_state(
-            'regenerate_project_secret_key', *args, **kwargs
-        )
-        raise Return((result, error))
-
-    @coroutine
-    def check_auth(self, project, sign, encoded_data):
-        is_authenticated = auth.check_sign(
-            project['secret_key'],
-            project['_id'],
-            encoded_data,
-            sign
-        )
-        if not is_authenticated:
-            raise Return((None, None))
-
+        now = int(time.time())
+        expire_at = now + self.presence_timeout
+        hash_key = self.get_presence_hash_key(project_id, category, channel)
+        set_key = self.get_presence_set_key(project_id, category, channel)
+        yield Task(self.client.zadd, set_key, {user_id: expire_at})
+        yield Task(self.client.hset, hash_key, user_id, user_info or '')
         raise Return((True, None))
+
+    @coroutine
+    def remove_presence(self, project_id, category, channel, user_id):
+        """
+        Remove user's presence from Redis.
+        Must be called on disconnects of any kind.
+        """
+        hash_key = self.get_presence_hash_key(project_id, category, channel)
+        set_key = self.get_presence_set_key(project_id, category, channel)
+        yield Task(self.client.hdel, hash_key, user_id)
+        yield Task(self.client.zrem, set_key, user_id)
+        raise Return((True, None))
+
+    @coroutine
+    def get_presence(self, project_id, category, channel):
+        """
+        Get presence for channel.
+        """
+        now = int(time.time())
+        hash_key = self.get_presence_hash_key(project_id, category, channel)
+        set_key = self.get_presence_set_key(project_id, category, channel)
+        expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
+        if expired_keys:
+            yield Task(self.client.zremrangebyscore, set_key, 0, now)
+            yield Task(self.client.hdel, hash_key, expired_keys)
+        data = yield Task(self.client.hgetall, hash_key)
+        raise Return((dict_from_list(data), None))
+
+    @coroutine
+    def add_history_message(self, project_id, category, channel, message, history_size=None):
+        """
+        Add message to channel's history.
+        Must be called when new message has been published.
+        """
+        history_size = history_size or self.history_size
+        list_key = self.get_history_list_key(project_id, category, channel)
+        yield Task(self.client.lpush, list_key, message)
+        yield Task(self.client.ltrim, list_key, 0, history_size - 1)
+        raise Return((True, None))
+
+    @coroutine
+    def get_history(self, project_id, category, channel):
+        """
+        Get a list of last messages for channel.
+        """
+        history_list_key = self.get_history_list_key(project_id, category, channel)
+        data = yield Task(self.client.lrange, history_list_key, 0, -1)
+        raise Return((data, None))

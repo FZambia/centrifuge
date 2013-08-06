@@ -1,8 +1,8 @@
 {
     "password": "",
     "cookie_secret": "secret",
-    "storage": {
-        "module": "centrifuge.storage.mongodb",
+    "structure": {
+        "storage": "centrifuge.structure.mongodb",
         "settings": {
             "host": "localhost",
             "port": 27017,

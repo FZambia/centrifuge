@@ -69,7 +69,7 @@ class ApiHandler(BaseHandler):
 
         sign = auth_info['sign']
 
-        project, error = yield self.application.state.get_project_by_id(project_id)
+        project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not project:
@@ -79,7 +79,7 @@ class ApiHandler(BaseHandler):
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no request body")
 
-        result, error = yield self.application.state.check_auth(project, sign, encoded_data)
+        result, error = yield self.application.structure.check_auth(project, sign, encoded_data)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not result:

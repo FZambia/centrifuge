@@ -77,8 +77,8 @@ install_requires = [
 
 
 def long_description():
-    return "Light and simple open-source platform for real-time message " \
-           "broadcasting in your web applications"
+    return "Simple open-source platform for real-time message " \
+           "broadcasting in web applications"
 
 
 setup(
@@ -97,7 +97,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'centrifuge = centrifuge.app:main',
+            'centrifuge = centrifuge.node:main',
             'xpub_xsub = centrifuge.proxy:main'
         ],
     },
