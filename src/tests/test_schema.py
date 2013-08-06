@@ -34,14 +34,14 @@ class SchemaTest(TestCase):
         }
 
         self.assertEqual(
-            validate(schema, admin_params_schema["broadcast"]),
+            validate(schema, admin_params_schema["publish"]),
             None
         )
 
         del schema["category"]
 
         try:
-            validate(schema, admin_params_schema["broadcast"])
+            validate(schema, admin_params_schema["publish"])
         except ValidationError:
             pass
         else:

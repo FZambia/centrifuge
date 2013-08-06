@@ -1,6 +1,17 @@
 import toredis
 import time
 from tornado.gen import coroutine, Return, Task, engine
+from six import PY3
+
+
+if PY3:
+    range_func = range
+else:
+    range_func = xrange
+
+
+def dict_from_list(key_value_list):
+    return dict(key_value_list[i:i+2] for i in range_func(0, len(key_value_list), 2))
 
 
 class Store(object):
@@ -30,14 +41,11 @@ class Store(object):
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
         """
-        now = time.time()
+        now = int(time.time())
         expire_at = now + self.presence_timeout
-        print expire_at
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
-        print(set_key)
-        res = yield Task(self.client.zadd, set_key, {expire_at: user_id})
-        print res
+        yield Task(self.client.zadd, set_key, {user_id: expire_at})
         yield Task(self.client.hset, hash_key, user_id, user_info or '')
         raise Return((True, None))
 
@@ -58,16 +66,15 @@ class Store(object):
         """
         Get presence for channel.
         """
-        now = time.time()
+        now = int(time.time())
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
         expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
-        print(expired_keys)
         if expired_keys:
             yield Task(self.client.zremrangebyscore, set_key, 0, now)
             yield Task(self.client.hdel, hash_key, expired_keys)
         data = yield Task(self.client.hgetall, hash_key)
-        raise Return((data, None))
+        raise Return((dict_from_list(data), None))
 
     @coroutine
     def add_history_message(self, project_id, category, channel, message, history_size=None):
@@ -78,8 +85,8 @@ class Store(object):
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, category, channel)
         yield Task(self.client.lpush, list_key, message)
-        yield Task(self.client.ltrim, list_key, 0, history_size)
-        raise Return((None, None))
+        yield Task(self.client.ltrim, list_key, 0, history_size - 1)
+        raise Return((True, None))
 
     @coroutine
     def get_history(self, project_id, category, channel):
