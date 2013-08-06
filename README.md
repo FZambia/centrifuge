@@ -33,3 +33,10 @@ Architecture diagram:
 
 Admin web interface:
 ![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/starting/main.png "admin web interface")
+
+
+To run tests type the following (`centrifuge` must be in PYTHONPATH):
+
+```python
+python -m unittest discover -p 'test_*.py'
+```
