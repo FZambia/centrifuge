@@ -13,6 +13,12 @@ DEFAULT_BACK_OFF_INTERVAL = 100
 
 DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 
+DEFAULT_PRESENCE_PING_INTERVAL = 25
+
+DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
+
+DEFAULT_HISTORY_SIZE = 20
+
 
 class ProjectForm(Form):
 
@@ -44,7 +50,6 @@ class ProjectForm(Form):
     max_auth_attempts = IntegerField(
         label='maximum auth attempts',
         validators=[
-            validators.Optional(),
             validators.NumberRange(min=1, max=100)
         ],
         default=DEFAULT_MAX_AUTH_ATTEMPTS
@@ -53,7 +58,6 @@ class ProjectForm(Form):
     back_off_interval = IntegerField(
         label='back-off interval in milliseconds',
         validators=[
-            validators.Optional(),
             validators.NumberRange(min=50, max=10000)
         ],
         default=DEFAULT_BACK_OFF_INTERVAL
@@ -62,7 +66,6 @@ class ProjectForm(Form):
     back_off_max_timeout = IntegerField(
         label='back-off max timeout in milliseconds',
         validators=[
-            validators.Optional(),
             validators.NumberRange(min=50, max=120000)
         ],
         default=DEFAULT_BACK_OFF_MAX_TIMEOUT
@@ -86,18 +89,53 @@ class CategoryForm(Form):
         label='is bidirectional',
         validators=[],
         default=False,
-        description="bidirectional categories allow clients to publish messages"
+        description="bidirectional categories allow clients to publish messages in channels"
     )
 
     is_monitored = BooleanField(
         label='is monitored',
         validators=[],
         default=False,
-        description="publish all messages to special administrative channels"
+        description="publish all category channel's messages to administrator's web interface"
     )
 
     presence = BooleanField(
-        label=''
+        label='presence information',
+        validators=[],
+        default=True,
+        description="check if you want to get presence info for channels in this category"
     )
 
-    presence_timeout = TextField
+    presence_ping_interval = IntegerField(
+        label='presence ping interval in seconds',
+        validators=[
+            validators.NumberRange(min=1)
+        ],
+        description="client's presence ping interval (internal)",
+        default=DEFAULT_PRESENCE_PING_INTERVAL
+    )
+
+    presence_expire_interval = IntegerField(
+        label="presence expire interval in seconds",
+        validators=[
+            validators.NumberRange(min=2)
+        ],
+        description="how long we should consider presence info valid after receiving presence ping",
+        default=DEFAULT_PRESENCE_EXPIRE_INTERVAL
+    )
+
+    history = BooleanField(
+        label='history information',
+        validators=[],
+        default=True,
+        description="check if you want to get history info for channels in this category"
+    )
+
+    history_size = IntegerField(
+        label="history size",
+        validators=[
+            validators.NumberRange(min=1)
+        ],
+        default=DEFAULT_HISTORY_SIZE,
+        description="maximum amount of messages in history for channels in this category"
+    )
