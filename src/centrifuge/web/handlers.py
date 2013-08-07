@@ -20,10 +20,10 @@ import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from ..log import logger
-from ..handlers import BaseHandler, NAME_RE
+from ..handlers import BaseHandler
 from ..core import ADMIN_CHANNEL
 
-from .forms import ProjectForm
+from .forms import ProjectForm, CategoryForm
 
 
 class LogoutHandler(BaseHandler):
@@ -130,6 +130,98 @@ class ProjectCreateHandler(BaseHandler):
             raise tornado.web.HTTPError(500, log_message="error creating project")
 
         self.redirect(self.reverse_url('main'))
+
+
+class CategoryFormHandler(BaseHandler):
+
+    @coroutine
+    def get_project(self, project_id):
+        project, error = self.application.structure.get_project_by_id(project_id)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        if not project:
+            raise tornado.web.HTTPError(404)
+        raise Return((project, None))
+
+    @coroutine
+    def get_category(self, category_id):
+        category, error = self.application.structure.get_category_by_id(category_id)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        if not category:
+            raise tornado.web.HTTPError(404)
+        raise Return((category, error))
+
+    @tornado.web.authenticated
+    def get(self, project_id, category_id=None):
+
+        if category_id:
+            self.category, error = yield self.get_category(category_id)
+            form = CategoryForm(self, **self.category)
+        else:
+            form = CategoryForm(self)
+
+        self.render(
+            'category/create.html', form=form, render_control=render_control
+        )
+
+    @tornado.web.authenticated
+    @coroutine
+    def post(self, project_id, category_id=None):
+
+        self.project, error = yield self.get_project(project_id)
+
+        if category_id:
+            self.category, error = yield self.get_category(category_id)
+
+        form = CategoryForm(self)
+
+        if not form.validate():
+            self.render(
+                'category/create.html', form=form, render_control=render_control
+            )
+            return
+
+        existing_category, error = yield self.application.structure.get_category_by_name(
+            self.project, form.name.data
+        )
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+
+        if (not category_id and existing_category) or (existing_category and existing_category['_id'] != category_id):
+            form.name.errors.append('duplicate name')
+            self.render(
+                'category/create.html', form=form, render_control=render_control
+            )
+            return
+
+        args = (
+            form.name.data,
+            form.is_bidirectional.data,
+            form.is_monitored.data,
+            form.presence.data,
+            form.presence_ping_interval.data,
+            form.presence_expire_interval.data,
+            form.history.data,
+            form.history_size.data
+        )
+
+        if not category_id:
+            category, error = yield self.application.structure.category_create(
+                self.project,
+                *args
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message="error creating project")
+        else:
+            category, error = yield self.application.structure.category_edit(
+                self.category,
+                *args
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message="error creating project")
+
+        self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
 
 
 class ProjectSettingsHandler(BaseHandler):
