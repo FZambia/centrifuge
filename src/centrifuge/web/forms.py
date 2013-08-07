@@ -9,12 +9,16 @@ NAME_RE = re.compile('^[^_]+[A-z0-9]{2,}$')
 
 DEFAULT_MAX_AUTH_ATTEMPTS = 5
 
+# milliseconds
 DEFAULT_BACK_OFF_INTERVAL = 100
 
+# milliseconds
 DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 
+# seconds
 DEFAULT_PRESENCE_PING_INTERVAL = 25
 
+# seconds
 DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
 DEFAULT_HISTORY_SIZE = 20
@@ -120,7 +124,7 @@ class CategoryForm(Form):
         validators=[
             validators.NumberRange(min=2)
         ],
-        description="how long we should consider presence info valid after receiving presence ping",
+        description="how long we must consider presence info valid after receiving presence ping",
         default=DEFAULT_PRESENCE_EXPIRE_INTERVAL
     )
 
