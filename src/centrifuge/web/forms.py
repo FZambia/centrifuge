@@ -1,6 +1,6 @@
 # coding: utf-8
 import re
-from wtforms import TextField, IntegerField, validators
+from wtforms import TextField, IntegerField, BooleanField, validators
 from ..utils import Form
 
 
@@ -60,7 +60,7 @@ class ProjectForm(Form):
     )
 
     back_off_max_timeout = IntegerField(
-        label='Back-off max timeout in milliseconds',
+        label='back-off max timeout in milliseconds',
         validators=[
             validators.Optional(),
             validators.NumberRange(min=50, max=120000)
@@ -70,3 +70,34 @@ class ProjectForm(Form):
 
     def validate_name(self, field):
         field.data = field.data.lower()
+
+
+class CategoryForm(Form):
+
+    name = TextField(
+        label='category name',
+        validators=[
+            validators.Regexp(regex=NAME_RE, message="invalid name")
+        ],
+        description="unique category name"
+    )
+
+    is_bidirectional = BooleanField(
+        label='is bidirectional',
+        validators=[],
+        default=False,
+        description="bidirectional categories allow clients to publish messages"
+    )
+
+    is_monitored = BooleanField(
+        label='is monitored',
+        validators=[],
+        default=False,
+        description="publish all messages to special administrative channels"
+    )
+
+    presence = BooleanField(
+        label=''
+    )
+
+    presence_timeout = TextField

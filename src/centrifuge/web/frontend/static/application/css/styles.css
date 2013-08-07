@@ -189,6 +189,12 @@ a.brand {
     padding: 5px 30px 5px 5px;
     width: 50%;
 }
+.bs-callout-large {
+    border-left: 5px solid #EEEEEE;
+    margin: 10px 0;
+    padding: 15px 30px 15px 15px;
+    width: 50%;
+}
 .bs-callout h4 {
     margin-top: 0;
 }

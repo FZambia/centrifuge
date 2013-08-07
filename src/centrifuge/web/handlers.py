@@ -23,6 +23,8 @@ from ..log import logger
 from ..handlers import BaseHandler, NAME_RE
 from ..core import ADMIN_CHANNEL
 
+from .forms import ProjectForm
+
 
 class LogoutHandler(BaseHandler):
 
@@ -82,9 +84,6 @@ class MainHandler(BaseHandler):
         self.render("main.html", **context)
 
 
-from .forms import ProjectForm
-
-
 def render_control(field):
     return field(class_="form-control")
 
@@ -133,89 +132,6 @@ class ProjectCreateHandler(BaseHandler):
         self.redirect(self.reverse_url('main'))
 
 
-class ProjectCreateHandlerOLD(BaseHandler):
-
-    @tornado.web.authenticated
-    def get(self):
-        self.render(
-            'project/create.html', form_data={}
-        )
-
-    @tornado.web.authenticated
-    @coroutine
-    def post(self):
-        validation_error = False
-        name = self.get_argument("name", None)
-        display_name = self.get_argument("display_name", "")
-        description = self.get_argument("description", "")
-        validate_url = self.get_argument("validate_url", "")
-        auth_attempts = self.get_argument("auth_attempts", None)
-        back_off_interval = self.get_argument("back_off_interval", None)
-        back_off_max_timeout = self.get_argument("back_off_max_timeout", None)
-
-        if name:
-            name = name.lower()
-
-        if auth_attempts:
-            try:
-                auth_attempts = abs(int(float(auth_attempts)))
-            except ValueError:
-                auth_attempts = None
-
-        if back_off_interval:
-            try:
-                back_off_interval = abs(int(float(back_off_interval)))
-            except ValueError:
-                back_off_interval = None
-
-        if back_off_max_timeout:
-            try:
-                back_off_max_timeout = abs(int(float(back_off_max_timeout)))
-            except ValueError:
-                back_off_max_timeout = None
-
-        if not name or not NAME_RE.search(name):
-            validation_error = True
-
-        existing_project, error = yield self.application.structure.get_project_by_name(name)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        if existing_project:
-            validation_error = True
-
-        if validation_error:
-            form_data = {
-                'name': name,
-                'display_name': display_name,
-                'validate_url': validate_url,
-                'description': description,
-                'auth_attempts': auth_attempts,
-                'back_off_interval': back_off_interval,
-                'back_off_max_timeout': back_off_max_timeout
-            }
-            self.render(
-                'project/create.html', form_data=form_data
-            )
-            return
-
-        if not display_name:
-            display_name = name
-
-        project, error = yield self.application.structure.project_create(
-            name,
-            display_name,
-            description,
-            validate_url,
-            auth_attempts,
-            back_off_interval,
-            back_off_max_timeout
-        )
-        if error:
-            raise tornado.web.HTTPError(500, log_message="error creating project")
-
-        self.redirect(self.reverse_url('main'))
-
-
 class ProjectSettingsHandler(BaseHandler):
     """
     Edit project setting.
@@ -249,6 +165,8 @@ class ProjectSettingsHandler(BaseHandler):
         data = {
             'user': self.current_user,
             'project': self.project,
+            'form': ProjectForm(self, **self.project),
+            'render_control': render_control
         }
         raise Return((data, None))
 
@@ -302,7 +220,7 @@ class ProjectSettingsHandler(BaseHandler):
     @coroutine
     def post_edit(self, submit):
 
-        url = self.reverse_url("project_settings", self.project['name'], 'edit')
+        #url = self.reverse_url("project_settings", self.project['name'], 'edit')
 
         if submit == 'project_del':
             # completely remove project
@@ -316,54 +234,37 @@ class ProjectSettingsHandler(BaseHandler):
 
         elif submit == 'project_edit':
             # edit project
-            name = self.get_argument('name', None)
-            if name and NAME_RE.search(name):
-                display_name = self.get_argument('display_name', None)
-                description = self.get_argument('description', "")
-                validate_url = self.get_argument('validate_url', "")
-                auth_attempts = self.get_argument("auth_attempts", None)
-                back_off_interval = self.get_argument(
-                    "back_off_interval", None
+            form = ProjectForm(self)
+            if not form.validate():
+                self.render(
+                    'project/settings_edit.html', project=self.project, form=form, render_control=render_control
                 )
-                back_off_max_timeout = self.get_argument(
-                    'back_off_max_timeout', None
-                )
-
-                if name:
-                    name = name.lower()
-
-                if auth_attempts:
-                    try:
-                        auth_attempts = abs(int(float(auth_attempts)))
-                    except ValueError:
-                        auth_attempts = None
-
-                if back_off_interval:
-                    try:
-                        back_off_interval = abs(int(float(back_off_interval)))
-                    except ValueError:
-                        back_off_interval = None
-
-                if back_off_max_timeout:
-                    try:
-                        back_off_max_timeout = abs(int(float(back_off_max_timeout)))
-                    except ValueError:
-                        back_off_max_timeout = None
-
-                if not display_name:
-                    display_name = name
-
-                res, error = yield self.application.structure.project_edit(
-                    self.project, name, display_name,
-                    description, validate_url, auth_attempts,
-                    back_off_interval, back_off_max_timeout
-                )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
-                self.redirect(self.reverse_url("project_settings", name, "edit"))
                 return
 
-        self.redirect(url)
+            existing_project, error = yield self.application.structure.get_project_by_name(form.name.data)
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+
+            if existing_project and existing_project['_id'] != self.project['_id']:
+                form.name.errors.append('duplicate name')
+                self.render(
+                    'project/settings_edit.html', form=form, render_control=render_control
+                )
+                return
+
+            res, error = yield self.application.structure.project_edit(
+                self.project,
+                form.name.data,
+                form.display_name.data,
+                '',
+                form.auth_address.data,
+                form.max_auth_attempts.data,
+                form.back_off_interval.data,
+                form.back_off_max_timeout.data
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+            self.redirect(self.reverse_url("project_settings", form.name.data, "edit"))
 
     @tornado.web.authenticated
     @coroutine
