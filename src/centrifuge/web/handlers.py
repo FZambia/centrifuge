@@ -85,7 +85,13 @@ class MainHandler(BaseHandler):
 
 
 def render_control(field):
+    if field.type == 'BooleanField':
+        return field()
     return field(class_="form-control")
+
+
+def render_label(label):
+    return label(class_="col-lg-2 control-label")
 
 
 class ProjectCreateHandler(BaseHandler):
@@ -94,7 +100,8 @@ class ProjectCreateHandler(BaseHandler):
     def get(self):
 
         self.render(
-            'project/create.html', form=ProjectForm(self), render_control=render_control
+            'project/create.html', form=ProjectForm(self),
+            render_control=render_control, render_label=render_label
         )
 
     @tornado.web.authenticated
@@ -103,7 +110,8 @@ class ProjectCreateHandler(BaseHandler):
         form = ProjectForm(self)
         if not form.validate():
             self.render(
-                'project/create.html', form=form, render_control=render_control
+                'project/create.html', form=form,
+                render_control=render_control, render_label=render_label
             )
             return
 
@@ -113,7 +121,8 @@ class ProjectCreateHandler(BaseHandler):
         if existing_project:
             form.name.errors.append('duplicate name')
             self.render(
-                'project/create.html', form=form, render_control=render_control
+                'project/create.html', form=form,
+                render_control=render_control, render_label=render_label
             )
             return
 
@@ -135,8 +144,8 @@ class ProjectCreateHandler(BaseHandler):
 class CategoryFormHandler(BaseHandler):
 
     @coroutine
-    def get_project(self, project_id):
-        project, error = self.application.structure.get_project_by_id(project_id)
+    def get_project(self, project_name):
+        project, error = yield self.application.structure.get_project_by_name(project_name)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not project:
@@ -144,8 +153,10 @@ class CategoryFormHandler(BaseHandler):
         raise Return((project, None))
 
     @coroutine
-    def get_category(self, category_id):
-        category, error = self.application.structure.get_category_by_id(category_id)
+    def get_category(self, project, category_name):
+        category, error = yield self.application.structure.get_category_by_name(
+            project, category_name
+        )
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if not category:
@@ -153,16 +164,20 @@ class CategoryFormHandler(BaseHandler):
         raise Return((category, error))
 
     @tornado.web.authenticated
-    def get(self, project_id, category_id=None):
+    @coroutine
+    def get(self, project_name, category_name=None):
 
-        if category_id:
-            self.category, error = yield self.get_category(category_id)
+        self.project, error = yield self.get_project(project_name)
+
+        if category_name:
+            self.category, error = yield self.get_category(self.project, category_name)
             form = CategoryForm(self, **self.category)
         else:
             form = CategoryForm(self)
 
         self.render(
-            'category/create.html', form=form, render_control=render_control
+            'category/create.html', form=form, project=self.project,
+            render_control=render_control, render_label=render_label
         )
 
     @tornado.web.authenticated
@@ -178,7 +193,8 @@ class CategoryFormHandler(BaseHandler):
 
         if not form.validate():
             self.render(
-                'category/create.html', form=form, render_control=render_control
+                'category/create.html', form=form, project=self.project,
+                render_control=render_control, render_label=render_label
             )
             return
 
@@ -191,7 +207,8 @@ class CategoryFormHandler(BaseHandler):
         if (not category_id and existing_category) or (existing_category and existing_category['_id'] != category_id):
             form.name.errors.append('duplicate name')
             self.render(
-                'category/create.html', form=form, render_control=render_control
+                'category/create.html', form=form, project=self.project,
+                render_control=render_control, render_label=render_label
             )
             return
 
@@ -258,7 +275,8 @@ class ProjectSettingsHandler(BaseHandler):
             'user': self.current_user,
             'project': self.project,
             'form': ProjectForm(self, **self.project),
-            'render_control': render_control
+            'render_control': render_control,
+            'render_label': render_label
         }
         raise Return((data, None))
 

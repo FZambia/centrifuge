@@ -31,7 +31,7 @@ class ProjectForm(Form):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique project name"
+        description="unique project name, must contain ascii symbols only"
     )
 
     display_name = TextField(
@@ -56,7 +56,8 @@ class ProjectForm(Form):
         validators=[
             validators.NumberRange(min=1, max=100)
         ],
-        default=DEFAULT_MAX_AUTH_ATTEMPTS
+        default=DEFAULT_MAX_AUTH_ATTEMPTS,
+        description="maximum amount of requests from Centrifuge to application during client's authorization"
     )
 
     back_off_interval = IntegerField(
@@ -64,7 +65,8 @@ class ProjectForm(Form):
         validators=[
             validators.NumberRange(min=50, max=10000)
         ],
-        default=DEFAULT_BACK_OFF_INTERVAL
+        default=DEFAULT_BACK_OFF_INTERVAL,
+        description="internal, keep it default until you know what you want"
     )
 
     back_off_max_timeout = IntegerField(
@@ -72,7 +74,8 @@ class ProjectForm(Form):
         validators=[
             validators.NumberRange(min=50, max=120000)
         ],
-        default=DEFAULT_BACK_OFF_MAX_TIMEOUT
+        default=DEFAULT_BACK_OFF_MAX_TIMEOUT,
+        description="internal, keep it default until you know what you want"
     )
 
     def validate_name(self, field):

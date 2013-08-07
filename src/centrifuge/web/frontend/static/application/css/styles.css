@@ -5,7 +5,13 @@ html {
     font-family: 'BebasNeue';
     src: url('BebasNeue-webfont.woff');
 }
-
+form {
+    margin-top: 40px;
+}
+.form-control {
+    padding-left: 2px;
+    width: 50%;
+}
 .tab-content {
     padding-top: 20px;
 }
@@ -13,7 +19,9 @@ html {
 label {
     font-weight: normal;
 }
-
+.navbar {
+    border-radius: 0;
+}
 a.brand {
     font-family: 'BebasNeue';
 }
@@ -21,7 +29,7 @@ a.brand {
 #wrap {
 	/* Negative indent footer by it's height */
 	margin: 0 auto;
-    margin-top: 70px;
+    margin-top: 20px;
 	width: 80%;
     max-width: 1400px;
     padding-bottom: 30px;
@@ -187,13 +195,13 @@ a.brand {
     border-left: 5px solid #EEEEEE;
     margin: 4px 0;
     padding: 5px 30px 5px 5px;
-    width: 50%;
+    width: 100%;
 }
 .bs-callout-large {
     border-left: 5px solid #EEEEEE;
     margin: 10px 0;
     padding: 15px 30px 15px 15px;
-    width: 50%;
+    width: 100%;
 }
 .bs-callout h4 {
     margin-top: 0;

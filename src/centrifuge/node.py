@@ -35,6 +35,7 @@ from centrifuge.web.handlers import LogoutHandler
 from centrifuge.web.handlers import AdminSocketHandler
 from centrifuge.web.handlers import Http404Handler
 from centrifuge.web.handlers import ProjectCreateHandler
+from centrifuge.web.handlers import CategoryFormHandler
 from centrifuge.web.handlers import ProjectSettingsHandler
 
 
@@ -111,6 +112,16 @@ def create_application_handlers():
             r'/project/([^/]+)/settings/([^/]+)$',
             ProjectSettingsHandler,
             name="project_settings"
+        ),
+        tornado.web.url(
+            r'/project/([^/]+)/category/create$',
+            CategoryFormHandler,
+            name="category_create"
+        ),
+        tornado.web.url(
+            r'/project/([^/]+)/category/edit/([^/]+)/',
+            CategoryFormHandler,
+            name="category_edit"
         ),
         tornado.web.url(
             r'/rpc/([^/]+)$', ApiHandler, name="api"

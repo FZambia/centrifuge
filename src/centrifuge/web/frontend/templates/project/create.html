@@ -3,28 +3,8 @@
 {% block title %}{{_("Centrifuge")}}{% end %}
 
 {% block content %}
-<form class="baseform" method="post" action="">
-    <fieldset>
-        {% raw xsrf_form_html() %}
-        <legend>{{_("Create new project")}}</legend>
-        {% for field in form %}
-            <div class="form-group {% if field.errors %}has-error{% end %}">
-                <label class="control-label">{% raw field.label %}</label>
-                {% raw render_control(field) %}
-                {% if field.errors %}
-                    {% for error in field.errors %}
-                        <div class="bs-callout bs-callout-danger">
-                            {{ error }}
-                        </div>
-                    {% end %}
-                {% end %}
-            </div>
-        {% end %}
-        <div class="form-group">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-    </fieldset>
-</form>
+    <legend>{{_("Create new project")}}</legend>
+    {% include '../form.html' %}
 {% end %}
 
 {% block panel %}{% end %}
