@@ -104,7 +104,7 @@ class CategoryForm(Form):
     )
 
     is_watching = BooleanField(
-        label='is monitored',
+        label='is watching',
         validators=[],
         default=False,
         description="publish all category channel's messages to administrator's web interface"

@@ -39,6 +39,30 @@ admin_params_schema = {
         },
         "required": ["category", "channel", "data"]
     },
+    "presence": {
+        "type": "object",
+        "properties": {
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
+            }
+        },
+        "required": ["category", "channel"]
+    },
+    "history": {
+        "type": "object",
+        "properties": {
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
+            }
+        },
+        "required": ["category", "channel"]
+    },
     "subscribe": {
         "type": "object",
         "properties": {
@@ -67,6 +91,8 @@ admin_params_schema = {
 
 client_params_schema = {
     "publish": admin_params_schema["publish"],
+    "presence": admin_params_schema["presence"],
+    "history": admin_params_schema["history"],
     "subscribe": {
         "type": "object",
         "properties": {

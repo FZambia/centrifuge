@@ -463,16 +463,18 @@ class Application(tornado.web.Application):
 
         message = json_encode(message)
 
-        if allowed_categories[category_name]['publish_to_admins']:
+        if allowed_categories[category_name]['is_watching']:
             # send to admin channel
             publish(self.pub_stream, ADMIN_CHANNEL, message)
 
         # send to event channel
-        channel = create_subscription_name(
+        subscription_name = create_subscription_name(
             project_id, category_name, channel
         )
 
-        publish(self.pub_stream, channel, message)
+        publish(self.pub_stream, subscription_name, message)
+
+        yield self.state.add_history_message(project_id, category_name, channel, message)
 
         raise Return((True, None))
 
@@ -540,7 +542,7 @@ class Application(tornado.web.Application):
         project_id = project['_id']
         category = params.get("category")
         channel = params.get("channel")
-        data, error = self.state.get_history(project_id, category, channel)
+        data, error = yield self.state.get_history(project_id, category, channel)
         raise Return((data, error))
 
     @coroutine
@@ -548,5 +550,5 @@ class Application(tornado.web.Application):
         project_id = project['_id']
         category = params.get("category")
         channel = params.get("channel")
-        data, error = self.state.get_presence(project_id, category, channel)
+        data, error = yield self.state.get_presence(project_id, category, channel)
         raise Return((data, error))

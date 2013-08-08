@@ -14,8 +14,11 @@ class StateTest(AsyncTestCase):
         self.project_id = 'test'
         self.category = 'test'
         self.channel = 'test'
+        self.uid_1 = 'test-1'
+        self.uid_2 = 'test-2'
         self.user_id = 'test'
         self.user_id_extra = 'test_extra'
+        self.user_info = 'test user info'
         self.message_1 = 'test message 1'
         self.message_2 = 'test message 2'
         self.message_3 = 'test message 3'
@@ -33,7 +36,8 @@ class StateTest(AsyncTestCase):
         self.assertEqual(result, {})
 
         result, error = yield self.state.add_presence(
-            self.project_id, self.category, self.channel, self.user_id
+            self.project_id, self.category, self.channel,
+            self.uid_1,  self.user_id, user_info=self.user_info
         )
         self.assertEqual(result, True)
 
@@ -43,7 +47,8 @@ class StateTest(AsyncTestCase):
         self.assertTrue(self.user_id in result)
 
         result, error = yield self.state.add_presence(
-            self.project_id, self.category, self.channel, self.user_id
+            self.project_id, self.category, self.channel,
+            self.uid_1, self.user_id, user_info=self.user_info
         )
         self.assertEqual(result, True)
 
@@ -54,7 +59,8 @@ class StateTest(AsyncTestCase):
         self.assertEqual(len(result), 1)
 
         result, error = yield self.state.add_presence(
-            self.project_id, self.category, self.channel, self.user_id_extra
+            self.project_id, self.category, self.channel,
+            self.uid_2, self.user_id_extra, user_info=self.user_info
         )
         self.assertEqual(result, True)
 
@@ -66,7 +72,8 @@ class StateTest(AsyncTestCase):
         self.assertEqual(len(result), 2)
 
         result, error = yield self.state.remove_presence(
-            self.project_id, self.category, self.channel, self.user_id_extra
+            self.project_id, self.category, self.channel,
+            self.uid_2, self.user_id_extra
         )
         self.assertEqual(result, True)
 

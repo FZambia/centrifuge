@@ -39,15 +39,6 @@ class Client(object):
     """
     application = None
 
-    # maximum auth validation requests before returning error to client
-    MAX_AUTH_ATTEMPTS = 5
-
-    # interval unit in milliseconds for back off
-    BACK_OFF_INTERVAL = 100
-
-    # maximum timeout between authorization attempts in back off
-    BACK_OFF_MAX_TIMEOUT = 5000
-
     INTERNAL_SERVER_ERROR = 'internal server error'
 
     def __init__(self, sock, info):
@@ -62,6 +53,7 @@ class Client(object):
         self.clean()
         logger.info('client destroyed (uid: %s)' % self.uid)
 
+    @coroutine
     def clean(self):
         if self.sub_stream and not self.sub_stream.closed():
             self.sub_stream.stop_on_recv()
@@ -73,8 +65,6 @@ class Client(object):
         project_id = self.project['_id']
 
         connections = self.application.connections
-
-        self.channels = None
 
         if not project_id in connections:
             return
@@ -98,6 +88,14 @@ class Client(object):
                     del connections[project_id]
                 except KeyError:
                     pass
+
+        for category, channels in six.iteritems(self.channels):
+            for channel, status in six.iteritems(channels):
+                yield self.application.state.remove_presence(
+                    project_id, category, channel, self.user
+                )
+
+        self.channels = None
 
         self.sock.close()
         self.sock = None
@@ -182,9 +180,9 @@ class Client(object):
             request_timeout=1
         )
 
-        max_auth_attempts = project.get('auth_attempts') or self.MAX_AUTH_ATTEMPTS
-        back_off_interval = project.get('back_off_interval') or self.BACK_OFF_INTERVAL
-        back_off_max_timeout = project.get('back_off_max_timeout') or self.BACK_OFF_MAX_TIMEOUT
+        max_auth_attempts = project.get('max_auth_attempts')
+        back_off_interval = project.get('back_off_interval')
+        back_off_max_timeout = project.get('back_off_max_timeout')
 
         attempts = 0
 
@@ -232,7 +230,7 @@ class Client(object):
         project_id = params["project_id"]
         permissions = params["permissions"]
 
-        project, error = yield self.application.state.get_project_by_id(project_id)
+        project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         if not project:
@@ -251,7 +249,7 @@ class Client(object):
         if not self.is_authenticated:
             raise Return((None, 'unauthorized'))
 
-        project_categories, error = yield self.application.state.get_project_categories(
+        project_categories, error = yield self.application.structure.get_project_categories(
             project
         )
         if error:
@@ -270,7 +268,7 @@ class Client(object):
         # allow publish from client only into bidirectional categories
         self.bidirectional_categories = {}
         for category_name, category in six.iteritems(self.categories):
-            if category.get('bidirectional', False):
+            if category.get('is_bidirectional', False):
                 self.bidirectional_categories[category_name] = category
 
         context = self.application.zmq_context
@@ -346,9 +344,11 @@ class Client(object):
                 if category_name not in self.channels:
                     self.channels[category_name] = {}
 
-                self.channels[category_name][channel_to_subscribe] = True
+                self.channels[category_name][channel] = True
 
-                self.add_presence(project_id, category_name, channel)
+                self.application.state.add_presence(
+                    project_id, category_name, channel, self.user
+                )
 
         raise Return((True, None))
 
@@ -394,7 +394,7 @@ class Client(object):
                 )
 
                 try:
-                    del self.channels[category_name][channel_to_unsubscribe]
+                    del self.channels[category_name][channel]
                 except KeyError:
                     pass
 
