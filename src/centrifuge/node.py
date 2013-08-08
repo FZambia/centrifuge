@@ -2,7 +2,7 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
 import os
 import sys
 import json
@@ -206,13 +206,7 @@ def main():
     AdminSocketHandler.application = app
     Client.application = app
 
-    app.init_callbacks()
-
-    app.init_structure()
-
-    app.init_sockets()
-
-    app.init_ping()
+    app.initialize()
 
     # summarize run configuration writing it into logger
     logger.info("Application started")

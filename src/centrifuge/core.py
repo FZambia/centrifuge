@@ -1,4 +1,8 @@
 # coding: utf-8
+#
+# Copyright (c) Alexandr Emelin. BSD license.
+# All rights reserved.
+
 import six
 import uuid
 import time
@@ -14,6 +18,7 @@ from tornado.escape import json_decode, json_encode
 
 from . import utils
 from .structure import Structure
+from .state import State
 from .log import logger
 
 import socket
@@ -119,10 +124,15 @@ class Application(tornado.web.Application):
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
+    def initialize(self):
+        self.init_callbacks()
+        self.init_structure()
+        self.init_sockets()
+        self.init_state()
+        self.init_ping()
+
     def init_structure(self):
-
         custom_settings = self.settings['config']
-
         structure_settings = custom_settings.get('structure', {})
 
         # detect and apply database storage module
@@ -152,6 +162,17 @@ class Application(tornado.web.Application):
         )
 
         logger.info("Storage module: {0}".format(storage_module))
+
+    def init_state(self):
+        config = self.settings['config']
+        state_config = config.get("state", None)
+        if not state_config:
+            self.state = State(fake=True)
+        else:
+            host = state_config.get("host", "localhost")
+            port = state_config.get("port", 6379)
+            self.state = State(host=host, port=port)
+            tornado.ioloop.IOLoop.instance().add_callback(self.state.connect)
 
     def init_sockets(self):
         """
@@ -347,8 +368,6 @@ class Application(tornado.web.Application):
                     # category does not exist
                     continue
 
-                category_id = category['_id']
-
                 if not channels:
                     # here we should unsubscribe client from all channels
                     # which belongs to category
@@ -531,4 +550,3 @@ class Application(tornado.web.Application):
         channel = params.get("channel")
         data, error = self.state.get_presence(project_id, category, channel)
         raise Return((data, error))
-

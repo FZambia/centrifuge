@@ -2,7 +2,7 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
 from tornado.escape import json_decode
 import base64
 import hmac
@@ -10,17 +10,6 @@ import six
 
 
 AUTH_HEADER_NAME = 'X-Centrifuge-Auth'
-
-
-def get_client_token(secret_key, project_id, user):
-    """
-    Create token to validate information provided by new connection.
-    """
-    sign = hmac.new(six.b(str(secret_key)))
-    sign.update(six.b(user))
-    sign.update(six.b(str(project_id)))
-    token = sign.hexdigest()
-    return token
 
 
 def get_auth_header(request):
@@ -79,3 +68,14 @@ def decode_data(data):
         return json_decode(base64.b64decode(data))
     except:
         return None
+
+
+def get_client_token(secret_key, project_id, user):
+    """
+    Create token to validate information provided by new connection.
+    """
+    sign = hmac.new(six.b(str(secret_key)))
+    sign.update(six.b(user))
+    sign.update(six.b(str(project_id)))
+    token = sign.hexdigest()
+    return token

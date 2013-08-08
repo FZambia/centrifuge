@@ -1,6 +1,10 @@
 {
     "password": "",
     "cookie_secret": "secret",
+    "state": {
+        "host": "localhost",
+        "port": 6379
+    },
     "structure": {
         "storage": "centrifuge.structure.mongodb",
         "settings": {
@@ -9,17 +13,5 @@
             "name": "centrifuge",
             "pool_size": 10
         }
-    },
-    "storage_alternative": {
-        "module": "centrifuge.storage.postgresql",
-        "settings": {
-            "user": "fz",
-            "password": "postgres"
-        }
-    },
-    "html": {
-        "escape": true,
-        "clean": false,
-        "allowed_domains": ["youtube.com", "www.youtube.com"]
     }
 }

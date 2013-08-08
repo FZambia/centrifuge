@@ -1,3 +1,8 @@
+# coding: utf-8
+#
+# Copyright (c) Alexandr Emelin. BSD license.
+# All rights reserved.
+
 import uuid
 import six
 import time

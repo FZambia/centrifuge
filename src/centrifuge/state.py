@@ -1,7 +1,14 @@
+# coding: utf-8
+#
+# Copyright (c) Alexandr Emelin. BSD license.
+# All rights reserved.
+
 import toredis
 import time
 from tornado.gen import coroutine, Return, Task
 from six import PY3
+
+from .log import logger
 
 
 if PY3:
@@ -16,15 +23,31 @@ def dict_from_list(key_value_list):
 
 class State(object):
 
-    def __init__(self, host="localhost", port=6379, io_loop=None, presence_timeout=60, history_size=20):
+    def __init__(self, host="localhost", port=6379, io_loop=None, fake=False, presence_timeout=60, history_size=20):
         self.host = host
         self.port = port
         self.io_loop = io_loop
+        self.fake = fake
+        self.client = None
         self.connected = False
         self.presence_timeout = presence_timeout
         self.history_size = history_size
+
+    def connect(self):
+        """
+        Connect to Redis.
+        Do not even try to connect if State is faked.
+        """
+        if self.fake:
+            return
+
         self.client = toredis.Client(io_loop=self.io_loop)
-        self.client.connect()
+        try:
+            self.client.connect(host=self.host, port=self.port)
+        except Exception as e:
+            logger.error("error connecting to Redis server: %s" % (str(e)))
+        else:
+            self.connected = True
 
     def get_presence_hash_key(self, project_id, category, channel):
         return "presence:hash:%s:%s:%s" % (project_id, category, channel)
@@ -36,13 +59,15 @@ class State(object):
         return "history:%s:%s:%s" % (project_id, category, channel)
 
     @coroutine
-    def add_presence(self, project_id, category, channel, user_id, user_info=None):
+    def add_presence(self, project_id, category, channel, user_id, user_info=None, presence_timeout=None):
         """
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
         """
+        if self.fake:
+            raise Return((True, None))
         now = int(time.time())
-        expire_at = now + self.presence_timeout
+        expire_at = now + (presence_timeout or self.presence_timeout)
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
         yield Task(self.client.zadd, set_key, {user_id: expire_at})
@@ -55,6 +80,8 @@ class State(object):
         Remove user's presence from Redis.
         Must be called on disconnects of any kind.
         """
+        if self.fake:
+            raise Return((True, None))
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
         yield Task(self.client.hdel, hash_key, user_id)
@@ -66,6 +93,8 @@ class State(object):
         """
         Get presence for channel.
         """
+        if self.fake:
+            raise Return((None, None))
         now = int(time.time())
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
@@ -82,6 +111,8 @@ class State(object):
         Add message to channel's history.
         Must be called when new message has been published.
         """
+        if self.fake:
+            raise Return((True, None))
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, category, channel)
         yield Task(self.client.lpush, list_key, message)
@@ -93,6 +124,8 @@ class State(object):
         """
         Get a list of last messages for channel.
         """
+        if self.fake:
+            raise Return((None, None))
         history_list_key = self.get_history_list_key(project_id, category, channel)
         data = yield Task(self.client.lrange, history_list_key, 0, -1)
         raise Return((data, None))

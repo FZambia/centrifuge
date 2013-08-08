@@ -2,7 +2,7 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
 import re
 import tornado.web
 from tornado.escape import json_encode

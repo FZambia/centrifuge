@@ -2,7 +2,7 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
 from tornado.gen import coroutine, Return
 import momoko
 import psycopg2.extras

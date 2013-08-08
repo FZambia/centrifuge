@@ -1,10 +1,8 @@
-__author__ = 'fz'
-
 # coding: utf-8
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
 from tornado.gen import coroutine, Return
 from tornado.escape import json_encode
 from toro import Lock
