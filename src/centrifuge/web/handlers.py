@@ -129,7 +129,6 @@ class ProjectCreateHandler(BaseHandler):
         project, error = yield self.application.structure.project_create(
             form.name.data,
             form.display_name.data,
-            '',
             form.auth_address.data,
             form.max_auth_attempts.data,
             form.back_off_interval.data,
@@ -170,24 +169,36 @@ class CategoryFormHandler(BaseHandler):
         self.project, error = yield self.get_project(project_name)
 
         if category_name:
+            template_name = 'category/edit.html'
             self.category, error = yield self.get_category(self.project, category_name)
             form = CategoryForm(self, **self.category)
         else:
+            template_name = 'category/create.html'
             form = CategoryForm(self)
 
         self.render(
-            'category/create.html', form=form, project=self.project,
+            template_name, form=form, project=self.project,
             render_control=render_control, render_label=render_label
         )
 
     @tornado.web.authenticated
     @coroutine
-    def post(self, project_id, category_id=None):
+    def post(self, project_id, category_name=None):
 
         self.project, error = yield self.get_project(project_id)
 
-        if category_id:
-            self.category, error = yield self.get_category(category_id)
+        if category_name:
+            self.category, error = yield self.get_category(self.project, category_name)
+
+        submit = self.get_argument('submit', None)
+        if submit == 'category_delete':
+            res, error = yield self.application.structure.category_delete(
+                self.project, category_name
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+            self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
+            return
 
         form = CategoryForm(self)
 
@@ -204,7 +215,7 @@ class CategoryFormHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        if (not category_id and existing_category) or (existing_category and existing_category['_id'] != category_id):
+        if (not category_name and existing_category) or (existing_category and existing_category['name'] != category_name):
             form.name.errors.append('duplicate name')
             self.render(
                 'category/create.html', form=form, project=self.project,
@@ -215,7 +226,7 @@ class CategoryFormHandler(BaseHandler):
         args = (
             form.name.data,
             form.is_bidirectional.data,
-            form.is_monitored.data,
+            form.is_watching.data,
             form.presence.data,
             form.presence_ping_interval.data,
             form.presence_expire_interval.data,
@@ -223,7 +234,7 @@ class CategoryFormHandler(BaseHandler):
             form.history_size.data
         )
 
-        if not category_id:
+        if not category_name:
             category, error = yield self.application.structure.category_create(
                 self.project,
                 *args
@@ -285,41 +296,7 @@ class ProjectSettingsHandler(BaseHandler):
 
         url = self.reverse_url("project_settings", self.project['name'], 'general')
 
-        if submit == 'category_add':
-            # add category
-
-            category_name = self.get_argument('category_name', None)
-            bidirectional = bool(self.get_argument('bidirectional', False))
-            publish_to_admins = bool(self.get_argument('publish_to_admins', False))
-
-            if category_name:
-
-                category, error = yield self.application.structure.get_category_by_name(
-                    self.project, category_name
-                )
-
-                if not category:
-                    # create new category with unique name
-                    res, error = yield self.application.structure.category_create(
-                        self.project,
-                        category_name,
-                        bidirectional,
-                        publish_to_admins
-                    )
-                    if error:
-                        raise tornado.web.HTTPError(500, log_message=str(error))
-
-        elif submit == 'category_del':
-            # delete category
-            category_name = self.get_argument('category_name', None)
-            if category_name:
-                res, error = yield self.application.structure.category_delete(
-                    self.project, category_name
-                )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
-
-        elif submit == 'regenerate_secret':
+        if submit == 'regenerate_secret':
             # regenerate public and secret key
             res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
             if error:
@@ -329,8 +306,6 @@ class ProjectSettingsHandler(BaseHandler):
 
     @coroutine
     def post_edit(self, submit):
-
-        #url = self.reverse_url("project_settings", self.project['name'], 'edit')
 
         if submit == 'project_del':
             # completely remove project
@@ -342,12 +317,13 @@ class ProjectSettingsHandler(BaseHandler):
                 self.redirect(self.reverse_url("main"))
                 return
 
-        elif submit == 'project_edit':
+        else:
             # edit project
             form = ProjectForm(self)
             if not form.validate():
                 self.render(
-                    'project/settings_edit.html', project=self.project, form=form, render_control=render_control
+                    'project/settings_edit.html', project=self.project,
+                    form=form, render_control=render_control, render_label=render_label
                 )
                 return
 
@@ -358,7 +334,9 @@ class ProjectSettingsHandler(BaseHandler):
             if existing_project and existing_project['_id'] != self.project['_id']:
                 form.name.errors.append('duplicate name')
                 self.render(
-                    'project/settings_edit.html', form=form, render_control=render_control
+                    'project/settings_edit.html', form=form,
+                    render_control=render_control, render_label=render_label,
+                    project=self.project
                 )
                 return
 
@@ -366,7 +344,6 @@ class ProjectSettingsHandler(BaseHandler):
                 self.project,
                 form.name.data,
                 form.display_name.data,
-                '',
                 form.auth_address.data,
                 form.max_auth_attempts.data,
                 form.back_off_interval.data,

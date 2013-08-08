@@ -99,7 +99,7 @@ class CategoryForm(Form):
         description="bidirectional categories allow clients to publish messages in channels"
     )
 
-    is_monitored = BooleanField(
+    is_watching = BooleanField(
         label='is monitored',
         validators=[],
         default=False,

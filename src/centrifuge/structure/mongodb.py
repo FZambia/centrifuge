@@ -136,17 +136,22 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, project_name, display_name,
-                   description, validate_url, auth_attempts,
-                   back_off_interval, back_off_max_timeout):
+def project_create(
+        db,
+        name,
+        display_name,
+        auth_address,
+        max_auth_attempts,
+        back_off_interval,
+        back_off_max_timeout):
+
     project_id = str(ObjectId())
     to_insert = {
         '_id': project_id,
-        'name': project_name,
+        'name': name,
         'display_name': display_name,
-        'description': description,
-        'validate_url': validate_url,
-        'auth_attempts': auth_attempts,
+        'auth_address': auth_address,
+        'max_auth_attempts': max_auth_attempts,
         'back_off_interval': back_off_interval,
         'back_off_max_timeout': back_off_max_timeout,
         'secret_key': uuid.uuid4().hex
@@ -159,18 +164,23 @@ def project_create(db, project_name, display_name,
 
 
 @coroutine
-def project_edit(db, project, name, display_name,
-                 description, validate_url, auth_attempts,
-                 back_off_interval, back_off_max_timeout):
+def project_edit(
+        db,
+        project,
+        name,
+        display_name,
+        auth_address,
+        max_auth_attempts,
+        back_off_interval,
+        back_off_max_timeout):
     """
     Edit project
     """
     to_update = {
         'name': name,
         'display_name': display_name,
-        'description': description,
-        'validate_url': validate_url,
-        'auth_attempts': auth_attempts,
+        'auth_address': auth_address,
+        'max_auth_attempts': max_auth_attempts,
         'back_off_interval': back_off_interval,
         'back_off_max_timeout': back_off_max_timeout
     }
@@ -220,17 +230,65 @@ def category_list(db):
 
 
 @coroutine
-def category_create(db, project, category_name,
-                    bidirectional=False, publish_to_admins=False):
+def category_create(
+        db,
+        project,
+        name,
+        is_bidirectional,
+        is_monitored,
+        presence,
+        presence_ping_interval,
+        presence_expire_interval,
+        history,
+        history_size):
 
     haystack = {
         '_id': str(ObjectId()),
         'project': project['_id'],
-        'name': category_name,
-        'bidirectional': bidirectional,
-        'publish_to_admins': publish_to_admins
+        'name': name,
+        'is_bidirectional': is_bidirectional,
+        'is_monitored': is_monitored,
+        'presence': presence,
+        'presence_ping_interval': presence_ping_interval,
+        'presence_expire_interval': presence_expire_interval,
+        'history': history,
+        'history_size': history_size
     }
     category, error = yield insert(db.category, haystack)
+    if error:
+        on_error(error)
+
+    raise Return((category, None))
+
+
+@coroutine
+def category_edit(
+        db,
+        category,
+        name,
+        is_bidirectional,
+        is_monitored,
+        presence,
+        presence_ping_interval,
+        presence_expire_interval,
+        history,
+        history_size):
+
+    to_update = {
+        'name': name,
+        'is_bidirectional': is_bidirectional,
+        'is_monitored': is_monitored,
+        'presence': presence,
+        'presence_ping_interval': presence_ping_interval,
+        'presence_expire_interval': presence_expire_interval,
+        'history': history,
+        'history_size': history_size
+    }
+    _res, error = yield update(
+        db.category,
+        {'_id': category['_id']},
+        to_update
+    )
     if error:
         on_error(error)
 

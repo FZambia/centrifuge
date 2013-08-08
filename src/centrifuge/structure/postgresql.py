@@ -42,14 +42,15 @@ def on_connection_ready(structure, ready_callback):
 
     project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24) UNIQUE, ' \
               'name varchar(100) NOT NULL UNIQUE, display_name ' \
-              'varchar(100) NOT NULL, description text, validate_url varchar(255), ' \
-              'auth_attempts integer, back_off_interval integer, ' \
+              'varchar(100) NOT NULL, auth_address varchar(255), ' \
+              'max_auth_attempts integer, back_off_interval integer, ' \
               'back_off_max_timeout integer, secret_key varchar(32))'
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, bidirectional bool, ' \
-               'publish_to_admins bool)'
+               'name varchar(100) NOT NULL UNIQUE, is_bidirectional bool, ' \
+               'is_watching bool, presence bool, presence_ping_interval integer, ' \
+               'presence_expire_interval integer, history bool, history_size integer)'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, category, ())
@@ -84,25 +85,30 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, project_name, display_name,
-                   description, validate_url, auth_attempts,
-                   back_off_interval, back_off_max_timeout):
+def project_create(
+        db,
+        name,
+        display_name,
+        auth_address,
+        max_auth_attempts,
+        back_off_interval,
+        back_off_max_timeout):
+
     to_insert = {
         '_id': str(ObjectId()),
-        'name': project_name,
+        'name': name,
         'display_name': display_name,
-        'description': description,
-        'validate_url': validate_url,
-        'auth_attempts': auth_attempts or None,
-        'back_off_interval': back_off_interval or None,
-        'back_off_max_timeout': back_off_max_timeout or None,
+        'auth_address': auth_address,
+        'max_auth_attempts': max_auth_attempts,
+        'back_off_interval': back_off_interval,
+        'back_off_max_timeout': back_off_max_timeout,
         'secret_key': uuid.uuid4().hex
     }
 
-    query = "INSERT INTO projects (_id, name, display_name, description, " \
-            "validate_url, auth_attempts, back_off_interval, back_off_max_timeout, secret_key) " \
-            "VALUES (%(_id)s, %(name)s, %(display_name)s, %(description)s, " \
-            "%(validate_url)s, %(auth_attempts)s, %(back_off_interval)s, " \
+    query = "INSERT INTO projects (_id, name, display_name, " \
+            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key) " \
+            "VALUES (%(_id)s, %(name)s, %(display_name)s, " \
+            "%(auth_address)s, %(max_auth_attempts)s, %(back_off_interval)s, " \
             "%(back_off_max_timeout)s, %(secret_key)s)"
 
     try:
@@ -116,9 +122,15 @@ def project_create(db, project_name, display_name,
 
 
 @coroutine
-def project_edit(db, project, name, display_name,
-                 description, validate_url, auth_attempts,
-                 back_off_interval, back_off_max_timeout):
+def project_edit(
+        db,
+        project,
+        name,
+        display_name,
+        auth_address,
+        max_auth_attempts,
+        back_off_interval,
+        back_off_max_timeout):
     """
     Edit project
     """
@@ -126,16 +138,15 @@ def project_edit(db, project, name, display_name,
         '_id': extract_obj_id(project),
         'name': name,
         'display_name': display_name,
-        'description': description,
-        'validate_url': validate_url,
-        'auth_attempts': auth_attempts or None,
-        'back_off_interval': back_off_interval or None,
-        'back_off_max_timeout': back_off_max_timeout or None
+        'auth_address': auth_address,
+        'max_auth_attempts': max_auth_attempts,
+        'back_off_interval': back_off_interval,
+        'back_off_max_timeout': back_off_max_timeout
     }
 
     query = "UPDATE projects SET name=%(name)s, display_name=%(display_name)s, " \
-            "description=%(description)s, validate_url=%(validate_url)s, " \
-            "auth_attempts=%(auth_attempts)s, back_off_interval=%(back_off_interval)s, " \
+            "auth_address=%(auth_address)s, " \
+            "max_auth_attempts=%(max_auth_attempts)s, back_off_interval=%(back_off_interval)s, " \
             "back_off_max_timeout=%(back_off_max_timeout)s WHERE " \
             "_id=%(_id)s"
 
@@ -196,20 +207,36 @@ def category_list(db):
 
 
 @coroutine
-def category_create(db, project, category_name,
-                    bidirectional=False, publish_to_admins=False):
+def category_create(
+        db,
+        project,
+        name,
+        is_bidirectional,
+        is_watching,
+        presence,
+        presence_ping_interval,
+        presence_expire_interval,
+        history,
+        history_size):
 
     to_insert = {
         '_id': str(ObjectId()),
         'project_id': project['_id'],
-        'name': category_name,
-        'bidirectional': bidirectional,
-        'publish_to_admins': publish_to_admins
+        'name': name,
+        'is_bidirectional': is_bidirectional,
+        'is_watching': is_watching,
+        'presence': presence,
+        'presence_ping_interval': presence_ping_interval,
+        'presence_expire_interval': presence_expire_interval,
+        'history': history,
+        'history_size': history_size
     }
 
-    query = "INSERT INTO categories (_id, project_id, name, bidirectional, " \
-            "publish_to_admins) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
-            "%(bidirectional)s, %(publish_to_admins)s)"
+    query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
+            "is_watching, presense, presence_ping_interval, presence_expire_interval, " \
+            "history, history_size) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
+            "%(is_bidirectional)s, %(is_watching)s, %(presence)s, %(presence_ping_interval)s, " \
+            "%(presence_expire_interval)s, %(history)s, %(history_size)s)"
 
     try:
         yield momoko.Op(
@@ -220,6 +247,48 @@ def category_create(db, project, category_name,
     else:
         raise Return((to_insert, None))
 
+@coroutine
+def category_edit(
+        db,
+        category,
+        name,
+        is_bidirectional,
+        is_watching,
+        presence,
+        presence_ping_interval,
+        presence_expire_interval,
+        history,
+        history_size):
+    """
+    Edit project
+    """
+    to_update = {
+        '_id': category['_id'],
+        'name': name,
+        'is_bidirectional': is_bidirectional,
+        'is_watching': is_watching,
+        'presence': presence,
+        'presence_ping_interval': presence_ping_interval,
+        'presence_expire_interval': presence_expire_interval,
+        'history': history,
+        'history_size': history_size
+    }
+
+    query = "UPDATE categories SET name=%(name)s, is_bidirectional=%(is_bidirectional)s, " \
+            "is_watching=%(is_watching)s, presence=%(presence)s, " \
+            "presence_ping_interval=%(presence_ping_interval)s, " \
+            "presence_expire_interval=%(presence_expire_interval)s, " \
+            "history=%(history)s, history_size=%(history_size)s " \
+            "WHERE _id=%(_id)s"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, to_update
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((to_update, None))
 
 @coroutine
 def category_delete(db, project, category_name):
