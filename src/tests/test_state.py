@@ -37,7 +37,7 @@ class StateTest(AsyncTestCase):
 
         result, error = yield self.state.add_presence(
             self.project_id, self.category, self.channel,
-            self.uid_1,  self.user_id, user_info=self.user_info
+            self.uid_1, self.user_info
         )
         self.assertEqual(result, True)
 
@@ -48,7 +48,7 @@ class StateTest(AsyncTestCase):
 
         result, error = yield self.state.add_presence(
             self.project_id, self.category, self.channel,
-            self.uid_1, self.user_id, user_info=self.user_info
+            self.uid_1, self.user_info
         )
         self.assertEqual(result, True)
 
@@ -60,7 +60,7 @@ class StateTest(AsyncTestCase):
 
         result, error = yield self.state.add_presence(
             self.project_id, self.category, self.channel,
-            self.uid_2, self.user_id_extra, user_info=self.user_info
+            self.uid_2, self.user_info
         )
         self.assertEqual(result, True)
 

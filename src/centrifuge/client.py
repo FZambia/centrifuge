@@ -263,7 +263,7 @@ class Client(object):
         self.project = project
         self.permissions = permissions
         self.user = user
-        self.user_info = {'user_id': self.user}
+        self.user_info = json_encode({'user_id': self.user})
         self.channels = {}
 
         # allow publish from client only into bidirectional categories
