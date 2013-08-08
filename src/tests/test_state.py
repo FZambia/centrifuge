@@ -44,7 +44,7 @@ class StateTest(AsyncTestCase):
         result, error = yield self.state.get_presence(
             self.project_id, self.category, self.channel
         )
-        self.assertTrue(self.user_id in result)
+        self.assertTrue(self.uid_1 in result)
 
         result, error = yield self.state.add_presence(
             self.project_id, self.category, self.channel,
@@ -55,7 +55,7 @@ class StateTest(AsyncTestCase):
         result, error = yield self.state.get_presence(
             self.project_id, self.category, self.channel
         )
-        self.assertTrue(self.user_id in result)
+        self.assertTrue(self.uid_1 in result)
         self.assertEqual(len(result), 1)
 
         result, error = yield self.state.add_presence(
@@ -67,21 +67,20 @@ class StateTest(AsyncTestCase):
         result, error = yield self.state.get_presence(
             self.project_id, self.category, self.channel
         )
-        self.assertTrue(self.user_id in result)
-        self.assertTrue(self.user_id_extra in result)
+        self.assertTrue(self.uid_1 in result)
+        self.assertTrue(self.uid_2 in result)
         self.assertEqual(len(result), 2)
 
         result, error = yield self.state.remove_presence(
-            self.project_id, self.category, self.channel,
-            self.uid_2, self.user_id_extra
+            self.project_id, self.category, self.channel, self.uid_2
         )
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_presence(
             self.project_id, self.category, self.channel
         )
-        self.assertTrue(self.user_id in result)
-        self.assertTrue(self.user_id_extra not in result)
+        self.assertTrue(self.uid_1 in result)
+        self.assertTrue(self.uid_2 not in result)
         self.assertEqual(len(result), 1)
 
         time.sleep(2)

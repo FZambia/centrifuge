@@ -92,7 +92,7 @@ class Client(object):
         for category, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 yield self.application.state.remove_presence(
-                    project_id, category, channel, self.user
+                    project_id, category, channel, self.uid
                 )
 
         self.channels = None
@@ -263,6 +263,7 @@ class Client(object):
         self.project = project
         self.permissions = permissions
         self.user = user
+        self.user_info = {'user_id': self.user}
         self.channels = {}
 
         # allow publish from client only into bidirectional categories
@@ -347,7 +348,7 @@ class Client(object):
                 self.channels[category_name][channel] = True
 
                 self.application.state.add_presence(
-                    project_id, category_name, channel, self.user
+                    project_id, category_name, channel, self.uid, self.user_info
                 )
 
         raise Return((True, None))

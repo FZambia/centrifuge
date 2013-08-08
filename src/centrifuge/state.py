@@ -59,7 +59,7 @@ class State(object):
         return "history:%s:%s:%s" % (project_id, category, channel)
 
     @coroutine
-    def add_presence(self, project_id, category, channel, user_id, user_info=None, presence_timeout=None):
+    def add_presence(self, project_id, category, channel, uid, user_info, presence_timeout=None):
         """
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
@@ -70,12 +70,12 @@ class State(object):
         expire_at = now + (presence_timeout or self.presence_timeout)
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
-        yield Task(self.client.zadd, set_key, {user_id: expire_at})
-        yield Task(self.client.hset, hash_key, user_id, user_info or '')
+        yield Task(self.client.zadd, set_key, {uid: expire_at})
+        yield Task(self.client.hset, hash_key, uid, user_info)
         raise Return((True, None))
 
     @coroutine
-    def remove_presence(self, project_id, category, channel, user_id):
+    def remove_presence(self, project_id, category, channel, uid):
         """
         Remove user's presence from Redis.
         Must be called on disconnects of any kind.
@@ -84,8 +84,8 @@ class State(object):
             raise Return((True, None))
         hash_key = self.get_presence_hash_key(project_id, category, channel)
         set_key = self.get_presence_set_key(project_id, category, channel)
-        yield Task(self.client.hdel, hash_key, user_id)
-        yield Task(self.client.zrem, set_key, user_id)
+        yield Task(self.client.hdel, hash_key, uid)
+        yield Task(self.client.zrem, set_key, uid)
         raise Return((True, None))
 
     @coroutine
