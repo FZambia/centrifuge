@@ -72,7 +72,8 @@ install_requires = [
     'Momoko==1.0.0',
     'jsonschema==1.2.0',
     'toro==0.5',
-    'WTForms==1.0.4'
+    'WTForms==1.0.4',
+    'toredis-fork==0.1.2'
 ]
 
 

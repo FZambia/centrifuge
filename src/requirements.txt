@@ -7,3 +7,4 @@ pyzmq==13.1
 Momoko==1.0.0
 toro==0.5
 WTForms==1.0.4
+toredis-fork==0.1.2
