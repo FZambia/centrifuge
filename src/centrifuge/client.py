@@ -375,8 +375,6 @@ class Client(object):
                 # attempt to unsubscribe from unknown channels
                 continue
 
-            #category_id = self.categories[category_name]['_id']
-
             for channel in channels:
 
                 allowed_channels = self.permissions[category_name] if self.permissions else []
@@ -398,6 +396,10 @@ class Client(object):
                     del self.channels[category_name][channel]
                 except KeyError:
                     pass
+
+                yield self.application.state.remove_presence(
+                    project_id, category_name, channel, self.uid
+                )
 
         raise Return((True, None))
 

@@ -40,10 +40,6 @@ class BaseHandler(tornado.web.RequestHandler):
         return self.settings.get('config', {})
 
 
-class CommandHandler(BaseHandler):
-    pass
-
-
 class ApiHandler(BaseHandler):
     """
     Listen for incoming POST request, authorize it and in case off
@@ -90,9 +86,9 @@ class ApiHandler(BaseHandler):
             raise tornado.web.HTTPError(400, log_message="malformed data")
 
         context = {
-            'id': None,
+            'uid': None,
             'error': None,
-            'result': None
+            'body': None
         }
 
         try:
@@ -100,11 +96,12 @@ class ApiHandler(BaseHandler):
         except ValidationError as e:
             context['error'] = str(e)
         else:
-            req_id = data.get("id", None)
+            req_id = data.get("uid", None)
             method = data.get("method")
             params = data.get("params")
 
-            context['id'] = req_id
+            context['uid'] = req_id
+            context['method'] = method
 
             if method not in admin_params_schema:
                 context['error'] = "method not found"
@@ -119,7 +116,7 @@ class ApiHandler(BaseHandler):
                     )
 
                     context['error'] = error
-                    context['result'] = result
+                    context['body'] = result
 
         self.json_response(context)
 
