@@ -26,7 +26,7 @@ from .schema import req_schema, client_params_schema
 @coroutine
 def sleep(seconds):
     """
-    Non-blocking sleep
+    Non-blocking sleep.
     """
     yield Task(IOLoop.instance().add_timeout, time.time()+seconds)
     raise Return((True, None))
@@ -319,8 +319,6 @@ class Client(object):
                 # attempt to subscribe without channels provided
                 continue
 
-            #category_id = self.categories[category_name]['_id']
-
             allowed_channels = self.permissions.get(category_name) if self.permissions else []
 
             for channel in channels:
@@ -429,49 +427,3 @@ class Client(object):
         )
 
         raise Return((result, error))
-
-    def add_presence(self, project_id, category, channel):
-
-        if not self.user:
-            return
-
-        self.application.presence.setdefault(project_id, {})
-        self.application.presence[project_id].setdefault(category, {})
-        self.application.presence[project_id][category].setdefault(channel, {})
-        self.application.presence[project_id][category][channel].setdefault(self.user, self.user)
-        self.application.presence[project_id][category][channel][self.user]['connects'].append(self.uid)
-
-    def remove_presence(self, project_id, category, channel):
-
-        if not self.user:
-            return
-
-        try:
-            self.application.presence[project_id][category][channel][self.user]['connects'].remove(self.uid)
-        except (KeyError, ValueError):
-            # already done
-            pass
-
-        try:
-            if not self.application.presence[project_id][category][channel][self.user]['connects']:
-                del self.application.presence[project_id][category][channel][self.user]
-        except KeyError:
-            pass
-
-        try:
-            if not self.application.presence[project_id][category][channel]:
-                del self.application.presence[project_id][category][channel]
-        except KeyError:
-            pass
-
-        try:
-            if not self.application.presence[project_id][category]:
-                del self.application.presence[project_id][category]
-        except KeyError:
-            pass
-
-        try:
-            if not self.application.presence[project_id]:
-                del self.application.presence[project_id]
-        except KeyError:
-            pass

@@ -3,6 +3,7 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
+import six
 import uuid
 import tornado.web
 import tornado.escape
@@ -10,11 +11,8 @@ import tornado.auth
 import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
-
 from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
-
-import six
 
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
