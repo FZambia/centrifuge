@@ -192,12 +192,15 @@ class CategoryFormHandler(BaseHandler):
 
         submit = self.get_argument('submit', None)
         if submit == 'category_delete':
-            res, error = yield self.application.structure.category_delete(
-                self.project, category_name
-            )
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-            self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
+            if self.get_argument('confirm', None) == category_name:
+                res, error = yield self.application.structure.category_delete(
+                    self.project, category_name
+                )
+                if error:
+                    raise tornado.web.HTTPError(500, log_message=str(error))
+                self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
+            else:
+                self.redirect(self.reverse_url("category_edit", self.project['name'], category_name))
             return
 
         form = CategoryForm(self)
@@ -316,6 +319,8 @@ class ProjectSettingsHandler(BaseHandler):
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 self.redirect(self.reverse_url("main"))
                 return
+            else:
+                self.redirect(self.reverse_url("project_settings", self.project['name'], "edit"))
 
         else:
             # edit project

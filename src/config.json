@@ -6,7 +6,7 @@
         "port": 6379
     },
     "structure": {
-        "storage": "centrifuge.structure.mongodb",
+        "storage": "centrifuge.structure.sqlite",
         "settings": {
             "host": "localhost",
             "port": 27017,

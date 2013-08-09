@@ -3,13 +3,18 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
+import sqlite3
 from tornado.gen import coroutine, Return
-import momoko
-import psycopg2.extras
 import uuid
 from bson import ObjectId
-from functools import partial
 from ..log import logger
+
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
 
 
 def on_error(error):
@@ -21,24 +26,9 @@ def on_error(error):
 
 
 def init_storage(structure, settings, ready_callback):
-    dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
-        settings.get('name', 'centrifuge'),
-        settings.get('user', 'postgres'),
-        settings.get('password', ''),
-        settings.get('host', 'localhost'),
-        settings.get('port', 5432)
-    )
-    callback = partial(on_connection_ready, structure, ready_callback)
-    db = momoko.Pool(
-        dsn=dsn, size=settings.get('pool_size', 10), callback=callback
-    )
-    structure.set_db(db)
-
-
-@coroutine
-def on_connection_ready(structure, ready_callback):
-
-    db = structure.db
+    conn = sqlite3.connect(settings.get('path', 'centrifuge.db'))
+    conn.row_factory = dict_factory
+    cursor = conn.cursor()
 
     project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24) UNIQUE, ' \
               'name varchar(100) NOT NULL UNIQUE, display_name ' \
@@ -52,8 +42,12 @@ def on_connection_ready(structure, ready_callback):
                'is_watching bool, presence bool, presence_ping_interval integer, ' \
                'presence_expire_interval integer, history bool, history_size integer)'
 
-    yield momoko.Op(db.execute, project, ())
-    yield momoko.Op(db.execute, category, ())
+    cursor.execute(project, ())
+    conn.commit()
+    cursor.execute(category, ())
+    conn.commit()
+
+    structure.set_db(cursor)
     ready_callback()
     logger.info("Database ready")
 
@@ -67,26 +61,24 @@ def extract_obj_id(obj):
 
 
 @coroutine
-def project_list(db):
+def project_list(cursor):
     """
     Get all projects user can see.
     """
     query = "SELECT * FROM projects"
     try:
-        cursor = yield momoko.Op(
-            db.execute, query, {},
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
+        cursor.execute(query, {},)
     except Exception as e:
         on_error(e)
     else:
         projects = cursor.fetchall()
+        print projects
         raise Return((projects, None))
 
 
 @coroutine
 def project_create(
-        db,
+        cursor,
         name,
         display_name,
         auth_address,
@@ -94,36 +86,33 @@ def project_create(
         back_off_interval,
         back_off_max_timeout):
 
-    to_insert = {
-        '_id': str(ObjectId()),
-        'name': name,
-        'display_name': display_name,
-        'auth_address': auth_address,
-        'max_auth_attempts': max_auth_attempts,
-        'back_off_interval': back_off_interval,
-        'back_off_max_timeout': back_off_max_timeout,
-        'secret_key': uuid.uuid4().hex
-    }
+    to_insert = (
+        str(ObjectId()),
+        name,
+        display_name,
+        auth_address,
+        max_auth_attempts,
+        back_off_interval,
+        back_off_max_timeout,
+        uuid.uuid4().hex
+    )
 
     query = "INSERT INTO projects (_id, name, display_name, " \
             "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key) " \
-            "VALUES (%(_id)s, %(name)s, %(display_name)s, " \
-            "%(auth_address)s, %(max_auth_attempts)s, %(back_off_interval)s, " \
-            "%(back_off_max_timeout)s, %(secret_key)s)"
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
-        yield momoko.Op(
-            db.execute, query, to_insert
-        )
+        cursor.execute(query, to_insert)
     except Exception as e:
         on_error(e)
     else:
+        cursor.connection.commit()
         raise Return((to_insert, None))
 
 
 @coroutine
 def project_edit(
-        db,
+        cursor,
         project,
         name,
         display_name,
@@ -134,7 +123,7 @@ def project_edit(
     """
     Edit project
     """
-    to_update = {
+    to_return = {
         '_id': extract_obj_id(project),
         'name': name,
         'display_name': display_name,
@@ -144,61 +133,55 @@ def project_edit(
         'back_off_max_timeout': back_off_max_timeout
     }
 
-    query = "UPDATE projects SET name=%(name)s, display_name=%(display_name)s, " \
-            "auth_address=%(auth_address)s, " \
-            "max_auth_attempts=%(max_auth_attempts)s, back_off_interval=%(back_off_interval)s, " \
-            "back_off_max_timeout=%(back_off_max_timeout)s WHERE " \
-            "_id=%(_id)s"
+    to_update = (
+        name, display_name, auth_address, max_auth_attempts, back_off_interval,
+        back_off_max_timeout, extract_obj_id(project)
+    )
+
+    query = "UPDATE projects SET name=?, display_name=?, auth_address=?, " \
+            "max_auth_attempts=?, back_off_interval=?, back_off_max_timeout=? " \
+            "WHERE _id=?"
 
     try:
-        yield momoko.Op(
-            db.execute, query, to_update
-        )
+        cursor.execute(query, to_update)
     except Exception as e:
         on_error(e)
     else:
-        raise Return((to_update, None))
+        cursor.connection.commit()
+        raise Return((to_return, None))
 
 
 @coroutine
-def project_delete(db, project):
+def project_delete(cursor, project):
     """
     Delete project. Also delete all related categories and events.
     """
-    haystack = {
-        'project_id': project['_id']
-    }
+    haystack = (project['_id'], )
 
-    query = "DELETE FROM projects WHERE _id=%(project_id)s"
+    query = "DELETE FROM projects WHERE _id=?"
     try:
-        yield momoko.Op(
-            db.execute, query, haystack
-        )
+        cursor.execute(query, haystack)
     except Exception as e:
         on_error(e)
 
-    query = "DELETE FROM categories WHERE project_id=%(project_id)s"
+    query = "DELETE FROM categories WHERE project_id=?"
     try:
-        yield momoko.Op(
-            db.execute, query, haystack
-        )
+        cursor.execute(query, haystack)
     except Exception as e:
         on_error(e)
-
-    raise Return((True, None))
+    else:
+        cursor.connection.commit()
+        raise Return((True, None))
 
 
 @coroutine
-def category_list(db):
+def category_list(cursor):
     """
     Get all categories
     """
     query = "SELECT * FROM categories"
     try:
-        cursor = yield momoko.Op(
-            db.execute, query, {},
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
+        cursor.execute(query, ())
     except Exception as e:
         on_error(e)
     else:
@@ -208,7 +191,7 @@ def category_list(db):
 
 @coroutine
 def category_create(
-        db,
+        cursor,
         project,
         name,
         is_bidirectional,
@@ -219,7 +202,7 @@ def category_create(
         history,
         history_size):
 
-    to_insert = {
+    to_return = {
         '_id': str(ObjectId()),
         'project_id': project['_id'],
         'name': name,
@@ -232,24 +215,29 @@ def category_create(
         'history_size': history_size
     }
 
+    to_insert = (
+        to_return['_id'], to_return['project_id'], name, is_bidirectional,
+        is_watching, presence, presence_ping_interval, presence_expire_interval,
+        history, history_size
+    )
+
     query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
             "is_watching, presence, presence_ping_interval, presence_expire_interval, " \
-            "history, history_size) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
-            "%(is_bidirectional)s, %(is_watching)s, %(presence)s, %(presence_ping_interval)s, " \
-            "%(presence_expire_interval)s, %(history)s, %(history_size)s)"
+            "history, history_size) VALUES (?, ?, ?, " \
+            "?, ?, ?, ?, " \
+            "?, ?, ?)"
 
     try:
-        yield momoko.Op(
-            db.execute, query, to_insert
-        )
+        cursor.execute(query, to_insert)
     except Exception as e:
         on_error(e)
     else:
+        cursor.connection.commit()
         raise Return((to_insert, None))
 
 @coroutine
 def category_edit(
-        db,
+        cursor,
         category,
         name,
         is_bidirectional,
@@ -262,7 +250,7 @@ def category_edit(
     """
     Edit project
     """
-    to_update = {
+    to_return = {
         '_id': category['_id'],
         'name': name,
         'is_bidirectional': is_bidirectional,
@@ -274,72 +262,66 @@ def category_edit(
         'history_size': history_size
     }
 
-    query = "UPDATE categories SET name=%(name)s, is_bidirectional=%(is_bidirectional)s, " \
-            "is_watching=%(is_watching)s, presence=%(presence)s, " \
-            "presence_ping_interval=%(presence_ping_interval)s, " \
-            "presence_expire_interval=%(presence_expire_interval)s, " \
-            "history=%(history)s, history_size=%(history_size)s " \
-            "WHERE _id=%(_id)s"
+    to_update = (
+        name, is_bidirectional, is_watching, presence, presence_ping_interval,
+        presence_expire_interval, history, history_size, category['_id']
+    )
+
+    query = "UPDATE categories SET name=?, is_bidirectional=?, " \
+            "is_watching=?, presence=?, " \
+            "presence_ping_interval=?, " \
+            "presence_expire_interval=?, " \
+            "history=?, history_size=? " \
+            "WHERE _id=?"
 
     try:
-        yield momoko.Op(
-            db.execute, query, to_update
-        )
+        cursor.execute(query, to_update)
     except Exception as e:
         on_error(e)
     else:
-        raise Return((to_update, None))
+        cursor.connection.commit()
+        raise Return((to_return, None))
 
 @coroutine
-def category_delete(db, project, category_name):
+def category_delete(cursor, project, category_name):
     """
     Delete category from project. Also delete all related entries from
     event collection.
     """
-    haystack = {
-        'project_id': project['_id'],
-        'name': category_name
-    }
-
-    query = "DELETE FROM categories WHERE name=%(name)s AND project_id=%(project_id)s"
-
+    haystack = (category_name, project['_id'])
+    query = "DELETE FROM categories WHERE name=? AND project_id=?"
     try:
-        yield momoko.Op(
-            db.execute, query, haystack
-        )
+        cursor.execute(query, haystack)
     except Exception as e:
         on_error(e)
     else:
+        cursor.connection.commit()
         raise Return((True, None))
 
 
 @coroutine
-def regenerate_project_secret_key(db, project):
+def regenerate_project_secret_key(cursor, project):
     """
     Create new secret and public keys for user in specified project.
     """
     project_id = extract_obj_id(project)
     secret_key = uuid.uuid4().hex
-    haystack = {
-        'project_id': project_id,
-        'secret_key': secret_key
-    }
+    haystack = (secret_key, project_id)
 
-    query = "UPDATE projects SET secret_key=%(secret_key)s " \
-            "WHERE _id=%(project_id)s"
+    query = "UPDATE projects SET secret_key=? " \
+            "WHERE _id=?"
 
     try:
-        yield momoko.Op(
-            db.execute, query, haystack,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
+        cursor.execute(query, haystack)
     except Exception as e:
         on_error(e)
     else:
+        cursor.connection.commit()
         raise Return((secret_key, None))
 
 
 def projects_by_id(projects):
+    #import pdb; pdb.set_trace()
     to_return = {}
     for project in projects:
         to_return[project['_id']] = project
