@@ -137,7 +137,7 @@ class Application(tornado.web.Application):
 
         # detect and apply database storage module
         storage_module = structure_settings.get(
-            'storage', 'centrifuge.structure.mongodb'
+            'storage', 'centrifuge.structure.sqlite'
         )
         storage = utils.import_module(storage_module)
 
