@@ -7,6 +7,7 @@
     },
     "structure": {
         "storage": "centrifuge.structure.sqlite",
+        "update_interval": 60,
         "settings": {
             "host": "localhost",
             "port": 27017,

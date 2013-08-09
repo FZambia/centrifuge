@@ -3,7 +3,6 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
-import re
 import tornado.web
 from tornado.escape import json_encode
 from tornado.gen import coroutine
@@ -12,12 +11,9 @@ from sockjs.tornado import SockJSConnection
 from jsonschema import validate, ValidationError
 
 from . import auth
+from .core import Response
 from .client import Client
 from .schema import req_schema, admin_params_schema
-
-
-# regex pattern to match project and category names
-NAME_RE = re.compile('^[^_]+[A-z0-9]{2,}$')
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -47,14 +43,14 @@ class ApiHandler(BaseHandler):
     """
     def check_xsrf_cookie(self):
         """
-        We do not need xsrf protection here.
+        No need in CSRF protection here.
         """
         pass
 
     @coroutine
     def post(self, project_id):
         """
-        Handle requests from clients.
+        Handle API HTTP requests.
         """
         if not self.request.body:
             raise tornado.web.HTTPError(400, log_message="empty request")
@@ -63,7 +59,9 @@ class ApiHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(401, log_message=error)
 
-        sign = auth_info['sign']
+        sign = auth_info.get('sign')
+        if not sign:
+            raise tornado.web.HTTPError(401, log_message="unauthorized")
 
         project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
@@ -85,40 +83,35 @@ class ApiHandler(BaseHandler):
         if not data:
             raise tornado.web.HTTPError(400, log_message="malformed data")
 
-        context = {
-            'uid': None,
-            'error': None,
-            'body': None
-        }
+        response = Response()
 
         try:
             validate(data, req_schema)
         except ValidationError as e:
-            context['error'] = str(e)
+            response.error = str(e)
         else:
             req_id = data.get("uid", None)
             method = data.get("method")
             params = data.get("params")
 
-            context['uid'] = req_id
-            context['method'] = method
+            response.uid = req_id
+            response.method = method
 
             if method not in admin_params_schema:
-                context['error'] = "method not found"
+                response.error = "method not found"
             else:
                 try:
                     validate(params, admin_params_schema[method])
                 except ValidationError as e:
-                    context['error'] = str(e)
+                    response.error = str(e)
                 else:
                     result, error = yield self.application.process_call(
                         project, method, params
                     )
+                    response.body = result
+                    response.error = error
 
-                    context['error'] = error
-                    context['body'] = result
-
-        self.json_response(context)
+        self.json_response(response.as_message())
 
 
 class SockjsConnection(SockJSConnection):

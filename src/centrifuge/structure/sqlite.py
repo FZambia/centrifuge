@@ -27,6 +27,7 @@ def on_error(error):
 
 def init_storage(structure, settings, ready_callback):
     conn = sqlite3.connect(settings.get('path', 'centrifuge.db'))
+    # noinspection PyPropertyAccess
     conn.row_factory = dict_factory
     cursor = conn.cursor()
 
@@ -98,8 +99,8 @@ def project_create(
     )
 
     query = "INSERT INTO projects (_id, name, display_name, " \
-            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key) " \
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, " \
+            "secret_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
@@ -223,9 +224,7 @@ def category_create(
 
     query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
             "is_watching, presence, presence_ping_interval, presence_expire_interval, " \
-            "history, history_size) VALUES (?, ?, ?, " \
-            "?, ?, ?, ?, " \
-            "?, ?, ?)"
+            "history, history_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
@@ -234,6 +233,7 @@ def category_create(
     else:
         cursor.connection.commit()
         raise Return((to_insert, None))
+
 
 @coroutine
 def category_edit(
@@ -267,11 +267,8 @@ def category_edit(
         presence_expire_interval, history, history_size, category['_id']
     )
 
-    query = "UPDATE categories SET name=?, is_bidirectional=?, " \
-            "is_watching=?, presence=?, " \
-            "presence_ping_interval=?, " \
-            "presence_expire_interval=?, " \
-            "history=?, history_size=? " \
+    query = "UPDATE categories SET name=?, is_bidirectional=?, is_watching=?, presence=?, " \
+            "presence_ping_interval=?, presence_expire_interval=?, history=?, history_size=? " \
             "WHERE _id=?"
 
     try:
@@ -281,6 +278,7 @@ def category_edit(
     else:
         cursor.connection.commit()
         raise Return((to_return, None))
+
 
 @coroutine
 def category_delete(cursor, project, category_name):
@@ -308,8 +306,7 @@ def regenerate_project_secret_key(cursor, project):
     secret_key = uuid.uuid4().hex
     haystack = (secret_key, project_id)
 
-    query = "UPDATE projects SET secret_key=? " \
-            "WHERE _id=?"
+    query = "UPDATE projects SET secret_key=? WHERE _id=?"
 
     try:
         cursor.execute(query, haystack)
@@ -321,7 +318,6 @@ def regenerate_project_secret_key(cursor, project):
 
 
 def projects_by_id(projects):
-    #import pdb; pdb.set_trace()
     to_return = {}
     for project in projects:
         to_return[project['_id']] = project

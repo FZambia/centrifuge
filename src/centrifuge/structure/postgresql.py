@@ -247,6 +247,7 @@ def category_create(
     else:
         raise Return((to_insert, None))
 
+
 @coroutine
 def category_edit(
         db,
@@ -289,6 +290,7 @@ def category_edit(
         on_error(e)
     else:
         raise Return((to_update, None))
+
 
 @coroutine
 def category_delete(db, project, category_name):
