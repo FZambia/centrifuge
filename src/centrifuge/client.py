@@ -7,7 +7,7 @@ import uuid
 import six
 import time
 import random
-from tornado.ioloop import IOLoop
+from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.escape import json_encode, json_decode
 from tornado.gen import coroutine, Return, Task
@@ -89,6 +89,8 @@ class Client(object):
                 except KeyError:
                     pass
 
+        self.presence_ping.stop()
+
         for category, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 yield self.application.state.remove_presence(
@@ -117,8 +119,6 @@ class Client(object):
     def message_received(self, message):
 
         response = Response()
-
-        print message
 
         try:
             data = json_decode(message)
@@ -220,6 +220,14 @@ class Client(object):
         raise Return((False, None))
 
     @coroutine
+    def send_presence_ping(self):
+        for category, channels in six.iteritems(self.channels):
+            for channel, status in six.iteritems(channels):
+                yield self.application.state.add_presence(
+                    self.project['_id'], category, channel, self.uid, self.user_info
+                )
+
+    @coroutine
     def handle_auth(self, params):
 
         if self.is_authenticated:
@@ -265,6 +273,10 @@ class Client(object):
         self.user = user
         self.user_info = json_encode({'user_id': self.user})
         self.channels = {}
+        self.presence_ping = PeriodicCallback(
+            self.send_presence_ping, self.application.presence_ping_interval
+        )
+        self.presence_ping.start()
 
         # allow publish from client only into bidirectional categories
         self.bidirectional_categories = {}
@@ -345,7 +357,7 @@ class Client(object):
 
                 self.channels[category_name][channel] = True
 
-                self.application.state.add_presence(
+                yield self.application.state.add_presence(
                     project_id, category_name, channel, self.uid, self.user_info
                 )
 

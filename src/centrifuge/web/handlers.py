@@ -61,7 +61,7 @@ class MainHandler(BaseHandler):
         Here we need information about categories and sources.
         Also information about watching and marked objects.
         """
-        user = self.current_user
+        user = self.current_user.decode()
 
         projects, error = yield self.application.structure.project_list()
         if error:
@@ -229,8 +229,6 @@ class CategoryFormHandler(BaseHandler):
             form.is_bidirectional.data,
             form.is_watching.data,
             form.presence.data,
-            form.presence_ping_interval.data,
-            form.presence_expire_interval.data,
             form.history.data,
             form.history_size.data
         )

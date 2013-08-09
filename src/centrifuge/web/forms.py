@@ -19,11 +19,6 @@ DEFAULT_BACK_OFF_INTERVAL = 100
 # milliseconds
 DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 
-# seconds
-DEFAULT_PRESENCE_PING_INTERVAL = 25
-
-# seconds
-DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
 DEFAULT_HISTORY_SIZE = 20
 
@@ -115,24 +110,6 @@ class CategoryForm(Form):
         validators=[],
         default=True,
         description="check if you want to get presence info for channels in this category"
-    )
-
-    presence_ping_interval = IntegerField(
-        label='presence ping interval in seconds',
-        validators=[
-            validators.NumberRange(min=1)
-        ],
-        description="client's presence ping interval (internal)",
-        default=DEFAULT_PRESENCE_PING_INTERVAL
-    )
-
-    presence_expire_interval = IntegerField(
-        label="presence expire interval in seconds",
-        validators=[
-            validators.NumberRange(min=2)
-        ],
-        description="how long we must consider presence info valid after receiving presence ping",
-        default=DEFAULT_PRESENCE_EXPIRE_INTERVAL
     )
 
     history = BooleanField(

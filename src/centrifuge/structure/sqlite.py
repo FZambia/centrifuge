@@ -40,8 +40,7 @@ def init_storage(structure, settings, ready_callback):
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, is_bidirectional bool, ' \
-               'is_watching bool, presence bool, presence_ping_interval integer, ' \
-               'presence_expire_interval integer, history bool, history_size integer)'
+               'is_watching bool, presence bool, history bool, history_size integer)'
 
     cursor.execute(project, ())
     conn.commit()
@@ -197,8 +196,6 @@ def category_create(
         is_bidirectional,
         is_watching,
         presence,
-        presence_ping_interval,
-        presence_expire_interval,
         history,
         history_size):
 
@@ -209,21 +206,18 @@ def category_create(
         'is_bidirectional': is_bidirectional,
         'is_watching': is_watching,
         'presence': presence,
-        'presence_ping_interval': presence_ping_interval,
-        'presence_expire_interval': presence_expire_interval,
         'history': history,
         'history_size': history_size
     }
 
     to_insert = (
         to_return['_id'], to_return['project_id'], name, is_bidirectional,
-        is_watching, presence, presence_ping_interval, presence_expire_interval,
-        history, history_size
+        is_watching, presence, history, history_size
     )
 
     query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
-            "is_watching, presence, presence_ping_interval, presence_expire_interval, " \
-            "history, history_size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "is_watching, presence, history, history_size) VALUES " \
+            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
@@ -242,8 +236,6 @@ def category_edit(
         is_bidirectional,
         is_watching,
         presence,
-        presence_ping_interval,
-        presence_expire_interval,
         history,
         history_size):
     """
@@ -255,20 +247,17 @@ def category_edit(
         'is_bidirectional': is_bidirectional,
         'is_watching': is_watching,
         'presence': presence,
-        'presence_ping_interval': presence_ping_interval,
-        'presence_expire_interval': presence_expire_interval,
         'history': history,
         'history_size': history_size
     }
 
     to_update = (
-        name, is_bidirectional, is_watching, presence, presence_ping_interval,
-        presence_expire_interval, history, history_size, category['_id']
+        name, is_bidirectional, is_watching, presence,
+        history, history_size, category['_id']
     )
 
     query = "UPDATE categories SET name=?, is_bidirectional=?, is_watching=?, presence=?, " \
-            "presence_ping_interval=?, presence_expire_interval=?, history=?, history_size=? " \
-            "WHERE _id=?"
+            "history=?, history_size=? WHERE _id=?"
 
     try:
         cursor.execute(query, to_update)

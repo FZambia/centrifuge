@@ -169,11 +169,8 @@
             };
 
             var handle_event_message = function(data) {
-                var category = {
-                    '_id': data['category_id'],
-                    'name': data['category']
-                };
-                var event_id = data['event_id'];
+                var category = data['category'];
+                var event_id = data['uid'];
                 var channel = data['channel'];
                 var event_data = data['data'];
                 var project_id = data['project_id'];

@@ -49,8 +49,7 @@ def on_connection_ready(structure, ready_callback):
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, is_bidirectional bool, ' \
-               'is_watching bool, presence bool, presence_ping_interval integer, ' \
-               'presence_expire_interval integer, history bool, history_size integer)'
+               'is_watching bool, presence bool, history bool, history_size integer)'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, category, ())
@@ -214,8 +213,6 @@ def category_create(
         is_bidirectional,
         is_watching,
         presence,
-        presence_ping_interval,
-        presence_expire_interval,
         history,
         history_size):
 
@@ -226,17 +223,15 @@ def category_create(
         'is_bidirectional': is_bidirectional,
         'is_watching': is_watching,
         'presence': presence,
-        'presence_ping_interval': presence_ping_interval,
-        'presence_expire_interval': presence_expire_interval,
         'history': history,
         'history_size': history_size
     }
 
     query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
-            "is_watching, presence, presence_ping_interval, presence_expire_interval, " \
+            "is_watching, presence, " \
             "history, history_size) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
-            "%(is_bidirectional)s, %(is_watching)s, %(presence)s, %(presence_ping_interval)s, " \
-            "%(presence_expire_interval)s, %(history)s, %(history_size)s)"
+            "%(is_bidirectional)s, %(is_watching)s, %(presence)s, " \
+            "%(history)s, %(history_size)s)"
 
     try:
         yield momoko.Op(
@@ -256,8 +251,6 @@ def category_edit(
         is_bidirectional,
         is_watching,
         presence,
-        presence_ping_interval,
-        presence_expire_interval,
         history,
         history_size):
     """
@@ -269,16 +262,12 @@ def category_edit(
         'is_bidirectional': is_bidirectional,
         'is_watching': is_watching,
         'presence': presence,
-        'presence_ping_interval': presence_ping_interval,
-        'presence_expire_interval': presence_expire_interval,
         'history': history,
         'history_size': history_size
     }
 
     query = "UPDATE categories SET name=%(name)s, is_bidirectional=%(is_bidirectional)s, " \
             "is_watching=%(is_watching)s, presence=%(presence)s, " \
-            "presence_ping_interval=%(presence_ping_interval)s, " \
-            "presence_expire_interval=%(presence_expire_interval)s, " \
             "history=%(history)s, history_size=%(history_size)s " \
             "WHERE _id=%(_id)s"
 

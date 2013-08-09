@@ -15,6 +15,7 @@ import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
 from tornado.escape import json_decode, json_encode
+from tornado.escape import utf8
 
 from . import utils
 from .structure import Structure
@@ -33,11 +34,19 @@ CHANNEL_NAME_SEPARATOR = ':'
 CHANNEL_SUFFIX = '>>>'
 
 
+# in seconds, client's send presence ping to Redis once in this interval
+DEFAULT_PRESENCE_PING_INTERVAL = 25
+
+# in seconds, how long we must consider presence info valid after
+# receiving presence ping
+DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
+
+
 def publish(stream, channel, message):
     """
     Publish message into channel of stream.
     """
-    to_publish = [channel, message]
+    to_publish = [utf8(channel), utf8(message)]
     stream.send_multipart(to_publish)
 
 
@@ -166,12 +175,22 @@ class Application(tornado.web.Application):
     def init_state(self):
         config = self.settings['config']
         state_config = config.get("state", None)
+        self.presence_ping_interval = state_config.get(
+            'presence_ping_interval', DEFAULT_PRESENCE_PING_INTERVAL
+        )*1000
         if not state_config:
             self.state = State(fake=True)
         else:
             host = state_config.get("host", "localhost")
             port = state_config.get("port", 6379)
-            self.state = State(host=host, port=port)
+            self.state = State(
+                host=host,
+                port=port,
+                presence_timeout=state_config.get(
+                    "presence_expire_interval",
+                    DEFAULT_PRESENCE_EXPIRE_INTERVAL
+                )
+            )
             tornado.ioloop.IOLoop.instance().add_callback(self.state.connect)
 
     def init_sockets(self):
@@ -263,9 +282,7 @@ class Application(tornado.web.Application):
 
     def init_ping(self):
         options = self.settings['options']
-        scheme = 'http' if not options.ssl else 'https'
-        address = '%s://%s:%s' % (
-            scheme,
+        address = '%s:%s' % (
             socket.gethostbyname(socket.gethostname()),
             options.port
         )
@@ -474,7 +491,10 @@ class Application(tornado.web.Application):
 
         publish(self.pub_stream, subscription_name, message)
 
-        yield self.state.add_history_message(project_id, category_name, channel, message)
+        yield self.state.add_history_message(
+            project_id, category_name, channel, message,
+            history_size=allowed_categories[category_name]['history_size']
+        )
 
         raise Return((True, None))
 
@@ -491,10 +511,8 @@ class Application(tornado.web.Application):
 
         message = {
             'project_id': project['_id'],
-            'project': project['name'],
-            'category_id': category['_id'],
             'category': category['name'],
-            'event_id': uuid.uuid4().hex,
+            'uid': uuid.uuid4().hex,
             'channel': params.get('channel'),
             'data': params.get('data')
         }

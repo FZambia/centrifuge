@@ -237,8 +237,6 @@ def category_create(
         is_bidirectional,
         is_watching,
         presence,
-        presence_ping_interval,
-        presence_expire_interval,
         history,
         history_size):
 
@@ -249,8 +247,6 @@ def category_create(
         'is_bidirectional': is_bidirectional,
         'is_watching': is_watching,
         'presence': presence,
-        'presence_ping_interval': presence_ping_interval,
-        'presence_expire_interval': presence_expire_interval,
         'history': history,
         'history_size': history_size
     }
@@ -269,8 +265,6 @@ def category_edit(
         is_bidirectional,
         is_watching,
         presence,
-        presence_ping_interval,
-        presence_expire_interval,
         history,
         history_size):
 
@@ -279,8 +273,6 @@ def category_edit(
         'is_bidirectional': is_bidirectional,
         'is_watching': is_watching,
         'presence': presence,
-        'presence_ping_interval': presence_ping_interval,
-        'presence_expire_interval': presence_expire_interval,
         'history': history,
         'history_size': history_size
     }

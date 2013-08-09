@@ -6,6 +6,7 @@
 import toredis
 import time
 from tornado.gen import coroutine, Return, Task
+from tornado.escape import json_decode
 from six import PY3
 
 from .log import logger
@@ -17,8 +18,22 @@ else:
     range_func = xrange
 
 
+def prepare_key_value(pair):
+    if not pair:
+        return
+    key = pair[0].decode()
+    try:
+        value = json_decode(pair[1].decode())
+    except ValueError:
+        value = {}
+    return key, value
+
+
 def dict_from_list(key_value_list):
-    return dict(key_value_list[i:i+2] for i in range_func(0, len(key_value_list), 2))
+    # noinspection PyTypeChecker
+    return dict(
+        prepare_key_value(key_value_list[i:i+2]) for i in range_func(0, len(key_value_list), 2)
+    )
 
 
 class State(object):
@@ -101,7 +116,7 @@ class State(object):
         expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
         if expired_keys:
             yield Task(self.client.zremrangebyscore, set_key, 0, now)
-            yield Task(self.client.hdel, hash_key, expired_keys)
+            yield Task(self.client.hdel, hash_key, [x.decode() for x in expired_keys])
         data = yield Task(self.client.hgetall, hash_key)
         raise Return((dict_from_list(data), None))
 
@@ -128,4 +143,4 @@ class State(object):
             raise Return((None, None))
         history_list_key = self.get_history_list_key(project_id, category, channel)
         data = yield Task(self.client.lrange, history_list_key, 0, -1)
-        raise Return((data, None))
+        raise Return(([json_decode(x.decode()) for x in data], None))

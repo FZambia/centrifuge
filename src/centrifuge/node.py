@@ -83,10 +83,6 @@ define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
-define(
-    "ssl", default=False, help="run with this flag when using HTTPS", type=bool
-)
-
 
 def stop_running(msg):
     """
