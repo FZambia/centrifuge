@@ -148,7 +148,7 @@ class Application(tornado.web.Application):
         def run_periodic_structure_update():
             structure.update()
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
-                structure.update, structure_settings.get('update_interval', 30000)
+                structure.update, structure_settings.get('update_interval', 30)*1000
             )
             periodic_structure_update.start()
 

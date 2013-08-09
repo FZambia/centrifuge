@@ -73,7 +73,6 @@ def project_list(cursor):
         on_error(e)
     else:
         projects = cursor.fetchall()
-        print projects
         raise Return((projects, None))
 
 
