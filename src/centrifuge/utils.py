@@ -2,20 +2,71 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
 from __future__ import with_statement
-
 import sys
-from lxml.html import clean
+import six
+import weakref
+from tornado.gen import coroutine, Return, Callback, WaitAll
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from wtforms import Form as WTForm
 
 
-if sys.version_info < (3, 0):
-    _PY3 = False
-else:
-    _PY3 = True
+class Form(WTForm):
+    """
+    WTForms wrapper for Tornado.
+    """
+
+    def __init__(self, formdata=None, obj=None, prefix='', **kwargs):
+        super(Form, self).__init__(
+            MultiDictWrapper(formdata), obj=obj, prefix=prefix, **kwargs
+        )
 
 
-if _PY3:
+class MultiDictWrapper(object):
+    """
+    Wrapper class to provide form values to wtforms.Form
+
+    This class is tightly coupled to a request handler, and more importantly
+    one of our BaseHandlers which has a 'context'. At least if you want to use
+    the save/load functionality.
+
+    Some of this more difficult that it otherwise seems like it should be because of nature
+    of how tornado handles it's form input.
+    """
+    def __init__(self, handler):
+        # We keep a weakref to prevent circular references
+        # This object is tightly coupled to the handler...
+        # which certainly isn't nice, but it's the
+        # way it's gonna have to be for now.
+        self.handler = weakref.ref(handler)
+
+    @property
+    def _arguments(self):
+        return self.handler().request.arguments
+
+    def __iter__(self):
+        return iter(self._arguments)
+
+    def __len__(self):
+        return len(self._arguments)
+
+    def __contains__(self, name):
+        # We use request.arguments because get_arguments always returns a
+        # value regardless of the existence of the key.
+        return name in self._arguments
+
+    def getlist(self, name):
+        # get_arguments by default strips whitespace from the input data,
+        # so we pass strip=False to stop that in case we need to validate
+        # on whitespace.
+        return self.handler().get_arguments(name, strip=False)
+
+    def __getitem__(self, name):
+        return self.handler().get_argument(name)
+
+
+if six.PY3:
     def reraise(exception, traceback):
         raise exception.with_traceback(traceback)
 else:
@@ -82,6 +133,8 @@ def _importAndCheckStack(importName):
 
 def namedAny(name):
     """
+    From Twisted source code.
+
     Retrieve a Python object by its fully qualified name from the global Python
     module namespace. The first part of the name, that describes a module,
     will be discovered and imported. Each subsequent part of the name is
@@ -125,9 +178,9 @@ def namedAny(name):
     moduleNames = names[:]
     while not topLevelPackage:
         if moduleNames:
-            trialname = '.'.join(moduleNames)
+            trial_name = '.'.join(moduleNames)
             try:
-                topLevelPackage = _importAndCheckStack(trialname)
+                topLevelPackage = _importAndCheckStack(trial_name)
             except _NoModuleFound:
                 moduleNames.pop()
         else:
@@ -143,38 +196,6 @@ def namedAny(name):
     return obj
 
 
-class Bleacher(clean.Cleaner):
-
-    safe_attrs_only = True
-
-    safe_attrs = frozenset([
-        'abbr', 'accept', 'accept-charset', 'accesskey', 'action', 'align',
-        'alt', 'axis', 'border', 'cellpadding', 'cellspacing', 'char', 'charoff',
-        'charset', 'checked', 'cite', 'class', 'clear', 'cols', 'colspan',
-        'color', 'compact', 'coords', 'datetime', 'dir', 'disabled', 'enctype',
-        'for', 'frame', 'headers', 'height', 'href', 'hreflang', 'hspace',
-        'ismap', 'label', 'lang', 'longdesc', 'maxlength', 'media', 'method',
-        'multiple', 'name', 'nohref', 'noshade', 'nowrap', 'prompt', 'readonly',
-        'rel', 'rev', 'rows', 'rowspan', 'rules', 'scope', 'selected', 'shape',
-        'size', 'span', 'src', 'start', 'summary', 'tabindex', 'target', 'title',
-        'type', 'usemap', 'valign', 'value', 'vspace', 'width'
-    ])
-
-    _tag_link_attrs = dict(
-        iframe='src',
-        embed='src',
-        a='href'
-    )
-
-
-def clean_html(html, host_whitelist=()):
-    cleaner = Bleacher(host_whitelist=host_whitelist)
-    cleaned_html = cleaner.clean_html('<body>' + html + '</body>')
-    linkified_html = clean.autolink_html(cleaned_html)
-    return linkified_html
-
-
-# from https://github.com/benoitc/gunicorn/blob/master/gunicorn/util.py
 try:
     from importlib import import_module
 except ImportError:
@@ -192,7 +213,10 @@ except ImportError:
         return "%s.%s" % (package[:dot], name)
 
     def import_module(name, package=None):
-        """Import a module.
+        """
+        From Gunicorn source code.
+
+        Import a module.
         The 'package' argument is required when performing a relative import. It
         specifies the package to use as the anchor point from which to resolve the
         relative import to an absolute import.
@@ -208,3 +232,27 @@ except ImportError:
             name = _resolve_name(name[level:], package, level)
         __import__(name)
         return sys.modules[name]
+
+
+@coroutine
+def request_urls(urls, body, connect_timeout=1, request_timeout=1):
+
+    client = AsyncHTTPClient()
+
+    keys = []
+    for i, url in enumerate(urls):
+        key = 'key_%s' % i
+        keys.append(key)
+
+        params = {
+            'url': url,
+            'method': 'POST',
+            'connect_timeout': connect_timeout,
+            'request_timeout': request_timeout,
+            'body': body
+        }
+        request = HTTPRequest(**params)
+        client.fetch(request, callback=(yield Callback(key)))
+
+    responses = yield WaitAll(keys)
+    raise Return((responses, None))

@@ -2,7 +2,8 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
+
+import six
 import uuid
 import tornado.web
 import tornado.escape
@@ -10,18 +11,17 @@ import tornado.auth
 import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
-
 from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
-
-import six
 
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
 
 from ..log import logger
-from ..handlers import state, BaseHandler, NAME_RE
-from ..rpc import create_project_channel_name, CHANNEL_DATA_SEPARATOR
+from ..handlers import BaseHandler
+from ..core import ADMIN_CHANNEL
+
+from .forms import ProjectForm, CategoryForm
 
 
 class LogoutHandler(BaseHandler):
@@ -61,13 +61,13 @@ class MainHandler(BaseHandler):
         Here we need information about categories and sources.
         Also information about watching and marked objects.
         """
-        user = self.current_user
+        user = self.current_user.decode()
 
-        projects, error = yield state.project_list()
+        projects, error = yield self.application.structure.project_list()
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        project_categories, error = yield state.get_categories_for_projects()
+        project_categories, error = yield self.application.structure.get_categories_for_projects()
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -82,87 +82,173 @@ class MainHandler(BaseHandler):
         self.render("main.html", **context)
 
 
+def render_control(field):
+    if field.type == 'BooleanField':
+        return field()
+    return field(class_="form-control")
+
+
+def render_label(label):
+    return label(class_="col-lg-2 control-label")
+
+
 class ProjectCreateHandler(BaseHandler):
 
     @tornado.web.authenticated
     def get(self):
+
         self.render(
-            'project/create.html', form_data={}
+            'project/create.html', form=ProjectForm(self),
+            render_control=render_control, render_label=render_label
         )
 
     @tornado.web.authenticated
     @coroutine
     def post(self):
-        validation_error = False
-        name = self.get_argument("name", None)
-        display_name = self.get_argument("display_name", "")
-        description = self.get_argument("description", "")
-        validate_url = self.get_argument("validate_url", "")
-        auth_attempts = self.get_argument("auth_attempts", None)
-        back_off_interval = self.get_argument("back_off_interval", None)
-        back_off_max_timeout = self.get_argument("back_off_max_timeout", None)
-
-        if name:
-            name = name.lower()
-
-        if auth_attempts:
-            try:
-                auth_attempts = abs(int(float(auth_attempts)))
-            except ValueError:
-                auth_attempts = None
-
-        if back_off_interval:
-            try:
-                back_off_interval = abs(int(float(back_off_interval)))
-            except ValueError:
-                back_off_interval = None
-
-        if back_off_max_timeout:
-            try:
-                back_off_max_timeout = abs(int(float(back_off_max_timeout)))
-            except ValueError:
-                back_off_max_timeout = None
-
-        if not name or not NAME_RE.search(name):
-            validation_error = True
-
-        existing_project, error = yield state.get_project_by_name(name)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        if existing_project:
-            validation_error = True
-
-        if validation_error:
-            form_data = {
-                'name': name,
-                'display_name': display_name,
-                'validate_url': validate_url,
-                'description': description,
-                'auth_attempts': auth_attempts,
-                'back_off_interval': back_off_interval,
-                'back_off_max_timeout': back_off_max_timeout
-            }
+        form = ProjectForm(self)
+        if not form.validate():
             self.render(
-                'project/create.html', form_data=form_data
+                'project/create.html', form=form,
+                render_control=render_control, render_label=render_label
             )
             return
 
-        if not display_name:
-            display_name = name
+        existing_project, error = yield self.application.structure.get_project_by_name(form.name.data)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        if existing_project:
+            form.name.errors.append('duplicate name')
+            self.render(
+                'project/create.html', form=form,
+                render_control=render_control, render_label=render_label
+            )
+            return
 
-        project, error = yield state.project_create(
-            name,
-            display_name,
-            description,
-            validate_url,
-            auth_attempts,
-            back_off_interval,
-            back_off_max_timeout
+        project, error = yield self.application.structure.project_create(
+            form.name.data,
+            form.display_name.data,
+            form.auth_address.data,
+            form.max_auth_attempts.data,
+            form.back_off_interval.data,
+            form.back_off_max_timeout.data
         )
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")
 
         self.redirect(self.reverse_url('main'))
+
+
+class CategoryFormHandler(BaseHandler):
+
+    @coroutine
+    def get_project(self, project_name):
+        project, error = yield self.application.structure.get_project_by_name(project_name)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        if not project:
+            raise tornado.web.HTTPError(404)
+        raise Return((project, None))
+
+    @coroutine
+    def get_category(self, project, category_name):
+        category, error = yield self.application.structure.get_category_by_name(
+            project, category_name
+        )
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        if not category:
+            raise tornado.web.HTTPError(404)
+        raise Return((category, error))
+
+    @tornado.web.authenticated
+    @coroutine
+    def get(self, project_name, category_name=None):
+
+        self.project, error = yield self.get_project(project_name)
+
+        if category_name:
+            template_name = 'category/edit.html'
+            self.category, error = yield self.get_category(self.project, category_name)
+            form = CategoryForm(self, **self.category)
+        else:
+            template_name = 'category/create.html'
+            form = CategoryForm(self)
+
+        self.render(
+            template_name, form=form, project=self.project,
+            render_control=render_control, render_label=render_label
+        )
+
+    @tornado.web.authenticated
+    @coroutine
+    def post(self, project_id, category_name=None):
+
+        self.project, error = yield self.get_project(project_id)
+
+        if category_name:
+            self.category, error = yield self.get_category(self.project, category_name)
+
+        submit = self.get_argument('submit', None)
+        if submit == 'category_delete':
+            if self.get_argument('confirm', None) == category_name:
+                res, error = yield self.application.structure.category_delete(
+                    self.project, category_name
+                )
+                if error:
+                    raise tornado.web.HTTPError(500, log_message=str(error))
+                self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
+            else:
+                self.redirect(self.reverse_url("category_edit", self.project['name'], category_name))
+            return
+
+        form = CategoryForm(self)
+
+        if not form.validate():
+            self.render(
+                'category/create.html', form=form, project=self.project,
+                render_control=render_control, render_label=render_label
+            )
+            return
+
+        existing_category, error = yield self.application.structure.get_category_by_name(
+            self.project, form.name.data
+        )
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+
+        if (not category_name and existing_category) or (existing_category and existing_category['name'] != category_name):
+            form.name.errors.append('duplicate name')
+            self.render(
+                'category/create.html', form=form, project=self.project,
+                render_control=render_control, render_label=render_label
+            )
+            return
+
+        args = (
+            form.name.data,
+            form.is_bidirectional.data,
+            form.is_watching.data,
+            form.presence.data,
+            form.history.data,
+            form.history_size.data
+        )
+
+        if not category_name:
+            category, error = yield self.application.structure.category_create(
+                self.project,
+                *args
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message="error creating project")
+        else:
+            category, error = yield self.application.structure.category_edit(
+                self.category,
+                *args
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message="error creating project")
+
+        self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
 
 
 class ProjectSettingsHandler(BaseHandler):
@@ -173,7 +259,7 @@ class ProjectSettingsHandler(BaseHandler):
     @coroutine
     def get_project(self, project_name):
 
-        project, error = yield state.get_project_by_name(project_name)
+        project, error = yield self.application.structure.get_project_by_name(project_name)
         if not project:
             raise tornado.web.HTTPError(404)
 
@@ -181,7 +267,7 @@ class ProjectSettingsHandler(BaseHandler):
 
     @coroutine
     def get_general(self):
-        categories, error = yield state.get_project_categories(self.project)
+        categories, error = yield self.application.structure.get_project_categories(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -198,6 +284,9 @@ class ProjectSettingsHandler(BaseHandler):
         data = {
             'user': self.current_user,
             'project': self.project,
+            'form': ProjectForm(self, **self.project),
+            'render_control': render_control,
+            'render_label': render_label
         }
         raise Return((data, None))
 
@@ -206,43 +295,9 @@ class ProjectSettingsHandler(BaseHandler):
 
         url = self.reverse_url("project_settings", self.project['name'], 'general')
 
-        if submit == 'category_add':
-            # add category
-
-            category_name = self.get_argument('category_name', None)
-            bidirectional = bool(self.get_argument('bidirectional', False))
-            publish_to_admins = bool(self.get_argument('publish_to_admins', False))
-
-            if category_name:
-
-                category, error = yield state.get_category_by_name(
-                    self.project, category_name
-                )
-
-                if not category:
-                    # create new category with unique name
-                    res, error = yield state.category_create(
-                        self.project,
-                        category_name,
-                        bidirectional,
-                        publish_to_admins
-                    )
-                    if error:
-                        raise tornado.web.HTTPError(500, log_message=str(error))
-
-        elif submit == 'category_del':
-            # delete category
-            category_name = self.get_argument('category_name', None)
-            if category_name:
-                res, error = yield state.category_delete(
-                    self.project, category_name
-                )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
-
-        elif submit == 'regenerate_secret':
+        if submit == 'regenerate_secret':
             # regenerate public and secret key
-            res, error = yield state.regenerate_project_secret_key(self.project)
+            res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -251,68 +306,53 @@ class ProjectSettingsHandler(BaseHandler):
     @coroutine
     def post_edit(self, submit):
 
-        url = self.reverse_url("project_settings", self.project['name'], 'edit')
-
         if submit == 'project_del':
             # completely remove project
             confirm = self.get_argument('confirm', None)
             if confirm == self.project['name']:
-                res, error = yield state.project_delete(self.project)
+                res, error = yield self.application.structure.project_delete(self.project)
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 self.redirect(self.reverse_url("main"))
                 return
+            else:
+                self.redirect(self.reverse_url("project_settings", self.project['name'], "edit"))
 
-        elif submit == 'project_edit':
+        else:
             # edit project
-            name = self.get_argument('name', None)
-            if name and NAME_RE.search(name):
-                display_name = self.get_argument('display_name', None)
-                description = self.get_argument('description', "")
-                validate_url = self.get_argument('validate_url', "")
-                auth_attempts = self.get_argument("auth_attempts", None)
-                back_off_interval = self.get_argument(
-                    "back_off_interval", None
+            form = ProjectForm(self)
+            if not form.validate():
+                self.render(
+                    'project/settings_edit.html', project=self.project,
+                    form=form, render_control=render_control, render_label=render_label
                 )
-                back_off_max_timeout = self.get_argument(
-                    'back_off_max_timeout', None
-                )
-
-                if name:
-                    name = name.lower()
-
-                if auth_attempts:
-                    try:
-                        auth_attempts = abs(int(float(auth_attempts)))
-                    except ValueError:
-                        auth_attempts = None
-
-                if back_off_interval:
-                    try:
-                        back_off_interval = abs(int(float(back_off_interval)))
-                    except ValueError:
-                        back_off_interval = None
-
-                if back_off_max_timeout:
-                    try:
-                        back_off_max_timeout = abs(int(float(back_off_max_timeout)))
-                    except ValueError:
-                        back_off_max_timeout = None
-
-                if not display_name:
-                    display_name = name
-
-                res, error = yield state.project_edit(
-                    self.project, name, display_name,
-                    description, validate_url, auth_attempts,
-                    back_off_interval, back_off_max_timeout
-                )
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
-                self.redirect(self.reverse_url("project_settings", name, "edit"))
                 return
 
-        self.redirect(url)
+            existing_project, error = yield self.application.structure.get_project_by_name(form.name.data)
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+
+            if existing_project and existing_project['_id'] != self.project['_id']:
+                form.name.errors.append('duplicate name')
+                self.render(
+                    'project/settings_edit.html', form=form,
+                    render_control=render_control, render_label=render_label,
+                    project=self.project
+                )
+                return
+
+            res, error = yield self.application.structure.project_edit(
+                self.project,
+                form.name.data,
+                form.display_name.data,
+                form.auth_address.data,
+                form.max_auth_attempts.data,
+                form.back_off_interval.data,
+                form.back_off_max_timeout.data
+            )
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+            self.redirect(self.reverse_url("project_settings", form.name.data, "edit"))
 
     @tornado.web.authenticated
     @coroutine
@@ -358,15 +398,15 @@ class ProjectSettingsHandler(BaseHandler):
 class AdminSocketHandler(SockJSConnection):
 
     def on_message_published(self, message):
-        actual_message = message[0]
+        actual_message = message[1]
         if six.PY3:
             actual_message = actual_message.decode()
-        self.send(actual_message.split(CHANNEL_DATA_SEPARATOR, 1)[1])
+        self.send(actual_message)
 
     @coroutine
     def subscribe(self):
 
-        projects, error = yield state.project_list()
+        projects, error = yield self.application.structure.project_list()
         self.projects = [x['_id'] for x in projects]
         self.uid = uuid.uuid4().hex
         self.connections = self.application.admin_connections
@@ -380,15 +420,11 @@ class AdminSocketHandler(SockJSConnection):
             for address in self.application.zmq_sub_address:
                 subscribe_socket.connect(address)
 
-        for project_id in self.projects:
-            if project_id not in self.connections:
-                self.connections[project_id] = {}
-            self.connections[project_id][self.uid] = self
+        self.connections[self.uid] = self
 
-            channel_to_subscribe = create_project_channel_name(project_id)
-            subscribe_socket.setsockopt_string(
-                zmq.SUBSCRIBE, six.u(channel_to_subscribe)
-            )
+        subscribe_socket.setsockopt_string(
+            zmq.SUBSCRIBE, six.u(ADMIN_CHANNEL)
+        )
 
         self.subscribe_stream = ZMQStream(subscribe_socket)
         self.subscribe_stream.on_recv(self.on_message_published)
@@ -434,4 +470,3 @@ class Http404Handler(BaseHandler):
 
     def get(self):
         self.render("http404.html")
-

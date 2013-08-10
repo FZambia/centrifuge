@@ -14,7 +14,7 @@ properly encoded requests to Centrifuge). Look at Cent documentation for more
 information
 
 In project settings you can also manage **categories**. Categories is a required
-property for every new message. They helps to manage permissions and behavior.
+property for every new message. They help to manage permissions and behavior.
 Every category must have unique name and can be one-way or bidirectional. In
 bidirectional categories authorized clients can broadcast new events themselves.
 This is important for chat-like applications.

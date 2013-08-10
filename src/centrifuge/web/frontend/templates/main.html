@@ -19,7 +19,7 @@
         <div class="event-header">
             <span class="event-key">
                 <span class="event-key-word muted">
-                    {{!>~lower(category['name'])}}
+                    {{!>~lower(category)}}
                 </span>
                 <span class="event-key-word">
                     {{!>channel}}
@@ -38,23 +38,21 @@
 </script>
 
 <script type="text/x-jsrender" id="project_template">
-    <div class="project {{!if is_owner}}project-own{{!/if}} span6" id="project-{{!>_id}}" data-project-id="{{!>_id}}" data-project-name="{{!>name}}" data-project-display="{{!>display_name}}">
-        <div class="span1 project-pill" style="min-width: 90px;">
-            <div class="pill pill-info pill-circle pill-medium pill-surrounded" {{!if description}}title="{{!>description}}"{{!/if}}>
-                <a href="#" data-tab-open="{{!>_id}}">
-                    <i class="text-info project-event-counter">&nbsp;</i>
-                </a>
-            </div>
-        </div>
-        <div class="container-fluid project-info">
-            <div class="project-header">
-                <a href="#" class="project-name" data-tab-open="{{!>_id}}">{{!>display_name}}</a>
-            </div>
-            <div class="project-meta">
-                <div>
-                    {{!>name}}
-                    &nbsp;
-                    <a href="/project/{{!>name}}/settings/general" class="project-settings">{{_("settings")}}</a>
+    <div class="project {{!if is_owner}}project-own{{!/if}} col-lg-4" id="project-{{!>_id}}" data-project-id="{{!>_id}}" data-project-name="{{!>name}}" data-project-display="{{!>display_name}}">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="project-header">
+                    <a href="#" class="project-name" data-tab-open="{{!>_id}}">{{!>display_name}}</a>
+                    <a href="#" data-tab-open="{{!>_id}}" style="margin: 0 auto;">
+                        <span class="pill"><i class="text-info project-event-counter"></i></span>
+                    </a>
+                </div>
+                <div class="project-meta">
+                    <div>
+                        {{!>name}}
+                        &nbsp;
+                        <a href="/project/{{!>name}}/settings/general" class="project-settings">{{_("settings")}}</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -79,54 +77,15 @@
     </li>
 </script>
 
-<script type="text/x-jsrender" id="project_list_panel_template">
-    <div class="" id="project-list-panel">
-        <ul class="nav nav-list panel-search">
-            <li class="nav-header">{{_("Filter name")}}</li>
-            <li><input type="text" id="project-name-filter" /></li>
-        </ul>
-    </div>
-</script>
-
-<script type="text/x-jsrender" id="project_panel_template">
-    <div class="project-panel" id="panel-{{!>project['_id']}}" data-project-id="{{!>project['id']}}" style="display:none;">
-        {{!if categories}}
-        <ul class="nav nav-list">
-            <li class="nav-header">{{_("Filter category")}}</li>
-            {{!for categories}}
-                <li>
-                    <a href="#" class="category" data-category-id="{{!>_id}}">
-                        {{!>name}}
-                    </a>
-                </li>
-            {{!/for}}
-        </ul>
-        {{!/if}}
-
-        <ul class="nav nav-list panel-search">
-            <li class="nav-header">{{_("Filter channel")}}</li>
-            <li><input type="text" class="channel-filter" /></li>
-        </ul>
-
-        <div class="panel-buttons">
-            <button type="button" class="btn btn-info apply-event-filter">{{_("Apply")}}</button>
-            <button type="button" class="btn reset-event-filter">{{_("Reset")}}</button>
-        </div>
-    </div>
-</script>
-
-<div id="main-content" class="row-fluid">
+<div id="main-content" class="row">
     <ul class="nav nav-tabs" id="tabs">
         <li><a href="#_projects" id="tab-_projects" data-id="_projects" data-name="_projects" data-toggle="tab">{{_("projects")}}</a></li>
     </ul>
-    <div class="row-fluid">
-        <div class="span10">
+    <div class="row">
+        <div class="col-lg-12">
             <div class="tab-content" id="tab-content">
                 <div class="tab-pane" id="_projects"></div>
             </div>
-        </div>
-        <div class="span2">
-            <div id="panel"></div>
         </div>
     </div>
 </div>

@@ -1,3 +1,4 @@
 *.pyc
 src/config_dev.json
+src/centrifuge.db
 docs/_build/*

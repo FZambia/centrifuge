@@ -71,19 +71,20 @@ install_requires = [
     'motor==0.1.1',
     'Momoko==1.0.0',
     'jsonschema==1.2.0',
-    'lxml==3.1.0',
-    'toro==0.5'
+    'toro==0.5',
+    'WTForms==1.0.4',
+    'toredis-fork==0.1.2'
 ]
 
 
 def long_description():
-    return "Light and simple open-source platform for real-time message " \
-           "broadcasting in your web applications"
+    return "Simple open-source platform for real-time message " \
+           "broadcasting in web applications"
 
 
 setup(
     name='centrifuge',
-    version='0.1.2',
+    version='0.2.0rc1',
     description="Light and simple open-source platform for real-time message "
                 "broadcasting in your web applications",
     long_description=long_description(),
@@ -97,7 +98,7 @@ setup(
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'centrifuge = centrifuge.app:main',
+            'centrifuge = centrifuge.node:main',
             'xpub_xsub = centrifuge.proxy:main'
         ],
     },

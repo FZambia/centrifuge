@@ -58,11 +58,12 @@
 
                     connection.onmessage = function(event) {
                         console.log(event);
+                        console.log(event.data);
+                        var data = event.data;
 
-                        var data = $.parseJSON(event.data);
-                        if (data["ack"] === true) {
+                        if (data["method"] !== "message") {
                             // ack message
-                            message(event.data, false);
+                            message(JSON.stringify(event.data), false);
                             console.log('ack received');
                             var method = data['method'];
                             var error = data['error'];
@@ -78,10 +79,33 @@
                                     }
                                 };
                                 connection.send(JSON.stringify(subscribe_message));
+
+                                window.setTimeout(function(){
+                                    var presence_message = {
+                                        'method': 'presence',
+                                        'params': {
+                                            'category': 'python',
+                                            'channel': 'django'
+                                        }
+                                    };
+                                    connection.send(JSON.stringify(presence_message));
+                                }, 2000);
+
+                                window.setTimeout(function(){
+                                    var history_message = {
+                                        'method': 'history',
+                                        'params': {
+                                            'category': 'python',
+                                            'channel': 'django'
+                                        }
+                                    };
+                                    connection.send(JSON.stringify(history_message));
+                                }, 3000);
+
                             }
                         } else {
                             // broadcast message
-                            message(event.data, true);
+                            message(JSON.stringify(event.data), true);
                         }
                     };
                 }
@@ -91,15 +115,15 @@
                     var input = $(this).find('input[type="text"]');
 
                     if (is_authenticated === true) {
-                        var broadcast_message = {
-                            'method': 'broadcast',
+                        var publish_message = {
+                            'method': 'publish',
                             'params': {
                                 'category': 'python',
                                 'channel': 'django',
                                 'data': {'input': input.val()}
                             }
                         };
-                        connection.send(JSON.stringify(broadcast_message));
+                        connection.send(JSON.stringify(publish_message));
                     }
 
                     input.val('');

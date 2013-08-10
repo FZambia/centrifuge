@@ -1,0 +1,25 @@
+<form class="form-horizontal" method="post" action="">
+    {% raw xsrf_form_html() %}
+    {% for field in form %}
+        <div class="form-group {% if field.errors %}has-error{% end %}">
+            {% raw render_label(field.label) %}
+            <div class="col-lg-10">
+                {% raw render_control(field) %}
+                {% if field.errors %}
+                    {% for error in field.errors %}
+                        <div class="bs-callout bs-callout-danger">
+                            {{ error }}
+                        </div>
+                    {% end %}
+                {% end %}
+                <span class="help-block">{{ field.description }}</span>
+            </div>
+        </div>
+    {% end %}
+
+    <div class="form-group">
+        <div class="col-lg-offset-2 col-lg-10">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </div>
+</form>

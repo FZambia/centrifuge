@@ -70,26 +70,23 @@ installed:
 Install and run database
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Centrifuge by default uses `MongoDB <http://docs.mongodb.org/manual/>`_ as data
-store.
+Centrifuge by default uses SQLite as data store. It does not requre installation
+because SQLite comes with standard Python installation.
 
-`Here <http://docs.mongodb.org/manual/installation/>`_ is explanation
+You can also use `MongoDB <http://docs.mongodb.org/manual/>`_ as data
+store. `Here <http://docs.mongodb.org/manual/installation/>`_ is explanation
 how to install it on your system.
 
-You can also run Centrifuge with `PostgreSQL <http://www.postgresql.org/>`_ as storage.
-
-Read `this <http://wiki.postgresql.org/wiki/Detailed_installation_guides>`_ for help with
+And if you want you can also run Centrifuge with `PostgreSQL <http://www.postgresql.org/>`_
+as storage. Read `this <http://wiki.postgresql.org/wiki/Detailed_installation_guides>`_ for help with
 PostgreSQL installation.
-
-To use custom connection settings to storage you should fill appropriate section of
-configuration file.
 
 
 Fill centrifuge's configuration file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Configuration is a JSON file. You can find example of those file in Centrifuge's
-repository. With MongoDB (installed with default settings) configuration file
+repository. With SQLite (installed with default settings) configuration file
 can be omitted during development. But in production environment it must be used
 because it contains important security settings like cookie_secret and administrative
 password.

@@ -5,12 +5,12 @@
     <h1>Centrifuge</h1>
     <hr/>
     <p class="muted">
-        {{_("Light and simple open-source platform for real-time message broadcasting in your web applications.")}}
+        {{_("Simple platform for real-time message broadcasting in web applications.")}}
     </p>
     <hr/>
     <form action="" method="post" class="form-inline">
         {% raw xsrf_form_html() %}
-        <input type="password" name="password" placeholder="{{_('enter password to log in...')}}"/>
+        <input class="form-control" type="password" name="password" placeholder="{{_('Type administrative password to log in...')}}"/>
         <button type="submit" class="btn btn-primary">{{_("Let me in")}}</button>
     </form>
 </div>

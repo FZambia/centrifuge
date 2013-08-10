@@ -1,25 +1,18 @@
 {
-    "password": "",
+    "password": "123",
     "cookie_secret": "secret",
-    "storage": {
-        "module": "centrifuge.storage.mongodb",
+    "state": {
+        "host": "localhost",
+        "port": 6379
+    },
+    "structure": {
+        "storage": "centrifuge.structure.sqlite",
+        "update_interval": 60,
         "settings": {
             "host": "localhost",
             "port": 27017,
             "name": "centrifuge",
             "pool_size": 10
         }
-    },
-    "storage_alternative": {
-        "module": "centrifuge.storage.postgresql",
-        "settings": {
-            "user": "fz",
-            "password": "postgres"
-        }
-    },
-    "html": {
-        "escape": true,
-        "clean": false,
-        "allowed_domains": ["youtube.com", "www.youtube.com"]
     }
 }

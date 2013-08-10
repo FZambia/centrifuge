@@ -26,7 +26,7 @@ Here is an example of config file's content:
 .. code-block:: bash
 
     [python]
-    address = http://localhost:8000/rpc
+    address = http://localhost:8000/api
     project_id = 51b229f778b83c2eced3a76b
     secret_key = 994021f2dc354d7893d88b90d430498e
     timeout = 5
@@ -44,12 +44,12 @@ It is easy enough:
 
 .. code-block:: bash
 
-    cent python broadcast --params='{"category": "django", "channel": "news", "data": {"title": "Django 1.6 finally released", "text": "Release keynotes:..."}}'
+    cent python publish --params='{"category": "django", "channel": "news", "data": {"title": "Django 1.6 finally released", "text": "Release keynotes:..."}}'
 
 
 - *cent* is the name of program
 - *python* is the name of section in configuration file
-- *broadcast* is the method name you want to call
+- *publish* is the method name you want to call
 - *--params* is a JSON string with method parameters, in this case of broadcast you should provide category, channel and data parameters.
 
 
@@ -57,7 +57,7 @@ If request was successful you'll get something like this in response:
 
 .. code-block:: bash
 
-    {u'error': None, u'result': True, u'id': None}
+    {'error': None, 'body': True, 'uid': None, 'method': 'publish'}
 
 
 In case of any error you will get its description.

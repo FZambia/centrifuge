@@ -2,7 +2,6 @@
 #
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
-#
 
 
 req_schema = {
@@ -22,7 +21,7 @@ req_schema = {
 }
 
 admin_params_schema = {
-    "broadcast": {
+    "publish": {
         "type": "object",
         "properties": {
             "category": {
@@ -39,6 +38,30 @@ admin_params_schema = {
             }
         },
         "required": ["category", "channel", "data"]
+    },
+    "presence": {
+        "type": "object",
+        "properties": {
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
+            }
+        },
+        "required": ["category", "channel"]
+    },
+    "history": {
+        "type": "object",
+        "properties": {
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
+            }
+        },
+        "required": ["category", "channel"]
     },
     "subscribe": {
         "type": "object",
@@ -67,7 +90,9 @@ admin_params_schema = {
 }
 
 client_params_schema = {
-    "broadcast": admin_params_schema["broadcast"],
+    "publish": admin_params_schema["publish"],
+    "presence": admin_params_schema["presence"],
+    "history": admin_params_schema["history"],
     "subscribe": {
         "type": "object",
         "properties": {

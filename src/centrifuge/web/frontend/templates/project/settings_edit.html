@@ -5,43 +5,23 @@
 {% block section_active %}edit{% end %}
 
 {% block section %}
-<fieldset>
+
     <legend>{{_("Edit project")}} "{{project['name']}}"</legend>
-    <form class="baseform" method="post" action="">
-        {% raw xsrf_form_html() %}
-        <label>{{_("Project Unique Identity")}}</label>
-        <input type="text" name="name" value="{{project.get('name', '')}}" placeholder="{{_("Type new project identity")}}">
-        <label>{{_("Display Name (human readable project name)")}}</label>
-        <input type="text" name="display_name" value="{{project.get('display_name', '')}}">
-        <label>{{_("Description (optional)")}}</label>
-        <textarea placeholder="{{_("Type project description…")}}" name="description">{{project['description']}}</textarea>
-        <label>{{_("Address to validate user's authorization")}}</label>
-        <input type="text" name="validate_url" value="{{project.get('validate_url') or ''}}">
-        <label>{{_("Max authorization attempts, must be positive integer (5 if empty)")}}</label>
-        <input type="text" name="auth_attempts" value="{{project.get('auth_attempts') or ''}}">
-        <label>{{_("Back-off interval in milliseconds, must be positive integer (100 if empty)")}}</label>
-        <input type="text" name="back_off_interval" value="{{project.get('back_off_interval') or ''}}">
-        <label>{{_("Back-off max timeout in milliseconds, must be positive integer (5000 if empty)")}}</label>
-        <input type="text" name="back_off_max_timeout" value="{{project.get('back_off_max_timeout') or ''}}">
-        <div>
-            <button type="submit" name="submit" value="project_edit" class="btn">Submit</button>
+    {% include '../form.html' %}
+
+    <fieldset>
+        <legend>{{_("Danger zone")}}</legend>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="bs-callout-large bs-callout-danger">
+                    {{_("Remove Project. This action will also remove all data related to this project.")}}
+                </div>
+                <form class="form-inline" method="post" action="">
+                    {% raw xsrf_form_html() %}
+                    <input type="text" class="form-control" style="width: 50%;" name="confirm" placeholder="{{_("Type project unique name")}}">
+                    <button type="submit" name="submit" value="project_del" class="btn btn-danger">{{_("I understand. Delete project.")}}</button>
+                </form>
+            </div>
         </div>
-    </form>
-</fieldset>
-<fieldset>
-    <legend>{{_("Danger zone")}}</legend>
-    <div class="row-fluid" style="margin-top: 20px;">
-        <div class="span12">
-            <form class="" method="post" action="">
-                {% raw xsrf_form_html() %}
-                <label class="alert alert-danger">
-                    {{_("Remove Project. This action will also remove all categories and logged events related to this project.")}}
-                </label>
-                <input type="text" name="confirm" placeholder="{{_("Type project unique identity")}}" style="margin-bottom: 0px;">
-                &nbsp;
-                <button type="submit" name="submit" value="project_del" class="btn btn-danger">{{_("I understand. Delete project.")}}</button>
-            </form>
-        </div>
-    </div>
-</fieldset>
+    </fieldset>
 {% end %}
