@@ -1,3 +1,11 @@
+v0.2.0
+======
+* global code refactoring
+* presence support for channels
+* history support for channels
+* Bootstrap 3.0 for web interface
+* SQLite for structure store - now no need in installing PostgreSQL or MongoDB
+
 v0.1.2
 ======
 * use SockJS for admin connections instead of pure Websockets(lol, see v0.0.7)
