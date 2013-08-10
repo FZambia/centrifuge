@@ -217,7 +217,7 @@ def category_create(
 
     query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
             "is_watching, presence, history, history_size) VALUES " \
-            "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            "(?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
