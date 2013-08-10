@@ -1,5 +1,5 @@
 {
-    "password": "",
+    "password": "123",
     "cookie_secret": "secret",
     "state": {
         "host": "localhost",

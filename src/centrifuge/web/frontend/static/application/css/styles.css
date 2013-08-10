@@ -1,10 +1,6 @@
 html {
     overflow-y: scroll;
 }
-@font-face {
-    font-family: 'BebasNeue';
-    src: url('BebasNeue-webfont.woff');
-}
 form {
     margin-top: 40px;
 }
@@ -15,17 +11,12 @@ form {
 .tab-content {
     padding-top: 20px;
 }
-
 label {
     font-weight: normal;
 }
 .navbar {
     border-radius: 0;
 }
-a.brand {
-    font-family: 'BebasNeue';
-}
-
 #wrap {
 	/* Negative indent footer by it's height */
 	margin: 0 auto;
@@ -34,14 +25,12 @@ a.brand {
     max-width: 1400px;
     padding-bottom: 30px;
 }
-
 .marketing h1 {
     margin: 60px 0 10px;
     font-size: 60px;
     font-weight: 200;
     line-height: 1;
     letter-spacing: -1px;
-    font-family: 'BebasNeue';
     color: #4b4b4b;
 }
 .marketing p {
@@ -54,31 +43,6 @@ a.brand {
 .navbar {
 	margin-bottom: 0;
 }
-.nav-list {
-    padding: 0;
-}
-.nav-list input {
-    width:100%;
-    height: auto;
-    box-sizing: border-box;
-    -webkit-box-sizing:border-box;
-    -moz-box-sizing: border-box;
-}
-.nav-list > li > a, .nav-list .nav-header {
-    margin-left: 0;
-    margin-right: 0;
-    font-size: 13px;
-}
-.nav-list li {
-    line-height: 18px;
-}
-.nav-header {
-    padding-left: 10px;
-}
-.nav li + .nav-header {
-    margin-top: 3px;
-}
-
 .label-counter {
 	margin-left: 5px;
 }
@@ -95,7 +59,7 @@ a.brand {
 }
 
 .event {
-	margin-left: 0 !important;
+	margin-left: 20px;
 	margin-bottom: 25px;
 }
 
@@ -164,6 +128,9 @@ a.brand {
 }
 .connection-status {
     margin-bottom: 15px;
+    margin-top: 15px;
+    margin-left: 15px;
+    font-size: 18px;
 }
 .connected {
     color: #AAA;

@@ -22,13 +22,11 @@
             <li class="">
                 <a href="https://github.com/FZambia/centrifuge" target="_blank">{{_("Source code")}}</a>
             </li>
-        </ul>
-        <ul class="nav navbar-nav pull-right">
-          <li>
-            {% if current_user and handler.opts.get("password") %}
-                <a class="btn btn-default" href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
-            {% end %}
-          </li>
+            <li>
+                {% if current_user and handler.opts.get("password") %}
+                    <a href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
+                {% end %}
+            </li>
         </ul>
       </div><!-- /.nav-collapse -->
     </div><!-- /.container -->
