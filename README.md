@@ -34,12 +34,12 @@ and look at [examples](https://github.com/FZambia/centrifuge/tree/master/example
 Architecture diagram
 --------------------
 
-![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/description/centrifuge_architecture.png "centrifuge")
+![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/main/centrifuge_architecture.png "centrifuge")
 
 Admin web interface
 -------------------
 
-![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/starting/main.png "admin web interface")
+![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/main/main.png "admin web interface")
 
 
 To run tests type the following from `tests` directory (`centrifuge` must be in PYTHONPATH):

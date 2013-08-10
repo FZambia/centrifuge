@@ -6,7 +6,7 @@ Command line options
 Centrifuge has some command line arguments.
 
 
-Example. To create 2 instances of Centrifuge you can use something like this:
+Example. To create 2 connected instances of Centrifuge you can use something like this:
 
 
 .. code-block:: bash
@@ -15,11 +15,17 @@ Example. To create 2 instances of Centrifuge you can use something like this:
     centrifuge --port=8001 --zmq_pub_port=7001 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
 
 
+With correct Nginx configuration you can load balance clients from browsers between them.
+
+
 To run Centrifuge in debug Tornado's mode:
 
 .. code-block:: bash
 
     centrifuge --debug
+
+Note, that because of PyZMQ bug Tornado's autoreloading feature will not work. Until new
+release of PyZMQ where this error was fixed.
 
 
 To run Centrifuge with XPUB/XSUB proxy:

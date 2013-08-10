@@ -6,19 +6,9 @@ This part of the docs focuses on describing what Centrifuge is, installation and
 .. toctree::
    :maxdepth: 2
 
-   starting/overview
-   starting/install
-
-
-Architecture
-------------
-
-This part of the doc focuses on how Centrifuge built and features it provides.
-
-.. toctree::
-   :maxdepth: 1
-
-   description/architecture
+   main/overview
+   main/install
+   main/contribute_and_license
 
 
 Configuration file
@@ -77,20 +67,6 @@ This part of the doc focuses on deploying Centrifuge in production environment.
 
    deployment/nginx
    deployment/supervisord
-
-
-License, Contribution etc
--------------------------
-
-Contribution notes and legal information are here (for those interested).
-
-.. toctree::
-   :maxdepth: 2
-
-   marketing/license
-   marketing/contribute
-
-
 
 
 

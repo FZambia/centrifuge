@@ -37,12 +37,14 @@ When using SockJS library initialize connection like this:
 At this moment there are no javascript libraries to wrap communication routine
 with Centrifuge. But communication is rather simple.
 
-You should know only 4 basic commands:
+There are only 6 basic commands:
 
 1) auth
 2) subscribe
 3) unsubscribe
-4) broadcast
+4) publish
+5) presence
+6) history
 
 Lets see on them in detail.
 
@@ -122,19 +124,19 @@ If you want to unsubscribe from some channels - send message like this:
     connection.send(JSON.stringify(unsubscribe_message));
 
 
-Broadcast
----------
+Publish
+-------
 
 Clients can send messages in bidirectional categories. Here is an example of broadcast message:
 
 .. code-block:: js
 
-    var broadcast_message = {
-        'method': 'broadcast',
+    var publish_message = {
+        'method': 'publish',
         'params': {
             'category': 'python',
             'channel': 'django',
-            'data': {'input': input.val()}
+            'data': {'input': 'hello world'}
         }
     };
     connection.send(JSON.stringify(broadcast_message));
@@ -142,3 +144,37 @@ Clients can send messages in bidirectional categories. Here is an example of bro
 
 Look - you send category name, channel name and data of this new message (event).
 Data must be object.
+
+
+Presence
+--------
+
+Get information about which clients connected to the channel at the moment:
+
+.. code-block:: js
+
+    var presence_message = {
+        'method': 'presence',
+        'params': {
+            'category': 'python',
+            'channel': 'django'
+        }
+    };
+    connection.send(JSON.stringify(presence_message));
+
+
+History
+-------
+
+Get last messages that were sent into channel
+
+.. code-block:: js
+
+    var history_message = {
+        'method': 'history',
+        'params': {
+            'category': 'python',
+            'channel': 'django'
+        }
+    };
+    connection.send(JSON.stringify(history_message));

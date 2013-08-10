@@ -79,6 +79,29 @@
                                     }
                                 };
                                 connection.send(JSON.stringify(subscribe_message));
+
+                                window.setTimeout(function(){
+                                    var presence_message = {
+                                        'method': 'presence',
+                                        'params': {
+                                            'category': 'python',
+                                            'channel': 'django'
+                                        }
+                                    };
+                                    connection.send(JSON.stringify(presence_message));
+                                }, 2000);
+
+                                window.setTimeout(function(){
+                                    var history_message = {
+                                        'method': 'history',
+                                        'params': {
+                                            'category': 'python',
+                                            'channel': 'django'
+                                        }
+                                    };
+                                    connection.send(JSON.stringify(history_message));
+                                }, 3000);
+
                             }
                         } else {
                             // broadcast message

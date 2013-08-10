@@ -413,24 +413,28 @@ class Client(object):
 
         raise Return((True, None))
 
+    def check_category_permission(self, category):
+        if category not in self.categories:
+            raise Return((None, 'category does not exist or permission denied'))
+
+    def check_channel_permission(self, category, channel):
+        allowed_channels = self.permissions.get(category) if self.permissions else []
+        if allowed_channels and channel not in allowed_channels:
+            # attempt to publish into not allowed channel
+            raise Return((None, 'channel permission denied'))
+
     @coroutine
     def handle_publish(self, params):
 
         category = params.get('category')
-
         channel = params.get('channel')
 
-        if category not in self.categories:
-            raise Return((None, 'category does not exist or permission denied'))
+        self.check_category_permission(category)
 
         if category not in self.bidirectional_categories:
             raise Return((None, 'one-way category'))
 
-        allowed_channels = self.permissions.get(category) if self.permissions else []
-
-        if allowed_channels and channel not in allowed_channels:
-            # attempt to publish into not allowed channel
-            raise Return((None, 'channel permission denied'))
+        self.check_channel_permission(category, channel)
 
         result, error = yield self.application.process_publish(
             self.project,
@@ -438,4 +442,30 @@ class Client(object):
             allowed_categories=self.bidirectional_categories
         )
 
+        raise Return((result, error))
+
+    @coroutine
+    def handle_presence(self, params):
+        category = params.get('category')
+        channel = params.get('channel')
+
+        self.check_category_permission(category)
+        self.check_channel_permission(category, channel)
+        result, error = yield self.application.process_presence(
+            self.project,
+            params
+        )
+        raise Return((result, error))
+
+    @coroutine
+    def handle_history(self, params):
+        category = params.get('category')
+        channel = params.get('channel')
+
+        self.check_category_permission(category)
+        self.check_channel_permission(category, channel)
+        result, error = yield self.application.process_history(
+            self.project,
+            params
+        )
         raise Return((result, error))
