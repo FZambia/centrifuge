@@ -8,7 +8,7 @@ When you have running Centrifuge's instance and want to create web application u
 first you should do is to add your project into Centrifuge. It's very simple - just fill
 the form.
 
-.. image:: project_create_form.png
+.. image:: project_create.png
     :width: 650 px
 
 **name** - unique project name, must be written using ascii symbols only. This is project
