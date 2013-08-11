@@ -58,4 +58,4 @@ Pull requests are welcome! But, please, follow next principles:
 * pep8
 * python 2.6, 2.7 and 3.3 compatible
 
-P.S. If BSD license of Centrifuge does not allow you to use Centrifuge, tell me and I'll consider to change license.
+P.S. If BSD license of Centrifuge does not allow you to use it, tell me and I'll consider to change license.
