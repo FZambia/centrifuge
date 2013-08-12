@@ -26,7 +26,6 @@ centrifuge = function(name) {
     var _messageQueue = [];
     var _listeners = {};
     var _backoff = 0;
-    var _advice = {};
     var _handshakeProps;
     var _publishCallbacks = {};
     var _reestablish = false;
@@ -389,15 +388,6 @@ centrifuge = function(name) {
         }
     }
 
-    function _updateAdvice(newAdvice)
-    {
-        if (newAdvice)
-        {
-            _advice = _centrifuge._mixin(false, {}, _config.advice, newAdvice);
-            _centrifuge._debug('New advice', _advice);
-        }
-    }
-
     function _disconnect(abort)
     {
         if (abort)
@@ -427,20 +417,6 @@ centrifuge = function(name) {
 
         _clearSubscriptions();
 
-        // Reset the transports if we're not retrying the handshake
-        if (_isDisconnected())
-        {
-            _updateAdvice(_config.advice);
-        }
-        else
-        {
-            // We are retrying the handshake, either because another handshake failed
-            // and we're backing off, or because the server timed us out and asks us to
-            // re-handshake: in both cases, make sure that if the handshake succeeds
-            // the next action is a connect.
-            _updateAdvice(_centrifuge._mixin(false, _advice, {reconnect: 'retry'}));
-        }
-
         // Save the properties provided by the user, so that
         // we can reuse them during automatic re-handshake
         _handshakeProps = handshakeProps;
@@ -450,11 +426,7 @@ centrifuge = function(name) {
         var bayeuxMessage = {
             version: version,
             minimumVersion: '0.9',
-            channel: '/meta/handshake',
-            advice: {
-                timeout: _advice.timeout,
-                interval: _advice.interval
-            }
+            channel: '/meta/handshake'
         };
         // Do not allow the user to mess with the required properties,
         // so merge first the user properties and *then* the bayeux message
@@ -685,8 +657,6 @@ centrifuge = function(name) {
         {
             return;
         }
-
-        _updateAdvice(message.advice);
 
         var channel = message.channel;
         switch (channel)
@@ -1187,11 +1157,5 @@ centrifuge = function(name) {
     this.getConfiguration = function()
     {
         return this._mixin(true, {}, _config);
-    };
-
-    //noinspection JSUnusedGlobalSymbols
-    this.getAdvice = function()
-    {
-        return this._mixin(true, {}, _advice);
     };
 };
