@@ -388,7 +388,7 @@ Centrifuge = function(name) {
     {
         _clientId = null;
 
-        //_clearSubscriptions();
+        _clearSubscriptions();
 
         _setStatus('connecting');
 
