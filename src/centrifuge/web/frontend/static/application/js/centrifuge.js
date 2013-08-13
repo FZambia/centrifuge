@@ -24,10 +24,11 @@ Centrifuge = function(name) {
     var _transport = null;
     var _messageId = 0;
     var _clientId = null;
-    var _messageQueue = [];
     var _listeners = {};
     var _backoff = 0;
     var _publishCallbacks = {};
+    var _presenceCallbacks = {};
+    var _historyCallbacks = {};
     var _reestablish = false;
     var _connected = false;
     var _regex = /^\/([^_]+[A-z0-9]{2,})\/(.+)$/;
@@ -44,12 +45,9 @@ Centrifuge = function(name) {
     };
 
     function _fieldValue(object, name) {
-        try
-        {
+        try {
             return object[name];
-        }
-        catch (x)
-        {
+        } catch (x) {
             return undefined;
         }
     }
@@ -64,49 +62,38 @@ Centrifuge = function(name) {
         var result = target || {};
 
         // Skip first 2 parameters (deep and target), and loop over the others
-        for (var i = 2; i < arguments.length; ++i)
-        {
+        for (var i = 2; i < arguments.length; ++i) {
             var object = arguments[i];
 
-            if (object === undefined || object === null)
-            {
+            if (object === undefined || object === null) {
                 continue;
             }
 
-            for (var propName in object)
-            {
+            for (var propName in object) {
                 //noinspection JSUnfilteredForInLoop
                 var prop = _fieldValue(object, propName);
                 //noinspection JSUnfilteredForInLoop
                 var targ = _fieldValue(result, propName);
 
                 // Avoid infinite loops
-                if (prop === target)
-                {
+                if (prop === target) {
                     continue;
                 }
                 // Do not mixin undefined values
-                if (prop === undefined)
-                {
+                if (prop === undefined) {
                     continue;
                 }
 
-                if (deep && typeof prop === 'object' && prop !== null)
-                {
-                    if (prop instanceof Array)
-                    {
+                if (deep && typeof prop === 'object' && prop !== null) {
+                    if (prop instanceof Array) {
                         //noinspection JSUnfilteredForInLoop
                         result[propName] = this._mixin(deep, targ instanceof Array ? targ : [], prop);
-                    }
-                    else
-                    {
+                    } else {
                         var source = typeof targ === 'object' && !(targ instanceof Array) ? targ : {};
                         //noinspection JSUnfilteredForInLoop
                         result[propName] = this._mixin(deep, source, prop);
                     }
-                }
-                else
-                {
+                } else {
                     //noinspection JSUnfilteredForInLoop
                     result[propName] = prop;
                 }
@@ -160,6 +147,16 @@ Centrifuge = function(name) {
             _log('debug', arguments);
         }
     };
+
+    function _parsePath(path) {
+        var matches = _regex.exec(path);
+        if (!matches) {
+            throw "Invalid channel to subscribe. Must be in format /category/channel"
+        }
+        var category = matches[1];
+        var channel = matches[2];
+        return [category, channel]
+    }
 
     function _configure(configuration) {
         _centrifuge._debug('Configuring centrifuge object with', configuration);
@@ -241,6 +238,11 @@ Centrifuge = function(name) {
         return _status === 'disconnecting' || _status === 'disconnected';
     }
 
+    function _isConnected() {
+        return _status === 'connected';
+    }
+
+
     function _nextMessageId() {
         return ++_messageId;
     }
@@ -272,6 +274,7 @@ Centrifuge = function(name) {
         // Notify direct listeners
         _notify(channel, message);
 
+        /*
         // Notify the globbing listeners
         var channelParts = channel.split('/');
         var last = channelParts.length - 1;
@@ -288,11 +291,8 @@ Centrifuge = function(name) {
             channelPart += '*';
             _notify(channelPart, message);
         }
+        */
     }
-
-    // Needed to break cyclic dependencies between function definitions
-    var _handleMessages;
-    var _handleFailure;
 
     /**
      * Delivers the messages to the centrifuge server
@@ -314,22 +314,30 @@ Centrifuge = function(name) {
                 message.clientId = _clientId;
             }
 
-            var callback = undefined;
-            if (_isFunction(message._callback))
-            {
-                callback = message._callback;
-                // Remove the publish callback before calling the extensions
-                delete message._callback;
+            var publishCallback = undefined;
+            var presenceCallback = undefined;
+            var historyCallback = undefined;
+
+            if (_isFunction(message._publishCallback)) {
+                publishCallback = message._publishCallback;
+                delete message._publishCallback;
+            } else if (_isFunction(message._presenceCallback)) {
+                presenceCallback = message._presenceCallback;
+                delete message._presenceCallback;
+            } else if (_isFunction(message._historyCallback)) {
+                historyCallback = message._historyCallback;
+                delete message._historyCallback;
             }
 
-            if (message !== undefined && message !== null)
-            {
+            if (message !== undefined && message !== null) {
                 messages[i] = message;
-                if (callback)
-                    _publishCallbacks[message.uid] = callback;
-            }
-            else
-            {
+                if (publishCallback)
+                    _publishCallbacks[message.uid] = publishCallback;
+                if (presenceCallback)
+                    _presenceCallbacks[message.uid] = presenceCallback;
+                if (historyCallback)
+                    _historyCallbacks[message.uid] = historyCallback;
+            } else {
                 messages.splice(i--, 1);
             }
             _centrifuge._debug('Send', message);
@@ -356,29 +364,18 @@ Centrifuge = function(name) {
     }
 
     function _increaseBackoff() {
-        if (_backoff < _config.maxBackoff)
-        {
+        if (_backoff < _config.maxBackoff) {
             _backoff += _config.backoffIncrement;
         }
     }
 
     function _disconnect(abort) {
-        if (abort)
-        {
+        if (abort) {
             _transport.abort();
         }
         _clientId = null;
         _setStatus('disconnected');
         _resetBackoff();
-
-        // Fail any existing queued message
-        if (_messageQueue.length > 0)
-        {
-            _handleFailure.call(_centrifuge, undefined, _messageQueue, {
-                reason: 'Disconnected'
-            });
-            _messageQueue = [];
-        }
     }
 
     /**
@@ -436,13 +433,6 @@ Centrifuge = function(name) {
 
     }
 
-    function _failConnect(message)
-    {
-        // Notify the listeners after the status change but before the next action
-        _notifyListeners('/_meta/connect', message);
-        _notifyListeners('/_meta/unsuccessful', message);
-    }
-
     function _connectResponse(message) {
         _connected = message.error === null;
 
@@ -456,25 +446,13 @@ Centrifuge = function(name) {
         }
     }
 
-    function _connectFailure(failure)
-    {
-        _connected = false;
-        _failConnect({
-            successful: false,
-            failure: failure,
-            channel: '/_meta/connect'
-        });
-    }
-
-    function _failDisconnect(message)
-    {
-        _disconnect(true);
-        _notifyListeners('/_meta/disconnect', message);
+    function _failConnect(message) {
+        // Notify the listeners after the status change but before the next action
+        _notifyListeners('/_meta/connect', message);
         _notifyListeners('/_meta/unsuccessful', message);
     }
 
-    function _disconnectResponse(message)
-    {
+    function _disconnectResponse(message) {
         if (message.error === null)
         {
             _disconnect(false);
@@ -486,136 +464,109 @@ Centrifuge = function(name) {
         }
     }
 
-    function _disconnectFailure(failure)
-    {
-        _failDisconnect({
-            successful: false,
-            failure: failure,
-            channel: '/_meta/disconnect'
-        });
-    }
-
-    function _failSubscribe(message)
-    {
-        _notifyListeners('/_meta/subscribe', message);
+    function _failDisconnect(message) {
+        _disconnect(true);
+        _notifyListeners('/_meta/disconnect', message);
         _notifyListeners('/_meta/unsuccessful', message);
     }
 
-    function _subscribeResponse(message)
-    {
-        if (message.error === null)
-        {
+    function _subscribeResponse(message) {
+        if (message.error === null) {
             _notifyListeners('/_meta/subscribe', message);
-        }
-        else
-        {
+        } else {
             _failSubscribe(message);
         }
     }
 
-    function _subscribeFailure(failure)
-    {
-        _failSubscribe({
-            successful: false,
-            failure: failure,
-            channel: '/_meta/subscribe',
-            advice: {
-                reconnect: 'none',
-                interval: 0
-            }
-        });
-    }
-
-    function _failUnsubscribe(message)
-    {
-        _notifyListeners('/_meta/unsubscribe', message);
+    function _failSubscribe(message) {
+        _notifyListeners('/_meta/subscribe', message);
         _notifyListeners('/_meta/unsuccessful', message);
     }
 
-    function _unsubscribeResponse(message)
-    {
-        if (message.error === null)
-        {
+    function _unsubscribeResponse(message) {
+        if (message.error === null) {
             _notifyListeners('/_meta/unsubscribe', message);
-        }
-        else
-        {
+        } else {
             _failUnsubscribe(message);
         }
     }
 
-    function _unsubscribeFailure(failure)
-    {
-        _failUnsubscribe({
-            successful: false,
-            failure: failure,
-            channel: '/_meta/unsubscribe',
-            advice: {
-                reconnect: 'none',
-                interval: 0
-            }
-        });
+    function _failUnsubscribe(message) {
+        _notifyListeners('/_meta/unsubscribe', message);
+        _notifyListeners('/_meta/unsuccessful', message);
     }
 
     function _publishResponse(message) {
-        if (message.error === null)
-        {
-            _handlePublishCallback(message);
+        if (message.error === null) {
+            _handleCallback(_publishCallbacks, message);
             _notifyListeners('/_meta/publish', message);
-        }
-        else
-        {
-            _failMessage(message);
+        } else {
+            _failPublish(message);
         }
     }
 
-    function _handlePublishCallback(message)
-    {
-        var callback = _publishCallbacks[message.uid];
-        if (_isFunction(callback))
-        {
-            delete _publishCallbacks[message.uid];
-            callback.call(_centrifuge, message);
-        }
-    }
-
-    function _failMessage(message)
-    {
-        _handlePublishCallback(message);
+    function _failPublish(message) {
+        _handleCallback(_publishCallbacks, message);
         _notifyListeners('/_meta/publish', message);
         _notifyListeners('/_meta/unsuccessful', message);
     }
 
-    function _messageResponse(message)
-    {
-        if (message.method === "message")
-        {
-            if (message.body)
-            {
-                var body = $.parseJSON(message.body);
-                var path = '/' + body.category + '/' + body.channel;
-                console.log(body);
-                // It is a plain message, and not a bayeux meta message
-                _notifyListeners(path, body.data);
-            }
-            else
-            {
-                _centrifuge._debug('Unknown message', message);
-            }
+    function _presenceResponse(message) {
+        if (message.error === null) {
+            _handleCallback(_presenceCallbacks, message);
+            _notifyListeners('/_meta/presence', message);
+        } else {
+            _failPresence(message);
         }
     }
 
-    function _messageFailure(message, failure)
+    function _failPresence(message) {
+        _handleCallback(_presenceCallbacks, message);
+        _notifyListeners('/_meta/presence', message);
+        _notifyListeners('/_meta/unsuccessful', message);
+    }
+
+    function _historyResponse(message) {
+        if (message.error === null) {
+            _handleCallback(_historyCallbacks, message);
+            _notifyListeners('/_meta/history', message);
+        } else {
+            _failHistory(message);
+        }
+    }
+
+    function _failHistory(message) {
+        _handleCallback(_historyCallbacks, message);
+        _notifyListeners('/_meta/history', message);
+        _notifyListeners('/_meta/unsuccessful', message);
+    }
+
+
+    function _handleCallback(store, message)
     {
-        _failMessage({
-            successful: false,
-            failure: failure,
-            channel: message.channel,
-            advice: {
-                reconnect: 'none',
-                interval: 0
-            }
-        });
+        var callback = store[message.uid];
+        if (_isFunction(callback))
+        {
+            delete store[message.uid];
+            callback.call(_centrifuge, message);
+        }
+    }
+
+    function _messageResponse(message) {
+        if (message.method !== "message") {
+            _centrifuge._debug('Unknown message', message);
+            return;
+        }
+
+        if (message.body) {
+            var body = $.parseJSON(message.body);
+            var path = '/' + body.category + '/' + body.channel;
+            console.log(body);
+            // It is a plain message, and not a bayeux meta message
+            _notifyListeners(path, body.data);
+        } else {
+            _centrifuge._debug('Unknown message', message);
+        }
     }
 
     function _receive(message)
@@ -627,8 +578,7 @@ Centrifuge = function(name) {
 
         var method = message.method;
 
-        switch (method)
-        {
+        switch (method) {
             case 'connect':
                 _connectResponse(message);
                 break;
@@ -644,6 +594,12 @@ Centrifuge = function(name) {
             case 'publish':
                 _publishResponse(message);
                 break;
+            case 'presence':
+                _presenceResponse(message);
+                break;
+            case 'history':
+                _historyResponse(message);
+                break;
             default:
                 _messageResponse(message);
                 break;
@@ -656,47 +612,6 @@ Centrifuge = function(name) {
      * messages simulating that they had been received.
      */
     this.receive = _receive;
-
-    _handleMessages = function(rcvdMessages)
-    {
-        _centrifuge._debug('Received', rcvdMessages);
-
-        for (var i = 0; i < rcvdMessages.length; ++i)
-        {
-            var message = rcvdMessages[i];
-            _receive(message);
-        }
-    };
-
-    _handleFailure = function(conduit, messages, failure)
-    {
-        _centrifuge._debug('handleFailure', conduit, messages, failure);
-
-        for (var i = 0; i < messages.length; ++i)
-        {
-            var message = messages[i];
-            var messageFailure = _centrifuge._mixin(false, { message: message, transport: conduit }, failure);
-            var channel = message.channel;
-            switch (channel)
-            {
-                case '/_meta/connect':
-                    _connectFailure(messageFailure);
-                    break;
-                case '/_meta/disconnect':
-                    _disconnectFailure(messageFailure);
-                    break;
-                case '/_meta/subscribe':
-                    _subscribeFailure(messageFailure);
-                    break;
-                case '/_meta/unsubscribe':
-                    _unsubscribeFailure(messageFailure);
-                    break;
-                default:
-                    _messageFailure(message, messageFailure);
-                    break;
-            }
-        }
-    };
 
     function _hasSubscriptions(channel)
     {
@@ -846,7 +761,7 @@ Centrifuge = function(name) {
      * @return the subscription handle to be passed to {@link #unsubscribe(object)}
      */
     this.subscribe = function(path, callback) {
-        console.log('SUBSCRIBING');
+
         if (arguments.length < 2)
         {
             throw 'Illegal arguments number: required 2, got ' + arguments.length;
@@ -867,15 +782,10 @@ Centrifuge = function(name) {
 
         if (send)
         {
+            var matches = _parsePath(path);
+            var category = matches[0];
+            var channel = matches[1];
 
-            var matches = _regex.exec(path);
-
-            if (!matches) {
-                throw "Invalid channel to subscribe. Must be in format /category/channel"
-            }
-
-            var category = matches[1];
-            var channel = matches[2];
             var subscribe_to = {};
             subscribe_to[category] = [channel];
 
@@ -896,14 +806,12 @@ Centrifuge = function(name) {
      * Unsubscribes the subscription obtained with a call to {@link #subscribe(string, object, function)}.
      * @param subscription the subscription to unsubscribe.
      */
-    this.unsubscribe = function(subscription)
-    {
-        if (arguments.length < 1)
-        {
+    this.unsubscribe = function(subscription) {
+
+        if (arguments.length < 1) {
             throw 'Illegal arguments number: required 1, got ' + arguments.length;
         }
-        if (_isDisconnected())
-        {
+        if (_isDisconnected()) {
             throw 'Illegal state: already disconnected';
         }
 
@@ -913,23 +821,18 @@ Centrifuge = function(name) {
 
         var path = subscription.channel;
         // Only send the message to the server if this client unsubscribes the last subscription
-        if (!_hasSubscriptions(path))
-        {
-            var matches = _regex.exec(path);
+        if (!_hasSubscriptions(path)) {
+            var matches = _parsePath(path);
+            var category = matches[0];
+            var channel = matches[1];
 
-            if (!matches) {
-                throw "Invalid channel to subscribe. Must be in format /category/channel"
-            }
-
-            var category = matches[1];
-            var channel = matches[2];
+            var unsubscribe_from = {};
+            unsubscribe_from[category] = [channel];
 
             var centrifugeMessage = {
                 "method": "unsubscribe",
                 "params": {
-                    "from": {
-                        category: [channel]
-                    }
+                    "from": unsubscribe_from
                 }
             };
             var message = this._mixin(false, {}, centrifugeMessage);
@@ -941,8 +844,7 @@ Centrifuge = function(name) {
     this.resubscribe = function(subscription, subscribeProps)
     {
         _removeSubscription(subscription);
-        if (subscription)
-        {
+        if (subscription) {
             return this.subscribe(subscription.channel, subscription.scope, subscription.callback, subscribeProps);
         }
         return undefined;
@@ -964,8 +866,7 @@ Centrifuge = function(name) {
      * @param content the content of the message
      * @param publishCallback a function to be invoked when the publish is acknowledged by the server
      */
-    this.publish = function(path, content, publishCallback)
-    {
+    this.publish = function(path, content, publishCallback) {
         if (arguments.length < 2)
         {
             throw 'Illegal arguments number: required 2, got ' + arguments.length;
@@ -979,12 +880,9 @@ Centrifuge = function(name) {
             throw 'Illegal state: already disconnected';
         }
 
-        var matches = _regex.exec(path);
-        if (!matches) {
-            throw "Invalid channel to subscribe. Must be in format /category/channel"
-        }
-        var category = matches[1];
-        var channel = matches[2];
+        var matches = _parsePath(path);
+        var category = matches[0];
+        var channel = matches[1];
 
         var centrifugeMessage = {
             "method": "publish",
@@ -993,7 +891,63 @@ Centrifuge = function(name) {
                 "channel": channel,
                 "data": content
             },
-            _callback: publishCallback
+            _publishCallback: publishCallback
+        };
+        var message = this._mixin(false, {}, centrifugeMessage);
+        _send([message]);
+    };
+
+    this.presence = function(path, presenceCallback) {
+        if (arguments.length < 2) {
+            throw 'Illegal arguments number: required 2, got ' + arguments.length;
+        }
+        if (!_isString(path)) {
+            throw 'Illegal argument type: channel must be a string';
+        }
+        if (_isDisconnected())
+        {
+            throw 'Illegal state: already disconnected';
+        }
+
+        var matches = _parsePath(path);
+        var category = matches[0];
+        var channel = matches[1];
+
+        var centrifugeMessage = {
+            "method": "presence",
+            "params": {
+                "category": category,
+                "channel": channel
+            },
+            _presenceCallback: presenceCallback
+        };
+        var message = this._mixin(false, {}, centrifugeMessage);
+        _send([message]);
+    };
+
+    this.history = function(path, historyCallback) {
+        if (arguments.length < 2) {
+            throw 'Illegal arguments number: required 2, got ' + arguments.length;
+        }
+        if (!_isString(path)) {
+            throw 'Illegal argument type: channel must be a string';
+        }
+        if (_isDisconnected())
+        {
+            throw 'Illegal state: already disconnected';
+        }
+
+        var matches = _parsePath(path);
+        var category = matches[0];
+        var channel = matches[1];
+
+        var centrifugeMessage = {
+            "method": "history",
+            "params": {
+                "category": category,
+                "channel": channel
+            },
+            _historyCallback: historyCallback
         };
         var message = this._mixin(false, {}, centrifugeMessage);
         _send([message]);
@@ -1003,8 +957,7 @@ Centrifuge = function(name) {
     /**
      * Returns a string representing the status of the centrifuge communication with the Centrifuge server.
      */
-    this.getStatus = function()
-    {
+    this.getStatus = function() {
         return _status;
     };
 
@@ -1014,6 +967,11 @@ Centrifuge = function(name) {
     this.isDisconnected = _isDisconnected;
 
     /**
+     * Returns whether this instance connected.
+     */
+    this.isConnected = _isConnected;
+
+    /**
      * Sets the backoff period used to increase the backoff time when retrying an unsuccessful or failed message.
      * Default value is 1 second, which means if there is a persistent failure the retries will happen
      * after 1 second, then after 2 seconds, then after 3 seconds, etc. So for example with 15 seconds of
@@ -1021,8 +979,7 @@ Centrifuge = function(name) {
      * @param period the backoff period to set
      * @see #getBackoffIncrement()
      */
-    this.setBackoffIncrement = function(period)
-    {
+    this.setBackoffIncrement = function(period) {
         _config.backoffIncrement = period;
     };
 
