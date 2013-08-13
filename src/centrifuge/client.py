@@ -49,9 +49,11 @@ class Client(object):
         self.sub_stream = None
         logger.debug("new client created (uid: %s)" % self.uid)
 
+    @coroutine
     def close(self):
-        self.clean()
+        yield self.clean()
         logger.info('client destroyed (uid: %s)' % self.uid)
+        raise Return((True, None))
 
     @coroutine
     def clean(self):
@@ -60,17 +62,17 @@ class Client(object):
             self.sub_stream.close()
 
         if not self.is_authenticated:
-            return
+            raise Return((True, None))
 
         project_id = self.project['_id']
 
         connections = self.application.connections
 
         if not project_id in connections:
-            return
+            raise Return((True, None))
 
         if not self.user in connections[project_id]:
-            return
+            raise Return((True, None))
 
         try:
             del connections[project_id][self.user][self.uid]
@@ -98,9 +100,8 @@ class Client(object):
                 )
 
         self.channels = None
-
-        self.sock.close()
         self.sock = None
+        raise Return((True, None))
 
     def send(self, response):
         self.sock.send(response.as_message())
@@ -125,14 +126,16 @@ class Client(object):
         except ValueError:
             response.error = 'malformed JSON data'
             self.send(response)
-            raise Return(True)
+            yield self.sock.close()
+            raise Return((True, None))
 
         try:
             validate(data, req_schema)
         except ValidationError as e:
             response.error = str(e)
             self.send(response)
-            raise Return(True)
+            yield self.sock.close()
+            raise Return((True, None))
 
         uid = data.get('uid', None)
         method = data.get('method')
@@ -141,28 +144,31 @@ class Client(object):
         response.uid = uid
         response.method = method
 
-        if method != 'auth' and not self.is_authenticated:
+        if method != 'connect' and not self.is_authenticated:
             response.error = 'unauthorized'
             self.send(response)
-            raise Return(True)
+            yield self.sock.close()
+            raise Return((True, None))
 
         func = getattr(self, 'handle_%s' % method, None)
 
         if not func:
             response.error = "unknown method %s" % method
             self.send(response)
-            raise Return(True)
+            yield self.sock.close()
+            raise Return((True, None))
 
         try:
             validate(params, client_params_schema[method])
         except ValidationError as e:
             response = Response(uid=uid, method=method, error=str(e))
             self.send(response)
-            raise Return(True)
+            yield self.sock.close()
+            raise Return((True, None))
 
         response.body, response.error = yield func(params)
         self.send(response)
-        raise Return(True)
+        raise Return((True, None))
 
     @coroutine
     def authorize(self, project, user, permissions):
@@ -228,14 +234,14 @@ class Client(object):
                 )
 
     @coroutine
-    def handle_auth(self, params):
+    def handle_connect(self, params):
 
         if self.is_authenticated:
             raise Return((True, None))
 
         token = params["token"]
         user = params["user"]
-        project_id = params["project_id"]
+        project_id = params["project"]
         permissions = params["permissions"]
 
         project, error = yield self.application.structure.get_project_by_id(project_id)
@@ -296,7 +302,7 @@ class Client(object):
         self.sub_stream = ZMQStream(subscribe_socket)
         self.sub_stream.on_recv(self.message_published)
 
-        raise Return((True, None))
+        raise Return((self.uid, None))
 
     @coroutine
     def handle_subscribe(self, params):

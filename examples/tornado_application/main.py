@@ -61,7 +61,7 @@ class SockjsHandler(tornado.web.RequestHandler):
         auth_data = {
             'token': token,
             'user': user,
-            'project_id': options.project_id
+            'project': options.project_id
         }
 
         self.render(
@@ -87,7 +87,7 @@ class WebsocketHandler(tornado.web.RequestHandler):
         auth_data = {
             'token': token,
             'user': user,
-            'project_id': options.project_id
+            'project': options.project_id
         }
 
         self.render(

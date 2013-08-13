@@ -111,7 +111,7 @@ client_params_schema = {
         },
         "required": ["from"]
     },
-    "auth": {
+    "connect": {
         "type": "object",
         "properties": {
             "token": {
@@ -120,13 +120,13 @@ client_params_schema = {
             "user": {
                 "type": "string"
             },
-            "project_id": {
+            "project": {
                 "type": "string"
             },
             "permissions": {
                 "type": "object",
             }
         },
-        "required": ["token", "user", "project_id", "permissions"]
+        "required": ["token", "user", "project", "permissions"]
     }
 }
