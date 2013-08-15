@@ -3,7 +3,9 @@
     <head>
         <meta charset="utf-8">
         <title></title>
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/libs/jquery/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/event_emitter.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/centrifuge.js"></script>
         <style type="text/css">
             input[type="text"] { width: 300px; }
         </style>
@@ -14,121 +16,60 @@
 
             $(function() {
 
-                var is_authenticated = false;
+                var centrifuge = new Centrifuge();
+                window.centrifuge = centrifuge;
+                centrifuge.configure({
+                    url: 'ws://{{centrifuge_address}}/connection/websocket',
+                    token: '{{auth_data["token"]}}',
+                    project: '{{auth_data["project"]}}',
+                    user: '{{auth_data["user"]}}',
+                    permissions: {},
+                    logLevel: 'debug'
+                });
 
-                function message(text, is_broadcast) {
+                centrifuge.addListener('/_meta/connect', function() {
+
+                    var subscription = centrifuge.subscribe('/python/django', function(message) {
+                        draw_message(message['input']);
+                    }).callback(function() {
+                        console.log("successfully subscribed");
+                    }).errback(function() {
+                        console.log("error while subscribing");
+                    });
+
+                    centrifuge.presence('/python/django', function(message) {
+                        console.log(message.body);
+                        var count = 0;
+                        for (var key in message.body){
+                            count++;
+                        }
+                        draw_message('Now in this room: ' + count + ' clients');
+                    });
+
+                });
+
+                centrifuge.connect();
+
+                function draw_message(text) {
                     var date = new Date();
                     var container = $('#messages');
                     container.prepend($('<li/>').text([
-                        date.getHours(),
-                        date.getMinutes(),
-                        date.getSeconds(),
+                        date.toString(),
                         ' '+text
                     ].join(':')));
-                    if (is_broadcast) {
-                        container.find('li:first').css({'color': 'green'});
-                    }
-                }
-
-                function connect() {
-                    connection = new WebSocket('ws://{{centrifuge_address}}/connection/websocket');
-
-                    connection.onopen = function() {
-                        message('Connecting…');
-
-                        var auth_message = {
-                            'method': 'auth',
-                            'params': {
-                                'token': '{{auth_data["token"]}}',
-                                'user': '{{auth_data["user"]}}',
-                                'project_id': '{{auth_data["project_id"]}}',
-                                'permissions': {}
-                            }
-                        };
-                        console.log('sending auth');
-                        connection.send(JSON.stringify(auth_message));
-                    };
-
-                    connection.onclose = function() {
-                        message('Connection closed.');
-                        is_authenticated = false;
-                        window.setTimeout(connect, 3000);
-                    };
-
-                    connection.onmessage = function(event) {
-                        console.log(event);
-
-                        var data = $.parseJSON(event.data);
-                        if (data["method"] != "message") {
-                            // ack message
-                            message(event.data, false);
-                            console.log('ack received');
-                            var method = data['method'];
-                            var error = data['error'];
-                            var result = data['result'];
-                            if (method === 'auth' && error === null) {
-                                is_authenticated = true;
-                                var subscribe_message = {
-                                    'method': 'subscribe',
-                                    'params': {
-                                        'to': {
-                                            'python': ['django']
-                                        }
-                                    }
-                                };
-                                connection.send(JSON.stringify(subscribe_message));
-
-                                window.setTimeout(function(){
-                                    var presence_message = {
-                                        'method': 'presence',
-                                        'params': {
-                                            'category': 'python',
-                                            'channel': 'django'
-                                        }
-                                    };
-                                    connection.send(JSON.stringify(presence_message));
-                                }, 2000);
-
-                                window.setTimeout(function(){
-                                    var history_message = {
-                                        'method': 'history',
-                                        'params': {
-                                            'category': 'python',
-                                            'channel': 'django'
-                                        }
-                                    };
-                                    connection.send(JSON.stringify(history_message));
-                                }, 3000);
-
-                            }
-                        } else {
-                            // broadcast message
-                            message(event.data, true);
-                        }
-                    };
                 }
 
                 $('form').submit(function(event) {
                     event.preventDefault();
                     var input = $(this).find('input[type="text"]');
 
-                    if (is_authenticated === true) {
-                        var publish_message = {
-                            'method': 'publish',
-                            'params': {
-                                'category': 'python',
-                                'channel': 'django',
-                                'data': {'input': input.val()}
-                            }
-                        };
-                        connection.send(JSON.stringify(publish_message));
+                    if (centrifuge.getStatus() === 'connected') {
+                        centrifuge.publish('/python/django', {'input': input.val()}, function() {
+                            console.log('message successfully sent');
+                        });
+                        input.val('');
                     }
-
-                    input.val('');
                 });
-
-                connect();
-
             });
         </script>
     </head>

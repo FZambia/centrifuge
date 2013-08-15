@@ -5,7 +5,7 @@
         <title></title>
         <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
         <script type="text/javascript" src="http://cdn.sockjs.org/sockjs-0.3.1.min.js"></script>
-        <script type="text/javascript" src="http://localhost:8000/static/application/js/centrifuge.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/centrifuge.js"></script>
         <style type="text/css">
             input[type="text"] { width: 300px; }
         </style>
@@ -28,8 +28,17 @@
                 });
 
                 centrifuge.addListener('/_meta/connect', function() {
-                    centrifuge.subscribe('/python/django', function(message) {
+
+                    var subscription = centrifuge.subscribe('/python/django', function(message) {
                         draw_message(message['input']);
+                    }).callback(function() {
+                        console.log("successfully subscribed");
+                    }).errback(function() {
+                        console.log("error while subscribing");
+                    });
+
+                    centrifuge.presence('/python/django', function(message) {
+                        console.log(message);
                     });
                 });
 

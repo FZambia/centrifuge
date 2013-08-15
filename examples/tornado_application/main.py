@@ -4,6 +4,7 @@ import tornado.web
 from tornado.options import options, define
 import logging
 import hmac
+import json
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -105,7 +106,7 @@ class ValidateHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
-        self.write('ok')
+        self.write(json.dumps({'first_name': 'Alexandr', 'last_name': 'Emelin'}))
 
 
 def run():

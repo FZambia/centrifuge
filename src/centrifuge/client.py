@@ -47,6 +47,7 @@ class Client(object):
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
         self.sub_stream = None
+        self.user_details = {}
         logger.debug("new client created (uid: %s)" % self.uid)
 
     @coroutine
@@ -173,14 +174,15 @@ class Client(object):
     @coroutine
     def authorize(self, project, user, permissions):
 
-        if not user or not project.get('validate_url', None):
+        if not user or not project.get('auth_address', None):
             raise Return((True, None))
 
         project_id = project['_id']
 
         http_client = AsyncHTTPClient()
         request = HTTPRequest(
-            project['validate_url'],
+            'http://localhost:3000/validate',
+            #project['auth_address'],
             method="POST",
             body=json_encode({'user': user, 'permissions': permissions}),
             request_timeout=1
@@ -208,17 +210,28 @@ class Client(object):
 
             try:
                 response = yield http_client.fetch(request)
-            except:
+            except Exception as e:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
+                print e
                 pass
             else:
                 # reset back-off attempts
                 self.application.back_off[project_id] = 0
 
                 if response.code == 200:
+                    # auth successful
+                    try:
+                        user_details = json_decode(response.body)
+                    except:
+                        pass
+                    else:
+                        if isinstance(user_details, dict):
+                            self.user_details = user_details
                     raise Return((True, None))
+
                 elif response.code == 403:
+                    # access denied for this client
                     raise Return((False, None))
             attempts += 1
             self.application.back_off[project_id] += 1
@@ -277,7 +290,8 @@ class Client(object):
         self.project = project
         self.permissions = permissions
         self.user = user
-        self.user_info = json_encode({'user_id': self.user})
+        self.user_details.update({'user_id': self.user})
+        self.user_info = json_encode(self.user_details)
         self.channels = {}
         self.presence_ping = PeriodicCallback(
             self.send_presence_ping, self.application.presence_ping_interval
@@ -327,6 +341,8 @@ class Client(object):
         if self.user:
             connections[project_id][self.user][self.uid] = self
 
+        to_return = []
+
         for category_name, channels in six.iteritems(subscribe_to):
 
             if category_name not in self.categories:
@@ -363,11 +379,13 @@ class Client(object):
 
                 self.channels[category_name][channel] = True
 
+                to_return.append([category_name, channel])
+
                 yield self.application.state.add_presence(
                     project_id, category_name, channel, self.uid, self.user_info
                 )
 
-        raise Return((True, None))
+        raise Return((to_return, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
@@ -381,6 +399,8 @@ class Client(object):
 
         project_id = self.project['_id']
 
+        to_return = []
+
         for category_name, channels in six.iteritems(unsubscribe_from):
 
             if category_name not in self.categories:
@@ -392,6 +412,8 @@ class Client(object):
                 continue
 
             for channel in channels:
+
+                to_return.append([category_name, channel])
 
                 allowed_channels = self.permissions[category_name] if self.permissions else []
 
@@ -417,7 +439,7 @@ class Client(object):
                     project_id, category_name, channel, self.uid
                 )
 
-        raise Return((True, None))
+        raise Return((to_return, None))
 
     def check_category_permission(self, category):
         if category not in self.categories:
