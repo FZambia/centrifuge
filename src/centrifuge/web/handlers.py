@@ -125,12 +125,12 @@ class ProjectCreateHandler(BaseHandler):
             return
 
         project, error = yield self.application.structure.project_create(
-            form.name.data,
-            form.display_name.data,
-            form.auth_address.data,
-            form.max_auth_attempts.data,
-            form.back_off_interval.data,
-            form.back_off_max_timeout.data
+            name=form.name.data,
+            display_name=form.display_name.data,
+            auth_address=form.auth_address.data,
+            max_auth_attempts=form.max_auth_attempts.data,
+            back_off_interval=form.back_off_interval.data,
+            back_off_max_timeout=form.back_off_max_timeout.data
         )
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")
@@ -224,26 +224,26 @@ class CategoryFormHandler(BaseHandler):
             )
             return
 
-        args = (
-            form.name.data,
-            form.publish.data,
-            form.is_watching.data,
-            form.presence.data,
-            form.history.data,
-            form.history_size.data
-        )
+        kwargs = {
+            'name': form.name.data,
+            'publish': form.publish.data,
+            'is_watching': form.is_watching.data,
+            'presence': form.presence.data,
+            'history': form.history.data,
+            'history_size': form.history_size.data
+        }
 
         if not category_name:
             category, error = yield self.application.structure.category_create(
                 self.project,
-                *args
+                **kwargs
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message="error creating project")
         else:
             category, error = yield self.application.structure.category_edit(
                 self.category,
-                *args
+                **kwargs
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message="error creating project")
@@ -343,12 +343,12 @@ class ProjectSettingsHandler(BaseHandler):
 
             res, error = yield self.application.structure.project_edit(
                 self.project,
-                form.name.data,
-                form.display_name.data,
-                form.auth_address.data,
-                form.max_auth_attempts.data,
-                form.back_off_interval.data,
-                form.back_off_max_timeout.data
+                name=form.name.data,
+                display_name=form.display_name.data,
+                auth_address=form.auth_address.data,
+                max_auth_attempts=form.max_auth_attempts.data,
+                back_off_interval=form.back_off_interval.data,
+                back_off_max_timeout=form.back_off_max_timeout.data
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))

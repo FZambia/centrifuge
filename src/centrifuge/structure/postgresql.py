@@ -84,23 +84,16 @@ def project_list(db):
 
 
 @coroutine
-def project_create(
-        db,
-        name,
-        display_name,
-        auth_address,
-        max_auth_attempts,
-        back_off_interval,
-        back_off_max_timeout):
+def project_create(db, **kwargs):
 
     to_insert = {
         '_id': str(ObjectId()),
-        'name': name,
-        'display_name': display_name,
-        'auth_address': auth_address,
-        'max_auth_attempts': max_auth_attempts,
-        'back_off_interval': back_off_interval,
-        'back_off_max_timeout': back_off_max_timeout,
+        'name': kwargs['name'],
+        'display_name': kwargs['display_name'],
+        'auth_address': kwargs['auth_address'],
+        'max_auth_attempts': kwargs['max_auth_attempts'],
+        'back_off_interval': kwargs['back_off_interval'],
+        'back_off_max_timeout': kwargs['back_off_max_timeout'],
         'secret_key': uuid.uuid4().hex
     }
 
@@ -121,26 +114,18 @@ def project_create(
 
 
 @coroutine
-def project_edit(
-        db,
-        project,
-        name,
-        display_name,
-        auth_address,
-        max_auth_attempts,
-        back_off_interval,
-        back_off_max_timeout):
+def project_edit(db, project, **kwargs):
     """
     Edit project
     """
     to_update = {
         '_id': extract_obj_id(project),
-        'name': name,
-        'display_name': display_name,
-        'auth_address': auth_address,
-        'max_auth_attempts': max_auth_attempts,
-        'back_off_interval': back_off_interval,
-        'back_off_max_timeout': back_off_max_timeout
+        'name': kwargs['name'],
+        'display_name': kwargs['display_name'],
+        'auth_address': kwargs['auth_address'],
+        'max_auth_attempts': kwargs['max_auth_attempts'],
+        'back_off_interval': kwargs['back_off_interval'],
+        'back_off_max_timeout': kwargs['back_off_max_timeout']
     }
 
     query = "UPDATE projects SET name=%(name)s, display_name=%(display_name)s, " \
@@ -206,25 +191,17 @@ def category_list(db):
 
 
 @coroutine
-def category_create(
-        db,
-        project,
-        name,
-        publish,
-        is_watching,
-        presence,
-        history,
-        history_size):
+def category_create(db, project, **kwargs):
 
     to_insert = {
         '_id': str(ObjectId()),
         'project_id': project['_id'],
-        'name': name,
-        'publish': publish,
-        'is_watching': is_watching,
-        'presence': presence,
-        'history': history,
-        'history_size': history_size
+        'name': kwargs['name'],
+        'publish': kwargs['publish'],
+        'is_watching': kwargs['is_watching'],
+        'presence': kwargs['presence'],
+        'history': kwargs['history'],
+        'history_size': kwargs['history_size']
     }
 
     query = "INSERT INTO categories (_id, project_id, name, publish, " \
@@ -244,26 +221,18 @@ def category_create(
 
 
 @coroutine
-def category_edit(
-        db,
-        category,
-        name,
-        publish,
-        is_watching,
-        presence,
-        history,
-        history_size):
+def category_edit(db, category, **kwargs):
     """
     Edit project
     """
     to_update = {
         '_id': category['_id'],
-        'name': name,
-        'publish': publish,
-        'is_watching': is_watching,
-        'presence': presence,
-        'history': history,
-        'history_size': history_size
+        'name': kwargs['name'],
+        'publish': kwargs['publish'],
+        'is_watching': kwargs['is_watching'],
+        'presence': kwargs['presence'],
+        'history': kwargs['history'],
+        'history_size': kwargs['history_size']
     }
 
     query = "UPDATE categories SET name=%(name)s, publish=%(publish)s, " \
