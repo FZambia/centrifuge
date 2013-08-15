@@ -291,6 +291,8 @@ cent_proto._connect = function() {
 
     this._clientId = null;
 
+    console.log(this);
+
     this._clearSubscriptions();
 
     this._setStatus('connecting');
@@ -324,7 +326,9 @@ cent_proto._connect = function() {
     this._transport.onclose = function() {
         self._setStatus('disconnected');
         self.trigger('disconnect');
-        window.setTimeout(self._connect, self._config.retry);
+        window.setTimeout(function() {
+            self._connect.call(self)
+        }, self._config.retry);
     };
 
     this._transport.onmessage = function(event) {

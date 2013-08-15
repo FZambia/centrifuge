@@ -44,7 +44,7 @@ class ProjectForm(Form):
     auth_address = TextField(
         label='auth url address',
         validators=[
-            validators.URL(),
+            validators.URL(require_tld=False),
             validators.Optional()
         ],
         description="url address to authorize clients"

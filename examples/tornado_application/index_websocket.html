@@ -27,6 +27,7 @@
                     logLevel: 'debug'
                 });
 
+                /*
                 centrifuge.addListener('/_meta/connect', function() {
 
                     var subscription = centrifuge.subscribe('/python/django', function(message) {
@@ -47,6 +48,15 @@
                     });
 
                 });
+                */
+
+                centrifuge.on('connect', function(){
+                   draw_message('connected');
+                });
+
+                centrifuge.on('disconnect', function(){
+                    draw_message('disconnected');
+                });
 
                 centrifuge.connect();
 
@@ -63,7 +73,7 @@
                     event.preventDefault();
                     var input = $(this).find('input[type="text"]');
 
-                    if (centrifuge.getStatus() === 'connected') {
+                    if (centrifuge.isConnected() === true) {
                         centrifuge.publish('/python/django', {'input': input.val()}, function() {
                             console.log('message successfully sent');
                         });
