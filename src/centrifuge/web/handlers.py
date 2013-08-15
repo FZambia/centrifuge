@@ -226,7 +226,7 @@ class CategoryFormHandler(BaseHandler):
 
         args = (
             form.name.data,
-            form.is_bidirectional.data,
+            form.publish.data,
             form.is_watching.data,
             form.presence.data,
             form.history.data,

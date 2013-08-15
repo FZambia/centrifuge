@@ -144,6 +144,7 @@ class Client(object):
 
         response.uid = uid
         response.method = method
+        response.params = params
 
         if method != 'connect' and not self.is_authenticated:
             response.error = 'unauthorized'
@@ -172,25 +173,21 @@ class Client(object):
         raise Return((True, None))
 
     @coroutine
-    def authorize(self, project, user, permissions):
+    def authorize(self, auth_address, category_name, channel):
 
-        if not user or not project.get('auth_address', None):
-            raise Return((True, None))
-
-        project_id = project['_id']
+        project_id = self.project['_id']
 
         http_client = AsyncHTTPClient()
         request = HTTPRequest(
-            'http://localhost:3000/validate',
-            #project['auth_address'],
+            auth_address,
             method="POST",
-            body=json_encode({'user': user, 'permissions': permissions}),
+            body={'user': self.user, 'category': category_name, 'channel': channel},
             request_timeout=1
         )
 
-        max_auth_attempts = project.get('max_auth_attempts')
-        back_off_interval = project.get('back_off_interval')
-        back_off_max_timeout = project.get('back_off_max_timeout')
+        max_auth_attempts = self.project.get('max_auth_attempts')
+        back_off_interval = self.project.get('back_off_interval')
+        back_off_max_timeout = self.project.get('back_off_max_timeout')
 
         attempts = 0
 
@@ -221,13 +218,6 @@ class Client(object):
 
                 if response.code == 200:
                     # auth successful
-                    try:
-                        user_details = json_decode(response.body)
-                    except:
-                        pass
-                    else:
-                        if isinstance(user_details, dict):
-                            self.user_details = user_details
                     raise Return((True, None))
 
                 elif response.code == 403:
@@ -255,7 +245,7 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
-        permissions = params["permissions"]
+        #info = params.get("info", {})
 
         project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
@@ -268,27 +258,8 @@ class Client(object):
         if token != auth.get_client_token(secret_key, project_id, user):
             raise Return((None, "invalid token"))
 
-        self.is_authenticated, error = yield self.authorize(
-            project, user, permissions
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not self.is_authenticated:
-            raise Return((None, 'unauthorized'))
-
-        project_categories, error = yield self.application.structure.get_project_categories(
-            project
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        self.categories = {}
-        for category in project_categories:
-            if not permissions or (permissions and category['name'] in permissions):
-                self.categories[category['name']] = category
-
+        self.is_authenticated = True
         self.project = project
-        self.permissions = permissions
         self.user = user
         self.user_details.update({'user_id': self.user})
         self.user_info = json_encode(self.user_details)
@@ -297,12 +268,6 @@ class Client(object):
             self.send_presence_ping, self.application.presence_ping_interval
         )
         self.presence_ping.start()
-
-        # allow publish from client only into bidirectional categories
-        self.bidirectional_categories = {}
-        for category_name, category in six.iteritems(self.categories):
-            if category.get('is_bidirectional', False):
-                self.bidirectional_categories[category_name] = category
 
         context = self.application.zmq_context
         subscribe_socket = context.socket(zmq.SUB)
@@ -323,10 +288,11 @@ class Client(object):
         """
         Subscribe authenticated connection on channels.
         """
-        subscribe_to = params.get('to')
+        category_name = params.get('category')
+        channel = params.get('channel')
 
-        if not subscribe_to:
-            raise Return((True, None))
+        if not category_name or not channel:
+            raise Return((None, 'no category or channel provided'))
 
         project_id = self.project['_id']
 
@@ -341,144 +307,143 @@ class Client(object):
         if self.user:
             connections[project_id][self.user][self.uid] = self
 
-        to_return = []
+        category, error = yield self.get_category(category_name)
+        if error:
+            raise Return((None, error))
 
-        for category_name, channels in six.iteritems(subscribe_to):
+        is_protected = category.get('is_protected', False)
 
-            if category_name not in self.categories:
-                # attempt to subscribe on not allowed category
-                continue
+        if is_protected:
+            auth_address = category.get(
+                'auth_address',
+                self.project.get('auth_address', None)
+            )
+            if not auth_address:
+                raise Return((None, 'no auth address found'))
+            is_authorized, error = yield self.authorize(auth_address, category_name, channel)
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            if not is_authorized:
+                raise Return((None, 'permission denied'))
 
-            if not channels or not isinstance(channels, list):
-                # attempt to subscribe without channels provided
-                continue
+        channel_to_subscribe = create_subscription_name(
+            project_id,
+            category_name,
+            channel
+        )
 
-            allowed_channels = self.permissions.get(category_name) if self.permissions else []
+        self.sub_stream.setsockopt_string(
+            zmq.SUBSCRIBE, six.u(channel_to_subscribe)
+        )
 
-            for channel in channels:
+        if category_name not in self.channels:
+            self.channels[category_name] = {}
 
-                if not isinstance(allowed_channels, list):
-                    continue
+        self.channels[category_name][channel] = True
 
-                if allowed_channels and channel not in allowed_channels:
-                    # attempt to subscribe on not allowed channel
-                    continue
+        yield self.application.state.add_presence(
+            project_id, category_name, channel, self.uid, self.user_info
+        )
 
-                channel_to_subscribe = create_subscription_name(
-                    project_id,
-                    category_name,
-                    channel
-                )
-
-                self.sub_stream.setsockopt_string(
-                    zmq.SUBSCRIBE, six.u(channel_to_subscribe)
-                )
-
-                if category_name not in self.channels:
-                    self.channels[category_name] = {}
-
-                self.channels[category_name][channel] = True
-
-                to_return.append([category_name, channel])
-
-                yield self.application.state.add_presence(
-                    project_id, category_name, channel, self.uid, self.user_info
-                )
-
-        raise Return((to_return, None))
+        raise Return((True, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
         """
         Unsubscribe authenticated connection from channels.
         """
-        unsubscribe_from = params.get('from')
+        category_name = params.get('category')
+        channel = params.get('channel')
 
-        if not unsubscribe_from:
+        if not category_name or not channel:
             raise Return((True, None))
 
         project_id = self.project['_id']
 
-        to_return = []
+        categories, error = yield self.application.structure.categories_by_name().get(
+            project_id, {}
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
 
-        for category_name, channels in six.iteritems(unsubscribe_from):
+        if category_name not in categories:
+            # attempt to unsubscribe from not allowed category
+            raise Return((True, None))
 
-            if category_name not in self.categories:
-                # attempt to unsubscribe from not allowed category
-                continue
+        channel_to_unsubscribe = self.application.create_subscription_name(
+            project_id,
+            category_name,
+            channel
+        )
+        self.sub_stream.setsockopt_string(
+            zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
+        )
 
-            if not channels or not isinstance(channels, list):
-                # attempt to unsubscribe from unknown channels
-                continue
+        try:
+            del self.channels[category_name][channel]
+        except KeyError:
+            pass
 
-            for channel in channels:
+        yield self.application.state.remove_presence(
+            project_id, category_name, channel, self.uid
+        )
 
-                to_return.append([category_name, channel])
+        raise Return((True, None))
 
-                allowed_channels = self.permissions[category_name] if self.permissions else []
+    @coroutine
+    def get_category(self, category_name):
+        categories, error = yield self.application.structure.get_categories_by_name()
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
 
-                if allowed_channels and channel not in allowed_channels:
-                    # attempt to unsubscribe from not allowed channel
-                    continue
+        project_categories = categories.get(
+            self.project['_id'], {}
+        )
+        if category_name not in project_categories:
+            raise Return((None, 'category does not exist'))
 
-                channel_to_unsubscribe = self.application.create_subscription_name(
-                    project_id,
-                    category_name,
-                    channel
-                )
-                self.sub_stream.setsockopt_string(
-                    zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
-                )
-
-                try:
-                    del self.channels[category_name][channel]
-                except KeyError:
-                    pass
-
-                yield self.application.state.remove_presence(
-                    project_id, category_name, channel, self.uid
-                )
-
-        raise Return((to_return, None))
-
-    def check_category_permission(self, category):
-        if category not in self.categories:
-            raise Return((None, 'category does not exist or permission denied'))
+        raise Return((project_categories[category_name], None))
 
     def check_channel_permission(self, category, channel):
-        allowed_channels = self.permissions.get(category) if self.permissions else []
-        if allowed_channels and channel not in allowed_channels:
-            # attempt to publish into not allowed channel
-            raise Return((None, 'channel permission denied'))
+        if category in self.channels and channel in self.channels[category]:
+            return
+        raise Return((None, 'channel permission denied'))
 
     @coroutine
     def handle_publish(self, params):
 
-        category = params.get('category')
+        category_name = params.get('category')
         channel = params.get('channel')
 
-        self.check_category_permission(category)
+        category, error = yield self.get_category(category_name)
+        if error:
+            raise Return((None, error))
 
-        if category not in self.bidirectional_categories:
-            raise Return((None, 'one-way category'))
+        self.check_channel_permission(category_name, channel)
 
-        self.check_channel_permission(category, channel)
+        if not category['publish']:
+            raise Return((None, 'publishing into this category not available'))
 
         result, error = yield self.application.process_publish(
             self.project,
-            params,
-            allowed_categories=self.bidirectional_categories
+            params
         )
 
         raise Return((result, error))
 
     @coroutine
     def handle_presence(self, params):
-        category = params.get('category')
+        category_name = params.get('category')
         channel = params.get('channel')
 
-        self.check_category_permission(category)
-        self.check_channel_permission(category, channel)
+        category, error = yield self.get_category(category_name)
+        if error:
+            raise Return((None, error))
+        self.check_channel_permission(category_name, channel)
+
+        if not category['presence']:
+            raise Return((None, 'presence for this category not available'))
+
         result, error = yield self.application.process_presence(
             self.project,
             params
@@ -487,11 +452,17 @@ class Client(object):
 
     @coroutine
     def handle_history(self, params):
-        category = params.get('category')
+        category_name = params.get('category')
         channel = params.get('channel')
 
-        self.check_category_permission(category)
-        self.check_channel_permission(category, channel)
+        category, error = yield self.get_category(category_name)
+        if error:
+            raise Return((None, error))
+        self.check_channel_permission(category_name, channel)
+
+        if not category['history']:
+            raise Return((None, 'history for this category not available'))
+
         result, error = yield self.application.process_history(
             self.project,
             params

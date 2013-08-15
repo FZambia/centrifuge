@@ -604,6 +604,8 @@ Centrifuge = function(name) {
 
         var method = message.method;
 
+        console.log(message.error);
+
         switch (method) {
             case 'connect':
                 _connectResponse(message);
@@ -817,13 +819,11 @@ Centrifuge = function(name) {
             var category = matches[0];
             var channel = matches[1];
 
-            var subscribe_to = {};
-            subscribe_to[category] = [channel];
-
             var centrifugeMessage = {
                 "method": "subscribe",
                 "params": {
-                    "to": subscribe_to
+                    "category": category,
+                    "channel": channel
                 }
             };
             var message = this._mixin(false, {}, centrifugeMessage);
@@ -857,13 +857,11 @@ Centrifuge = function(name) {
             var category = matches[0];
             var channel = matches[1];
 
-            var unsubscribe_from = {};
-            unsubscribe_from[category] = [channel];
-
             var centrifugeMessage = {
                 "method": "unsubscribe",
                 "params": {
-                    "from": unsubscribe_from
+                    "category": category,
+                    "channel": channel
                 }
             };
             var message = this._mixin(false, {}, centrifugeMessage);
@@ -1610,13 +1608,11 @@ sub_proto.parsePath = function() {
 };
 
 sub_proto.subscribe = function(callback) {
-    var subscribe_to = {};
-    subscribe_to[this.category] = [this.channel];
-
     var centrifugeMessage = {
         "method": "subscribe",
         "params": {
-            "to": subscribe_to
+            "category": this.category,
+            "channel": this.channel
         }
     };
     var message = mixin(false, {}, centrifugeMessage);
@@ -1625,13 +1621,11 @@ sub_proto.subscribe = function(callback) {
 };
 
 sub_proto.unsubscribe = function() {
-    var unsubscribe_from = {};
-    unsubscribe_from[this.category] = [this.channel];
-
     var centrifugeMessage = {
         "method": "unsubscribe",
         "params": {
-            "from": unsubscribe_from
+            "category": this.category,
+            "channel": this.channel
         }
     };
     var message = mixin(false, {}, centrifugeMessage);

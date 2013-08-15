@@ -39,7 +39,7 @@ def init_storage(structure, settings, ready_callback):
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, is_bidirectional bool, ' \
+               'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
                'is_watching bool, presence bool, history bool, history_size integer)'
 
     cursor.execute(project, ())
@@ -193,7 +193,7 @@ def category_create(
         cursor,
         project,
         name,
-        is_bidirectional,
+        publish,
         is_watching,
         presence,
         history,
@@ -203,7 +203,7 @@ def category_create(
         '_id': str(ObjectId()),
         'project_id': project['_id'],
         'name': name,
-        'is_bidirectional': is_bidirectional,
+        'publish': publish,
         'is_watching': is_watching,
         'presence': presence,
         'history': history,
@@ -211,11 +211,11 @@ def category_create(
     }
 
     to_insert = (
-        to_return['_id'], to_return['project_id'], name, is_bidirectional,
+        to_return['_id'], to_return['project_id'], name, publish,
         is_watching, presence, history, history_size
     )
 
-    query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
+    query = "INSERT INTO categories (_id, project_id, name, publish, " \
             "is_watching, presence, history, history_size) VALUES " \
             "(?, ?, ?, ?, ?, ?, ?, ?)"
 
@@ -233,7 +233,7 @@ def category_edit(
         cursor,
         category,
         name,
-        is_bidirectional,
+        publish,
         is_watching,
         presence,
         history,
@@ -244,7 +244,7 @@ def category_edit(
     to_return = {
         '_id': category['_id'],
         'name': name,
-        'is_bidirectional': is_bidirectional,
+        'publish': publish,
         'is_watching': is_watching,
         'presence': presence,
         'history': history,
@@ -252,11 +252,11 @@ def category_edit(
     }
 
     to_update = (
-        name, is_bidirectional, is_watching, presence,
+        name, publish, is_watching, presence,
         history, history_size, category['_id']
     )
 
-    query = "UPDATE categories SET name=?, is_bidirectional=?, is_watching=?, presence=?, " \
+    query = "UPDATE categories SET name=?, publish=?, is_watching=?, presence=?, " \
             "history=?, history_size=? WHERE _id=?"
 
     try:

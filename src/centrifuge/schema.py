@@ -69,11 +69,14 @@ admin_params_schema = {
             "user": {
                 "type": "string"
             },
-            "to": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["user", "to"]
+        "required": ["user", "category", "channel"]
     },
     "unsubscribe": {
         "type": "object",
@@ -81,11 +84,14 @@ admin_params_schema = {
             "user": {
                 "type": "string"
             },
-            "from": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["user", "from"]
+        "required": ["user", "category", "channel"]
     }
 }
 
@@ -96,20 +102,26 @@ client_params_schema = {
     "subscribe": {
         "type": "object",
         "properties": {
-            "to": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["to"]
+        "required": ["category", "channel"]
     },
     "unsubscribe": {
         "type": "object",
         "properties": {
-            "from": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["from"]
+        "required": ["category", "channel"]
     },
     "connect": {
         "type": "object",
@@ -122,11 +134,8 @@ client_params_schema = {
             },
             "project": {
                 "type": "string"
-            },
-            "permissions": {
-                "type": "object",
             }
         },
-        "required": ["token", "user", "project", "permissions"]
+        "required": ["token", "user", "project"]
     }
 }

@@ -73,9 +73,10 @@ CONTROL_CHANNEL = '_control' + CHANNEL_SUFFIX
 
 class Response(object):
 
-    def __init__(self, uid=None, method=None, error=None, body=None):
+    def __init__(self, uid=None, method=None, params=None, error=None, body=None):
         self.uid = uid
         self.method = method
+        self.params = None
         self.error = error
         self.body = body
 
@@ -83,6 +84,7 @@ class Response(object):
         return {
             'uid': self.uid,
             'method': self.method,
+            'params': self.params,
             'error': self.error,
             'body': self.body
         }

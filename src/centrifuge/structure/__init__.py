@@ -158,6 +158,16 @@ class Structure:
             ))
 
     @coroutine
+    def get_categories_by_name(self):
+        with (yield lock.acquire()):
+            if not self.is_consistent():
+                raise Return((None, InconsistentStructureError()))
+            raise Return((
+                self._data['categories_by_name'],
+                None
+            ))
+
+    @coroutine
     def get_category_by_name(self, project, category_name):
         with (yield lock.acquire()):
             if not self.is_consistent():

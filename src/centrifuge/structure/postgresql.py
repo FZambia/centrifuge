@@ -48,7 +48,7 @@ def on_connection_ready(structure, ready_callback):
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, is_bidirectional bool, ' \
+               'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
                'is_watching bool, presence bool, history bool, history_size integer)'
 
     yield momoko.Op(db.execute, project, ())
@@ -210,7 +210,7 @@ def category_create(
         db,
         project,
         name,
-        is_bidirectional,
+        publish,
         is_watching,
         presence,
         history,
@@ -220,17 +220,17 @@ def category_create(
         '_id': str(ObjectId()),
         'project_id': project['_id'],
         'name': name,
-        'is_bidirectional': is_bidirectional,
+        'publish': publish,
         'is_watching': is_watching,
         'presence': presence,
         'history': history,
         'history_size': history_size
     }
 
-    query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
+    query = "INSERT INTO categories (_id, project_id, name, publish, " \
             "is_watching, presence, " \
             "history, history_size) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
-            "%(is_bidirectional)s, %(is_watching)s, %(presence)s, " \
+            "%(publish)s, %(is_watching)s, %(presence)s, " \
             "%(history)s, %(history_size)s)"
 
     try:
@@ -248,7 +248,7 @@ def category_edit(
         db,
         category,
         name,
-        is_bidirectional,
+        publish,
         is_watching,
         presence,
         history,
@@ -259,14 +259,14 @@ def category_edit(
     to_update = {
         '_id': category['_id'],
         'name': name,
-        'is_bidirectional': is_bidirectional,
+        'publish': publish,
         'is_watching': is_watching,
         'presence': presence,
         'history': history,
         'history_size': history_size
     }
 
-    query = "UPDATE categories SET name=%(name)s, is_bidirectional=%(is_bidirectional)s, " \
+    query = "UPDATE categories SET name=%(name)s, publish=%(publish)s, " \
             "is_watching=%(is_watching)s, presence=%(presence)s, " \
             "history=%(history)s, history_size=%(history_size)s " \
             "WHERE _id=%(_id)s"

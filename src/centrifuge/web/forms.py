@@ -91,13 +91,6 @@ class CategoryForm(Form):
         description="unique category name"
     )
 
-    is_bidirectional = BooleanField(
-        label='is bidirectional',
-        validators=[],
-        default=False,
-        description="bidirectional categories allow clients to publish messages in channels"
-    )
-
     is_watching = BooleanField(
         label='is watching',
         validators=[],
@@ -105,15 +98,29 @@ class CategoryForm(Form):
         description="publish all category channel's messages to administrator's web interface"
     )
 
+    is_protected = BooleanField(
+        label='is protected',
+        validators=[],
+        default=False,
+        description="authorize every subscription request using auth address"
+    )
+
+    publish = BooleanField(
+        label='publish',
+        validators=[],
+        default=False,
+        description="allow clients to publish messages in channels"
+    )
+
     presence = BooleanField(
-        label='presence information',
+        label='presence',
         validators=[],
         default=True,
         description="check if you want to get presence info for channels in this category"
     )
 
     history = BooleanField(
-        label='history information',
+        label='history',
         validators=[],
         default=True,
         description="check if you want to get history info for channels in this category"
