@@ -207,10 +207,6 @@ cent_proto._configure = function(configuration) {
         throw 'Missing required configuration parameter \'user\' specifying user\'s unique ID in your application';
     }
 
-    if (!this._config.permissions) {
-        throw 'Missing required configuration parameter \'permissions\' specifying user\'s subscribe permissions';
-    }
-
     this._config.url = stripSlash(this._config.url);
 
     if (endsWith(this._config.url, 'connection')) {
@@ -315,8 +311,7 @@ cent_proto._connect = function() {
             'params': {
                 'token': self._config.token,
                 'user': self._config.user,
-                'project': self._config.project,
-                'permissions': self._config.permissions
+                'project': self._config.project
             }
         };
         var message = mixin(false, {}, centrifuge_message);

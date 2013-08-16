@@ -17,45 +17,34 @@
             $(function() {
 
                 var centrifuge = new Centrifuge();
-                window.centrifuge = centrifuge;
+
                 centrifuge.configure({
                     url: 'ws://{{centrifuge_address}}/connection/websocket',
                     token: '{{auth_data["token"]}}',
                     project: '{{auth_data["project"]}}',
                     user: '{{auth_data["user"]}}',
-                    permissions: {},
                     logLevel: 'debug'
                 });
 
-                /*
-                centrifuge.addListener('/_meta/connect', function() {
+                centrifuge.on('connect', function(){
+
+                    draw_message('connected');
 
                     var subscription = centrifuge.subscribe('/python/django', function(message) {
-                        draw_message(message['input']);
-                    }).callback(function() {
-                        console.log("successfully subscribed");
-                    }).errback(function() {
-                        console.log("error while subscribing");
-                    });
-
-                    centrifuge.presence('/python/django', function(message) {
-                        console.log(message.body);
-                        var count = 0;
-                        for (var key in message.body){
-                            count++;
-                        }
-                        draw_message('Now in this room: ' + count + ' clients');
-                    });
-
-                });
-                */
-
-                centrifuge.on('connect', function(){
-                    draw_message('connected');
-                    centrifuge.subscribe('/python/django', function(message) {
                         console.log(message);
                         draw_message(message['input']);
                     });
+
+                    subscription.on('subscribe:success', function(){
+                        subscription.presence(function(message) {
+                            var count = 0;
+                            for (var key in message){
+                                count++;
+                            }
+                            draw_message('Now in this room: ' + count + ' clients');
+                        });
+                    });
+
                 });
 
                 centrifuge.on('disconnect', function(){
