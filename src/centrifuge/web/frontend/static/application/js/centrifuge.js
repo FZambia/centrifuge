@@ -94,11 +94,11 @@ function mixin(deep, target, objects) {
             if (deep && typeof prop === 'object' && prop !== null) {
                 if (prop instanceof Array) {
                     //noinspection JSUnfilteredForInLoop
-                    result[propName] = this._mixin(deep, targ instanceof Array ? targ : [], prop);
+                    result[propName] = mixin(deep, targ instanceof Array ? targ : [], prop);
                 } else {
                     var source = typeof targ === 'object' && !(targ instanceof Array) ? targ : {};
                     //noinspection JSUnfilteredForInLoop
-                    result[propName] = this._mixin(deep, source, prop);
+                    result[propName] = mixin(deep, source, prop);
                 }
             } else {
                 //noinspection JSUnfilteredForInLoop
@@ -162,8 +162,6 @@ function Centrifuge(name) {
     this._transport = null;
     this._messageId = 0;
     this._clientId = null;
-    this._listeners = {};
-    this._callbacks = {};
     this._subscriptions = {};
     this._regex = /^\/([^_]+[A-z0-9]{2,})\/(.+)$/;
     this._config = {
@@ -267,16 +265,6 @@ cent_proto._send = function(messages) {
         if (this._clientId) {
             message.clientId = this._clientId;
         }
-
-        var callback = undefined;
-
-        if (isFunction(message._callback)) {
-            callback = message._callback;
-            delete message._callback;
-        }
-
-        if (callback)
-            this._callbacks[message.uid] = callback;
 
         this._debug('Send', message);
         this._transport.send(JSON.stringify(message));

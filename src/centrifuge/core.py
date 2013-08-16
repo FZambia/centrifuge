@@ -76,7 +76,7 @@ class Response(object):
     def __init__(self, uid=None, method=None, params=None, error=None, body=None):
         self.uid = uid
         self.method = method
-        self.params = None
+        self.params = params
         self.error = error
         self.body = body
 
