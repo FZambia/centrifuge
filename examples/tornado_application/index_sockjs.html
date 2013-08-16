@@ -3,80 +3,14 @@
     <head>
         <meta charset="utf-8">
         <title></title>
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
         <script type="text/javascript" src="http://cdn.sockjs.org/sockjs-0.3.1.min.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/libs/jquery/jquery-1.9.1.min.js"></script>
         <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/event_emitter.js"></script>
         <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/centrifuge.js"></script>
         <style type="text/css">
             input[type="text"] { width: 300px; }
         </style>
-        <script type="text/javascript">
-            'use strict';
-
-            var connection;
-
-            $(function() {
-
-                var centrifuge = new Centrifuge();
-
-                centrifuge.configure({
-                    url: 'ws://{{centrifuge_address}}/connection/websocket',
-                    token: '{{auth_data["token"]}}',
-                    project: '{{auth_data["project"]}}',
-                    user: '{{auth_data["user"]}}',
-                    logLevel: 'debug'
-                });
-
-                centrifuge.on('connect', function(){
-
-                    draw_message('connected');
-
-                    var subscription = centrifuge.subscribe('/python/django', function(message) {
-                        console.log(message);
-                        draw_message(message['input']);
-                    });
-
-                    subscription.on('subscribe:success', function(){
-                        subscription.presence(function(message) {
-                            var count = 0;
-                            for (var key in message){
-                                count++;
-                            }
-                            draw_message('Now in this room: ' + count + ' clients');
-                        });
-                    });
-
-                });
-
-                centrifuge.on('disconnect', function(){
-                    draw_message('disconnected');
-                });
-
-                centrifuge.connect();
-
-                function draw_message(text) {
-                    var date = new Date();
-                    var container = $('#messages');
-                    container.prepend($('<li/>').text([
-                        date.toString(),
-                        ' '+text
-                    ].join(':')));
-                }
-
-                $('form').submit(function(event) {
-                    event.preventDefault();
-                    var input = $(this).find('input[type="text"]');
-
-                    if (centrifuge.isConnected() === true) {
-                        var subscription = centrifuge.publish('/python/django', {'input': input.val()}, function() {
-                            console.log('message successfully sent');
-                        });
-                        console.log(subscription);
-                        input.val('');
-                    }
-                });
-            });
-        </script>
+        {% include 'code.html' %}
     </head>
     <body>
         <form action=".">

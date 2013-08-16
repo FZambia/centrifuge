@@ -31,6 +31,45 @@ Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/),
 and look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
 
 
+Basic usage from browser
+```javascript
+var centrifuge = new Centrifuge();
+
+centrifuge.configure({
+    url: 'http://{{centrifuge_address}}/connection',  // use SockJS endpoint (SockJS library must be imported)
+    token: '{{auth_data["token"]}}', // token based on project's ID and user ID
+    project: '{{auth_data["project"]}}', // project ID from Centrifuge admin interface
+    user: '{{auth_data["user"]}}', // your application user ID (can be empty for anonymous access)
+});
+
+centrifuge.on('connect', function(){
+
+    console.log('connected');
+
+    var subscription = centrifuge.subscribe('/python/django', function(message) {
+        console.log(message);
+    });
+
+    subscription.on('subscribe:success', function(){
+        subscription.presence(function(message) {
+            var count = 0;
+            for (var key in message){
+                count++;
+            }
+            console.log('Now in this room: ' + count + ' clients');
+        });
+    });
+
+});
+
+centrifuge.on('disconnect', function(){
+    console.log('disconnected');
+});
+
+centrifuge.connect();
+```
+
+
 Architecture diagram
 --------------------
 
