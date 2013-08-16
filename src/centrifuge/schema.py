@@ -63,21 +63,6 @@ admin_params_schema = {
         },
         "required": ["category", "channel"]
     },
-    "subscribe": {
-        "type": "object",
-        "properties": {
-            "user": {
-                "type": "string"
-            },
-            "category": {
-                "type": "string"
-            },
-            "channel": {
-                "type": "string"
-            }
-        },
-        "required": ["user", "category", "channel"]
-    },
     "unsubscribe": {
         "type": "object",
         "properties": {
@@ -91,7 +76,7 @@ admin_params_schema = {
                 "type": "string"
             }
         },
-        "required": ["user", "category", "channel"]
+        "required": ["user"]
     }
 }
 

@@ -44,7 +44,7 @@ centrifuge.configure({
     user: '{{auth_data["user"]}}', // your application user ID (can be empty for anonymous access)
 });
 
-centrifuge.on('connect', function(){
+centrifuge.on('connect', function() {
 
     console.log('connected');
 

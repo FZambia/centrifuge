@@ -214,7 +214,7 @@ class Client(object):
 
             try:
                 response = yield http_client.fetch(request)
-            except Exception as e:
+            except:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
                 pass
@@ -251,7 +251,6 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
-        #info = params.get("info", {})
 
         project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
