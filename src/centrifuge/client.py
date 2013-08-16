@@ -7,6 +7,10 @@ import uuid
 import six
 import time
 import random
+try:
+    from urllib import urlencode
+except ImportError:
+    from urllib.parse import urlencode
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.escape import json_encode, json_decode
@@ -176,12 +180,15 @@ class Client(object):
     def authorize(self, auth_address, category_name, channel):
 
         project_id = self.project['_id']
-
         http_client = AsyncHTTPClient()
         request = HTTPRequest(
             auth_address,
             method="POST",
-            body={'user': self.user, 'category': category_name, 'channel': channel},
+            body=urlencode({
+                'user': self.user,
+                'category': category_name,
+                'channel': channel
+            }),
             request_timeout=1
         )
 
@@ -210,7 +217,6 @@ class Client(object):
             except Exception as e:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
-                print e
                 pass
             else:
                 # reset back-off attempts
@@ -314,10 +320,9 @@ class Client(object):
         is_protected = category.get('is_protected', False)
 
         if is_protected:
-            auth_address = category.get(
-                'auth_address',
-                self.project.get('auth_address', None)
-            )
+            auth_address = category.get('auth_address', None)
+            if not auth_address:
+                auth_address = self.project.get('auth_address', None)
             if not auth_address:
                 raise Return((None, 'no auth address found'))
             is_authorized, error = yield self.authorize(auth_address, category_name, channel)
@@ -428,7 +433,6 @@ class Client(object):
             self.project,
             params
         )
-
         raise Return((result, error))
 
     @coroutine

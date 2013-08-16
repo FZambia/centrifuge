@@ -40,7 +40,8 @@ def init_storage(structure, settings, ready_callback):
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
-               'is_watching bool, presence bool, history bool, history_size integer)'
+               'is_watching bool, presence bool, history bool, history_size integer, ' \
+               'is_protected bool, auth_address varchar(255))'
 
     cursor.execute(project, ())
     conn.commit()
@@ -185,18 +186,20 @@ def category_create(cursor, project, **kwargs):
         'is_watching': kwargs['is_watching'],
         'presence': kwargs['presence'],
         'history': kwargs['history'],
-        'history_size': kwargs['history_size']
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
 
     to_insert = (
         to_return['_id'], to_return['project_id'], to_return['name'], to_return['publish'],
         to_return['is_watching'], to_return['presence'], to_return['history'],
-        to_return['history_size']
+        to_return['history_size'], to_return['is_protected'], to_return['auth_address']
     )
 
     query = "INSERT INTO categories (_id, project_id, name, publish, " \
-            "is_watching, presence, history, history_size) VALUES " \
-            "(?, ?, ?, ?, ?, ?, ?, ?)"
+            "is_watching, presence, history, history_size, is_protected, " \
+            "auth_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
@@ -219,17 +222,19 @@ def category_edit(cursor, category, **kwargs):
         'is_watching': kwargs['is_watching'],
         'presence': kwargs['presence'],
         'history': kwargs['history'],
-        'history_size': kwargs['history_size']
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
 
     to_update = (
         to_return['name'], to_return['publish'], to_return['is_watching'],
         to_return['presence'], to_return['history'], to_return['history_size'],
-        category['_id']
+        to_return['is_protected'], to_return['auth_address'], category['_id']
     )
 
     query = "UPDATE categories SET name=?, publish=?, is_watching=?, presence=?, " \
-            "history=?, history_size=? WHERE _id=?"
+            "history=?, history_size=?, is_protected=?, auth_address=? WHERE _id=?"
 
     try:
         cursor.execute(query, to_update)

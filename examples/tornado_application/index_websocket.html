@@ -51,7 +51,11 @@
                 */
 
                 centrifuge.on('connect', function(){
-                   draw_message('connected');
+                    draw_message('connected');
+                    centrifuge.subscribe('/python/django', function(message) {
+                        console.log(message);
+                        draw_message(message['input']);
+                    });
                 });
 
                 centrifuge.on('disconnect', function(){
@@ -74,9 +78,10 @@
                     var input = $(this).find('input[type="text"]');
 
                     if (centrifuge.isConnected() === true) {
-                        centrifuge.publish('/python/django', {'input': input.val()}, function() {
+                        var subscription = centrifuge.publish('/python/django', {'input': input.val()}, function() {
                             console.log('message successfully sent');
                         });
+                        console.log(subscription);
                         input.val('');
                     }
                 });

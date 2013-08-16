@@ -230,7 +230,9 @@ class CategoryFormHandler(BaseHandler):
             'is_watching': form.is_watching.data,
             'presence': form.presence.data,
             'history': form.history.data,
-            'history_size': form.history_size.data
+            'history_size': form.history_size.data,
+            'is_protected': form.is_protected.data,
+            'auth_address': form.auth_address.data
         }
 
         if not category_name:

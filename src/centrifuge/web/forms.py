@@ -134,3 +134,13 @@ class CategoryForm(Form):
         default=DEFAULT_HISTORY_SIZE,
         description="maximum amount of messages in history for channels in this category"
     )
+
+    auth_address = TextField(
+        label='auth url address',
+        validators=[
+            validators.URL(require_tld=False),
+            validators.Optional()
+        ],
+        description="url address to authorize clients specific for category "
+                    "(leave it blank to use auth url from project)"
+    )

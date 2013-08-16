@@ -225,7 +225,9 @@ def category_create(db, project, **kwargs):
         'is_watching': kwargs['is_watching'],
         'presence': kwargs['presence'],
         'history': kwargs['history'],
-        'history_size': kwargs['history_size']
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
     category, error = yield insert(db.category, haystack)
     if error:
@@ -243,7 +245,9 @@ def category_edit(db, category, **kwargs):
         'is_watching': kwargs['is_watching'],
         'presence': kwargs['presence'],
         'history': kwargs['history'],
-        'history_size': kwargs['history_size']
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
     _res, error = yield update(
         db.category,

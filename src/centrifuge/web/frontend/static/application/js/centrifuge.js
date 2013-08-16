@@ -364,10 +364,10 @@ cent_proto._connectResponse = function(message) {
     if (message.error === null) {
         this._clientId = message.body;
         this._setStatus('connected');
-        this.trigger('connect', message);
+        this.trigger('connect', [message]);
     } else {
-        this.trigger('error', message);
-        this.trigger('connect:error', message);
+        this.trigger('error', [message]);
+        this.trigger('connect:error', [message]);
     }
 };
 
@@ -375,11 +375,11 @@ cent_proto._disconnectResponse = function(message) {
     if (message.error === null) {
         this._clientId = null;
         this._setStatus('disconnected');
-        this.trigger('disconnect', message);
-        this.trigger('disconnect:success', message);
+        this.trigger('disconnect', [message]);
+        this.trigger('disconnect:success', [message]);
     } else {
-        this.trigger('error', message);
-        this.trigger('disconnect:error', message);
+        this.trigger('error', [message]);
+        this.trigger('disconnect:error', [message]);
     }
 };
 
@@ -392,10 +392,10 @@ cent_proto._subscribeResponse = function(message) {
         return
     }
     if (message.error === null) {
-        subscription.trigger('subscribe:success', message);
+        subscription.trigger('subscribe:success', [message]);
     } else {
-        subscription.trigger('subscribe:error', message);
-        this.trigger('error', message);
+        subscription.trigger('subscribe:error', [message]);
+        this.trigger('error', [message]);
     }
 };
 
@@ -408,10 +408,10 @@ cent_proto._unsubscribeResponse = function(message) {
         return
     }
     if (message.error === null) {
-        subscription.trigger('unsubscribe:success', message);
+        subscription.trigger('unsubscribe:success', [message]);
     } else {
-        subscription.trigger('unsubscribe:error', message);
-        this.trigger('error', message);
+        subscription.trigger('unsubscribe:error', [message]);
+        this.trigger('error', [message]);
     }
 };
 
@@ -424,10 +424,10 @@ cent_proto._publishResponse = function(message) {
         return
     }
     if (message.error === null) {
-        subscription.trigger('publish:success', message);
+        subscription.trigger('publish:success', [message]);
     } else {
-        subscription.trigger('publish:error', message);
-        this.trigger('error', message);
+        subscription.trigger('publish:error', [message]);
+        this.trigger('error', [message]);
     }
 };
 
@@ -440,11 +440,11 @@ cent_proto._presenceResponse = function(message) {
         return
     }
     if (message.error === null) {
-        subscription.trigger('presence', message.body);
-        subscription.trigger('presence:success', message);
+        subscription.trigger('presence', [message.body]);
+        subscription.trigger('presence:success', [message]);
     } else {
-        subscription.trigger('presence:error', message);
-        this.trigger('error', message);
+        subscription.trigger('presence:error', [message]);
+        this.trigger('error', [message]);
     }
 };
 
@@ -457,11 +457,11 @@ cent_proto._historyResponse = function(message) {
         return
     }
     if (message.error === null) {
-        subscription.trigger('history', message.body);
-        subscription.trigger('history:success', message);
+        subscription.trigger('history', [message.body]);
+        subscription.trigger('history:success', [message]);
     } else {
-        subscription.trigger('history:error', message);
-        this.trigger('error', message);
+        subscription.trigger('history:error', [message]);
+        this.trigger('error', [message]);
     }
 };
 
@@ -474,7 +474,7 @@ cent_proto._messageResponse = function(message) {
         if (!subscription) {
             return
         }
-        subscription.trigger('message', body);
+        subscription.trigger('message', [body.data]);
     } else {
         this._debug('Unknown message', message);
     }
@@ -524,6 +524,8 @@ cent_proto.parsePath = cent_proto._parsePath;
 
 cent_proto.isConnected = cent_proto._isConnected;
 
+cent_proto.isDisconnected = cent_proto._isDisconnected;
+
 cent_proto.configure = function(configuration) {
     this._configure.call(this, configuration);
 };
@@ -560,6 +562,36 @@ cent_proto.subscribe = function(path, callback) {
     return subscription;
 };
 
+cent_proto.publish = function(path, data) {
+    var subscription = this._subscriptions[path];
+    console.log(this._subscriptions);
+    if (!subscription) {
+        this.trigger('error', ['no subscription to publish into for path ' + path]);
+        return null;
+    }
+    subscription.publish(data);
+    return subscription;
+};
+
+cent_proto.presence = function(path, callback) {
+    var subscription = this._subscriptions[path];
+    if (!subscription) {
+        this.trigger('error', ['no subscription to get presence for path ' + path]);
+        return null;
+    }
+    subscription.presence(callback);
+    return subscription;
+};
+
+cent_proto.history = function(path, callback) {
+    var subscription = this._subscriptions[path];
+    if (!subscription) {
+        this.trigger('error', ['no subscription to get history for path ' + path]);
+        return null;
+    }
+    subscription.history(callback);
+    return subscription;
+};
 
 function Subscription(centrifuge, path) {
     /**

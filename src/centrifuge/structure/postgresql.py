@@ -49,7 +49,8 @@ def on_connection_ready(structure, ready_callback):
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
-               'is_watching bool, presence bool, history bool, history_size integer)'
+               'is_watching bool, presence bool, history bool, history_size integer, ' \
+               'is_protected bool, auth_address varchar(255))'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, category, ())
@@ -201,14 +202,16 @@ def category_create(db, project, **kwargs):
         'is_watching': kwargs['is_watching'],
         'presence': kwargs['presence'],
         'history': kwargs['history'],
-        'history_size': kwargs['history_size']
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
 
     query = "INSERT INTO categories (_id, project_id, name, publish, " \
-            "is_watching, presence, " \
-            "history, history_size) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
+            "is_watching, presence, history, history_size, is_protected, " \
+            "auth_address) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
             "%(publish)s, %(is_watching)s, %(presence)s, " \
-            "%(history)s, %(history_size)s)"
+            "%(history)s, %(history_size)s, %(is_protected)s, %(auth_address)s)"
 
     try:
         yield momoko.Op(
@@ -232,12 +235,15 @@ def category_edit(db, category, **kwargs):
         'is_watching': kwargs['is_watching'],
         'presence': kwargs['presence'],
         'history': kwargs['history'],
-        'history_size': kwargs['history_size']
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
 
     query = "UPDATE categories SET name=%(name)s, publish=%(publish)s, " \
             "is_watching=%(is_watching)s, presence=%(presence)s, " \
-            "history=%(history)s, history_size=%(history_size)s " \
+            "history=%(history)s, history_size=%(history_size)s, " \
+            "is_protected=%(is_protected)s, auth_address=%(auth_address)s " \
             "WHERE _id=%(_id)s"
 
     try:
