@@ -32,6 +32,8 @@ and look at [examples](https://github.com/FZambia/centrifuge/tree/master/example
 
 
 Basic usage from browser
+------------------------
+
 ```javascript
 var centrifuge = new Centrifuge();
 
