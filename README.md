@@ -121,7 +121,7 @@ subscription events:
 - 'message' - same as with anonymous above
 - 'subscribe:success' - subscribe operation succeeded
 - 'subscribe:error' - error while subscribing
-/*
+*/
 
 
 subscription.unsubscribe()
