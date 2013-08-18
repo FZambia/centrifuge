@@ -103,49 +103,68 @@ centrifuge.disconnect(function() {
     // now disconnected
 });
 
+/*
+Events:
 
 - 'disconnect' - same as with anonymous above
 - 'disconnect:success' - disconnect response from server received
 - 'disconnect:error' - disconnect response contains error
+*/
 
 subscription = centrifuge.subscribe(path, function(message) {
     // new message from this channel
 });
 
+/*
 subscription events:
 
 - 'message' - same as with anonymous above
 - 'subscribe:success' - subscribe operation succeeded
 - 'subscribe:error' - error while subscribing
+/*
 
-
-subscription actions:
 
 subscription.unsubscribe()
 
+/*
+Events:
+
 - 'unsubscribe:success'
 - 'unsubscribe:error'
+*/
 
 subscription.publish(content);
 
+/*
+Events:
+
 - 'publish:success'
 - 'publish:error'
+*/
 
 subscription.presence(function(data) {
     // new presence message for this path
 });
 
+/*
+Events:
+
 - 'presence'
 - 'presence: success'
 - 'presence: error'
+*/
 
 subscription.history(function(data) {
     // new history message for this path
 });
 
+/*
+Events:
+
 - 'history'
 - 'history: success'
 - 'history: error'
+*/
 ```
 
 
