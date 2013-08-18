@@ -71,6 +71,83 @@ centrifuge.on('disconnect', function(){
 centrifuge.connect();
 ```
 
+Javascript client reference:
+
+```javascript
+centrifuge = new Centrifuge();
+
+centrifuge.configure({
+    url: "Centrifuge server connection endpoint",
+    token: "token based on project's ID and user ID",
+    project: "project ID from Centrifuge admin interface",
+    user: "your application user ID (can be empty for anonymous access)"
+});
+
+centrifuge.connect(function() {
+    // connection now established, client now can subscribe on channels
+});
+
+centrifuge.on('connect', function() {
+    // the same as with anonymous above
+});
+
+centrifuge.on('connect:success', function() {
+    // connect response from server received without error
+});
+
+centrifuge.on('connect:error', function(){
+    // connect response from server received with error
+});
+
+centrifuge.disconnect(function() {
+    // now disconnected
+});
+
+
+- 'disconnect' - same as with anonymous above
+- 'disconnect:success' - disconnect response from server received
+- 'disconnect:error' - disconnect response contains error
+
+subscription = centrifuge.subscribe(path, function(message) {
+    // new message from this channel
+});
+
+subscription events:
+
+- 'message' - same as with anonymous above
+- 'subscribe:success' - subscribe operation succeeded
+- 'subscribe:error' - error while subscribing
+
+
+subscription actions:
+
+subscription.unsubscribe()
+
+- 'unsubscribe:success'
+- 'unsubscribe:error'
+
+subscription.publish(content);
+
+- 'publish:success'
+- 'publish:error'
+
+subscription.presence(function(data) {
+    // new presence message for this path
+});
+
+- 'presence'
+- 'presence: success'
+- 'presence: error'
+
+subscription.history(function(data) {
+    // new history message for this path
+});
+
+- 'history'
+- 'history: success'
+- 'history: error'
+```
+
 
 Architecture diagram
 --------------------
