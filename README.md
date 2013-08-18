@@ -1,3 +1,6 @@
+Warning! Centrifuge 0.2.0 will be released soon with simple javascript client. See [js](https://github.com/FZambia/centrifuge/tree/js) branch.
+That branch contains some important changes. I'll update documentation and README as soon I merge that branch into master.
+
 CENTRIFUGE
 ==========
 
