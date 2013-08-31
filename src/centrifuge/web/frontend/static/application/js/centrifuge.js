@@ -99,10 +99,10 @@
         }
     }
 
-
     function Centrifuge(options) {
         this._sockjs = false;
         this._status = 'disconnected';
+        this._reconnect = true;
         this._transport = null;
         this._messageId = 0;
         this._clientId = null;
@@ -233,6 +233,8 @@
 
         this._clientId = null;
 
+        this._reconnect = true;
+
         this._clearSubscriptions();
 
         this._setStatus('connecting');
@@ -269,9 +271,13 @@
         this._transport.onclose = function() {
             self._setStatus('disconnected');
             self.trigger('disconnect');
-            window.setTimeout(function() {
-                self._connect.call(self)
-            }, self._config.retry);
+            if (self._reconnect === true) {
+                window.setTimeout(function() {
+                    if (self._reconnect === true) {
+                        self._connect.call(self)
+                    }
+                }, self._config.retry);
+            }
         };
 
         this._transport.onmessage = function(event) {
@@ -283,6 +289,14 @@
             }
             self._receive(data);
         };
+    };
+
+    centrifuge_proto._disconnect = function() {
+        this._clientId = null;
+        this._setStatus('disconnected');
+        this._subscriptions = {};
+        this._reconnect = false;
+        this._transport.close();
     };
 
     centrifuge_proto._hasSubscription = function(path) {
@@ -340,7 +354,7 @@
         var path = this._makePath(category, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            return
+            return;
         }
         if (message.error === null) {
             subscription.trigger('subscribe:success', [message]);
@@ -491,6 +505,8 @@
     };
 
     centrifuge_proto.connect = centrifuge_proto._connect;
+
+    centrifuge_proto.disconnect = centrifuge_proto._disconnect;
 
     centrifuge_proto.getSubscription = centrifuge_proto._getSubscription;
 

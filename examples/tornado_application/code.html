@@ -46,6 +46,10 @@
 
         });
 
+        centrifuge.on('error', function(error_message) {
+            console.log(error_message);
+        });
+
         centrifuge.on('disconnect', function(){
             draw_message('disconnected');
         });
