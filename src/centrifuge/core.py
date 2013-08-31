@@ -73,9 +73,10 @@ CONTROL_CHANNEL = '_control' + CHANNEL_SUFFIX
 
 class Response(object):
 
-    def __init__(self, uid=None, method=None, error=None, body=None):
+    def __init__(self, uid=None, method=None, params=None, error=None, body=None):
         self.uid = uid
         self.method = method
+        self.params = params
         self.error = error
         self.body = body
 
@@ -83,6 +84,7 @@ class Response(object):
         return {
             'uid': self.uid,
             'method': self.method,
+            'params': self.params,
             'error': self.error,
             'body': self.body
         }
@@ -345,7 +347,8 @@ class Application(tornado.web.Application):
         """
         project = params.get("project")
         user = params.get("user")
-        unsubscribe_from = params.get("from")
+        category_name = params.get("category", None)
+        channel = params.get("channel", None)
 
         if not user:
             # we don't need to block anonymous users
@@ -366,57 +369,61 @@ class Application(tornado.web.Application):
             (x['name'], x) for x in categories
         )
 
+        category = categories.get(category_name, None)
+        if not category:
+            # category does not exist
+            raise Return((True, None))
+
         for uid, connection in six.iteritems(user_connections):
 
-            if not unsubscribe_from:
+            if not category_name and not channel:
                 # unsubscribe from all channels
-                for category_name, channels in six.iteritems(connection.channels):
-                    for channel_to_unsubscribe in channels:
+                for cat, channels in six.iteritems(connection.channels):
+                    for chan in channels:
+                        channel_to_unsubscribe = create_subscription_name(
+                            project_id, category_name, chan
+                        )
                         connection.sub_stream.setsockopt_string(
                             zmq.UNSUBSCRIBE,
                             six.u(channel_to_unsubscribe)
                         )
+
+                connection.channels = {}
+
+            elif category_name and not channel:
+                # unsubscribe from all channels in category
+                for cat, channels in six.iteritems(connection.channels):
+                    if category_name != cat:
+                        continue
+                    for chan in channels:
+                        channel_to_unsubscribe = create_subscription_name(
+                            project_id, category_name, chan
+                        )
+                        connection.sub_stream.setsockopt_string(
+                            zmq.UNSUBSCRIBE,
+                            six.u(channel_to_unsubscribe)
+                        )
+                try:
+                    del connection.channels[category_name]
+                except KeyError:
+                    pass
                 raise Return((True, None))
 
-            for category_name, channels in six.iteritems(unsubscribe_from):
+            else:
+                # unsubscribe from certain channel
+                channel_to_unsubscribe = create_subscription_name(
+                    project_id, category_name, channel
+                )
 
-                category = categories.get(category_name, None)
-                if not category:
-                    # category does not exist
-                    continue
+                connection.sub_stream.setsockopt_string(
+                    zmq.UNSUBSCRIBE,
+                    six.u(channel_to_unsubscribe)
+                )
 
-                if not channels:
-                    # here we should unsubscribe client from all channels
-                    # which belongs to category
-                    category_channels = connection.channels.get(category_name, None)
-                    if not category_channels:
-                        continue
-                    for channel_to_unsubscribe in category_channels:
-                        connection.sub_stream.setsockopt_string(
-                            zmq.UNSUBSCRIBE,
-                            six.u(channel_to_unsubscribe)
-                        )
-                    try:
-                        del connection.channels[category_name]
-                    except KeyError:
-                        pass
-                else:
-                    for channel in channels:
-                        # unsubscribe from certain channel
-
-                        channel_to_unsubscribe = create_subscription_name(
-                            project_id, category_name, channel
-                        )
-
-                        connection.sub_stream.setsockopt_string(
-                            zmq.UNSUBSCRIBE,
-                            six.u(channel_to_unsubscribe)
-                        )
-
-                        try:
-                            del connection.channels[category_name][channel_to_unsubscribe]
-                        except KeyError:
-                            pass
+                try:
+                    del connection.channels[category_name][channel]
+                except KeyError:
+                    pass
 
         raise Return((True, None))
 
@@ -499,7 +506,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, allowed_categories, params):
+    def prepare_message(self, project, allowed_categories, params, client_id):
         """
         Prepare message before actual publishing.
         """
@@ -513,8 +520,9 @@ class Application(tornado.web.Application):
             'project_id': project['_id'],
             'category': category['name'],
             'uid': uuid.uuid4().hex,
+            'client_id': client_id,
             'channel': params.get('channel'),
-            'data': params.get('data')
+            'data': params.get('data', None)
         }
 
         for callback in self.pre_publish_callbacks:
@@ -527,7 +535,7 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, allowed_categories=None):
+    def process_publish(self, project, params, allowed_categories=None, client_id=None):
 
         if allowed_categories is None:
             project_categories, error = yield self.structure.get_project_categories(project)
@@ -537,7 +545,7 @@ class Application(tornado.web.Application):
             allowed_categories = dict((x['name'], x) for x in project_categories)
 
         message, error = yield self.prepare_message(
-            project, allowed_categories, params
+            project, allowed_categories, params, client_id
         )
         if error:
             raise Return((None, error))

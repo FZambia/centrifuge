@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 Warning! Centrifuge 0.2.0 will be released soon with simple javascript client. See [js](https://github.com/FZambia/centrifuge/tree/js) branch.
 That branch contains some important changes. I'll update documentation and README as soon as I merge that branch into master.
+=======
+WARNING! Centrifuge PYPI release is out-of-date. Version 0.2.0 will contain lots of changes
+and will be available on PYPI soon.
+>>>>>>> js
 
 CENTRIFUGE
 ==========
@@ -32,6 +37,154 @@ or [PostgreSQL](http://www.postgresql.org/) backends instead of SQLite for struc
 
 Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/), watch [screencast](http://www.youtube.com/watch?v=RCLnCexzfOk)
 and look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
+
+
+Main features
+-------------
+
+* Asynchronous backend on top of Tornado
+* SockJS and pure Websockets endpoints
+* Simple javascript client
+* Presence and history data for channels
+* Web interface for managing your projects
+* Flexible channel settings through categories
+
+
+Basic usage from browser
+------------------------
+
+```javascript
+var centrifuge = new Centrifuge();
+
+centrifuge.configure({
+    url: 'http://{{centrifuge_address}}/connection',  // use SockJS endpoint (SockJS library must be imported)
+    token: '{{auth_data["token"]}}', // token based on project's ID and user ID
+    project: '{{auth_data["project"]}}', // project ID from Centrifuge admin interface
+    user: '{{auth_data["user"]}}', // your application user ID (can be empty for anonymous access)
+});
+
+centrifuge.on('connect', function() {
+
+    console.log('connected');
+
+    var subscription = centrifuge.subscribe('/python/django', function(message) {
+        console.log(message);
+    });
+
+    subscription.on('subscribe:success', function(){
+        subscription.presence(function(message) {
+            var count = 0;
+            for (var key in message){
+                count++;
+            }
+            console.log('Now in this room: ' + count + ' clients');
+        });
+    });
+
+});
+
+centrifuge.on('disconnect', function(){
+    console.log('disconnected');
+});
+
+centrifuge.connect();
+```
+
+Javascript client reference:
+
+```javascript
+centrifuge = new Centrifuge();
+
+centrifuge.configure({
+    url: "Centrifuge server connection endpoint",
+    token: "token based on project's ID and user ID",
+    project: "project ID from Centrifuge admin interface",
+    user: "your application user ID (can be empty for anonymous access)"
+});
+
+centrifuge.connect(function() {
+    // connection now established, client now can subscribe on channels
+});
+
+centrifuge.on('connect', function() {
+    // the same as with anonymous above
+});
+
+centrifuge.on('connect:success', function() {
+    // connect response from server received without error
+});
+
+centrifuge.on('connect:error', function(){
+    // connect response from server received with error
+});
+
+centrifuge.disconnect(function() {
+    // now disconnected
+});
+
+/*
+Events:
+
+- 'disconnect' - same as with anonymous above
+- 'disconnect:success' - disconnect response from server received
+- 'disconnect:error' - disconnect response contains error
+*/
+
+subscription = centrifuge.subscribe(path, function(message) {
+    // new message from this channel
+});
+
+/*
+subscription events:
+
+- 'message' - same as with anonymous above
+- 'subscribe:success' - subscribe operation succeeded
+- 'subscribe:error' - error while subscribing
+*/
+
+
+subscription.unsubscribe()
+
+/*
+Events:
+
+- 'unsubscribe:success'
+- 'unsubscribe:error'
+*/
+
+subscription.publish(content);
+
+/*
+Events:
+
+- 'publish:success'
+- 'publish:error'
+*/
+
+subscription.presence(function(data) {
+    // new presence message for this path
+});
+
+/*
+Events:
+
+- 'presence'
+- 'presence: success'
+- 'presence: error'
+*/
+
+subscription.history(function(data) {
+    // new history message for this path
+});
+
+/*
+Events:
+
+- 'history'
+- 'history: success'
+- 'history: error'
+*/
+```
 
 
 Architecture diagram

@@ -5,7 +5,7 @@
 
 import tornado.web
 from tornado.escape import json_encode
-from tornado.gen import coroutine
+from tornado.gen import coroutine, Return
 from sockjs.tornado import SockJSConnection
 
 from jsonschema import validate, ValidationError
@@ -124,9 +124,13 @@ class SockjsConnection(SockJSConnection):
         else:
             self.close()
 
+    @coroutine
     def on_message(self, message):
-        self.client.message_received(message)
+        yield self.client.message_received(message)
+        raise Return((True, None))
 
+    @coroutine
     def on_close(self):
-        self.client.close()
+        yield self.client.close()
         del self.client
+        raise Return((True, None))

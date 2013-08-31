@@ -44,7 +44,7 @@ class ProjectForm(Form):
     auth_address = TextField(
         label='auth url address',
         validators=[
-            validators.URL(),
+            validators.URL(require_tld=False),
             validators.Optional()
         ],
         description="url address to authorize clients"
@@ -91,13 +91,6 @@ class CategoryForm(Form):
         description="unique category name"
     )
 
-    is_bidirectional = BooleanField(
-        label='is bidirectional',
-        validators=[],
-        default=False,
-        description="bidirectional categories allow clients to publish messages in channels"
-    )
-
     is_watching = BooleanField(
         label='is watching',
         validators=[],
@@ -105,15 +98,29 @@ class CategoryForm(Form):
         description="publish all category channel's messages to administrator's web interface"
     )
 
+    is_protected = BooleanField(
+        label='is protected',
+        validators=[],
+        default=False,
+        description="authorize every subscription request using auth address"
+    )
+
+    publish = BooleanField(
+        label='publish',
+        validators=[],
+        default=False,
+        description="allow clients to publish messages in channels"
+    )
+
     presence = BooleanField(
-        label='presence information',
+        label='presence',
         validators=[],
         default=True,
         description="check if you want to get presence info for channels in this category"
     )
 
     history = BooleanField(
-        label='history information',
+        label='history',
         validators=[],
         default=True,
         description="check if you want to get history info for channels in this category"
@@ -126,4 +133,14 @@ class CategoryForm(Form):
         ],
         default=DEFAULT_HISTORY_SIZE,
         description="maximum amount of messages in history for channels in this category"
+    )
+
+    auth_address = TextField(
+        label='auth url address',
+        validators=[
+            validators.URL(require_tld=False),
+            validators.Optional()
+        ],
+        description="url address to authorize clients specific for category "
+                    "(leave it blank to use auth url from project)"
     )

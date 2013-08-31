@@ -39,8 +39,9 @@ def init_storage(structure, settings, ready_callback):
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, is_bidirectional bool, ' \
-               'is_watching bool, presence bool, history bool, history_size integer)'
+               'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
+               'is_watching bool, presence bool, history bool, history_size integer, ' \
+               'is_protected bool, auth_address varchar(255))'
 
     cursor.execute(project, ())
     conn.commit()
@@ -76,23 +77,16 @@ def project_list(cursor):
 
 
 @coroutine
-def project_create(
-        cursor,
-        name,
-        display_name,
-        auth_address,
-        max_auth_attempts,
-        back_off_interval,
-        back_off_max_timeout):
+def project_create(cursor, **kwargs):
 
     to_insert = (
         str(ObjectId()),
-        name,
-        display_name,
-        auth_address,
-        max_auth_attempts,
-        back_off_interval,
-        back_off_max_timeout,
+        kwargs['name'],
+        kwargs['display_name'],
+        kwargs['auth_address'],
+        kwargs['max_auth_attempts'],
+        kwargs['back_off_interval'],
+        kwargs['back_off_max_timeout'],
         uuid.uuid4().hex
     )
 
@@ -110,31 +104,24 @@ def project_create(
 
 
 @coroutine
-def project_edit(
-        cursor,
-        project,
-        name,
-        display_name,
-        auth_address,
-        max_auth_attempts,
-        back_off_interval,
-        back_off_max_timeout):
+def project_edit(cursor, project, **kwargs):
     """
     Edit project
     """
     to_return = {
         '_id': extract_obj_id(project),
-        'name': name,
-        'display_name': display_name,
-        'auth_address': auth_address,
-        'max_auth_attempts': max_auth_attempts,
-        'back_off_interval': back_off_interval,
-        'back_off_max_timeout': back_off_max_timeout
+        'name': kwargs['name'],
+        'display_name': kwargs['display_name'],
+        'auth_address': kwargs['auth_address'],
+        'max_auth_attempts': kwargs['max_auth_attempts'],
+        'back_off_interval': kwargs['back_off_interval'],
+        'back_off_max_timeout': kwargs['back_off_max_timeout']
     }
 
     to_update = (
-        name, display_name, auth_address, max_auth_attempts, back_off_interval,
-        back_off_max_timeout, extract_obj_id(project)
+        kwargs['name'], kwargs['display_name'], kwargs['auth_address'],
+        kwargs['max_auth_attempts'], kwargs['back_off_interval'],
+        kwargs['back_off_max_timeout'], extract_obj_id(project)
     )
 
     query = "UPDATE projects SET name=?, display_name=?, auth_address=?, " \
@@ -189,35 +176,30 @@ def category_list(cursor):
 
 
 @coroutine
-def category_create(
-        cursor,
-        project,
-        name,
-        is_bidirectional,
-        is_watching,
-        presence,
-        history,
-        history_size):
+def category_create(cursor, project, **kwargs):
 
     to_return = {
         '_id': str(ObjectId()),
         'project_id': project['_id'],
-        'name': name,
-        'is_bidirectional': is_bidirectional,
-        'is_watching': is_watching,
-        'presence': presence,
-        'history': history,
-        'history_size': history_size
+        'name': kwargs['name'],
+        'publish': kwargs['publish'],
+        'is_watching': kwargs['is_watching'],
+        'presence': kwargs['presence'],
+        'history': kwargs['history'],
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
 
     to_insert = (
-        to_return['_id'], to_return['project_id'], name, is_bidirectional,
-        is_watching, presence, history, history_size
+        to_return['_id'], to_return['project_id'], to_return['name'], to_return['publish'],
+        to_return['is_watching'], to_return['presence'], to_return['history'],
+        to_return['history_size'], to_return['is_protected'], to_return['auth_address']
     )
 
-    query = "INSERT INTO categories (_id, project_id, name, is_bidirectional, " \
-            "is_watching, presence, history, history_size) VALUES " \
-            "(?, ?, ?, ?, ?, ?, ?, ?)"
+    query = "INSERT INTO categories (_id, project_id, name, publish, " \
+            "is_watching, presence, history, history_size, is_protected, " \
+            "auth_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
@@ -229,35 +211,30 @@ def category_create(
 
 
 @coroutine
-def category_edit(
-        cursor,
-        category,
-        name,
-        is_bidirectional,
-        is_watching,
-        presence,
-        history,
-        history_size):
+def category_edit(cursor, category, **kwargs):
     """
     Edit project
     """
     to_return = {
         '_id': category['_id'],
-        'name': name,
-        'is_bidirectional': is_bidirectional,
-        'is_watching': is_watching,
-        'presence': presence,
-        'history': history,
-        'history_size': history_size
+        'name': kwargs['name'],
+        'publish': kwargs['publish'],
+        'is_watching': kwargs['is_watching'],
+        'presence': kwargs['presence'],
+        'history': kwargs['history'],
+        'history_size': kwargs['history_size'],
+        'is_protected': kwargs['is_protected'],
+        'auth_address': kwargs['auth_address']
     }
 
     to_update = (
-        name, is_bidirectional, is_watching, presence,
-        history, history_size, category['_id']
+        to_return['name'], to_return['publish'], to_return['is_watching'],
+        to_return['presence'], to_return['history'], to_return['history_size'],
+        to_return['is_protected'], to_return['auth_address'], category['_id']
     )
 
-    query = "UPDATE categories SET name=?, is_bidirectional=?, is_watching=?, presence=?, " \
-            "history=?, history_size=? WHERE _id=?"
+    query = "UPDATE categories SET name=?, publish=?, is_watching=?, presence=?, " \
+            "history=?, history_size=?, is_protected=?, auth_address=? WHERE _id=?"
 
     try:
         cursor.execute(query, to_update)

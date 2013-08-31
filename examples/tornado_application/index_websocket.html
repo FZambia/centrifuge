@@ -3,134 +3,14 @@
     <head>
         <meta charset="utf-8">
         <title></title>
-        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/libs/jquery/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/event_emitter.js"></script>
+        <script type="text/javascript" src="http://{{centrifuge_address}}/static/application/js/centrifuge.js"></script>
         <style type="text/css">
             input[type="text"] { width: 300px; }
+            .muted {color: #CCCCCC; font-size: 10px;}
         </style>
-        <script type="text/javascript">
-            'use strict';
-
-            var connection;
-
-            $(function() {
-
-                var is_authenticated = false;
-
-                function message(text, is_broadcast) {
-                    var date = new Date();
-                    var container = $('#messages');
-                    container.prepend($('<li/>').text([
-                        date.getHours(),
-                        date.getMinutes(),
-                        date.getSeconds(),
-                        ' '+text
-                    ].join(':')));
-                    if (is_broadcast) {
-                        container.find('li:first').css({'color': 'green'});
-                    }
-                }
-
-                function connect() {
-                    connection = new WebSocket('ws://{{centrifuge_address}}/connection/websocket');
-
-                    connection.onopen = function() {
-                        message('Connecting…');
-
-                        var auth_message = {
-                            'method': 'auth',
-                            'params': {
-                                'token': '{{auth_data["token"]}}',
-                                'user': '{{auth_data["user"]}}',
-                                'project_id': '{{auth_data["project_id"]}}',
-                                'permissions': {}
-                            }
-                        };
-                        console.log('sending auth');
-                        connection.send(JSON.stringify(auth_message));
-                    };
-
-                    connection.onclose = function() {
-                        message('Connection closed.');
-                        is_authenticated = false;
-                        window.setTimeout(connect, 3000);
-                    };
-
-                    connection.onmessage = function(event) {
-                        console.log(event);
-
-                        var data = $.parseJSON(event.data);
-                        if (data["method"] != "message") {
-                            // ack message
-                            message(event.data, false);
-                            console.log('ack received');
-                            var method = data['method'];
-                            var error = data['error'];
-                            var result = data['result'];
-                            if (method === 'auth' && error === null) {
-                                is_authenticated = true;
-                                var subscribe_message = {
-                                    'method': 'subscribe',
-                                    'params': {
-                                        'to': {
-                                            'python': ['django']
-                                        }
-                                    }
-                                };
-                                connection.send(JSON.stringify(subscribe_message));
-
-                                window.setTimeout(function(){
-                                    var presence_message = {
-                                        'method': 'presence',
-                                        'params': {
-                                            'category': 'python',
-                                            'channel': 'django'
-                                        }
-                                    };
-                                    connection.send(JSON.stringify(presence_message));
-                                }, 2000);
-
-                                window.setTimeout(function(){
-                                    var history_message = {
-                                        'method': 'history',
-                                        'params': {
-                                            'category': 'python',
-                                            'channel': 'django'
-                                        }
-                                    };
-                                    connection.send(JSON.stringify(history_message));
-                                }, 3000);
-
-                            }
-                        } else {
-                            // broadcast message
-                            message(event.data, true);
-                        }
-                    };
-                }
-
-                $('form').submit(function(event) {
-                    event.preventDefault();
-                    var input = $(this).find('input[type="text"]');
-
-                    if (is_authenticated === true) {
-                        var publish_message = {
-                            'method': 'publish',
-                            'params': {
-                                'category': 'python',
-                                'channel': 'django',
-                                'data': {'input': input.val()}
-                            }
-                        };
-                        connection.send(JSON.stringify(publish_message));
-                    }
-
-                    input.val('');
-                });
-
-                connect();
-
-            });
-        </script>
+        {% include 'code.html' %}
     </head>
     <body>
         <form action=".">

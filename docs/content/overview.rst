@@ -1,0 +1,149 @@
+Overview
+========
+
+.. _overview:
+
+What is it
+----------
+
+Centrifuge is a simple platform for real-time message broadcasting in web applications.
+
+This is something like `Pusher <http://pusher.com/>`_ or `Pubnub <http://pubnub.com/>`_ services - not so powerful yet, but open-source,
+self hosted and easy to setup. The closest analogue is `Faye <https://github.com/faye/faye>`_.
+
+It is built on top of `Tornado <http://www.tornadoweb.org/en/stable/>`_ -
+extremely fast and mature Python's async web server.
+
+Centrifuge uses `ZeroMQ <http://www.zeromq.org/>`_ steroid sockets for internal
+communication and publish/subscribe operations.
+
+For presence and history data Centrifuge utilizes `Redis <http://redis.io/>`_ - advanced and super fast
+in memory key-value store.
+
+To connect to Centrifuge from browser pure `Websockets <http://en.wikipedia.org/wiki/WebSocket>`_
+or [SockJS](https://github.com/sockjs/sockjs-client) library can be
+used.
+
+Centrifuge comes with administrative web interface to manage project/category structure and monitor important
+messages.
+
+Persistent data (projects, categories) by default stored in `SQLite <http://www.sqlite.org/>`_ database.
+But when running Centrifuge instance processes on different machines you should use `MongoDB <http://www.mongodb.org/>`_
+or `PostgreSQL <http://www.postgresql.org/>`_ backends instead of SQLite for structure management.
+
+
+.. image:: img/main.png
+    :width: 650 px
+
+
+When it can be helpful
+----------------------
+
+Everywhere you need real-time web page updates and do not want to use existing
+external hosted services like pusher.com or pubnub.com.
+
+There are tons of use cases where Centrifuge could be helpful - chat, graphs,
+comments, counters, games etc. Or you just want to know how many users currently
+watching web page.
+
+
+How it works
+------------
+
+In a few words: clients from browsers connect to Centrifuge, after connecting clients subscribe
+on channels. And every message which was published into channel will be broadcasted to connected
+clients.
+
+
+.. image:: img/centrifuge_architecture.png
+    :width: 650 px
+
+Now in details.
+
+When you start Centrifuge instance you start Tornado instance on a certain port number.
+That port number can be configured using command-line option ``--port`` .
+Default value is 8000 and if this port number is free in your system you can omit ``--port``
+option.
+
+In general you should provide path to configuration file when starting Centrifuge instance
+using ``--config`` option. You can start Centrifuge without configuration file but this is
+not flexible and absolutely unsecure. Configuration file must contain valid JSON. It contains
+cookie secret, administrative password, structure database settings and Redis settings. But
+for now let's omit configuration file. By default Centrifuge will use unsecure cookie secret,
+no administrative password, local SQLite storage as structure database and no Redis (no
+presence and message history data will be available). This is normal only during development.
+In production you always need to provide proper configuration file with secure settings.
+
+So the final command to start one instance of Centrifuge will be
+
+There could be a problem if port 7000 is not free in your system. This is a default port for
+ZeroMQ socket. If you have problems with running single instance you will find a way to change
+that port number below.
+
+As you started one instance of Centrifuge - clients from web browsers can start connecting to it.
+There are two endpoints for connections - ``/connection`` for SockJS and
+``/connection/websocket`` for pure Websocket connections. On browser side you now know the
+url to connect - for our simple case it is ``http://localhost:port/connection`` in case of
+using SockJS and ``ws://localhost:port/connection/websocket`` in case of using pure Websockets.
+To communicate with Centrifuge from browser you should use javascript client which comes
+with Centrifuge and provides methods for connecting, subscribing, listening for messages etc.
+
+Ok, now you have one working instance. But sometimes it isn't enough and you need to run
+more instances of Centrifuge and load balance clients between them. In case of several
+instances you must do some additional work.
+
+First, you must choose another port number (of course it is not necessary if you use
+another machine for other instance).
+
+Second, you must configure your load balancer. I suggest to use Nginx - you can find
+its configuration example in this documentation. You should use Nginx in production in
+case of single Centrifuge instance too. But in case of several instances it is an
+almost critical requirement (you can do load balancing from client side but this is a
+bad practice). Nginx is very fast and does some additional help, for example with
+malformed request headers.
+
+Third, new client can connect to any of running instances - if client publishes message
+we must send that message to other clients including those who connected to another instance
+at this moment. For this purpose Centrifuge uses ZeroMQ sockets. Every instance is binded
+to publish socket. Every instance must be subscribed on all publish sockets of all
+instances. In this way instances can communicate with each other using PUB/SUB mechanism.
+Only in this case message will be delivered to all recipients. So to create an instance
+in a proper way we must configure those sockets correctly. There are two ways of doing this.
+
+First way - manually set instance's publish socket and all publish sockets current
+instanсе must subscribe to. You should use these options for it. The drawback is that you
+should support correct settings for all instances and restart all insrtances with new
+socket configuration options when adding new instance.
+
+Another way - use XPUB/XSUB proxy. Things will work according to this scheme.
+In this case you only need to provide proxy endpoints in command-line options which will
+be the same for all Centrifuge instances. Also you must run the proxy itself. The drawback
+is that proxy is a single point of failure. There is proxy written in Go language. You
+can run it instead of python version coming with Centrifuge.
+
+Our next step will be talking about how presence and history data for channels work.
+For this tasks Centrifuge uses Redis. All instances of Centrifuge must have access to
+information about presence and message history. Redis settings must be set up in
+configuration file. As Redis settings set up correctly - every message published will
+be added to history and every connected client sends presence information into Redis.
+So if Redis available - information about presence and mesage history will be available
+for clients (there are options for categories which allow to disable presence and
+history for channels belonging to them).
+
+At this moment you can ask why not use Redis PUB/SUB mechanism instead of ZeroMQ PUB/SUB
+sockets for communicating and exchanging messages between instances? This is a fair question.
+There are some benchmarks I found which show significant performance difference - ZeroMQ
+just faster than Redis. But I think it is an open discussion and your thoughts are welcome.
+Mail me or create Github issue so we can make Centrifuge better in next releases.
+
+Finally let's talk about structure database. In Centrifuge you can create projects
+and categories in projects. This information must be stored somewhere and shared between
+all running instances. To achieve this SQLite or MongoDB or PostgreSQL can be used.
+If all your instances running on the same machine any of them can be used. But if
+you deploy Centrifuge on several machines it is impossible to use SQLite database.
+To avoid making query to database on every request all structure information loaded
+into memory and then updated when something in structure changed and periodically to
+avoid inconsistency.
+
+Now you know main things about how Centrifuge works. As may noted that there are some
+possible single points of failure. You should deploy Centrifuge with awareness of this.

@@ -29,15 +29,9 @@ admin_params_schema = {
             },
             "channel": {
                 "type": "string"
-            },
-            "data": {
-                "type": "object"
-            },
-            "unique_keys": {
-                "type": "array"
             }
         },
-        "required": ["category", "channel", "data"]
+        "required": ["category", "channel"]
     },
     "presence": {
         "type": "object",
@@ -63,29 +57,20 @@ admin_params_schema = {
         },
         "required": ["category", "channel"]
     },
-    "subscribe": {
-        "type": "object",
-        "properties": {
-            "user": {
-                "type": "string"
-            },
-            "to": {
-                "type": "object"
-            }
-        },
-        "required": ["user", "to"]
-    },
     "unsubscribe": {
         "type": "object",
         "properties": {
             "user": {
                 "type": "string"
             },
-            "from": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["user", "from"]
+        "required": ["user"]
     }
 }
 
@@ -96,22 +81,28 @@ client_params_schema = {
     "subscribe": {
         "type": "object",
         "properties": {
-            "to": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["to"]
+        "required": ["category", "channel"]
     },
     "unsubscribe": {
         "type": "object",
         "properties": {
-            "from": {
-                "type": "object"
+            "category": {
+                "type": "string"
+            },
+            "channel": {
+                "type": "string"
             }
         },
-        "required": ["from"]
+        "required": ["category", "channel"]
     },
-    "auth": {
+    "connect": {
         "type": "object",
         "properties": {
             "token": {
@@ -120,13 +111,10 @@ client_params_schema = {
             "user": {
                 "type": "string"
             },
-            "project_id": {
+            "project": {
                 "type": "string"
-            },
-            "permissions": {
-                "type": "object",
             }
         },
-        "required": ["token", "user", "project_id", "permissions"]
+        "required": ["token", "user", "project"]
     }
 }

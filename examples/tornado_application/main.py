@@ -4,6 +4,7 @@ import tornado.web
 from tornado.options import options, define
 import logging
 import hmac
+import json
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -61,7 +62,7 @@ class SockjsHandler(tornado.web.RequestHandler):
         auth_data = {
             'token': token,
             'user': user,
-            'project_id': options.project_id
+            'project': options.project_id
         }
 
         self.render(
@@ -87,7 +88,7 @@ class WebsocketHandler(tornado.web.RequestHandler):
         auth_data = {
             'token': token,
             'user': user,
-            'project_id': options.project_id
+            'project': options.project_id
         }
 
         self.render(
@@ -105,7 +106,7 @@ class ValidateHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
-        self.write('ok')
+        self.write(json.dumps({'first_name': 'Alexandr', 'last_name': 'Emelin'}))
 
 
 def run():
