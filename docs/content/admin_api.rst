@@ -1,7 +1,7 @@
-Getting started
-===============
+Admin API
+=========
 
-.. _cent_starting:
+.. _admin_api:
 
 
 Cent is a way to communicate with Centrifuge from python code or

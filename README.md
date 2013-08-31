@@ -31,6 +31,17 @@ Please, read the [documentation](https://centrifuge.readthedocs.org/en/latest/),
 and look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples) for more information.
 
 
+Main features
+-------------
+
+* Asynchronous backend on top of Tornado
+* SockJS and pure Websockets endpoints
+* Simple javascript client
+* Presence and history data for channels
+* Web interface for managing your projects
+* Flexible channel settings through categories
+
+
 Basic usage from browser
 ------------------------
 
