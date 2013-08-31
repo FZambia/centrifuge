@@ -107,7 +107,8 @@
         this._messageId = 0;
         this._clientId = null;
         this._subscriptions = {};
-        this._regex = /^\/([^_]+[A-z0-9]{2,})\/(.+)$/;
+        this._fullRegex = /^\/([^_]+[A-z0-9]{2,})\/(.+)$/;
+        this._channelOnlyRegex =/^\/(.+)$/;
         this._config = {
             retry: 3000,
             logLevel: 'info'
@@ -164,16 +165,26 @@
     };
 
     centrifuge_proto._parsePath = function(path) {
-        var matches = this._regex.exec(path);
-        if (!matches) {
-            throw "Invalid channel to subscribe. Must be in format /category/channel"
+        var channel, category;
+        var fullMatches = this._fullRegex.exec(path);
+        if (fullMatches) {
+            category = fullMatches[1];
+            channel = fullMatches[2];
+        } else {
+            var channelOnlyMatches = this._channelOnlyRegex.exec(path);
+            if (!channelOnlyMatches) {
+                throw 'Invalid path';
+            }
+            category = null;
+            channel = channelOnlyMatches[1];
         }
-        var category = matches[1];
-        var channel = matches[2];
         return [category, channel]
     };
 
     centrifuge_proto._makePath = function(category, channel) {
+        if (category === null || category == undefined) {
+            return '/' + channel;
+        }
         return '/' + category + '/' + channel;
     };
 
@@ -329,6 +340,7 @@
         var path = this._makePath(category, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
+            console.log(path);
             return
         }
         if (message.error === null) {
@@ -408,11 +420,16 @@
     centrifuge_proto._messageResponse = function(message) {
         if (message.body) {
             //noinspection JSValidateTypes
+            var subscription, path;
             var body = JSON.parse(message.body);
-            var path = this._makePath(body.category, body.channel);
-            var subscription = this._subscriptions[path];
+            path = this._makePath(body.category, body.channel);
+            subscription = this._subscriptions[path];
             if (!subscription) {
-                return
+                path = this._makePath(null, body.channel);
+                subscription = this._subscriptions[path];
+                if (!subscription) {
+                    return;
+                }
             }
             subscription.trigger('message', [body]);
         } else {
@@ -575,6 +592,10 @@
                 "channel": this.channel
             }
         };
+        if (this.category === null) {
+            // using default namespace
+            delete centrifugeMessage["params"]["category"];
+        }
         var message = mixin(false, {}, centrifugeMessage);
         this._centrifuge.send(message);
         if (callback) {
@@ -591,6 +612,10 @@
                 "channel": this.channel
             }
         };
+        if (this.category === null) {
+            // using default namespace
+            delete centrifugeMessage["params"]["category"];
+        }
         var message = mixin(false, {}, centrifugeMessage);
         this._centrifuge.send(message);
     };
@@ -604,6 +629,10 @@
                 "data": data
             }
         };
+        if (this.category === null) {
+            // using default namespace
+            delete centrifugeMessage["params"]["category"];
+        }
         if (callback) {
             this.on('publish:success', callback);
         }
@@ -619,6 +648,10 @@
                 "channel": this.channel
             }
         };
+        if (this.category === null) {
+            // using default namespace
+            delete centrifugeMessage["params"]["category"];
+        }
         if (callback) {
             this.on('presence', callback);
         }
@@ -634,6 +667,10 @@
                 "channel": this.channel
             }
         };
+        if (this.category === null) {
+            // using default namespace
+            delete centrifugeMessage["params"]["category"];
+        }
         if (callback) {
             this.on('history', callback);
         }

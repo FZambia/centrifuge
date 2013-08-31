@@ -101,6 +101,10 @@ class Application(tornado.web.Application):
     # milliseconds
     PING_REVIEW_INTERVAL = 10000
 
+    INTERNAL_SERVER_ERROR = 'internal server error'
+
+    CATEGORY_NOT_FOUND = 'category not found'
+
     def __init__(self, *args, **kwargs):
 
         self.zmq_context = zmq.Context()
@@ -511,6 +515,14 @@ class Application(tornado.web.Application):
         Prepare message before actual publishing.
         """
         category_name = params.get('category')
+        category, error = yield self.structure.get_category_by_name(
+            project, category_name
+        )
+        if error:
+            raise Return((None, error))
+        if not category:
+            raise Return((None, self.CATEGORY_NOT_FOUND))
+        category_name = category['name']
 
         category = allowed_categories.get(category_name, None)
         if not category:
@@ -566,15 +578,35 @@ class Application(tornado.web.Application):
     @coroutine
     def process_history(self, project, params):
         project_id = project['_id']
-        category = params.get("category")
+
+        category_name = params.get('category')
+        category, error = yield self.structure.get_category_by_name(
+            project, category_name
+        )
+        if error:
+            raise Return((None, error))
+        if not category:
+            raise Return((None, self.CATEGORY_NOT_FOUND))
+        category_name = category['name']
+
         channel = params.get("channel")
-        data, error = yield self.state.get_history(project_id, category, channel)
+        data, error = yield self.state.get_history(project_id, category_name, channel)
         raise Return((data, error))
 
     @coroutine
     def process_presence(self, project, params):
         project_id = project['_id']
-        category = params.get("category")
+
+        category_name = params.get('category')
+        category, error = yield self.structure.get_category_by_name(
+            project, category_name
+        )
+        if error:
+            raise Return((None, error))
+        if not category:
+            raise Return((None, self.CATEGORY_NOT_FOUND))
+        category_name = category['name']
+
         channel = params.get("channel")
-        data, error = yield self.state.get_presence(project_id, category, channel)
+        data, error = yield self.state.get_presence(project_id, category_name, channel)
         raise Return((data, error))

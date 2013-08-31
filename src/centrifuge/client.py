@@ -12,6 +12,7 @@ try:
     from urllib import urlencode
 except ImportError:
     # python 3
+    # noinspection PyUnresolvedReferences
     from urllib.parse import urlencode
 
 from tornado.ioloop import IOLoop, PeriodicCallback
@@ -45,8 +46,6 @@ class Client(object):
     web browser.
     """
     application = None
-
-    INTERNAL_SERVER_ERROR = 'internal server error'
 
     def __init__(self, sock, info):
         self.sock = sock
@@ -257,7 +256,7 @@ class Client(object):
 
         project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
         if not project:
             raise Return((None, "project not found"))
 
@@ -297,10 +296,18 @@ class Client(object):
         Subscribe authenticated connection on channels.
         """
         category_name = params.get('category')
-        channel = params.get('channel')
+        category, error = yield self.application.structure.get_category_by_name(
+            self.project, category_name
+        )
+        if error:
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not category:
+            raise Return((None, self.application.CATEGORY_NOT_FOUND))
+        category_name = category['name']
 
-        if not category_name or not channel:
-            raise Return((None, 'no category or channel provided'))
+        channel = params.get('channel')
+        if not channel:
+            raise Return((None, 'channel required'))
 
         project_id = self.project['_id']
 
@@ -315,10 +322,6 @@ class Client(object):
         if self.user:
             connections[project_id][self.user][self.uid] = self
 
-        category, error = yield self.get_category(category_name)
-        if error:
-            raise Return((None, error))
-
         is_protected = category.get('is_protected', False)
 
         if is_protected:
@@ -329,7 +332,7 @@ class Client(object):
                 raise Return((None, 'no auth address found'))
             is_authorized, error = yield self.authorize(auth_address, category_name, channel)
             if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
+                raise Return((None, self.application.INTERNAL_SERVER_ERROR))
             if not is_authorized:
                 raise Return((None, 'permission denied'))
 
@@ -360,9 +363,18 @@ class Client(object):
         Unsubscribe authenticated connection from channels.
         """
         category_name = params.get('category')
+        category, error = yield self.application.structure.get_category_by_name(
+            self.project, category_name
+        )
+        if error:
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not category:
+            raise Return((None, self.application.CATEGORY_NOT_FOUND))
+        category_name = category['name']
+
         channel = params.get('channel')
 
-        if not category_name or not channel:
+        if not channel:
             raise Return((True, None))
 
         project_id = self.project['_id']
@@ -371,7 +383,7 @@ class Client(object):
             project_id, {}
         )
         if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
 
         if category_name not in categories:
             # attempt to unsubscribe from not allowed category
@@ -397,20 +409,6 @@ class Client(object):
 
         raise Return((True, None))
 
-    @coroutine
-    def get_category(self, category_name):
-        categories, error = yield self.application.structure.get_categories_by_name()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        project_categories = categories.get(
-            self.project['_id'], {}
-        )
-        if category_name not in project_categories:
-            raise Return((None, 'category does not exist'))
-
-        raise Return((project_categories[category_name], None))
-
     def check_channel_permission(self, category, channel):
         if category in self.channels and channel in self.channels[category]:
             return
@@ -420,11 +418,16 @@ class Client(object):
     def handle_publish(self, params):
 
         category_name = params.get('category')
-        channel = params.get('channel')
-
-        category, error = yield self.get_category(category_name)
+        category, error = yield self.application.structure.get_category_by_name(
+            self.project, category_name
+        )
         if error:
-            raise Return((None, error))
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not category:
+            raise Return((None, self.application.CATEGORY_NOT_FOUND))
+        category_name = category['name']
+
+        channel = params.get('channel')
 
         self.check_channel_permission(category_name, channel)
 
@@ -440,12 +443,19 @@ class Client(object):
 
     @coroutine
     def handle_presence(self, params):
+
         category_name = params.get('category')
+        category, error = yield self.application.structure.get_category_by_name(
+            self.project, category_name
+        )
+        if error:
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not category:
+            raise Return((None, self.application.CATEGORY_NOT_FOUND))
+        category_name = category['name']
+
         channel = params.get('channel')
 
-        category, error = yield self.get_category(category_name)
-        if error:
-            raise Return((None, error))
         self.check_channel_permission(category_name, channel)
 
         if not category['presence']:
@@ -459,12 +469,19 @@ class Client(object):
 
     @coroutine
     def handle_history(self, params):
+
         category_name = params.get('category')
+        category, error = yield self.application.structure.get_category_by_name(
+            self.project, category_name
+        )
+        if error:
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not category:
+            raise Return((None, self.application.CATEGORY_NOT_FOUND))
+        category_name = category['name']
+
         channel = params.get('channel')
 
-        category, error = yield self.get_category(category_name)
-        if error:
-            raise Return((None, error))
         self.check_channel_permission(category_name, channel)
 
         if not category['history']:

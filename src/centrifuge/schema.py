@@ -31,7 +31,7 @@ admin_params_schema = {
                 "type": "string"
             }
         },
-        "required": ["category", "channel"]
+        "required": ["channel"]
     },
     "presence": {
         "type": "object",
@@ -43,7 +43,7 @@ admin_params_schema = {
                 "type": "string"
             }
         },
-        "required": ["category", "channel"]
+        "required": ["channel"]
     },
     "history": {
         "type": "object",
@@ -55,7 +55,7 @@ admin_params_schema = {
                 "type": "string"
             }
         },
-        "required": ["category", "channel"]
+        "required": ["channel"]
     },
     "unsubscribe": {
         "type": "object",
@@ -88,7 +88,7 @@ client_params_schema = {
                 "type": "string"
             }
         },
-        "required": ["category", "channel"]
+        "required": ["channel"]
     },
     "unsubscribe": {
         "type": "object",
@@ -100,7 +100,7 @@ client_params_schema = {
                 "type": "string"
             }
         },
-        "required": ["category", "channel"]
+        "required": ["channel"]
     },
     "connect": {
         "type": "object",

@@ -36,6 +36,7 @@
             });
 
             subscription.on('subscribe:success', function(){
+                console.log('1111111111');
                 subscription.presence(function(message) {
                     var count = 0;
                     for (var key in message){

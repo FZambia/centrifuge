@@ -169,15 +169,25 @@ class Structure:
 
     @coroutine
     def get_category_by_name(self, project, category_name):
-        with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
-            raise Return((
-                self._data['categories_by_name'].get(
-                    project['_id'], {}
-                ).get(category_name),
-                None
-            ))
+        if category_name is None:
+            default_namespace = project.get('default_namespace')
+            if not default_namespace:
+                raise Return((None, None))
+            else:
+                namespace, error = yield self.get_category_by_id(default_namespace)
+                raise Return((namespace, error))
+
+        else:
+            with (yield lock.acquire()):
+                if not self.is_consistent():
+                    raise Return((None, InconsistentStructureError()))
+
+                raise Return((
+                    self._data['categories_by_name'].get(
+                        project['_id'], {}
+                    ).get(category_name),
+                    None
+                ))
 
     @coroutine
     def call_and_update_structure(self, func_name, *args, **kwargs):
