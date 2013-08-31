@@ -29,15 +29,9 @@ admin_params_schema = {
             },
             "channel": {
                 "type": "string"
-            },
-            "data": {
-                "type": "object"
-            },
-            "unique_keys": {
-                "type": "array"
             }
         },
-        "required": ["category", "channel", "data"]
+        "required": ["category", "channel"]
     },
     "presence": {
         "type": "object",

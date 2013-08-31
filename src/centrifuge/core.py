@@ -506,7 +506,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, allowed_categories, params):
+    def prepare_message(self, project, allowed_categories, params, client_id):
         """
         Prepare message before actual publishing.
         """
@@ -520,8 +520,9 @@ class Application(tornado.web.Application):
             'project_id': project['_id'],
             'category': category['name'],
             'uid': uuid.uuid4().hex,
+            'client_id': client_id,
             'channel': params.get('channel'),
-            'data': params.get('data')
+            'data': params.get('data', None)
         }
 
         for callback in self.pre_publish_callbacks:
@@ -534,7 +535,7 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, allowed_categories=None):
+    def process_publish(self, project, params, allowed_categories=None, client_id=None):
 
         if allowed_categories is None:
             project_categories, error = yield self.structure.get_project_categories(project)
@@ -544,7 +545,7 @@ class Application(tornado.web.Application):
             allowed_categories = dict((x['name'], x) for x in project_categories)
 
         message, error = yield self.prepare_message(
-            project, allowed_categories, params
+            project, allowed_categories, params, client_id
         )
         if error:
             raise Return((None, error))

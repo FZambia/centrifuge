@@ -7,10 +7,13 @@ import uuid
 import six
 import time
 import random
+
 try:
     from urllib import urlencode
 except ImportError:
+    # python 3
     from urllib.parse import urlencode
+
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from tornado.escape import json_encode, json_decode
@@ -430,7 +433,8 @@ class Client(object):
 
         result, error = yield self.application.process_publish(
             self.project,
-            params
+            params,
+            client_id=self.uid
         )
         raise Return((result, error))
 

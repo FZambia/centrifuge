@@ -1,13 +1,23 @@
 <script type="text/javascript">
     'use strict';
 
-    var connection;
+    var tagsToReplace = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;'
+    };
+
+    function replaceTag(tag) {
+        return tagsToReplace[tag] || tag;
+    }
+
+    function safe_tags_replace(str) {
+        return str.replace(/[&<>]/g, replaceTag);
+    }
 
     $(function() {
 
-        var centrifuge = new Centrifuge();
-
-        centrifuge.configure({
+        var centrifuge = new Centrifuge({
             url: 'ws://{{centrifuge_address}}/connection/websocket',
             token: '{{auth_data["token"]}}',
             project: '{{auth_data["project"]}}',
@@ -21,7 +31,8 @@
 
             var subscription = centrifuge.subscribe('/python/django', function(message) {
                 console.log(message);
-                draw_message(message['input']);
+                var msg = safe_tags_replace(message.data) + ' <span class="muted">from ' + message.client_id + '</span>';
+                draw_message(msg);
             });
 
             subscription.on('subscribe:success', function(){
@@ -45,7 +56,7 @@
         function draw_message(text) {
             var date = new Date();
             var container = $('#messages');
-            container.prepend($('<li/>').text([
+            container.prepend($('<li/>').html([
                 date.toString(),
                 ' '+text
             ].join(':')));
@@ -56,7 +67,7 @@
             var input = $(this).find('input[type="text"]');
 
             if (centrifuge.isConnected() === true) {
-                var subscription = centrifuge.publish('/python/django', {'input': input.val()}, function() {
+                var subscription = centrifuge.publish('/python/django', input.val(), function() {
                     console.log('message successfully sent');
                 });
                 console.log(subscription);

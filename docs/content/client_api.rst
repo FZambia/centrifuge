@@ -17,7 +17,8 @@ First, import javascript client into your web page:
 
 .. code-block:: html
 
-    <script>
+    <script src="https://github.com/FZambia/centrifuge/blob/js/src/centrifuge/web/frontend/static/application/js/event_emitter.js"></script>
+    <script src="https://github.com/FZambia/centrifuge/blob/js/src/centrifuge/web/frontend/static/application/js/centrifuge.js"></script>
 
 
 Then create new centrifuge object:
