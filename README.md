@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-Warning! Centrifuge 0.2.0 will be released soon with simple javascript client. See [js](https://github.com/FZambia/centrifuge/tree/js) branch.
-That branch contains some important changes. I'll update documentation and README as soon as I merge that branch into master.
-=======
 WARNING! Centrifuge PYPI release is out-of-date. Version 0.2.0 will contain lots of changes
 and will be available on PYPI soon.
->>>>>>> js
 
 CENTRIFUGE
 ==========
