@@ -322,9 +322,9 @@ class Client(object):
         if self.user:
             connections[project_id][self.user][self.uid] = self
 
-        is_protected = namespace.get('is_protected', False)
+        is_private = namespace.get('is_private', False)
 
-        if is_protected:
+        if is_private:
             auth_address = namespace.get('auth_address', None)
             if not auth_address:
                 auth_address = self.project.get('auth_address', None)

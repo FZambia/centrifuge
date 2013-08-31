@@ -228,7 +228,7 @@ def namespace_create(db, project, **kwargs):
         'presence': kwargs['presence'],
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
-        'is_protected': kwargs['is_protected'],
+        'is_private': kwargs['is_private'],
         'auth_address': kwargs['auth_address']
     }
     namespace, error = yield insert(db.namespace, haystack)
@@ -248,7 +248,7 @@ def namespace_edit(db, namespace, **kwargs):
         'presence': kwargs['presence'],
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
-        'is_protected': kwargs['is_protected'],
+        'is_private': kwargs['is_private'],
         'auth_address': kwargs['auth_address']
     }
     _res, error = yield update(

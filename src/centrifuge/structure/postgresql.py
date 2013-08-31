@@ -51,7 +51,7 @@ def on_connection_ready(structure, ready_callback):
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
                'is_watching bool, presence bool, history bool, history_size integer, ' \
-               'is_protected bool, auth_address varchar(255))'
+               'is_private bool, auth_address varchar(255))'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, namespace, ())
@@ -206,15 +206,15 @@ def namespace_create(db, project, **kwargs):
         'presence': kwargs['presence'],
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
-        'is_protected': kwargs['is_protected'],
+        'is_private': kwargs['is_private'],
         'auth_address': kwargs['auth_address']
     }
 
     query = "INSERT INTO namespaces (_id, project_id, name, publish, " \
-            "is_watching, presence, history, history_size, is_protected, " \
+            "is_watching, presence, history, history_size, is_private, " \
             "auth_address) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
             "%(publish)s, %(is_watching)s, %(presence)s, " \
-            "%(history)s, %(history_size)s, %(is_protected)s, %(auth_address)s)"
+            "%(history)s, %(history_size)s, %(is_private)s, %(auth_address)s)"
 
     try:
         yield momoko.Op(
@@ -239,14 +239,14 @@ def namespace_edit(db, namespace, **kwargs):
         'presence': kwargs['presence'],
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
-        'is_protected': kwargs['is_protected'],
+        'is_private': kwargs['is_private'],
         'auth_address': kwargs['auth_address']
     }
 
     query = "UPDATE namespaces SET name=%(name)s, publish=%(publish)s, " \
             "is_watching=%(is_watching)s, presence=%(presence)s, " \
             "history=%(history)s, history_size=%(history_size)s, " \
-            "is_protected=%(is_protected)s, auth_address=%(auth_address)s " \
+            "is_private=%(is_private)s, auth_address=%(auth_address)s " \
             "WHERE _id=%(_id)s"
 
     try:

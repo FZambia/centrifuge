@@ -112,8 +112,8 @@ class NamespaceForm(Form):
         description="publish all namespace channel's messages to administrator's web interface"
     )
 
-    is_protected = BooleanField(
-        label='is protected',
+    is_private = BooleanField(
+        label='is private',
         validators=[],
         default=False,
         description="authorize every subscription request using auth address"

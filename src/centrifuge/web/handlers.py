@@ -231,7 +231,7 @@ class NamespaceFormHandler(BaseHandler):
             'presence': form.presence.data,
             'history': form.history.data,
             'history_size': form.history_size.data,
-            'is_protected': form.is_protected.data,
+            'is_private': form.is_private.data,
             'auth_address': form.auth_address.data
         }
 

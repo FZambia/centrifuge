@@ -42,7 +42,7 @@ def init_storage(structure, settings, ready_callback):
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
                'is_watching bool, presence bool, history bool, history_size integer, ' \
-               'is_protected bool, auth_address varchar(255))'
+               'is_private bool, auth_address varchar(255))'
 
     cursor.execute(project, ())
     conn.commit()
@@ -191,18 +191,18 @@ def namespace_create(cursor, project, **kwargs):
         'presence': kwargs['presence'],
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
-        'is_protected': kwargs['is_protected'],
+        'is_private': kwargs['is_private'],
         'auth_address': kwargs['auth_address']
     }
 
     to_insert = (
         to_return['_id'], to_return['project_id'], to_return['name'], to_return['publish'],
         to_return['is_watching'], to_return['presence'], to_return['history'],
-        to_return['history_size'], to_return['is_protected'], to_return['auth_address']
+        to_return['history_size'], to_return['is_private'], to_return['auth_address']
     )
 
     query = "INSERT INTO namespaces (_id, project_id, name, publish, " \
-            "is_watching, presence, history, history_size, is_protected, " \
+            "is_watching, presence, history, history_size, is_private, " \
             "auth_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
@@ -227,18 +227,18 @@ def namespace_edit(cursor, namespace, **kwargs):
         'presence': kwargs['presence'],
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
-        'is_protected': kwargs['is_protected'],
+        'is_private': kwargs['is_private'],
         'auth_address': kwargs['auth_address']
     }
 
     to_update = (
         to_return['name'], to_return['publish'], to_return['is_watching'],
         to_return['presence'], to_return['history'], to_return['history_size'],
-        to_return['is_protected'], to_return['auth_address'], namespace['_id']
+        to_return['is_private'], to_return['auth_address'], namespace['_id']
     )
 
     query = "UPDATE namespaces SET name=?, publish=?, is_watching=?, presence=?, " \
-            "history=?, history_size=?, is_protected=?, auth_address=? WHERE _id=?"
+            "history=?, history_size=?, is_private=?, auth_address=? WHERE _id=?"
 
     try:
         cursor.execute(query, to_update)
