@@ -84,7 +84,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.2.0rc1',
+    version='0.2.0rc2',
     description="Light and simple open-source platform for real-time message "
                 "broadcasting in your web applications",
     long_description=long_description(),
