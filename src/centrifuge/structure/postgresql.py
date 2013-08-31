@@ -44,7 +44,8 @@ def on_connection_ready(structure, ready_callback):
               'name varchar(100) NOT NULL UNIQUE, display_name ' \
               'varchar(100) NOT NULL, auth_address varchar(255), ' \
               'max_auth_attempts integer, back_off_interval integer, ' \
-              'back_off_max_timeout integer, secret_key varchar(32))'
+              'back_off_max_timeout integer, secret_key varchar(32), ' \
+              'default_namespace varchar(32))'
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
@@ -95,14 +96,15 @@ def project_create(db, **kwargs):
         'max_auth_attempts': kwargs['max_auth_attempts'],
         'back_off_interval': kwargs['back_off_interval'],
         'back_off_max_timeout': kwargs['back_off_max_timeout'],
-        'secret_key': uuid.uuid4().hex
+        'secret_key': uuid.uuid4().hex,
+        'default_namespace': None
     }
 
     query = "INSERT INTO projects (_id, name, display_name, " \
-            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key) " \
+            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key, default_namespace) " \
             "VALUES (%(_id)s, %(name)s, %(display_name)s, " \
             "%(auth_address)s, %(max_auth_attempts)s, %(back_off_interval)s, " \
-            "%(back_off_max_timeout)s, %(secret_key)s)"
+            "%(back_off_max_timeout)s, %(secret_key)s, %(default_namespace)s)"
 
     try:
         yield momoko.Op(
@@ -126,13 +128,14 @@ def project_edit(db, project, **kwargs):
         'auth_address': kwargs['auth_address'],
         'max_auth_attempts': kwargs['max_auth_attempts'],
         'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout']
+        'back_off_max_timeout': kwargs['back_off_max_timeout'],
+        'default_namespace': kwargs['default_namespace']
     }
 
     query = "UPDATE projects SET name=%(name)s, display_name=%(display_name)s, " \
             "auth_address=%(auth_address)s, " \
             "max_auth_attempts=%(max_auth_attempts)s, back_off_interval=%(back_off_interval)s, " \
-            "back_off_max_timeout=%(back_off_max_timeout)s WHERE " \
+            "back_off_max_timeout=%(back_off_max_timeout)s, default_namespace=%(default_namespace)s WHERE " \
             "_id=%(_id)s"
 
     try:

@@ -147,7 +147,8 @@ def project_create(db, **kwargs):
         'max_auth_attempts': kwargs['max_auth_attempts'],
         'back_off_interval': kwargs['back_off_interval'],
         'back_off_max_timeout': kwargs['back_off_max_timeout'],
-        'secret_key': uuid.uuid4().hex
+        'secret_key': uuid.uuid4().hex,
+        'default_namespace': None
     }
     result, error = yield insert(db.project, to_insert)
     if error:
@@ -167,7 +168,8 @@ def project_edit(db, project, **kwargs):
         'auth_address': kwargs['auth_address'],
         'max_auth_attempts': kwargs['max_auth_attempts'],
         'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout']
+        'back_off_max_timeout': kwargs['back_off_max_timeout'],
+        'default_namespace': kwargs['default_namespace']
     }
     _res, error = yield update(
         db.project,

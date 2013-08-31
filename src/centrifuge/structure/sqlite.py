@@ -35,7 +35,8 @@ def init_storage(structure, settings, ready_callback):
               'name varchar(100) NOT NULL UNIQUE, display_name ' \
               'varchar(100) NOT NULL, auth_address varchar(255), ' \
               'max_auth_attempts integer, back_off_interval integer, ' \
-              'back_off_max_timeout integer, secret_key varchar(32))'
+              'back_off_max_timeout integer, secret_key varchar(32), ' \
+              'default_namespace varchar(32))'
 
     category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
@@ -87,12 +88,13 @@ def project_create(cursor, **kwargs):
         kwargs['max_auth_attempts'],
         kwargs['back_off_interval'],
         kwargs['back_off_max_timeout'],
-        uuid.uuid4().hex
+        uuid.uuid4().hex,
+        None
     )
 
     query = "INSERT INTO projects (_id, name, display_name, " \
             "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, " \
-            "secret_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "secret_key, default_namespace) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
     try:
         cursor.execute(query, to_insert)
@@ -115,18 +117,20 @@ def project_edit(cursor, project, **kwargs):
         'auth_address': kwargs['auth_address'],
         'max_auth_attempts': kwargs['max_auth_attempts'],
         'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout']
+        'back_off_max_timeout': kwargs['back_off_max_timeout'],
+        'default_namespace': kwargs['default_namespace']
     }
 
     to_update = (
         kwargs['name'], kwargs['display_name'], kwargs['auth_address'],
         kwargs['max_auth_attempts'], kwargs['back_off_interval'],
-        kwargs['back_off_max_timeout'], extract_obj_id(project)
+        kwargs['back_off_max_timeout'], to_return['default_namespace'],
+        extract_obj_id(project)
     )
 
     query = "UPDATE projects SET name=?, display_name=?, auth_address=?, " \
-            "max_auth_attempts=?, back_off_interval=?, back_off_max_timeout=? " \
-            "WHERE _id=?"
+            "max_auth_attempts=?, back_off_interval=?, back_off_max_timeout=?, " \
+            "default_namespace=? WHERE _id=?"
 
     try:
         cursor.execute(query, to_update)

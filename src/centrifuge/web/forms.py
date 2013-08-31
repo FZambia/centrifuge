@@ -4,7 +4,7 @@
 # All rights reserved.
 
 import re
-from wtforms import TextField, IntegerField, BooleanField, validators
+from wtforms import TextField, IntegerField, BooleanField, validators, SelectField
 from ..utils import Form
 
 
@@ -24,6 +24,14 @@ DEFAULT_HISTORY_SIZE = 20
 
 
 class ProjectForm(Form):
+
+    def __init__(self, *args, **kwargs):
+        super(ProjectForm, self).__init__(*args, **kwargs)
+        namespace_choices = kwargs.get('namespace_choices', None)
+        if namespace_choices:
+            self.default_namespace.choices = namespace_choices
+        else:
+            del self.default_namespace
 
     name = TextField(
         label='project name',
@@ -75,6 +83,12 @@ class ProjectForm(Form):
         ],
         default=DEFAULT_BACK_OFF_MAX_TIMEOUT,
         description="internal, keep it default until you know what you want"
+    )
+
+    default_namespace = SelectField(
+        label='default namespace',
+        validators=[],
+        default=None
     )
 
     def validate_name(self, field):

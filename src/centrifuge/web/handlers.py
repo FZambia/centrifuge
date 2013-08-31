@@ -281,18 +281,6 @@ class ProjectSettingsHandler(BaseHandler):
         raise Return((data, None))
 
     @coroutine
-    def get_edit(self):
-
-        data = {
-            'user': self.current_user,
-            'project': self.project,
-            'form': ProjectForm(self, **self.project),
-            'render_control': render_control,
-            'render_label': render_label
-        }
-        raise Return((data, None))
-
-    @coroutine
     def post_general(self, submit):
 
         url = self.reverse_url("project_settings", self.project['name'], 'general')
@@ -304,6 +292,27 @@ class ProjectSettingsHandler(BaseHandler):
                 raise tornado.web.HTTPError(500, log_message=str(error))
 
         self.redirect(url)
+
+    @coroutine
+    def get_namespace_choices(self):
+        categories, error = yield self.application.structure.get_project_categories(self.project)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        namespace_choices = [(x['_id'], x['name']) for x in categories]
+        namespace_choices.insert(0, ('', '--------'))
+        raise Return((namespace_choices, None))
+
+    @coroutine
+    def get_edit(self):
+        namespace_choices, error = yield self.get_namespace_choices()
+        data = {
+            'user': self.current_user,
+            'project': self.project,
+            'form': ProjectForm(self, namespace_choices=namespace_choices, **self.project),
+            'render_control': render_control,
+            'render_label': render_label
+        }
+        raise Return((data, None))
 
     @coroutine
     def post_edit(self, submit):
@@ -322,7 +331,8 @@ class ProjectSettingsHandler(BaseHandler):
 
         else:
             # edit project
-            form = ProjectForm(self)
+            namespace_choices, error = yield self.get_namespace_choices()
+            form = ProjectForm(self, namespace_choices=namespace_choices)
             if not form.validate():
                 self.render(
                     'project/settings_edit.html', project=self.project,
@@ -343,6 +353,8 @@ class ProjectSettingsHandler(BaseHandler):
                 )
                 return
 
+            default_namespace = form.default_namespace.data or None
+
             res, error = yield self.application.structure.project_edit(
                 self.project,
                 name=form.name.data,
@@ -350,7 +362,8 @@ class ProjectSettingsHandler(BaseHandler):
                 auth_address=form.auth_address.data,
                 max_auth_attempts=form.max_auth_attempts.data,
                 back_off_interval=form.back_off_interval.data,
-                back_off_max_timeout=form.back_off_max_timeout.data
+                back_off_max_timeout=form.back_off_max_timeout.data,
+                default_namespace=default_namespace
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
