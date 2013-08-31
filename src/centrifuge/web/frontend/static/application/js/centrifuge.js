@@ -340,7 +340,6 @@
         var path = this._makePath(category, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            console.log(path);
             return
         }
         if (message.error === null) {

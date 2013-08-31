@@ -30,13 +30,11 @@
             draw_message('connected');
 
             var subscription = centrifuge.subscribe('/python/django', function(message) {
-                console.log(message);
                 var msg = safe_tags_replace(message.data) + ' <span class="muted">from ' + message.client_id + '</span>';
                 draw_message(msg);
             });
 
             subscription.on('subscribe:success', function(){
-                console.log('1111111111');
                 subscription.presence(function(message) {
                     var count = 0;
                     for (var key in message){
