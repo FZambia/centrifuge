@@ -21,7 +21,7 @@ from ..log import logger
 from ..handlers import BaseHandler
 from ..core import ADMIN_CHANNEL
 
-from .forms import ProjectForm, CategoryForm
+from .forms import ProjectForm, NamespaceForm
 
 
 class LogoutHandler(BaseHandler):
@@ -58,7 +58,7 @@ class MainHandler(BaseHandler):
     def get(self):
         """
         Render main template with additional data.
-        Here we need information about categories and sources.
+        Here we need information about namespaces and sources.
         Also information about watching and marked objects.
         """
         user = self.current_user.decode()
@@ -67,7 +67,7 @@ class MainHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        project_categories, error = yield self.application.structure.get_categories_for_projects()
+        project_namespaces, error = yield self.application.structure.get_namespaces_for_projects()
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
@@ -76,7 +76,7 @@ class MainHandler(BaseHandler):
                 'current_user': user,
                 'socket_url': '/socket',
                 'projects': projects,
-                'categories': project_categories
+                'namespaces': project_namespaces
             })
         }
         self.render("main.html", **context)
@@ -138,7 +138,7 @@ class ProjectCreateHandler(BaseHandler):
         self.redirect(self.reverse_url('main'))
 
 
-class CategoryFormHandler(BaseHandler):
+class NamespaceFormHandler(BaseHandler):
 
     @coroutine
     def get_project(self, project_name):
@@ -150,29 +150,29 @@ class CategoryFormHandler(BaseHandler):
         raise Return((project, None))
 
     @coroutine
-    def get_category(self, project, category_name):
-        category, error = yield self.application.structure.get_category_by_name(
-            project, category_name
+    def get_namespace(self, project, namespace_name):
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            project, namespace_name
         )
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
-        if not category:
+        if not namespace:
             raise tornado.web.HTTPError(404)
-        raise Return((category, error))
+        raise Return((namespace, error))
 
     @tornado.web.authenticated
     @coroutine
-    def get(self, project_name, category_name=None):
+    def get(self, project_name, namespace_name=None):
 
         self.project, error = yield self.get_project(project_name)
 
-        if category_name:
-            template_name = 'category/edit.html'
-            self.category, error = yield self.get_category(self.project, category_name)
-            form = CategoryForm(self, **self.category)
+        if namespace_name:
+            template_name = 'namespace/edit.html'
+            self.namespace, error = yield self.get_namespace(self.project, namespace_name)
+            form = NamespaceForm(self, **self.namespace)
         else:
-            template_name = 'category/create.html'
-            form = CategoryForm(self)
+            template_name = 'namespace/create.html'
+            form = NamespaceForm(self)
 
         self.render(
             template_name, form=form, project=self.project,
@@ -181,45 +181,45 @@ class CategoryFormHandler(BaseHandler):
 
     @tornado.web.authenticated
     @coroutine
-    def post(self, project_id, category_name=None):
+    def post(self, project_id, namespace_name=None):
 
         self.project, error = yield self.get_project(project_id)
 
-        if category_name:
-            self.category, error = yield self.get_category(self.project, category_name)
+        if namespace_name:
+            self.namespace, error = yield self.get_namespace(self.project, namespace_name)
 
         submit = self.get_argument('submit', None)
-        if submit == 'category_delete':
-            if self.get_argument('confirm', None) == category_name:
-                res, error = yield self.application.structure.category_delete(
-                    self.project, category_name
+        if submit == 'namespace_delete':
+            if self.get_argument('confirm', None) == namespace_name:
+                res, error = yield self.application.structure.namespace_delete(
+                    self.project, namespace_name
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 self.redirect(self.reverse_url("project_settings", self.project['name'], 'general'))
             else:
-                self.redirect(self.reverse_url("category_edit", self.project['name'], category_name))
+                self.redirect(self.reverse_url("namespace_edit", self.project['name'], namespace_name))
             return
 
-        form = CategoryForm(self)
+        form = NamespaceForm(self)
 
         if not form.validate():
             self.render(
-                'category/create.html', form=form, project=self.project,
+                'namespace/create.html', form=form, project=self.project,
                 render_control=render_control, render_label=render_label
             )
             return
 
-        existing_category, error = yield self.application.structure.get_category_by_name(
+        existing_namespace, error = yield self.application.structure.get_namespace_by_name(
             self.project, form.name.data
         )
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        if (not category_name and existing_category) or (existing_category and existing_category['name'] != category_name):
+        if (not namespace_name and existing_namespace) or (existing_namespace and existing_namespace['name'] != namespace_name):
             form.name.errors.append('duplicate name')
             self.render(
-                'category/create.html', form=form, project=self.project,
+                'namespace/create.html', form=form, project=self.project,
                 render_control=render_control, render_label=render_label
             )
             return
@@ -235,16 +235,16 @@ class CategoryFormHandler(BaseHandler):
             'auth_address': form.auth_address.data
         }
 
-        if not category_name:
-            category, error = yield self.application.structure.category_create(
+        if not namespace_name:
+            namespace, error = yield self.application.structure.namespace_create(
                 self.project,
                 **kwargs
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message="error creating project")
         else:
-            category, error = yield self.application.structure.category_edit(
-                self.category,
+            namespace, error = yield self.application.structure.namespace_edit(
+                self.namespace,
                 **kwargs
             )
             if error:
@@ -269,14 +269,14 @@ class ProjectSettingsHandler(BaseHandler):
 
     @coroutine
     def get_general(self):
-        categories, error = yield self.application.structure.get_project_categories(self.project)
+        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
         data = {
             'user': self.current_user,
             'project': self.project,
-            'categories': categories
+            'namespaces': namespaces
         }
         raise Return((data, None))
 
@@ -295,10 +295,10 @@ class ProjectSettingsHandler(BaseHandler):
 
     @coroutine
     def get_namespace_choices(self):
-        categories, error = yield self.application.structure.get_project_categories(self.project)
+        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
-        namespace_choices = [(x['_id'], x['name']) for x in categories]
+        namespace_choices = [(x['_id'], x['name']) for x in namespaces]
         namespace_choices.insert(0, ('', '--------'))
         raise Return((namespace_choices, None))
 

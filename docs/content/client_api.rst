@@ -72,7 +72,7 @@ for python:
 Correct token guarantees that connection request to Centrifuge contains valid
 information about project and user IDs. Token is similar to HTTP cookie, client must
 not show it to anyone else. Remember that you must  always use channels in private
-categories when working with data of limited access.
+namespaces when working with data of limited access.
 
 Now centrifuge client configured and you are ready to start communicating.
 
@@ -97,16 +97,16 @@ in this way:
         // now you can subscribe
     });
 
-It is very simple to subscribe on channel of certain category. Just write:
+It is very simple to subscribe on channel of certain namespace. Just write:
 
 .. code-block:: javascript
 
-    var subscription = centrifuge.subscribe('/category/channel', function(message) {
+    var subscription = centrifuge.subscribe('/namespace/channel', function(message) {
         // called when message received from this channel
     });
 
 
-If category of channel has publish option on you can publish messages into this
+If namespace of channel has publish option on you can publish messages into this
 channel. But you can not do it immediately after subscription request. You can
 only publish when ``subscribe:success`` event will occure. The same in case of presence
 and history requests. Lets publish message, get presence and get history data as

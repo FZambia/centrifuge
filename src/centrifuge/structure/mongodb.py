@@ -23,10 +23,10 @@ def ensure_indexes(db, drop=False):
     if drop:
         logger.info('dropping indexes...')
         db.project.drop_indexes()
-        db.category.drop_indexes()
+        db.namespace.drop_indexes()
 
     db.project.ensure_index([('name', 1)], unique=True)
-    db.category.ensure_index([('name', 1), ('project', 1)], unique=True)
+    db.namespace.ensure_index([('name', 1), ('project', 1)], unique=True)
 
     logger.info('Database ready')
 
@@ -185,7 +185,7 @@ def project_edit(db, project, **kwargs):
 @coroutine
 def project_delete(db, project):
     """
-    Delete project. Also delete all related categories and events.
+    Delete project. Also delete all related namespaces.
     """
     haystack = {
         '_id': project['_id']
@@ -197,7 +197,7 @@ def project_delete(db, project):
     haystack = {
         'project': project['_id']
     }
-    _res, error = yield remove(db.category, haystack)
+    _res, error = yield remove(db.namespace, haystack)
     if error:
         on_error(error)
 
@@ -205,19 +205,19 @@ def project_delete(db, project):
 
 
 @coroutine
-def category_list(db):
+def namespace_list(db):
     """
-    Get all categories
+    Get all namespaces
     """
-    categories, error = yield find(db.category, {})
+    namespaces, error = yield find(db.namespace, {})
     if error:
         on_error(error)
 
-    raise Return((categories, None))
+    raise Return((namespaces, None))
 
 
 @coroutine
-def category_create(db, project, **kwargs):
+def namespace_create(db, project, **kwargs):
 
     haystack = {
         '_id': str(ObjectId()),
@@ -231,15 +231,15 @@ def category_create(db, project, **kwargs):
         'is_protected': kwargs['is_protected'],
         'auth_address': kwargs['auth_address']
     }
-    category, error = yield insert(db.category, haystack)
+    namespace, error = yield insert(db.namespace, haystack)
     if error:
         on_error(error)
 
-    raise Return((category, None))
+    raise Return((namespace, None))
 
 
 @coroutine
-def category_edit(db, category, **kwargs):
+def namespace_edit(db, namespace, **kwargs):
 
     to_update = {
         'name': kwargs['name'],
@@ -252,27 +252,27 @@ def category_edit(db, category, **kwargs):
         'auth_address': kwargs['auth_address']
     }
     _res, error = yield update(
-        db.category,
-        {'_id': category['_id']},
+        db.namespace,
+        {'_id': namespace['_id']},
         to_update
     )
     if error:
         on_error(error)
 
-    raise Return((category, None))
+    raise Return((namespace, None))
 
 
 @coroutine
-def category_delete(db, project, category_name):
+def namespace_delete(db, project, namespace_name):
     """
-    Delete category from project. Also delete all related entries from
+    Delete namespace from project. Also delete all related entries from
     event collection.
     """
     haystack = {
         'project': project['_id'],
-        'name': category_name
+        'name': namespace_name
     }
-    _res, error = yield remove(db.category, haystack)
+    _res, error = yield remove(db.namespace, haystack)
     if error:
         on_error(error)
 
@@ -312,26 +312,26 @@ def projects_by_name(projects):
     return to_return
 
 
-def categories_by_id(categories):
+def namespaces_by_id(namespaces):
     to_return = {}
-    for category in categories:
-        to_return[category['_id']] = category
+    for namespace in namespaces:
+        to_return[namespace['_id']] = namespace
     return to_return
 
 
-def categories_by_name(categories):
+def namespaces_by_name(namespaces):
     to_return = {}
-    for category in categories:
-        if category['project'] not in to_return:
-            to_return[category['project']] = {}
-        to_return[category['project']][category['name']] = category
+    for namespace in namespaces:
+        if namespace['project'] not in to_return:
+            to_return[namespace['project']] = {}
+        to_return[namespace['project']][namespace['name']] = namespace
     return to_return
 
 
-def project_categories(categories):
+def project_namespaces(namespaces):
     to_return = {}
-    for category in categories:
-        if category['project'] not in to_return:
-            to_return[category['project']] = []
-        to_return[category['project']].append(category)
+    for namespace in namespaces:
+        if namespace['project'] not in to_return:
+            to_return[namespace['project']] = []
+        to_return[namespace['project']].append(namespace)
     return to_return

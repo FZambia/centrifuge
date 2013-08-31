@@ -12,7 +12,7 @@ class StateTest(AsyncTestCase):
     def setUp(self):
         super(StateTest, self).setUp()
         self.project_id = 'test'
-        self.category = 'test'
+        self.namespace = 'test'
         self.channel = 'test'
         self.uid_1 = 'test-1'
         self.uid_2 = 'test-2'
@@ -31,53 +31,53 @@ class StateTest(AsyncTestCase):
         self.assertEqual(result, "OK")
 
         result, error = yield self.state.get_presence(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertEqual(result, {})
 
         result, error = yield self.state.add_presence(
-            self.project_id, self.category, self.channel,
+            self.project_id, self.namespace, self.channel,
             self.uid_1, self.user_info
         )
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_presence(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertTrue(self.uid_1 in result)
 
         result, error = yield self.state.add_presence(
-            self.project_id, self.category, self.channel,
+            self.project_id, self.namespace, self.channel,
             self.uid_1, self.user_info
         )
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_presence(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertTrue(self.uid_1 in result)
         self.assertEqual(len(result), 1)
 
         result, error = yield self.state.add_presence(
-            self.project_id, self.category, self.channel,
+            self.project_id, self.namespace, self.channel,
             self.uid_2, self.user_info
         )
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_presence(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertTrue(self.uid_1 in result)
         self.assertTrue(self.uid_2 in result)
         self.assertEqual(len(result), 2)
 
         result, error = yield self.state.remove_presence(
-            self.project_id, self.category, self.channel, self.uid_2
+            self.project_id, self.namespace, self.channel, self.uid_2
         )
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_presence(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertTrue(self.uid_1 in result)
         self.assertTrue(self.uid_2 not in result)
@@ -85,7 +85,7 @@ class StateTest(AsyncTestCase):
 
         time.sleep(2)
         result, error = yield self.state.get_presence(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertEqual(result, {})
 
@@ -95,37 +95,37 @@ class StateTest(AsyncTestCase):
         self.assertEqual(result, "OK")
 
         result, error = yield self.state.add_history_message(
-            self.project_id, self.category, self.channel, self.message_1
+            self.project_id, self.namespace, self.channel, self.message_1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_history(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertEqual(error, None)
         self.assertEqual(len(result), 1)
 
         result, error = yield self.state.add_history_message(
-            self.project_id, self.category, self.channel, self.message_2
+            self.project_id, self.namespace, self.channel, self.message_2
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_history(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertEqual(error, None)
         self.assertEqual(len(result), 2)
 
         result, error = yield self.state.add_history_message(
-            self.project_id, self.category, self.channel, self.message_3
+            self.project_id, self.namespace, self.channel, self.message_3
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
 
         result, error = yield self.state.get_history(
-            self.project_id, self.category, self.channel
+            self.project_id, self.namespace, self.channel
         )
         self.assertEqual(error, None)
         self.assertEqual(len(result), 2)

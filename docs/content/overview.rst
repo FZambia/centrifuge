@@ -24,10 +24,10 @@ To connect to Centrifuge from browser pure `Websockets <http://en.wikipedia.org/
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be
 used.
 
-Centrifuge comes with administrative web interface to manage project/category structure and monitor important
+Centrifuge comes with administrative web interface to manage project/namespace structure and monitor important
 messages.
 
-Persistent data (projects, categories) by default stored in `SQLite <http://www.sqlite.org/>`_ database.
+Persistent data (projects, namespaces) by default stored in `SQLite <http://www.sqlite.org/>`_ database.
 But when running Centrifuge instance processes on different machines you should use `MongoDB <http://www.mongodb.org/>`_
 or `PostgreSQL <http://www.postgresql.org/>`_ backends instead of SQLite for structure management.
 
@@ -127,7 +127,7 @@ information about presence and message history. Redis settings must be set up in
 configuration file. As Redis settings set up correctly - every message published will
 be added to history and every connected client sends presence information into Redis.
 So if Redis available - information about presence and mesage history will be available
-for clients (there are options for categories which allow to disable presence and
+for clients (there are options for namespaces which allow to disable presence and
 history for channels belonging to them).
 
 At this moment you can ask why not use Redis PUB/SUB mechanism instead of ZeroMQ PUB/SUB
@@ -137,7 +137,7 @@ just faster than Redis. But I think it is an open discussion and your thoughts a
 Mail me or create Github issue so we can make Centrifuge better in next releases.
 
 Finally let's talk about structure database. In Centrifuge you can create projects
-and categories in projects. This information must be stored somewhere and shared between
+and namespaces in projects. This information must be stored somewhere and shared between
 all running instances. To achieve this SQLite or MongoDB or PostgreSQL can be used.
 If all your instances running on the same machine any of them can be used. But if
 you deploy Centrifuge on several machines it is impossible to use SQLite database.

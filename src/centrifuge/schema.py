@@ -24,7 +24,7 @@ admin_params_schema = {
     "publish": {
         "type": "object",
         "properties": {
-            "category": {
+            "namespace": {
                 "type": "string"
             },
             "channel": {
@@ -36,7 +36,7 @@ admin_params_schema = {
     "presence": {
         "type": "object",
         "properties": {
-            "category": {
+            "namespace": {
                 "type": "string"
             },
             "channel": {
@@ -48,7 +48,7 @@ admin_params_schema = {
     "history": {
         "type": "object",
         "properties": {
-            "category": {
+            "namespace": {
                 "type": "string"
             },
             "channel": {
@@ -63,7 +63,7 @@ admin_params_schema = {
             "user": {
                 "type": "string"
             },
-            "category": {
+            "namespace": {
                 "type": "string"
             },
             "channel": {
@@ -81,7 +81,7 @@ client_params_schema = {
     "subscribe": {
         "type": "object",
         "properties": {
-            "category": {
+            "namespace": {
                 "type": "string"
             },
             "channel": {
@@ -93,7 +93,7 @@ client_params_schema = {
     "unsubscribe": {
         "type": "object",
         "properties": {
-            "category": {
+            "namespace": {
                 "type": "string"
             },
             "channel": {

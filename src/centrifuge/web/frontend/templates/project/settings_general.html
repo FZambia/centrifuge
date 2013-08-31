@@ -31,22 +31,22 @@
 
 <div class="row-fluid" style="margin-top: 20px;">
     <fieldset>
-        <legend>{{_("Categories")}}</legend>
+        <legend>{{_("Namespaces")}}</legend>
         <div class="row-fluid">
-            <a class="btn btn-primary" href="{{ handler.reverse_url("category_create", project['name']) }}">{{_("Create new category")}}</a>
+            <a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['name']) }}">{{_("Create new namespace")}}</a>
             <br /><br />
             <table class="table table-striped">
-                {% for category in categories %}
-                    <tr class="project-category">
+                {% for namespace in namespaces %}
+                    <tr class="project-namespace">
                         <td class="col-lg-11">
-                            <h4>{{category['name']}}</h4>
+                            <h4>{{namespace['name']}}</h4>
                         </td>
                         <td class="col-lg-1">
-                            <a href="{{ handler.reverse_url("category_edit", project['name'], category['name']) }}" class="btn btn-primary">{{_("Edit")}}</a>
+                            <a href="{{ handler.reverse_url("namespace_edit", project['name'], namespace['name']) }}" class="btn btn-primary">{{_("Edit")}}</a>
                             <!--<form action="" method="post" class="pull-right form-delete">
                                 {% raw xsrf_form_html() %}
-                                <input type="hidden" name="category_name" value="{{category['name']}}" />
-                                <button type="submit" name="submit" value="category_del" class="btn btn-default">{{_("delete")}}</button>
+                                <input type="hidden" name="namespace_name" value="{{namespace['name']}}" />
+                                <button type="submit" name="submit" value="namespace_del" class="btn btn-default">{{_("delete")}}</button>
                             </form>-->
                         </td>
                     </tr>

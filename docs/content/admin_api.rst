@@ -9,7 +9,7 @@ Overview
 When clients publish into channel - your application does not know about those messages.
 In most cases you need to receive event from client, process it, probably validate and save
 into database and then broadcast to other connected clients. In this case you must not
-use channels which category allows publishing. The common pattern in this situation is
+use channels which namespace allows publishing. The common pattern in this situation is
 receive new message via AJAX, do whatever you need with it and then publish into Centrifuge
 using HTTP API. If your backend written on Python you can use Cent API client. If you use
 other language don't worry - I will describe how to communicate with Centrifuge API endpoint
@@ -111,13 +111,13 @@ It is easy enough:
 
 .. code-block:: bash
 
-    cent python publish --params='{"category": "django", "channel": "news", "data": {"title": "Django 1.6 finally released", "text": "Release keynotes:..."}}'
+    cent python publish --params='{"namespace": "django", "channel": "news", "data": {"title": "Django 1.6 finally released", "text": "Release keynotes:..."}}'
 
 
 - *cent* is the name of program
 - *python* is the name of section in configuration file
 - *publish* is the method name you want to call
-- *--params* is a JSON string with method parameters, in this case of broadcast you should provide category, channel and data parameters.
+- *--params* is a JSON string with method parameters, in this case of broadcast you should provide namespace, channel and data parameters.
 
 
 If request was successful you'll get something like this in response:

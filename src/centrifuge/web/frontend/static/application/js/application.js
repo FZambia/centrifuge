@@ -15,7 +15,7 @@ $(function(){
 	        		'key': idx,
 	        		'value': val,
                     'data': list
-	        	}
+	        	};
 	            ret += self.renderContent(data);
 	        });
 	        return ret;
@@ -37,7 +37,7 @@ $(function(){
         }
     });
 
-    $('.content').on('click', 'a.source, a.category', function(){
+    $('.content').on('click', 'a.source, a.namespace', function(){
 		return false;
 	});
 

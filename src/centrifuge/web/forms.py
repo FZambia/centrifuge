@@ -8,7 +8,7 @@ from wtforms import TextField, IntegerField, BooleanField, validators, SelectFie
 from ..utils import Form
 
 
-# regex pattern to match project and category names
+# regex pattern to match project and namespace names
 NAME_RE = re.compile('^[^_]+[A-z0-9]{2,}$')
 
 DEFAULT_MAX_AUTH_ATTEMPTS = 5
@@ -95,21 +95,21 @@ class ProjectForm(Form):
         field.data = field.data.lower()
 
 
-class CategoryForm(Form):
+class NamespaceForm(Form):
 
     name = TextField(
-        label='category name',
+        label='namespace name',
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique category name"
+        description="unique namespace name"
     )
 
     is_watching = BooleanField(
         label='is watching',
         validators=[],
         default=False,
-        description="publish all category channel's messages to administrator's web interface"
+        description="publish all namespace channel's messages to administrator's web interface"
     )
 
     is_protected = BooleanField(
@@ -130,14 +130,14 @@ class CategoryForm(Form):
         label='presence',
         validators=[],
         default=True,
-        description="check if you want to get presence info for channels in this category"
+        description="check if you want to get presence info for channels in this namespace"
     )
 
     history = BooleanField(
         label='history',
         validators=[],
         default=True,
-        description="check if you want to get history info for channels in this category"
+        description="check if you want to get history info for channels in this namespace"
     )
 
     history_size = IntegerField(
@@ -146,7 +146,7 @@ class CategoryForm(Form):
             validators.NumberRange(min=1)
         ],
         default=DEFAULT_HISTORY_SIZE,
-        description="maximum amount of messages in history for channels in this category"
+        description="maximum amount of messages in history for channels in this namespace"
     )
 
     auth_address = TextField(
@@ -155,6 +155,6 @@ class CategoryForm(Form):
             validators.URL(require_tld=False),
             validators.Optional()
         ],
-        description="url address to authorize clients specific for category "
+        description="url address to authorize clients specific for namespace "
                     "(leave it blank to use auth url from project)"
     )

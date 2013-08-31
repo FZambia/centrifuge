@@ -50,14 +50,14 @@ def publish(stream, channel, message):
     stream.send_multipart(to_publish)
 
 
-def create_subscription_name(project_id, category, channel):
+def create_subscription_name(project_id, namespace, channel):
     """
     Create subscription name to catch messages from specific
-    project, category and channel.
+    project, namespace and channel.
     """
     return str(CHANNEL_NAME_SEPARATOR.join([
         project_id,
-        category,
+        namespace,
         channel,
         CHANNEL_SUFFIX
     ]))
@@ -103,7 +103,7 @@ class Application(tornado.web.Application):
 
     INTERNAL_SERVER_ERROR = 'internal server error'
 
-    CATEGORY_NOT_FOUND = 'category not found'
+    NAMESPACE_NOT_FOUND = 'namespace not found'
 
     def __init__(self, *args, **kwargs):
 
@@ -122,7 +122,7 @@ class Application(tornado.web.Application):
         # key - node address, value - timestamp of last ping
         self.nodes = {}
 
-        # application structure (projects, categories etc)
+        # application structure (projects, namespaces etc)
         self.structure = None
 
         # initialize dict to keep channel presence
@@ -351,7 +351,7 @@ class Application(tornado.web.Application):
         """
         project = params.get("project")
         user = params.get("user")
-        category_name = params.get("category", None)
+        namespace_name = params.get("namespace", None)
         channel = params.get("channel", None)
 
         if not user:
@@ -365,27 +365,27 @@ class Application(tornado.web.Application):
         if not user_connections:
             raise Return((True, None))
 
-        categories, error = yield self.structure.get_project_categories(project)
+        namespaces, error = yield self.structure.get_project_namespaces(project)
         if error:
             raise Return((None, error))
 
-        categories = dict(
-            (x['name'], x) for x in categories
+        namespaces = dict(
+            (x['name'], x) for x in namespaces
         )
 
-        category = categories.get(category_name, None)
-        if not category:
-            # category does not exist
+        namespace = namespaces.get(namespace_name, None)
+        if not namespace:
+            # namespace does not exist
             raise Return((True, None))
 
         for uid, connection in six.iteritems(user_connections):
 
-            if not category_name and not channel:
+            if not namespace_name and not channel:
                 # unsubscribe from all channels
                 for cat, channels in six.iteritems(connection.channels):
                     for chan in channels:
                         channel_to_unsubscribe = create_subscription_name(
-                            project_id, category_name, chan
+                            project_id, namespace_name, chan
                         )
                         connection.sub_stream.setsockopt_string(
                             zmq.UNSUBSCRIBE,
@@ -394,21 +394,21 @@ class Application(tornado.web.Application):
 
                 connection.channels = {}
 
-            elif category_name and not channel:
-                # unsubscribe from all channels in category
+            elif namespace_name and not channel:
+                # unsubscribe from all channels in namespace
                 for cat, channels in six.iteritems(connection.channels):
-                    if category_name != cat:
+                    if namespace_name != cat:
                         continue
                     for chan in channels:
                         channel_to_unsubscribe = create_subscription_name(
-                            project_id, category_name, chan
+                            project_id, namespace_name, chan
                         )
                         connection.sub_stream.setsockopt_string(
                             zmq.UNSUBSCRIBE,
                             six.u(channel_to_unsubscribe)
                         )
                 try:
-                    del connection.channels[category_name]
+                    del connection.channels[namespace_name]
                 except KeyError:
                     pass
                 raise Return((True, None))
@@ -416,7 +416,7 @@ class Application(tornado.web.Application):
             else:
                 # unsubscribe from certain channel
                 channel_to_unsubscribe = create_subscription_name(
-                    project_id, category_name, channel
+                    project_id, namespace_name, channel
                 )
 
                 connection.sub_stream.setsockopt_string(
@@ -425,7 +425,7 @@ class Application(tornado.web.Application):
                 )
 
                 try:
-                    del connection.channels[category_name][channel]
+                    del connection.channels[namespace_name][channel]
                 except KeyError:
                     pass
 
@@ -481,56 +481,56 @@ class Application(tornado.web.Application):
         raise Return((result, error))
 
     @coroutine
-    def publish_message(self, message, allowed_categories):
+    def publish_message(self, message, allowed_namespaces):
         """
         Publish event into PUB socket stream
         """
         project_id = message['project_id']
-        category_name = message['category']
+        namespace_name = message['namespace']
         channel = message['channel']
 
         message = json_encode(message)
 
-        if allowed_categories[category_name]['is_watching']:
+        if allowed_namespaces[namespace_name]['is_watching']:
             # send to admin channel
             publish(self.pub_stream, ADMIN_CHANNEL, message)
 
         # send to event channel
         subscription_name = create_subscription_name(
-            project_id, category_name, channel
+            project_id, namespace_name, channel
         )
 
         publish(self.pub_stream, subscription_name, message)
 
         yield self.state.add_history_message(
-            project_id, category_name, channel, message,
-            history_size=allowed_categories[category_name]['history_size']
+            project_id, namespace_name, channel, message,
+            history_size=allowed_namespaces[namespace_name]['history_size']
         )
 
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, allowed_categories, params, client_id):
+    def prepare_message(self, project, allowed_namespaces, params, client_id):
         """
         Prepare message before actual publishing.
         """
-        category_name = params.get('category')
-        category, error = yield self.structure.get_category_by_name(
-            project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.structure.get_namespace_by_name(
+            project, namespace_name
         )
         if error:
             raise Return((None, error))
-        if not category:
-            raise Return((None, self.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
-        category = allowed_categories.get(category_name, None)
-        if not category:
-            raise Return(("category not found in allowed categories", None))
+        namespace = allowed_namespaces.get(namespace_name, None)
+        if not namespace:
+            raise Return(("namespace not found in allowed namespaces", None))
 
         message = {
             'project_id': project['_id'],
-            'category': category['name'],
+            'namespace': namespace['name'],
             'uid': uuid.uuid4().hex,
             'client_id': client_id,
             'channel': params.get('channel'),
@@ -547,17 +547,17 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, allowed_categories=None, client_id=None):
+    def process_publish(self, project, params, allowed_namespaces=None, client_id=None):
 
-        if allowed_categories is None:
-            project_categories, error = yield self.structure.get_project_categories(project)
+        if allowed_namespaces is None:
+            project_namespaces, error = yield self.structure.get_project_namespaces(project)
             if error:
                 raise Return((None, error))
 
-            allowed_categories = dict((x['name'], x) for x in project_categories)
+            allowed_namespaces = dict((x['name'], x) for x in project_namespaces)
 
         message, error = yield self.prepare_message(
-            project, allowed_categories, params, client_id
+            project, allowed_namespaces, params, client_id
         )
         if error:
             raise Return((None, error))
@@ -565,7 +565,7 @@ class Application(tornado.web.Application):
         if isinstance(message, dict):
             # event stored successfully and we can make callbacks
             result, error = yield self.publish_message(
-                message, allowed_categories
+                message, allowed_namespaces
             )
             if error:
                 raise Return((None, error))
@@ -579,34 +579,34 @@ class Application(tornado.web.Application):
     def process_history(self, project, params):
         project_id = project['_id']
 
-        category_name = params.get('category')
-        category, error = yield self.structure.get_category_by_name(
-            project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.structure.get_namespace_by_name(
+            project, namespace_name
         )
         if error:
             raise Return((None, error))
-        if not category:
-            raise Return((None, self.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get("channel")
-        data, error = yield self.state.get_history(project_id, category_name, channel)
+        data, error = yield self.state.get_history(project_id, namespace_name, channel)
         raise Return((data, error))
 
     @coroutine
     def process_presence(self, project, params):
         project_id = project['_id']
 
-        category_name = params.get('category')
-        category, error = yield self.structure.get_category_by_name(
-            project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.structure.get_namespace_by_name(
+            project, namespace_name
         )
         if error:
             raise Return((None, error))
-        if not category:
-            raise Return((None, self.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get("channel")
-        data, error = yield self.state.get_presence(project_id, category_name, channel)
+        data, error = yield self.state.get_presence(project_id, namespace_name, channel)
         raise Return((data, error))

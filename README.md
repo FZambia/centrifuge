@@ -23,10 +23,10 @@ To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be
 used.
 
-Centrifuge comes with administrative web interface to manage project/category structure and monitor important
+Centrifuge comes with administrative web interface to manage project/namespace structure and monitor important
 messages.
 
-Persistent data (projects, categories) by default stored in [SQLite](http://www.sqlite.org/) database.
+Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
 But when running Centrifuge instance processes on different machines you should use [MongoDB](http://www.mongodb.org/)
 or [PostgreSQL](http://www.postgresql.org/) backends instead of SQLite for structure management.
 
@@ -42,7 +42,7 @@ Main features
 * Simple javascript client
 * Presence and history data for channels
 * Web interface for managing your projects
-* Flexible channel settings through categories
+* Flexible channel settings through namespaces
 
 
 Basic usage from browser

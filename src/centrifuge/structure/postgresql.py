@@ -47,14 +47,14 @@ def on_connection_ready(structure, ready_callback):
               'back_off_max_timeout integer, secret_key varchar(32), ' \
               'default_namespace varchar(32))'
 
-    category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
+    namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
                'is_watching bool, presence bool, history bool, history_size integer, ' \
                'is_protected bool, auth_address varchar(255))'
 
     yield momoko.Op(db.execute, project, ())
-    yield momoko.Op(db.execute, category, ())
+    yield momoko.Op(db.execute, namespace, ())
     ready_callback()
     logger.info("Database ready")
 
@@ -151,7 +151,7 @@ def project_edit(db, project, **kwargs):
 @coroutine
 def project_delete(db, project):
     """
-    Delete project. Also delete all related categories and events.
+    Delete project. Also delete all related namespaces and events.
     """
     haystack = {
         'project_id': project['_id']
@@ -165,7 +165,7 @@ def project_delete(db, project):
     except Exception as e:
         on_error(e)
 
-    query = "DELETE FROM categories WHERE project_id=%(project_id)s"
+    query = "DELETE FROM namespaces WHERE project_id=%(project_id)s"
     try:
         yield momoko.Op(
             db.execute, query, haystack
@@ -177,11 +177,11 @@ def project_delete(db, project):
 
 
 @coroutine
-def category_list(db):
+def namespace_list(db):
     """
-    Get all categories
+    Get all namespaces
     """
-    query = "SELECT * FROM categories"
+    query = "SELECT * FROM namespaces"
     try:
         cursor = yield momoko.Op(
             db.execute, query, {},
@@ -190,12 +190,12 @@ def category_list(db):
     except Exception as e:
         on_error(e)
     else:
-        categories = cursor.fetchall()
-        raise Return((categories, None))
+        namespaces = cursor.fetchall()
+        raise Return((namespaces, None))
 
 
 @coroutine
-def category_create(db, project, **kwargs):
+def namespace_create(db, project, **kwargs):
 
     to_insert = {
         '_id': str(ObjectId()),
@@ -210,7 +210,7 @@ def category_create(db, project, **kwargs):
         'auth_address': kwargs['auth_address']
     }
 
-    query = "INSERT INTO categories (_id, project_id, name, publish, " \
+    query = "INSERT INTO namespaces (_id, project_id, name, publish, " \
             "is_watching, presence, history, history_size, is_protected, " \
             "auth_address) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
             "%(publish)s, %(is_watching)s, %(presence)s, " \
@@ -227,12 +227,12 @@ def category_create(db, project, **kwargs):
 
 
 @coroutine
-def category_edit(db, category, **kwargs):
+def namespace_edit(db, namespace, **kwargs):
     """
     Edit project
     """
     to_update = {
-        '_id': category['_id'],
+        '_id': namespace['_id'],
         'name': kwargs['name'],
         'publish': kwargs['publish'],
         'is_watching': kwargs['is_watching'],
@@ -243,7 +243,7 @@ def category_edit(db, category, **kwargs):
         'auth_address': kwargs['auth_address']
     }
 
-    query = "UPDATE categories SET name=%(name)s, publish=%(publish)s, " \
+    query = "UPDATE namespaces SET name=%(name)s, publish=%(publish)s, " \
             "is_watching=%(is_watching)s, presence=%(presence)s, " \
             "history=%(history)s, history_size=%(history_size)s, " \
             "is_protected=%(is_protected)s, auth_address=%(auth_address)s " \
@@ -260,17 +260,17 @@ def category_edit(db, category, **kwargs):
 
 
 @coroutine
-def category_delete(db, project, category_name):
+def namespace_delete(db, project, namespace_name):
     """
-    Delete category from project. Also delete all related entries from
+    Delete namespace from project. Also delete all related entries from
     event collection.
     """
     haystack = {
         'project_id': project['_id'],
-        'name': category_name
+        'name': namespace_name
     }
 
-    query = "DELETE FROM categories WHERE name=%(name)s AND project_id=%(project_id)s"
+    query = "DELETE FROM namespaces WHERE name=%(name)s AND project_id=%(project_id)s"
 
     try:
         yield momoko.Op(
@@ -322,26 +322,26 @@ def projects_by_name(projects):
     return to_return
 
 
-def categories_by_id(categories):
+def namespaces_by_id(namespaces):
     to_return = {}
-    for category in categories:
-        to_return[category['_id']] = category
+    for namespace in namespaces:
+        to_return[namespace['_id']] = namespace
     return to_return
 
 
-def categories_by_name(categories):
+def namespaces_by_name(namespaces):
     to_return = {}
-    for category in categories:
-        if category['project_id'] not in to_return:
-            to_return[category['project_id']] = {}
-        to_return[category['project_id']][category['name']] = category
+    for namespace in namespaces:
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = {}
+        to_return[namespace['project_id']][namespace['name']] = namespace
     return to_return
 
 
-def project_categories(categories):
+def project_namespaces(namespaces):
     to_return = {}
-    for category in categories:
-        if category['project_id'] not in to_return:
-            to_return[category['project_id']] = []
-        to_return[category['project_id']].append(category)
+    for namespace in namespaces:
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = []
+        to_return[namespace['project_id']].append(namespace)
     return to_return

@@ -14,7 +14,7 @@ class CoreTest(TestCase):
     def setUp(self):
 
         self.project_id = 'test'
-        self.category = 'test'
+        self.namespace = 'test'
         self.channel = 'test'
 
 

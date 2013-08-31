@@ -31,12 +31,12 @@ class Structure:
         self._uid = None
         self._data = {
             'projects': [],
-            'categories': [],
+            'namespaces': [],
             'projects_by_id': {},
             'projects_by_name': {},
-            'categories_by_id': {},
-            'categories_by_name': {},
-            'project_categories': {}
+            'namespaces_by_id': {},
+            'namespaces_by_name': {},
+            'project_namespaces': {}
         }
 
     def set_storage(self, storage):
@@ -70,24 +70,24 @@ class Structure:
             if error:
                 self.on_error(error)
 
-            categories, error = yield self.storage.category_list(self.db)
+            namespaces, error = yield self.storage.namespace_list(self.db)
             if error:
                 self.on_error(error)
 
             projects_by_id = self.storage.projects_by_id(projects)
             projects_by_name = self.storage.projects_by_name(projects)
-            categories_by_id = self.storage.categories_by_id(categories)
-            categories_by_name = self.storage.categories_by_name(categories)
-            project_categories = self.storage.project_categories(categories)
+            namespaces_by_id = self.storage.namespaces_by_id(namespaces)
+            namespaces_by_name = self.storage.namespaces_by_name(namespaces)
+            project_namespaces = self.storage.project_namespaces(namespaces)
 
             self._data = {
                 'projects': projects,
-                'categories': categories,
+                'namespaces': namespaces,
                 'projects_by_id': projects_by_id,
                 'projects_by_name': projects_by_name,
-                'categories_by_id': categories_by_id,
-                'categories_by_name': categories_by_name,
-                'project_categories': project_categories
+                'namespaces_by_id': namespaces_by_id,
+                'namespaces_by_name': namespaces_by_name,
+                'project_namespaces': project_namespaces
             }
 
             self._CONSISTENT = True
@@ -104,26 +104,26 @@ class Structure:
             raise Return((self._data['projects'], None))
 
     @coroutine
-    def category_list(self):
+    def namespace_list(self):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStructureError()))
-            raise Return((self._data['categories'], None))
+            raise Return((self._data['namespaces'], None))
 
     @coroutine
-    def get_categories_for_projects(self):
+    def get_namespaces_for_projects(self):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStructureError()))
-            raise Return((self._data['project_categories'], None))
+            raise Return((self._data['project_namespaces'], None))
 
     @coroutine
-    def get_project_categories(self, project):
+    def get_project_namespaces(self, project):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStructureError()))
             raise Return((
-                self._data['project_categories'].get(project['_id'], []),
+                self._data['project_namespaces'].get(project['_id'], []),
                 None
             ))
 
@@ -148,33 +148,33 @@ class Structure:
             ))
 
     @coroutine
-    def get_category_by_id(self, category_id):
+    def get_namespace_by_id(self, namespace_id):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStructureError()))
             raise Return((
-                self._data['categories_by_id'].get(category_id),
+                self._data['namespaces_by_id'].get(namespace_id),
                 None
             ))
 
     @coroutine
-    def get_categories_by_name(self):
+    def get_namespaces_by_name(self):
         with (yield lock.acquire()):
             if not self.is_consistent():
                 raise Return((None, InconsistentStructureError()))
             raise Return((
-                self._data['categories_by_name'],
+                self._data['namespaces_by_name'],
                 None
             ))
 
     @coroutine
-    def get_category_by_name(self, project, category_name):
-        if category_name is None:
+    def get_namespace_by_name(self, project, namespace_name):
+        if namespace_name is None:
             default_namespace = project.get('default_namespace')
             if not default_namespace:
                 raise Return((None, None))
             else:
-                namespace, error = yield self.get_category_by_id(default_namespace)
+                namespace, error = yield self.get_namespace_by_id(default_namespace)
                 raise Return((namespace, error))
 
         else:
@@ -183,9 +183,9 @@ class Structure:
                     raise Return((None, InconsistentStructureError()))
 
                 raise Return((
-                    self._data['categories_by_name'].get(
+                    self._data['namespaces_by_name'].get(
                         project['_id'], {}
-                    ).get(category_name),
+                    ).get(namespace_name),
                     None
                 ))
 
@@ -235,23 +235,23 @@ class Structure:
         raise Return((result, error))
 
     @coroutine
-    def category_create(self, *args, **kwargs):
+    def namespace_create(self, *args, **kwargs):
         result, error = yield self.call_and_update_structure(
-            'category_create', *args, **kwargs
+            'namespace_create', *args, **kwargs
         )
         raise Return((result, error))
 
     @coroutine
-    def category_edit(self, *args, **kwargs):
+    def namespace_edit(self, *args, **kwargs):
         result, error = yield self.call_and_update_structure(
-            'category_edit', *args, **kwargs
+            'namespace_edit', *args, **kwargs
         )
         raise Return((result, error))
 
     @coroutine
-    def category_delete(self, *args, **kwargs):
+    def namespace_delete(self, *args, **kwargs):
         result, error = yield self.call_and_update_structure(
-            'category_delete', *args, **kwargs
+            'namespace_delete', *args, **kwargs
         )
         raise Return((result, error))
 

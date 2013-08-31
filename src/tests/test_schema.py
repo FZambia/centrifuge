@@ -28,7 +28,7 @@ class SchemaTest(TestCase):
 
     def test_admin_params_schema_broadcast(self):
         schema = {
-            "category": "test",
+            "namespace": "test",
             "channel": "test",
             "data": {"input": "test"}
         }
@@ -38,7 +38,7 @@ class SchemaTest(TestCase):
             None
         )
 
-        del schema["category"]
+        del schema["namespace"]
 
         try:
             validate(schema, admin_params_schema["publish"])

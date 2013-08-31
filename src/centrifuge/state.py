@@ -64,17 +64,17 @@ class State(object):
         else:
             self.connected = True
 
-    def get_presence_hash_key(self, project_id, category, channel):
-        return "presence:hash:%s:%s:%s" % (project_id, category, channel)
+    def get_presence_hash_key(self, project_id, namespace, channel):
+        return "presence:hash:%s:%s:%s" % (project_id, namespace, channel)
 
-    def get_presence_set_key(self, project_id, category, channel):
-        return "presence:set:%s:%s:%s" % (project_id, category, channel)
+    def get_presence_set_key(self, project_id, namespace, channel):
+        return "presence:set:%s:%s:%s" % (project_id, namespace, channel)
 
-    def get_history_list_key(self, project_id, category, channel):
-        return "history:%s:%s:%s" % (project_id, category, channel)
+    def get_history_list_key(self, project_id, namespace, channel):
+        return "history:%s:%s:%s" % (project_id, namespace, channel)
 
     @coroutine
-    def add_presence(self, project_id, category, channel, uid, user_info, presence_timeout=None):
+    def add_presence(self, project_id, namespace, channel, uid, user_info, presence_timeout=None):
         """
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
@@ -83,36 +83,36 @@ class State(object):
             raise Return((True, None))
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
-        hash_key = self.get_presence_hash_key(project_id, category, channel)
-        set_key = self.get_presence_set_key(project_id, category, channel)
+        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
+        set_key = self.get_presence_set_key(project_id, namespace, channel)
         yield Task(self.client.zadd, set_key, {uid: expire_at})
         yield Task(self.client.hset, hash_key, uid, user_info)
         raise Return((True, None))
 
     @coroutine
-    def remove_presence(self, project_id, category, channel, uid):
+    def remove_presence(self, project_id, namespace, channel, uid):
         """
         Remove user's presence from Redis.
         Must be called on disconnects of any kind.
         """
         if self.fake:
             raise Return((True, None))
-        hash_key = self.get_presence_hash_key(project_id, category, channel)
-        set_key = self.get_presence_set_key(project_id, category, channel)
+        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
+        set_key = self.get_presence_set_key(project_id, namespace, channel)
         yield Task(self.client.hdel, hash_key, uid)
         yield Task(self.client.zrem, set_key, uid)
         raise Return((True, None))
 
     @coroutine
-    def get_presence(self, project_id, category, channel):
+    def get_presence(self, project_id, namespace, channel):
         """
         Get presence for channel.
         """
         if self.fake:
             raise Return((None, None))
         now = int(time.time())
-        hash_key = self.get_presence_hash_key(project_id, category, channel)
-        set_key = self.get_presence_set_key(project_id, category, channel)
+        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
+        set_key = self.get_presence_set_key(project_id, namespace, channel)
         expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
         if expired_keys:
             yield Task(self.client.zremrangebyscore, set_key, 0, now)
@@ -121,7 +121,7 @@ class State(object):
         raise Return((dict_from_list(data), None))
 
     @coroutine
-    def add_history_message(self, project_id, category, channel, message, history_size=None):
+    def add_history_message(self, project_id, namespace, channel, message, history_size=None):
         """
         Add message to channel's history.
         Must be called when new message has been published.
@@ -129,18 +129,18 @@ class State(object):
         if self.fake:
             raise Return((True, None))
         history_size = history_size or self.history_size
-        list_key = self.get_history_list_key(project_id, category, channel)
+        list_key = self.get_history_list_key(project_id, namespace, channel)
         yield Task(self.client.lpush, list_key, message)
         yield Task(self.client.ltrim, list_key, 0, history_size - 1)
         raise Return((True, None))
 
     @coroutine
-    def get_history(self, project_id, category, channel):
+    def get_history(self, project_id, namespace, channel):
         """
         Get a list of last messages for channel.
         """
         if self.fake:
             raise Return((None, None))
-        history_list_key = self.get_history_list_key(project_id, category, channel)
+        history_list_key = self.get_history_list_key(project_id, namespace, channel)
         data = yield Task(self.client.lrange, history_list_key, 0, -1)
         raise Return(([json_decode(x.decode()) for x in data], None))

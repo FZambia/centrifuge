@@ -38,7 +38,7 @@ def init_storage(structure, settings, ready_callback):
               'back_off_max_timeout integer, secret_key varchar(32), ' \
               'default_namespace varchar(32))'
 
-    category = 'CREATE TABLE IF NOT EXISTS categories (id SERIAL, ' \
+    namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
                'is_watching bool, presence bool, history bool, history_size integer, ' \
@@ -46,7 +46,7 @@ def init_storage(structure, settings, ready_callback):
 
     cursor.execute(project, ())
     conn.commit()
-    cursor.execute(category, ())
+    cursor.execute(namespace, ())
     conn.commit()
 
     structure.set_db(cursor)
@@ -144,7 +144,7 @@ def project_edit(cursor, project, **kwargs):
 @coroutine
 def project_delete(cursor, project):
     """
-    Delete project. Also delete all related categories and events.
+    Delete project. Also delete all related namespaces and events.
     """
     haystack = (project['_id'], )
 
@@ -154,7 +154,7 @@ def project_delete(cursor, project):
     except Exception as e:
         on_error(e)
 
-    query = "DELETE FROM categories WHERE project_id=?"
+    query = "DELETE FROM namespaces WHERE project_id=?"
     try:
         cursor.execute(query, haystack)
     except Exception as e:
@@ -165,22 +165,22 @@ def project_delete(cursor, project):
 
 
 @coroutine
-def category_list(cursor):
+def namespace_list(cursor):
     """
-    Get all categories
+    Get all namespaces
     """
-    query = "SELECT * FROM categories"
+    query = "SELECT * FROM namespaces"
     try:
         cursor.execute(query, ())
     except Exception as e:
         on_error(e)
     else:
-        categories = cursor.fetchall()
-        raise Return((categories, None))
+        namespaces = cursor.fetchall()
+        raise Return((namespaces, None))
 
 
 @coroutine
-def category_create(cursor, project, **kwargs):
+def namespace_create(cursor, project, **kwargs):
 
     to_return = {
         '_id': str(ObjectId()),
@@ -201,7 +201,7 @@ def category_create(cursor, project, **kwargs):
         to_return['history_size'], to_return['is_protected'], to_return['auth_address']
     )
 
-    query = "INSERT INTO categories (_id, project_id, name, publish, " \
+    query = "INSERT INTO namespaces (_id, project_id, name, publish, " \
             "is_watching, presence, history, history_size, is_protected, " \
             "auth_address) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 
@@ -215,12 +215,12 @@ def category_create(cursor, project, **kwargs):
 
 
 @coroutine
-def category_edit(cursor, category, **kwargs):
+def namespace_edit(cursor, namespace, **kwargs):
     """
     Edit project
     """
     to_return = {
-        '_id': category['_id'],
+        '_id': namespace['_id'],
         'name': kwargs['name'],
         'publish': kwargs['publish'],
         'is_watching': kwargs['is_watching'],
@@ -234,10 +234,10 @@ def category_edit(cursor, category, **kwargs):
     to_update = (
         to_return['name'], to_return['publish'], to_return['is_watching'],
         to_return['presence'], to_return['history'], to_return['history_size'],
-        to_return['is_protected'], to_return['auth_address'], category['_id']
+        to_return['is_protected'], to_return['auth_address'], namespace['_id']
     )
 
-    query = "UPDATE categories SET name=?, publish=?, is_watching=?, presence=?, " \
+    query = "UPDATE namespaces SET name=?, publish=?, is_watching=?, presence=?, " \
             "history=?, history_size=?, is_protected=?, auth_address=? WHERE _id=?"
 
     try:
@@ -250,13 +250,13 @@ def category_edit(cursor, category, **kwargs):
 
 
 @coroutine
-def category_delete(cursor, project, category_name):
+def namespace_delete(cursor, project, namespace_name):
     """
-    Delete category from project. Also delete all related entries from
+    Delete namespace from project. Also delete all related entries from
     event collection.
     """
-    haystack = (category_name, project['_id'])
-    query = "DELETE FROM categories WHERE name=? AND project_id=?"
+    haystack = (namespace_name, project['_id'])
+    query = "DELETE FROM namespaces WHERE name=? AND project_id=?"
     try:
         cursor.execute(query, haystack)
     except Exception as e:
@@ -300,26 +300,26 @@ def projects_by_name(projects):
     return to_return
 
 
-def categories_by_id(categories):
+def namespaces_by_id(namespaces):
     to_return = {}
-    for category in categories:
-        to_return[category['_id']] = category
+    for namespace in namespaces:
+        to_return[namespace['_id']] = namespace
     return to_return
 
 
-def categories_by_name(categories):
+def namespaces_by_name(namespaces):
     to_return = {}
-    for category in categories:
-        if category['project_id'] not in to_return:
-            to_return[category['project_id']] = {}
-        to_return[category['project_id']][category['name']] = category
+    for namespace in namespaces:
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = {}
+        to_return[namespace['project_id']][namespace['name']] = namespace
     return to_return
 
 
-def project_categories(categories):
+def project_namespaces(namespaces):
     to_return = {}
-    for category in categories:
-        if category['project_id'] not in to_return:
-            to_return[category['project_id']] = []
-        to_return[category['project_id']].append(category)
+    for namespace in namespaces:
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = []
+        to_return[namespace['project_id']].append(namespace)
     return to_return

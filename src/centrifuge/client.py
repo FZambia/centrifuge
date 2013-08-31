@@ -100,10 +100,10 @@ class Client(object):
 
         self.presence_ping.stop()
 
-        for category, channels in six.iteritems(self.channels):
+        for namespace, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 yield self.application.state.remove_presence(
-                    project_id, category, channel, self.uid
+                    project_id, namespace, channel, self.uid
                 )
 
         self.channels = None
@@ -179,7 +179,7 @@ class Client(object):
         raise Return((True, None))
 
     @coroutine
-    def authorize(self, auth_address, category_name, channel):
+    def authorize(self, auth_address, namespace_name, channel):
 
         project_id = self.project['_id']
         http_client = AsyncHTTPClient()
@@ -188,7 +188,7 @@ class Client(object):
             method="POST",
             body=urlencode({
                 'user': self.user,
-                'category': category_name,
+                'namespace': namespace_name,
                 'channel': channel
             }),
             request_timeout=1
@@ -238,10 +238,10 @@ class Client(object):
 
     @coroutine
     def send_presence_ping(self):
-        for category, channels in six.iteritems(self.channels):
+        for namespace, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 yield self.application.state.add_presence(
-                    self.project['_id'], category, channel, self.uid, self.user_info
+                    self.project['_id'], namespace, channel, self.uid, self.user_info
                 )
 
     @coroutine
@@ -295,15 +295,15 @@ class Client(object):
         """
         Subscribe authenticated connection on channels.
         """
-        category_name = params.get('category')
-        category, error = yield self.application.structure.get_category_by_name(
-            self.project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            self.project, namespace_name
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not category:
-            raise Return((None, self.application.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get('channel')
         if not channel:
@@ -322,15 +322,15 @@ class Client(object):
         if self.user:
             connections[project_id][self.user][self.uid] = self
 
-        is_protected = category.get('is_protected', False)
+        is_protected = namespace.get('is_protected', False)
 
         if is_protected:
-            auth_address = category.get('auth_address', None)
+            auth_address = namespace.get('auth_address', None)
             if not auth_address:
                 auth_address = self.project.get('auth_address', None)
             if not auth_address:
                 raise Return((None, 'no auth address found'))
-            is_authorized, error = yield self.authorize(auth_address, category_name, channel)
+            is_authorized, error = yield self.authorize(auth_address, namespace_name, channel)
             if error:
                 raise Return((None, self.application.INTERNAL_SERVER_ERROR))
             if not is_authorized:
@@ -338,7 +338,7 @@ class Client(object):
 
         channel_to_subscribe = create_subscription_name(
             project_id,
-            category_name,
+            namespace_name,
             channel
         )
 
@@ -346,13 +346,13 @@ class Client(object):
             zmq.SUBSCRIBE, six.u(channel_to_subscribe)
         )
 
-        if category_name not in self.channels:
-            self.channels[category_name] = {}
+        if namespace_name not in self.channels:
+            self.channels[namespace_name] = {}
 
-        self.channels[category_name][channel] = True
+        self.channels[namespace_name][channel] = True
 
         yield self.application.state.add_presence(
-            project_id, category_name, channel, self.uid, self.user_info
+            project_id, namespace_name, channel, self.uid, self.user_info
         )
 
         raise Return((True, None))
@@ -362,15 +362,15 @@ class Client(object):
         """
         Unsubscribe authenticated connection from channels.
         """
-        category_name = params.get('category')
-        category, error = yield self.application.structure.get_category_by_name(
-            self.project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            self.project, namespace_name
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not category:
-            raise Return((None, self.application.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
@@ -379,19 +379,19 @@ class Client(object):
 
         project_id = self.project['_id']
 
-        categories, error = yield self.application.structure.categories_by_name().get(
+        namespaces, error = yield self.application.structure.namespaces_by_name().get(
             project_id, {}
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))
 
-        if category_name not in categories:
-            # attempt to unsubscribe from not allowed category
+        if namespace_name not in namespaces:
+            # attempt to unsubscribe from not allowed namespace
             raise Return((True, None))
 
         channel_to_unsubscribe = self.application.create_subscription_name(
             project_id,
-            category_name,
+            namespace_name,
             channel
         )
         self.sub_stream.setsockopt_string(
@@ -399,40 +399,40 @@ class Client(object):
         )
 
         try:
-            del self.channels[category_name][channel]
+            del self.channels[namespace_name][channel]
         except KeyError:
             pass
 
         yield self.application.state.remove_presence(
-            project_id, category_name, channel, self.uid
+            project_id, namespace_name, channel, self.uid
         )
 
         raise Return((True, None))
 
-    def check_channel_permission(self, category, channel):
-        if category in self.channels and channel in self.channels[category]:
+    def check_channel_permission(self, namespace, channel):
+        if namespace in self.channels and channel in self.channels[namespace]:
             return
         raise Return((None, 'channel permission denied'))
 
     @coroutine
     def handle_publish(self, params):
 
-        category_name = params.get('category')
-        category, error = yield self.application.structure.get_category_by_name(
-            self.project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            self.project, namespace_name
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not category:
-            raise Return((None, self.application.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
-        self.check_channel_permission(category_name, channel)
+        self.check_channel_permission(namespace_name, channel)
 
-        if not category['publish']:
-            raise Return((None, 'publishing into this category not available'))
+        if not namespace['publish']:
+            raise Return((None, 'publishing into this namespace not available'))
 
         result, error = yield self.application.process_publish(
             self.project,
@@ -444,22 +444,22 @@ class Client(object):
     @coroutine
     def handle_presence(self, params):
 
-        category_name = params.get('category')
-        category, error = yield self.application.structure.get_category_by_name(
-            self.project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            self.project, namespace_name
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not category:
-            raise Return((None, self.application.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
-        self.check_channel_permission(category_name, channel)
+        self.check_channel_permission(namespace_name, channel)
 
-        if not category['presence']:
-            raise Return((None, 'presence for this category not available'))
+        if not namespace['presence']:
+            raise Return((None, 'presence for this namespace not available'))
 
         result, error = yield self.application.process_presence(
             self.project,
@@ -470,22 +470,22 @@ class Client(object):
     @coroutine
     def handle_history(self, params):
 
-        category_name = params.get('category')
-        category, error = yield self.application.structure.get_category_by_name(
-            self.project, category_name
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            self.project, namespace_name
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not category:
-            raise Return((None, self.application.CATEGORY_NOT_FOUND))
-        category_name = category['name']
+        if not namespace:
+            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
-        self.check_channel_permission(category_name, channel)
+        self.check_channel_permission(namespace_name, channel)
 
-        if not category['history']:
-            raise Return((None, 'history for this category not available'))
+        if not namespace['history']:
+            raise Return((None, 'history for this namespace not available'))
 
         result, error = yield self.application.process_history(
             self.project,

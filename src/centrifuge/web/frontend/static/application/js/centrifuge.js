@@ -165,27 +165,27 @@
     };
 
     centrifuge_proto._parsePath = function(path) {
-        var channel, category;
+        var channel, namespace;
         var fullMatches = this._fullRegex.exec(path);
         if (fullMatches) {
-            category = fullMatches[1];
+            namespace = fullMatches[1];
             channel = fullMatches[2];
         } else {
             var channelOnlyMatches = this._channelOnlyRegex.exec(path);
             if (!channelOnlyMatches) {
                 throw 'Invalid path';
             }
-            category = null;
+            namespace = null;
             channel = channelOnlyMatches[1];
         }
-        return [category, channel]
+        return [namespace, channel]
     };
 
-    centrifuge_proto._makePath = function(category, channel) {
-        if (category === null || category == undefined) {
+    centrifuge_proto._makePath = function(namespace, channel) {
+        if (namespace === null || namespace == undefined) {
             return '/' + channel;
         }
-        return '/' + category + '/' + channel;
+        return '/' + namespace + '/' + channel;
     };
 
     centrifuge_proto._setStatus = function(newStatus) {
@@ -349,9 +349,9 @@
     };
 
     centrifuge_proto._subscribeResponse = function(message) {
-        var category = message.params["category"];
+        var namespace = message.params["namespace"];
         var channel = message.params["channel"];
-        var path = this._makePath(category, channel);
+        var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
             return;
@@ -365,9 +365,9 @@
     };
 
     centrifuge_proto._unsubscribeResponse = function(message) {
-        var category = message.params["category"];
+        var namespace = message.params["namespace"];
         var channel = message.params["channel"];
-        var path = this._makePath(category, channel);
+        var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
             return
@@ -381,9 +381,9 @@
     };
 
     centrifuge_proto._publishResponse = function(message) {
-        var category = message.params["category"];
+        var namespace = message.params["namespace"];
         var channel = message.params["channel"];
-        var path = this._makePath(category, channel);
+        var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
             return
@@ -397,9 +397,9 @@
     };
 
     centrifuge_proto._presenceResponse = function(message) {
-        var category = message.params["category"];
+        var namespace = message.params["namespace"];
         var channel = message.params["channel"];
-        var path = this._makePath(category, channel);
+        var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
             return
@@ -414,9 +414,9 @@
     };
 
     centrifuge_proto._historyResponse = function(message) {
-        var category = message.params["category"];
+        var namespace = message.params["namespace"];
         var channel = message.params["channel"];
-        var path = this._makePath(category, channel);
+        var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
             return
@@ -435,7 +435,7 @@
             //noinspection JSValidateTypes
             var subscription, path;
             var body = JSON.parse(message.body);
-            path = this._makePath(body.category, body.channel);
+            path = this._makePath(body.namespace, body.channel);
             subscription = this._subscriptions[path];
             if (!subscription) {
                 path = this._makePath(null, body.channel);
@@ -579,7 +579,7 @@
         this._centrifuge = centrifuge;
         this._path = path;
         var matches = this.parsePath();
-        this.category = matches[0];
+        this.namespace = matches[0];
         this.channel = matches[1];
     }
 
@@ -603,13 +603,13 @@
         var centrifugeMessage = {
             "method": "subscribe",
             "params": {
-                "category": this.category,
+                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.category === null) {
+        if (this.namespace === null) {
             // using default namespace
-            delete centrifugeMessage["params"]["category"];
+            delete centrifugeMessage["params"]["namespace"];
         }
         var message = mixin(false, {}, centrifugeMessage);
         this._centrifuge.send(message);
@@ -623,13 +623,13 @@
         var centrifugeMessage = {
             "method": "unsubscribe",
             "params": {
-                "category": this.category,
+                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.category === null) {
+        if (this.namespace === null) {
             // using default namespace
-            delete centrifugeMessage["params"]["category"];
+            delete centrifugeMessage["params"]["namespace"];
         }
         var message = mixin(false, {}, centrifugeMessage);
         this._centrifuge.send(message);
@@ -639,14 +639,14 @@
         var centrifugeMessage = {
             "method": "publish",
             "params": {
-                "category": this.category,
+                "namespace": this.namespace,
                 "channel": this.channel,
                 "data": data
             }
         };
-        if (this.category === null) {
+        if (this.namespace === null) {
             // using default namespace
-            delete centrifugeMessage["params"]["category"];
+            delete centrifugeMessage["params"]["namespace"];
         }
         if (callback) {
             this.on('publish:success', callback);
@@ -659,13 +659,13 @@
         var centrifugeMessage = {
             "method": "presence",
             "params": {
-                "category": this.category,
+                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.category === null) {
+        if (this.namespace === null) {
             // using default namespace
-            delete centrifugeMessage["params"]["category"];
+            delete centrifugeMessage["params"]["namespace"];
         }
         if (callback) {
             this.on('presence', callback);
@@ -678,13 +678,13 @@
         var centrifugeMessage = {
             "method": "history",
             "params": {
-                "category": this.category,
+                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.category === null) {
+        if (this.namespace === null) {
             // using default namespace
-            delete centrifugeMessage["params"]["category"];
+            delete centrifugeMessage["params"]["namespace"];
         }
         if (callback) {
             this.on('history', callback);

@@ -9,7 +9,7 @@
                 current_user: {},
                 project_tab: '_projects',
                 projects: [],
-                categories: {},
+                namespaces: {},
                 socket_url: '/socket',
                 global_content_element: '#main-content',
                 global_tabs_element: '#tabs',
@@ -169,7 +169,7 @@
             };
 
             var handle_event_message = function(data) {
-                var category = data['category'];
+                var namespace = data['namespace'];
                 var event_id = data['uid'];
                 var channel = data['channel'];
                 var event_data = data['data'];
@@ -181,7 +181,7 @@
                 if (tab.length > 0) {
                     // tab already opened and meta already loaded
                     var container = get_content_for_project(project).find('.log');
-                    render_event(container, project, category, event_id, channel, event_data);
+                    render_event(container, project, namespace, event_id, channel, event_data);
                 } else {
                     if (active_tab_id !== options.project_tab) {
                         highlight_tab(global_projects[options.project_tab], true);
@@ -267,13 +267,13 @@
                 }
             };
 
-            var render_event = function(container, project, category, event_id, channel, event_data) {
+            var render_event = function(container, project, namespace, event_id, channel, event_data) {
 
                 var html = event_template.render({
                     'event_id': event_id,
                     'channel': channel,
                     'data': event_data,
-                    'category': category,
+                    'namespace': namespace,
                     'project': project
                 });
 
@@ -316,7 +316,7 @@
                 return false;
             });
 
-            global_content.on('click', '.category', function() {
+            global_content.on('click', '.namespace', function() {
                 var self = $(this);
                 var list_element = self.parents('li:first');
                 if (list_element.hasClass('active')) {
