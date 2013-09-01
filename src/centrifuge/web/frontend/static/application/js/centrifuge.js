@@ -111,7 +111,18 @@
         this._channelOnlyRegex =/^\/(.+)$/;
         this._config = {
             retry: 3000,
-            logLevel: 'info'
+            logLevel: 'info',
+            protocols_whitelist: [
+                'websocket',
+                'xdr-streaming',
+                'xhr-streaming',
+                'iframe-eventsource',
+                'iframe-htmlfile',
+                'xdr-polling',
+                'xhr-polling',
+                'iframe-xhr-polling',
+                'jsonp-polling'
+            ]
         };
         if (options) {
             this.configure(options);
@@ -245,7 +256,9 @@
 
         if (this._sockjs === true) {
             //noinspection JSUnresolvedFunction
-            this._transport = new SockJS(this._config.url);
+            this._transport = new SockJS(this._config.url, null, {
+                protocols_whitelist: this._config.protocols_whitelist
+            });
         } else {
             this._transport = new WebSocket(this._config.url);
         }
@@ -266,6 +279,10 @@
             };
             var message = mixin(false, {}, centrifuge_message);
             self._send([message]);
+        };
+
+        this._transport.onerror = function(error) {
+            this._debug(error);
         };
 
         this._transport.onclose = function() {

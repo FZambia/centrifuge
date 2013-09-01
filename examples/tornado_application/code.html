@@ -18,10 +18,11 @@
     $(function() {
 
         var centrifuge = new Centrifuge({
-            url: 'ws://{{centrifuge_address}}/connection/websocket',
+            url: '{{protocol}}://{{centrifuge_address}}{{endpoint}}',
             token: '{{auth_data["token"]}}',
             project: '{{auth_data["project"]}}',
             user: '{{auth_data["user"]}}',
+            //protocols_whitelist: ["xhr-streaming"],
             logLevel: 'debug'
         });
 
