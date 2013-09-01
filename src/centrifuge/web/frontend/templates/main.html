@@ -19,7 +19,7 @@
         <div class="event-header">
             <span class="event-key">
                 <span class="event-key-word muted">
-                    {{!>~lower(namespace)}}
+                    {{!>namespace}}
                 </span>
                 <span class="event-key-word">
                     {{!>channel}}
@@ -27,12 +27,7 @@
             </span>
         </div>
         <div class="event-description">
-            {{!foreach data}}
-                <span class="row-key">{{!>key}}</span>
-                <div class="row-value">
-                    {% if handler.opts.get('html', {}).get('escape', True) %}{{!>value}}{% else %}{{!:value}}{% end %}
-                </div>
-            {{!/foreach}}
+            <pre>{{!:data}}</pre>
         </div>
     </div>
 </script>
@@ -73,7 +68,7 @@
 
 <script type="text/x-jsrender" id="tab_template">
     <li>
-        <a href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-toggle="tab">{{!>~lower(tab_text)}}</a>
+        <a href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-toggle="tab">{{!>tab_text}}</a>
     </li>
 </script>
 

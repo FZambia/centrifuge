@@ -207,7 +207,8 @@ class Client(object):
         """
         try:
             info = json_decode(body)
-        except:
+        except Exception as e:
+            logger.error(str(e))
             info = {}
 
         user_info = {
