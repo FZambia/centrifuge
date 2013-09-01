@@ -53,7 +53,8 @@ class Client(object):
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
         self.sub_stream = None
-        self.user_details = {}
+        self.user_info = {}
+        self.default_user_info = None
         logger.debug("new client created (uid: %s)" % self.uid)
 
     @coroutine
@@ -107,6 +108,7 @@ class Client(object):
                 )
 
         self.channels = None
+        self.user_info = None
         self.sock = None
         raise Return((True, None))
 
@@ -179,6 +181,44 @@ class Client(object):
         raise Return((True, None))
 
     @coroutine
+    def send_presence_ping(self):
+        for namespace, channels in six.iteritems(self.channels):
+            for channel, status in six.iteritems(channels):
+                user_info = self.get_user_info(namespace, channel)
+                yield self.application.state.add_presence(
+                    self.project['_id'], namespace, channel, self.uid, user_info
+                )
+
+    def get_user_info(self, namespace_name, channel):
+        """
+        Return namespace and channel specific user info or
+        default user info in case of error.
+        """
+        try:
+            user_info = self.user_info[namespace_name][channel]
+        except KeyError:
+            user_info = self.default_user_info
+        return user_info
+
+    def update_user_info(self, body, namespace_name, channel):
+        """
+        Try to extract user info from response body and remember it
+        for namespace and channel.
+        """
+        try:
+            info = json_decode(body)
+        except:
+            info = {}
+
+        user_info = {
+            'user_id': self.user,
+            'client_id': self.uid,
+            'data': info
+        }
+        self.user_info.setdefault(namespace_name, {})
+        self.user_info[namespace_name][channel] = json_encode(user_info)
+
+    @coroutine
     def authorize(self, auth_address, namespace_name, channel):
 
         project_id = self.project['_id']
@@ -226,6 +266,7 @@ class Client(object):
 
                 if response.code == 200:
                     # auth successful
+                    self.update_user_info(response.body, namespace_name, channel)
                     raise Return((True, None))
 
                 elif response.code == 403:
@@ -235,14 +276,6 @@ class Client(object):
             self.application.back_off[project_id] += 1
 
         raise Return((False, None))
-
-    @coroutine
-    def send_presence_ping(self):
-        for namespace, channels in six.iteritems(self.channels):
-            for channel, status in six.iteritems(channels):
-                yield self.application.state.add_presence(
-                    self.project['_id'], namespace, channel, self.uid, self.user_info
-                )
 
     @coroutine
     def handle_connect(self, params):
@@ -268,8 +301,7 @@ class Client(object):
         self.is_authenticated = True
         self.project = project
         self.user = user
-        self.user_details.update({'user_id': self.user})
-        self.user_info = json_encode(self.user_details)
+        self.default_user_info = json_encode({'user_id': self.user})
         self.channels = {}
         self.presence_ping = PeriodicCallback(
             self.send_presence_ping, self.application.presence_ping_interval
@@ -295,14 +327,9 @@ class Client(object):
         """
         Subscribe authenticated connection on channels.
         """
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, namespace_name
-        )
+        namespace, error = yield self.get_namespace(params)
         if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+            raise Return((None, error))
         namespace_name = namespace['name']
 
         channel = params.get('channel')
@@ -351,8 +378,9 @@ class Client(object):
 
         self.channels[namespace_name][channel] = True
 
+        user_info = self.get_user_info(namespace_name, channel)
         yield self.application.state.add_presence(
-            project_id, namespace_name, channel, self.uid, self.user_info
+            project_id, namespace_name, channel, self.uid, user_info
         )
 
         raise Return((True, None))
@@ -362,14 +390,9 @@ class Client(object):
         """
         Unsubscribe authenticated connection from channels.
         """
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, namespace_name
-        )
+        namespace, error = yield self.get_namespace(params)
         if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+            raise Return((None, error))
         namespace_name = namespace['name']
 
         channel = params.get('channel')
@@ -417,14 +440,9 @@ class Client(object):
     @coroutine
     def handle_publish(self, params):
 
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, namespace_name
-        )
+        namespace, error = yield self.get_namespace(params)
         if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+            raise Return((None, error))
         namespace_name = namespace['name']
 
         channel = params.get('channel')
@@ -444,14 +462,9 @@ class Client(object):
     @coroutine
     def handle_presence(self, params):
 
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, namespace_name
-        )
+        namespace, error = yield self.get_namespace(params)
         if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+            raise Return((None, error))
         namespace_name = namespace['name']
 
         channel = params.get('channel')
@@ -470,14 +483,9 @@ class Client(object):
     @coroutine
     def handle_history(self, params):
 
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, namespace_name
-        )
+        namespace, error = yield self.get_namespace(params)
         if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+            raise Return((None, error))
         namespace_name = namespace['name']
 
         channel = params.get('channel')
@@ -492,3 +500,15 @@ class Client(object):
             params
         )
         raise Return((result, error))
+
+    @coroutine
+    def get_namespace(self, params):
+        namespace_name = params.get('namespace')
+        namespace, error = yield self.application.structure.get_namespace_by_name(
+            self.project, namespace_name
+        )
+        if error:
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not namespace:
+            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
+        raise Return((namespace, None))
