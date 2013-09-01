@@ -111,7 +111,7 @@
         this._channelOnlyRegex =/^\/(.+)$/;
         this._config = {
             retry: 3000,
-            logLevel: 'info',
+            debug: false,
             protocols_whitelist: [
                 'websocket',
                 'xdr-streaming',
@@ -134,7 +134,7 @@
     var centrifuge_proto = Centrifuge.prototype;
 
     centrifuge_proto._debug = function() {
-        if (this._config.logLevel === 'debug') {
+        if (this._config.debug === true) {
             log('debug', arguments);
         }
     };
@@ -250,6 +250,8 @@
 
         this._setStatus('connecting');
 
+        var self = this;
+
         if (callback) {
             this.on('connect', callback);
         }
@@ -259,13 +261,12 @@
             this._transport = new SockJS(this._config.url, null, {
                 protocols_whitelist: this._config.protocols_whitelist
             });
+
         } else {
             this._transport = new WebSocket(this._config.url);
         }
 
         this._setStatus('connecting');
-
-        var self = this;
 
         this._transport.onopen = function() {
 
