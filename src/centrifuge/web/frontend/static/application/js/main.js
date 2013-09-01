@@ -300,8 +300,6 @@ function syntaxHighlight(json) {
                     'project': project
                 });
 
-                console.log(html);
-
                 var prepared_html = prepare_html(html);
 
                 container.prepend(prepared_html);

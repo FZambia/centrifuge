@@ -1,12 +1,14 @@
-<div class="navbar navbar-inverse">
-    <div class="container">
-      <button data-target=".navbar-inverse-collapse" data-toggle="collapse" class="navbar-toggle" type="button">
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a href="{{reverse_url('main')}}" class="navbar-brand">Centrifuge</a>
-      <div class="nav-collapse collapse navbar-inverse-collapse">
+<nav class="navbar navbar-inverse" role="navigation">
+    <div class="navbar-header">
+        <button data-target=".navbar-ex8-collapse" data-toggle="collapse" class="navbar-toggle" type="button">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <a href="{{reverse_url('main')}}" class="navbar-brand">Centrifuge</a>
+    </div>
+    <div class="collapse navbar-collapse navbar-ex8-collapse">
         <ul class="nav navbar-nav">
             {% if handler.get_current_user() %}
             <li class="">
@@ -28,6 +30,5 @@
                 {% end %}
             </li>
         </ul>
-      </div><!-- /.nav-collapse -->
-    </div><!-- /.container -->
-</div>
+    </div>
+</nav>
