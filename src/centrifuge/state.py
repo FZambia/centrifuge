@@ -5,8 +5,10 @@
 
 import toredis
 import time
+from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
 from tornado.escape import json_decode
+from tornado.iostream import StreamClosedError
 from six import PY3
 
 from .log import logger
@@ -44,9 +46,11 @@ class State(object):
         self.io_loop = io_loop
         self.fake = fake
         self.client = None
-        self.connected = False
         self.presence_timeout = presence_timeout
         self.history_size = history_size
+        self.client = toredis.Client(io_loop=self.io_loop)
+        self.client.state = self
+        self.connection_check = PeriodicCallback(self.check_connection, 1000)
 
     def connect(self):
         """
@@ -56,13 +60,18 @@ class State(object):
         if self.fake:
             return
 
-        self.client = toredis.Client(io_loop=self.io_loop)
         try:
             self.client.connect(host=self.host, port=self.port)
         except Exception as e:
             logger.error("error connecting to Redis server: %s" % (str(e)))
-        else:
-            self.connected = True
+
+        self.connection_check.stop()
+        self.connection_check.start()
+
+    def check_connection(self):
+        if not self.client.is_connected():
+            logger.info('reconnecting to Redis')
+            self.connect()
 
     def get_presence_hash_key(self, project_id, namespace, channel):
         return "presence:hash:%s:%s:%s" % (project_id, namespace, channel)
@@ -85,9 +94,13 @@ class State(object):
         expire_at = now + (presence_timeout or self.presence_timeout)
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
         set_key = self.get_presence_set_key(project_id, namespace, channel)
-        yield Task(self.client.zadd, set_key, {uid: expire_at})
-        yield Task(self.client.hset, hash_key, uid, user_info)
-        raise Return((True, None))
+        try:
+            yield Task(self.client.zadd, set_key, {uid: expire_at})
+            yield Task(self.client.hset, hash_key, uid, user_info)
+        except StreamClosedError as e:
+            raise Return((None, e))
+        else:
+            raise Return((True, None))
 
     @coroutine
     def remove_presence(self, project_id, namespace, channel, uid):
@@ -99,9 +112,13 @@ class State(object):
             raise Return((True, None))
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
         set_key = self.get_presence_set_key(project_id, namespace, channel)
-        yield Task(self.client.hdel, hash_key, uid)
-        yield Task(self.client.zrem, set_key, uid)
-        raise Return((True, None))
+        try:
+            yield Task(self.client.hdel, hash_key, uid)
+            yield Task(self.client.zrem, set_key, uid)
+        except StreamClosedError as e:
+            raise Return((None, e))
+        else:
+            raise Return((True, None))
 
     @coroutine
     def get_presence(self, project_id, namespace, channel):
@@ -113,12 +130,16 @@ class State(object):
         now = int(time.time())
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
         set_key = self.get_presence_set_key(project_id, namespace, channel)
-        expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
-        if expired_keys:
-            yield Task(self.client.zremrangebyscore, set_key, 0, now)
-            yield Task(self.client.hdel, hash_key, [x.decode() for x in expired_keys])
-        data = yield Task(self.client.hgetall, hash_key)
-        raise Return((dict_from_list(data), None))
+        try:
+            expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
+            if expired_keys:
+                yield Task(self.client.zremrangebyscore, set_key, 0, now)
+                yield Task(self.client.hdel, hash_key, [x.decode() for x in expired_keys])
+            data = yield Task(self.client.hgetall, hash_key)
+        except StreamClosedError:
+            raise Return((None, 'presence unavailable'))
+        else:
+            raise Return((dict_from_list(data), None))
 
     @coroutine
     def add_history_message(self, project_id, namespace, channel, message, history_size=None):
@@ -130,9 +151,13 @@ class State(object):
             raise Return((True, None))
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, namespace, channel)
-        yield Task(self.client.lpush, list_key, message)
-        yield Task(self.client.ltrim, list_key, 0, history_size - 1)
-        raise Return((True, None))
+        try:
+            yield Task(self.client.lpush, list_key, message)
+            yield Task(self.client.ltrim, list_key, 0, history_size - 1)
+        except StreamClosedError as e:
+            raise Return((None, e))
+        else:
+            raise Return((True, None))
 
     @coroutine
     def get_history(self, project_id, namespace, channel):
@@ -142,5 +167,9 @@ class State(object):
         if self.fake:
             raise Return((None, None))
         history_list_key = self.get_history_list_key(project_id, namespace, channel)
-        data = yield Task(self.client.lrange, history_list_key, 0, -1)
-        raise Return(([json_decode(x.decode()) for x in data], None))
+        try:
+            data = yield Task(self.client.lrange, history_list_key, 0, -1)
+        except StreamClosedError:
+            raise Return((None, 'history unavailable'))
+        else:
+            raise Return(([json_decode(x.decode()) for x in data], None))
