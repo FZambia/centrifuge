@@ -23,7 +23,7 @@
             project: '{{auth_data["project"]}}',
             user: '{{auth_data["user"]}}',
             //protocols_whitelist: ["xhr-streaming"],
-            logLevel: 'debug'
+            debug: true
         });
 
         centrifuge.on('connect', function(){

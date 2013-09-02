@@ -561,7 +561,7 @@
     centrifuge_proto.publish = function(path, data, callback) {
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            this.trigger('error', ['no subscription to publish into for path ' + path]);
+            //this.trigger('error', ['no subscription to publish into for path ' + path]);
             return null;
         }
         subscription.publish(data, callback);
@@ -571,7 +571,7 @@
     centrifuge_proto.presence = function(path, callback) {
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            this.trigger('error', ['no subscription to get presence for path ' + path]);
+            //this.trigger('error', ['no subscription to get presence for path ' + path]);
             return null;
         }
         subscription.presence(callback);
@@ -581,7 +581,7 @@
     centrifuge_proto.history = function(path, callback) {
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            this.trigger('error', ['no subscription to get history for path ' + path]);
+            //this.trigger('error', ['no subscription to get history for path ' + path]);
             return null;
         }
         subscription.history(callback);
