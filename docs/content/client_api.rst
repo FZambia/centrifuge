@@ -3,10 +3,6 @@ Client API
 
 .. _client_api:
 
-There are two ways to communicate with Centrifuge from browser. First, you can use
-pure Websockets. Second, SockJS library - ['websocket', 'xdr-streaming', 'xhr-streaming',
-'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling',
-'jsonp-polling'] can be used.
 
 Javascript client designed to be very simple. I think the most difficult part of it is
 configuration. But lets go through its API step by step.
@@ -40,7 +36,11 @@ installation. To tell it that information you must use method ``configure``
     })
 
 **url** is a Centrifuge endpoint - SockJS or Websocket. Note that in case of using SockJS
-it must be imported on your page before Centrifuge's javascript client.
+it must be imported on your page before Centrifuge's javascript client.  In case of using
+SockJS additional configuration parameter can be used - ``protocols_whitelist``. It defines
+allowed transports and by default equals ['websocket', 'xdr-streaming', 'xhr-streaming',
+'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling',
+'jsonp-polling'].
 
 **project** is project ID from Centrifuge. Every project in Centrifuge has unique ID.
 You can see it on project settings page of administrative web interface. This is
