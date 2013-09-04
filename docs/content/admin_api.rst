@@ -128,3 +128,27 @@ If request was successful you'll get something like this in response:
 
 
 In case of any error you will get its description.
+
+
+Cent contains Client class to send messages to Centrifuge from your python-powered backend:
+
+.. code-block:: python
+
+    from cent.core import Client
+
+    client = Client("http://localhost:8000/api", "project_id", "project_secret_key")
+    result, error = client.send(
+        "publish", {
+            "namespace": "python",
+            "channel": "django",
+            "data": "hello world"
+        }
+    )
+
+
+Python
+~~~~~~
+
+If your backend Python powered and you don't want to install Cent, you can just copy
+``Client`` class from Cent source code (``cent.core.Client``) and use it as was shown
+above.
