@@ -9,47 +9,6 @@ import hmac
 import six
 
 
-AUTH_HEADER_NAME = 'X-Centrifuge-Auth'
-
-
-def get_auth_header(request):
-    """
-    Get and return authentication header from request.
-    """
-    return request.headers.get(AUTH_HEADER_NAME, None)
-
-
-def parse_auth_header(header):
-    """
-    Parse authentication header and return dictionary or None in case of an error.
-    """
-    try:
-        to_return = dict(
-            map(
-                lambda x: x.strip().split('='),
-                header.split(' ')
-            )
-        )
-    except (IndexError, ValueError):
-        return None
-    return to_return
-
-
-def extract_auth_info(request):
-    """
-    Get authentication credentials from auth data
-    """
-    auth_header = get_auth_header(request)
-    if not auth_header:
-        return None, "no auth header found"
-
-    auth_info = parse_auth_header(auth_header)
-    if not auth_info:
-        return None, "malformed auth header"
-
-    return auth_info, None
-
-
 def check_sign(secret_key, project_id, encoded_data, auth_sign):
     """
     Check that data from client was properly signed.

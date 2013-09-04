@@ -55,13 +55,10 @@ class ApiHandler(BaseHandler):
         if not self.request.body:
             raise tornado.web.HTTPError(400, log_message="empty request")
 
-        auth_info, error = auth.extract_auth_info(self.request)
-        if error:
-            raise tornado.web.HTTPError(401, log_message=error)
+        sign = self.get_argument('sign', None)
 
-        sign = auth_info.get('sign')
         if not sign:
-            raise tornado.web.HTTPError(401, log_message="unauthorized")
+            raise tornado.web.HTTPError(400, log_message="no data sign")
 
         project, error = yield self.application.structure.get_project_by_id(project_id)
         if error:
@@ -69,9 +66,9 @@ class ApiHandler(BaseHandler):
         if not project:
             raise tornado.web.HTTPError(404, log_message="project not found")
 
-        encoded_data = self.request.body
+        encoded_data = self.get_argument('data', None)
         if not encoded_data:
-            raise tornado.web.HTTPError(400, log_message="no request body")
+            raise tornado.web.HTTPError(400, log_message="no data")
 
         result, error = yield self.application.structure.check_auth(project, sign, encoded_data)
         if error:

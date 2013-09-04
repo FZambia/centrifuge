@@ -76,6 +76,11 @@ In production you always need to provide proper configuration file with secure s
 
 So the final command to start one instance of Centrifuge will be
 
+.. code-block:: bash
+
+    centrifuge --config=config.json
+
+
 There could be a problem if port 7000 is not free in your system. This is a default port for
 ZeroMQ socket. If you have problems with running single instance you will find a way to change
 that port number below.
@@ -111,15 +116,49 @@ Only in this case message will be delivered to all recipients. So to create an i
 in a proper way we must configure those sockets correctly. There are two ways of doing this.
 
 First way - manually set instance's publish socket and all publish sockets current
-instanсе must subscribe to. You should use these options for it. The drawback is that you
-should support correct settings for all instances and restart all insrtances with new
+instance must subscribe to. You should use these options for it. The drawback is that you
+should support correct settings for all instances and restart all instances with new
 socket configuration options when adding new instance.
 
+.. code-block:: bash
+
+    centrifuge --port=8000 --zmq_pub_port=7000 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
+    centrifuge --port=8001 --zmq_pub_port=7001 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
+
+Look, we selected two different ports for ZeroMQ PUB socket using ``--zmq_pub_port``
+option. And we told every instance a comma-separated list of all PUB socket addresses
+using ``--zmq_sub_address`` option. Instances now connected and you can load balance
+clients between them.
+
 Another way - use XPUB/XSUB proxy. Things will work according to this scheme.
+
+.. image:: img/xpub_xsub.png
+    :width: 650 px
+
+
 In this case you only need to provide proxy endpoints in command-line options which will
 be the same for all Centrifuge instances. Also you must run the proxy itself. The drawback
 is that proxy is a single point of failure. There is proxy written in Go language. You
 can run it instead of python version coming with Centrifuge.
+
+
+.. code-block:: bash
+
+    centrifuge --zmq_pub_sub_proxy --zmq_xsub=tcp://localhost:6000 --zmq_xpub=tcp://localhost:6001
+
+
+We told Centrifuge to use XPUB/XSUB proxy using flag ``--zmq_pub_sub_proxy`` and set
+XSUB (``--zmq_xsub``) and XPUB (``--zmq_xpub``) endpoints.
+
+And to start proxy:
+
+.. code-block:: bash
+
+    xpub_xsub --xsub=tcp://*:6000 --xpub=tcp://*:6001
+
+
+Now instances connected through XPUB/XSUB proxy. Success!
+
 
 Our next step will be talking about how presence and history data for channels work.
 For this tasks Centrifuge uses Redis. All instances of Centrifuge must have access to
