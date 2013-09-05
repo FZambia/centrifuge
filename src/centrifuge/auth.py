@@ -15,7 +15,7 @@ def check_sign(secret_key, project_id, encoded_data, auth_sign):
     """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(project_id))
-    sign.update(encoded_data)
+    sign.update(six.b(encoded_data))
     return sign.hexdigest() == auth_sign
 
 

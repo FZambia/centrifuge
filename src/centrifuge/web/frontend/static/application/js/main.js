@@ -224,7 +224,7 @@ function syntaxHighlight(json) {
                 });
 
                 connection.onopen = function() {
-                    console.log('Connected.');
+                    //console.log('Connected.');
                     $('.not-connected').hide();
                     $('.connected').show();
                     $('.pill').removeClass('pill-danger');
@@ -236,7 +236,7 @@ function syntaxHighlight(json) {
                 };
 
                 connection.onclose = function() {
-                    console.log('Disconnected.');
+                    //console.log('Disconnected.');
                     connection = null;
                     window.setTimeout(function(){
                         $('.connected').hide();
