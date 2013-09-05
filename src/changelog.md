@@ -3,6 +3,7 @@ v0.2.0
 * global code refactoring
 * presence support for channels
 * history support for channels
+* Simple javascript client to communicate with Centrifuge.
 * Bootstrap 3.0 for web interface
 * SQLite for structure store - now no need in installing PostgreSQL or MongoDB
 * Categories renamed into namespaces.
