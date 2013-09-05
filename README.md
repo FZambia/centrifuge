@@ -1,6 +1,3 @@
-WARNING! Centrifuge PYPI release is out-of-date. Version 0.2.0 will contain lots of changes
-and will be available on PYPI soon.
-
 CENTRIFUGE
 ==========
 

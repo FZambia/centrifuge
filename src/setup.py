@@ -84,9 +84,8 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.2.0rc2',
-    description="Light and simple open-source platform for real-time message "
-                "broadcasting in your web applications",
+    version='0.2.0',
+    description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
     download_url='https://github.com/FZambia/centrifuge',
@@ -106,8 +105,10 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.3',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
