@@ -160,8 +160,7 @@ def main():
     except IOError:
         logger.warning(
             "Application started without configuration file.\n"
-            "This is normal only during development and if you\n"
-            "want to use MongoDB as data storage.\n"
+            "This is normal only during development"
         )
         custom_settings = {}
 

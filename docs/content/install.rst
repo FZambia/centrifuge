@@ -37,8 +37,8 @@ If you are not familiar with it yet - please, make time and read about it
 Of course, you can name folders as you like. This is just an example.
 
 
-Install Centrifuge from pip
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Install Centrifuge
+~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -56,6 +56,26 @@ Then you don't have `libpq-dev` package installed on your machine. For example, 
 
     sudo apt-get install libpq-dev
 
+Or for Red Hat:
+
+.. code-block:: bash
+
+    yum install postgresql-devel
+
+
+If you get errors while building pyzmq you may need to install ``libzmq`` on your system first:
+
+.. code-block:: bash
+
+    apt-get install libzmq3-dev
+
+
+Or for Red Hat:
+
+.. code-block:: bash
+
+    yum install zeromq
+
 
 Also if you have problems with installing Centrifuge on Python 3, make sure you have `distribute`
 installed:
@@ -67,11 +87,11 @@ installed:
     easy_install pip
 
 
-Install and run database
-~~~~~~~~~~~~~~~~~~~~~~~
+Structure database
+~~~~~~~~~~~~~~~~~~
 
-Centrifuge by default uses SQLite as data store. It does not requre installation
-because SQLite comes with standard Python installation.
+Centrifuge by default uses SQLite as structure store. It does not require installation
+because SQLite comes with standard Python library.
 
 You can also use `MongoDB <http://docs.mongodb.org/manual/>`_ as data
 store. `Here <http://docs.mongodb.org/manual/installation/>`_ is explanation
@@ -82,8 +102,8 @@ as storage. Read `this <http://wiki.postgresql.org/wiki/Detailed_installation_gu
 PostgreSQL installation.
 
 
-Fill centrifuge's configuration file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Configuration file
+~~~~~~~~~~~~~~~~~~
 
 Configuration is a JSON file. You can find example of those file in Centrifuge's
 repository. With SQLite (installed with default settings) configuration file

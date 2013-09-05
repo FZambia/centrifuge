@@ -22,8 +22,6 @@ from .structure import Structure
 from .state import State
 from .log import logger
 
-import socket
-
 
 # separate important parts of channel name by this
 CHANNEL_NAME_SEPARATOR = ':'
@@ -180,7 +178,7 @@ class Application(tornado.web.Application):
 
     def init_state(self):
         config = self.settings['config']
-        state_config = config.get("state", None)
+        state_config = config.get("state", {})
         self.presence_ping_interval = state_config.get(
             'presence_ping_interval', DEFAULT_PRESENCE_PING_INTERVAL
         )*1000
@@ -287,15 +285,11 @@ class Application(tornado.web.Application):
                 pass
 
     def init_ping(self):
-        options = self.settings['options']
-        address = '%s:%s' % (
-            socket.gethostbyname(socket.gethostname()),
-            options.port
-        )
+
         message = {
             'app_id': self.uid,
             'method': 'ping',
-            'params': {'address': address}
+            'params': {'uid': self.uid}
         }
         send_ping = partial(publish, self.pub_stream, CONTROL_CHANNEL, json_encode(message))
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
@@ -342,7 +336,7 @@ class Application(tornado.web.Application):
 
     @coroutine
     def handle_ping(self, params):
-        self.nodes[params.get('address')] = time.time()
+        self.nodes[params.get('uid')] = time.time()
 
     @coroutine
     def handle_unsubscribe(self, params):
