@@ -18,7 +18,7 @@ right now.
 Centrifuge API url path is ``/api/ PROJECT_ID``. All you need to do is to send correctly
 constructed POST request to this endpoint. This request must have two POST parameters:
 ``data`` and ``sign``. Data is a base64 encoded json string and sign is an hmac based on
-project secret key and encoded data.
+project secret key, project ID and encoded data.
 
 Data is originally a json object with two properties:
 method and params. Method is the name of action you want to do. It can be publish,
@@ -130,3 +130,27 @@ If request was successful you'll get something like this in response:
 
 
 In case of any error you will get its description.
+
+
+Cent contains Client class to send messages to Centrifuge from your python-powered backend:
+
+.. code-block:: python
+
+    from cent.core import Client
+
+    client = Client("http://localhost:8000/api", "project_id", "project_secret_key")
+    result, error = client.send(
+        "publish", {
+            "namespace": "python",
+            "channel": "django",
+            "data": "hello world"
+        }
+    )
+
+
+Python
+~~~~~~
+
+If your backend Python powered and you don't want to install Cent, you can just copy
+``Client`` class from Cent source code (``cent.core.Client``) and use it as was shown
+above.
