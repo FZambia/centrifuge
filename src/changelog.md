@@ -5,6 +5,8 @@ v0.2.0
 * history support for channels
 * Bootstrap 3.0 for web interface
 * SQLite for structure store - now no need in installing PostgreSQL or MongoDB
+* Categories renamed into namespaces.
+* Possibility to set default namespace.
 
 v0.1.2
 ======
