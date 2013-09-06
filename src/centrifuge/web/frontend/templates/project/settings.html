@@ -2,16 +2,6 @@
 
 {% block title %}{{_("Project settings")}}{% end %}
 
-{% block extra_scripts %}
-<script type="text/javascript" src="{{ static_url('application/js/prefix_tab.js') }}"></script>
-<script type="text/javascript" src="{{ static_url('application/js/project_settings.js') }}"></script>
-<script type="text/javascript">
-    $(document).ready(function() {
-
-    });
-</script>
-{% end %}
-
 {% block content %}
 <div class="row-fluid">
     <ul class="nav nav-tabs" id="tabs">

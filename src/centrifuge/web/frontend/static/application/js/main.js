@@ -219,6 +219,7 @@ function syntaxHighlight(json) {
             var connect = function() {
                 disconnect();
 
+                //noinspection JSUnresolvedFunction
                 connection = new SockJS(window.location.protocol + '//' + window.location.host + options.socket_url, null, {
                     protocols_whitelist: options.transports
                 });
@@ -276,6 +277,7 @@ function syntaxHighlight(json) {
                 var container = get_content_for_project(global_projects[options.project_tab]);
                 clear_element_content(container);
                 for (index in options.projects) {
+                    //noinspection JSUnfilteredForInLoop
                     var project = options.projects[index];
                     render_project(project, container);
                 }
@@ -370,6 +372,7 @@ function syntaxHighlight(json) {
 
                 if (options.projects) {
                     for (var index in options.projects) {
+                        //noinspection JSUnfilteredForInLoop
                         var project = options.projects[index];
                         create_tab(project);
                     }

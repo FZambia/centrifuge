@@ -55,7 +55,9 @@ class Client(object):
         self.sub_stream = None
         self.user_info = {}
         self.default_user_info = None
-        logger.debug("new client created (uid: %s)" % self.uid)
+        logger.debug("new client created (uid: {0}, ip: {1})".format(
+            self.uid, getattr(self.info, 'ip', '-')
+        ))
 
     @coroutine
     def close(self):
