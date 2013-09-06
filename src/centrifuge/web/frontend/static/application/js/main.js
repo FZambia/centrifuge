@@ -378,7 +378,7 @@ function syntaxHighlight(json) {
                 show_hashed_tab();
 
                 // Change hash for page-reload
-                global_tabs.on('shown', 'a', function (e) {
+                global_tabs.on('shown.bs.tab', 'a', function (e) {
                     window.location.hash = e.target.hash.replace("#", "#" + options.tab_prefix);
                     var self = $(this);
                     route(self);
