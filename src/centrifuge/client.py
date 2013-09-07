@@ -68,9 +68,12 @@ class Client(object):
 
     @coroutine
     def clean(self):
+
         if self.sub_stream and not self.sub_stream.closed():
             self.sub_stream.stop_on_recv()
             self.sub_stream.close()
+
+        self.presence_ping.stop()
 
         project_id = self.project_id
 
@@ -104,8 +107,6 @@ class Client(object):
                     del connections[project_id]
                 except KeyError:
                     pass
-
-        self.presence_ping.stop()
 
         for namespace, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):

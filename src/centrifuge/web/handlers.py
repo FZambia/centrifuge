@@ -426,8 +426,7 @@ class AdminSocketHandler(SockJSConnection):
         self.uid = uuid.uuid4().hex
         self.connections = self.application.admin_connections
 
-        context = zmq.Context()
-        subscribe_socket = context.socket(zmq.SUB)
+        subscribe_socket = self.application.zmq_context.socket(zmq.SUB)
 
         if self.application.zmq_pub_sub_proxy:
             subscribe_socket.connect(self.application.zmq_xpub)
