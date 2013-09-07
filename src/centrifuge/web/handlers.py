@@ -420,11 +420,7 @@ class AdminSocketHandler(SockJSConnection):
 
     @coroutine
     def subscribe(self):
-
-        projects, error = yield self.application.structure.project_list()
-        self.projects = [x['_id'] for x in projects]
         self.uid = uuid.uuid4().hex
-        self.connections = self.application.admin_connections
 
         subscribe_socket = self.application.zmq_context.socket(zmq.SUB)
 
@@ -434,7 +430,8 @@ class AdminSocketHandler(SockJSConnection):
             for address in self.application.zmq_sub_address:
                 subscribe_socket.connect(address)
 
-        self.connections[self.uid] = self
+        connections = self.application.admin_connections
+        connections[self.uid] = self
 
         subscribe_socket.setsockopt_string(
             zmq.SUBSCRIBE, six.u(ADMIN_CHANNEL)
@@ -448,18 +445,17 @@ class AdminSocketHandler(SockJSConnection):
     def unsubscribe(self):
         if not hasattr(self, 'uid'):
             return
-        for project_id in self.projects:
-            if not project_id in self.connections:
-                continue
-            try:
-                del self.connections[project_id][self.uid]
-            except KeyError:
-                pass
-            if not self.connections[project_id]:
-                del self.connections[project_id]
 
-        self.subscribe_stream.on_recv(None)
-        self.subscribe_stream.close()
+        connections = self.application.admin_connections
+        try:
+            del connections[self.uid]
+        except KeyError:
+            pass
+
+        if hasattr(self, 'subscribe_stream'):
+            self.subscribe_stream.on_recv(None)
+            self.subscribe_stream.close()
+
         logger.info('admin disconnected')
 
     def on_open(self, info):
