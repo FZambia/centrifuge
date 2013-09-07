@@ -53,7 +53,6 @@ label {
 .center {
 	text-align: center !important;
 }
-
 .hidden {
 	display: none;
 }
@@ -76,18 +75,10 @@ label {
     overflow: hidden;
     padding: 10px;
 }
-
-.event-deleted .event-header {
-	background: rgb(250, 223, 223);
-}
-
 .event-key {
 	font-size: 20px;
 	font-family: Tahoma, Geneva, sans-serif;
     text-transform: uppercase;
-}
-.event-actions {
-	float: right;
 }
 .event-description {
 	padding: 0;
@@ -98,8 +89,6 @@ label {
     margin-left: 0 !important;
     margin-bottom: 20px;
 }
-
-
 .project-header {
     height:50px;
     line-height:50px;
@@ -116,19 +105,10 @@ label {
     color: #999999;
     margin-left: 15px;
 }
-.project-own-filtered {
-    display: none !important;
+.project-event-counter {
+    font-size: 30px;
 }
-.project-name-filtered {
-    display: none !important;
-}
-.nav-project {
-    font-size: 14px;
-    padding-left: 0px;
-}
-.panel-search {
-    margin-top: 5px;
-}
+
 .connection-status {
     margin-bottom: 15px;
     margin-top: 15px;
@@ -142,45 +122,17 @@ label {
     color: darkred;
 }
 
-.row-key {
-    color: #555;
-    text-shadow: 0px 1px 1px #bbb;
-    background-color: #F9F9F9;
-    border-top: 1px solid #DDDDDD;
-    border-bottom: 1px solid #DDDDDD;
-    line-height: 20px;
-    font-size: 14px;
-    vertical-align: top;
-    display: block;
-    padding: 3px 10px 3px 10px;
-}
-.row-value {
-    line-height: 20px;
-    border-bottom: 1px solid #DDDDDD;
-    margin-bottom: -1px;
-    padding: 3px 10px 3px 20px;
-}
-
 .bs-callout {
     border-left: 5px solid #EEEEEE;
     margin: 4px 0;
     padding: 5px 30px 5px 5px;
-    width: 100%;
+    width: 50%;
 }
 .bs-callout-large {
     border-left: 5px solid #EEEEEE;
     margin: 10px 0;
     padding: 15px 30px 15px 15px;
     width: 100%;
-}
-.bs-callout h4 {
-    margin-top: 0;
-}
-.bs-callout p:last-child {
-    margin-bottom: 0;
-}
-.bs-callout code, .bs-callout .highlight {
-    background-color: #FFFFFF;
 }
 .bs-callout-danger {
     background-color: #FCF2F2;
