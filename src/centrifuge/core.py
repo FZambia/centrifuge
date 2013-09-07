@@ -359,24 +359,22 @@ class Application(tornado.web.Application):
         if not user_connections:
             raise Return((True, None))
 
-        namespaces, error = yield self.structure.get_project_namespaces(project)
+        namespace, error = yield self.structure.get_namespace_by_name(
+            project, namespace_name
+        )
         if error:
             raise Return((None, error))
-
-        namespaces = dict(
-            (x['name'], x) for x in namespaces
-        )
-
-        namespace = namespaces.get(namespace_name, None)
-        if not namespace:
+        if channel and not namespace:
             # namespace does not exist
             raise Return((True, None))
+
+        namespace_name = namespace['name']
 
         for uid, connection in six.iteritems(user_connections):
 
             if not namespace_name and not channel:
                 # unsubscribe from all channels
-                for cat, channels in six.iteritems(connection.channels):
+                for ns, channels in six.iteritems(connection.channels):
                     for chan in channels:
                         channel_to_unsubscribe = create_subscription_name(
                             project_id, namespace_name, chan
@@ -448,16 +446,10 @@ class Application(tornado.web.Application):
         """
         assert isinstance(project, dict)
 
-        handle_func = None
-
-        if method == "publish":
-            handle_func = self.process_publish
-        elif method == "presence":
-            handle_func = self.process_presence
-        elif method == "history":
-            handle_func = self.process_history
+        handle_func = getattr(self, "process_%s" % method, None)
 
         if handle_func:
+            # noinspection PyCallingNonCallable
             result, error = yield handle_func(project, params)
             raise Return((result, error))
 
@@ -604,3 +596,21 @@ class Application(tornado.web.Application):
         channel = params.get("channel")
         data, error = yield self.state.get_presence(project_id, namespace_name, channel)
         raise Return((data, error))
+
+    @coroutine
+    def process_unsubscribe(self, project, params):
+
+        params["project"] = project
+        message = {
+            'app_id': self.uid,
+            'method': 'unsubscribe',
+            'params': params
+        }
+
+        # handle on this node
+        result, error = yield self.handle_unsubscribe(params)
+
+        # send to other nodes
+        self.send_control_message(json_encode(message))
+
+        raise Return((result, error))
