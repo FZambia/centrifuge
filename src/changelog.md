@@ -1,3 +1,13 @@
+v0.2.2
+======
+* fix project setting caching in Client's instance class.
+* fix unsubscribe admin API command behaviour.
+* repo clean ups
+
+v0.2.1
+======
+* ping fix
+
 v0.2.0
 ======
 * global code refactoring
