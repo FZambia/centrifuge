@@ -55,6 +55,7 @@ class Client(object):
         self.sub_stream = None
         self.user_info = {}
         self.default_user_info = None
+        self.project_id = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -71,10 +72,13 @@ class Client(object):
             self.sub_stream.stop_on_recv()
             self.sub_stream.close()
 
-        if not self.is_authenticated:
+        project_id = self.project_id
+
+        if not project_id:
             raise Return((True, None))
 
-        project_id = self.project['_id']
+        if not self.is_authenticated:
+            raise Return((True, None))
 
         connections = self.application.connections
 
@@ -188,7 +192,7 @@ class Client(object):
             for channel, status in six.iteritems(channels):
                 user_info = self.get_user_info(namespace, channel)
                 yield self.application.state.add_presence(
-                    self.project['_id'], namespace, channel, self.uid, user_info
+                    self.project_id, namespace, channel, self.uid, user_info
                 )
 
     def get_user_info(self, namespace_name, channel):
@@ -222,9 +226,10 @@ class Client(object):
         self.user_info[namespace_name][channel] = json_encode(user_info)
 
     @coroutine
-    def authorize(self, auth_address, namespace_name, channel):
+    def authorize(self, auth_address, project, namespace_name, channel):
 
-        project_id = self.project['_id']
+        project_id = self.project_id
+
         http_client = AsyncHTTPClient()
         request = HTTPRequest(
             auth_address,
@@ -237,9 +242,9 @@ class Client(object):
             request_timeout=1
         )
 
-        max_auth_attempts = self.project.get('max_auth_attempts')
-        back_off_interval = self.project.get('back_off_interval')
-        back_off_max_timeout = self.project.get('back_off_max_timeout')
+        max_auth_attempts = project.get('max_auth_attempts')
+        back_off_interval = project.get('back_off_interval')
+        back_off_max_timeout = project.get('back_off_max_timeout')
 
         attempts = 0
 
@@ -290,11 +295,9 @@ class Client(object):
         user = params["user"]
         project_id = params["project"]
 
-        project, error = yield self.application.structure.get_project_by_id(project_id)
+        project, error = yield self.get_project(project_id)
         if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not project:
-            raise Return((None, "project not found"))
+            raise Return((None, error))
 
         secret_key = project['secret_key']
 
@@ -302,7 +305,7 @@ class Client(object):
             raise Return((None, "invalid token"))
 
         self.is_authenticated = True
-        self.project = project
+        self.project_id = project_id
         self.user = user
         self.default_user_info = json_encode({'user_id': self.user})
         self.channels = {}
@@ -330,7 +333,11 @@ class Client(object):
         """
         Subscribe authenticated connection on channels.
         """
-        namespace, error = yield self.get_namespace(params)
+        project, error = yield self.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        namespace, error = yield self.get_namespace(project, params)
         if error:
             raise Return((None, error))
         namespace_name = namespace['name']
@@ -339,7 +346,7 @@ class Client(object):
         if not channel:
             raise Return((None, 'channel required'))
 
-        project_id = self.project['_id']
+        project_id = self.project_id
 
         connections = self.application.connections
 
@@ -357,14 +364,16 @@ class Client(object):
         if is_private:
             auth_address = namespace.get('auth_address', None)
             if not auth_address:
-                auth_address = self.project.get('auth_address', None)
+                auth_address = project.get('auth_address', None)
             if not auth_address:
                 raise Return((None, 'no auth address found'))
-            is_authorized, error = yield self.authorize(auth_address, namespace_name, channel)
+            is_authorized, error = yield self.authorize(
+                auth_address, project, namespace_name, channel
+            )
             if error:
                 raise Return((None, self.application.INTERNAL_SERVER_ERROR))
             if not is_authorized:
-                raise Return((None, 'permission denied'))
+                raise Return((None, self.application.PERMISSION_DENIED))
 
         channel_to_subscribe = create_subscription_name(
             project_id,
@@ -393,7 +402,11 @@ class Client(object):
         """
         Unsubscribe authenticated connection from channels.
         """
-        namespace, error = yield self.get_namespace(params)
+        project, error = yield self.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        namespace, error = yield self.get_namespace(project, params)
         if error:
             raise Return((None, error))
         namespace_name = namespace['name']
@@ -403,7 +416,7 @@ class Client(object):
         if not channel:
             raise Return((True, None))
 
-        project_id = self.project['_id']
+        project_id = self.project_id
 
         namespaces, error = yield self.application.structure.namespaces_by_name().get(
             project_id, {}
@@ -443,7 +456,11 @@ class Client(object):
     @coroutine
     def handle_publish(self, params):
 
-        namespace, error = yield self.get_namespace(params)
+        project, error = yield self.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        namespace, error = yield self.get_namespace(project, params)
         if error:
             raise Return((None, error))
         namespace_name = namespace['name']
@@ -456,7 +473,7 @@ class Client(object):
             raise Return((None, 'publishing into this namespace not available'))
 
         result, error = yield self.application.process_publish(
-            self.project,
+            project,
             params,
             client_id=self.uid
         )
@@ -465,7 +482,11 @@ class Client(object):
     @coroutine
     def handle_presence(self, params):
 
-        namespace, error = yield self.get_namespace(params)
+        project, error = yield self.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        namespace, error = yield self.get_namespace(project, params)
         if error:
             raise Return((None, error))
         namespace_name = namespace['name']
@@ -478,7 +499,7 @@ class Client(object):
             raise Return((None, 'presence for this namespace not available'))
 
         result, error = yield self.application.process_presence(
-            self.project,
+            project,
             params
         )
         raise Return((result, error))
@@ -486,7 +507,11 @@ class Client(object):
     @coroutine
     def handle_history(self, params):
 
-        namespace, error = yield self.get_namespace(params)
+        project, error = yield self.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        namespace, error = yield self.get_namespace(project, params)
         if error:
             raise Return((None, error))
         namespace_name = namespace['name']
@@ -499,16 +524,36 @@ class Client(object):
             raise Return((None, 'history for this namespace not available'))
 
         result, error = yield self.application.process_history(
-            self.project,
+            project,
             params
         )
         raise Return((result, error))
 
     @coroutine
-    def get_namespace(self, params):
+    def get_project(self, project_id):
+        """
+        Project settings can change during client's connection.
+        Every time we need project - we must extract actual
+        project data from structure.
+        """
+        project, error = yield self.application.structure.get_project_by_id(project_id)
+        if error:
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
+        raise Return((project, None))
+
+    @coroutine
+    def get_namespace(self, project, params):
+        """
+        Return actual namespace data for project.
+        Note that namespace name can be None here - in this
+        case we search for default project namespace and return
+        it if exists.
+        """
         namespace_name = params.get('namespace')
         namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, namespace_name
+            project, namespace_name
         )
         if error:
             raise Return((None, self.application.INTERNAL_SERVER_ERROR))

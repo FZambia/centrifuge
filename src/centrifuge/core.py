@@ -99,7 +99,11 @@ class Application(tornado.web.Application):
     # milliseconds
     PING_REVIEW_INTERVAL = 10000
 
+    PERMISSION_DENIED = 'permission denied'
+
     INTERNAL_SERVER_ERROR = 'internal server error'
+
+    PROJECT_NOT_FOUND = 'project not found'
 
     NAMESPACE_NOT_FOUND = 'namespace not found'
 
