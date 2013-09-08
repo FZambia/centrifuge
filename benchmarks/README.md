@@ -17,3 +17,6 @@ argv[1] - websocket endpoint
 argv[2] - project ID
 argv[3] - project secret key
 argv[4] - num connections
+
+
+1) Trough 200 clients: 16-19 sec

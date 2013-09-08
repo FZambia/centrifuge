@@ -2,6 +2,7 @@ import sys
 import hmac
 import six
 import json
+import time
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketClientFactory
 from autobahn.websocket import WebSocketClientProtocol
@@ -19,13 +20,15 @@ except IndexError:
     NUM_CLIENTS = 1
 
 
+COUNT = 0
+LIMIT = 1*NUM_CLIENTS
+
+
 class ClientProtocol(WebSocketClientProtocol):
     """
     Simple client that connects to a WebSocket server, send a HELLO
     message every 2 seconds and print everything it receives.
     """
-
-    user_id = "test"
 
     _connected = False
 
@@ -56,6 +59,7 @@ class ClientProtocol(WebSocketClientProtocol):
         self.sendMessage(json.dumps(message))
 
     def centrifuge_publish(self):
+
         message = {
             "method": "publish",
             "params": {
@@ -68,6 +72,9 @@ class ClientProtocol(WebSocketClientProtocol):
         self.sendMessage(json.dumps(message))
 
     def on_centrifuge_message(self, msg):
+        pass
+
+    def on_centrifuge_subscribed(self):
         pass
 
     def onOpen(self):
@@ -86,9 +93,24 @@ class ClientProtocol(WebSocketClientProtocol):
             self.centrifuge_subscribe()
         elif method == 'subscribe':
             self._subscribed = True
-            self.centrifuge_publish()
-        else:
+            self.on_centrifuge_subscribed()
+        elif method == 'message':
             self.on_centrifuge_message(msg)
+
+
+class ThroughputClientProtocol(ClientProtocol):
+
+    def on_centrifuge_subscribed(self):
+        self.start = time.time()
+        self.centrifuge_publish()
+
+    def on_centrifuge_message(self, msg):
+        global COUNT
+        COUNT += 1
+        if COUNT == NUM_CLIENTS*NUM_CLIENTS:
+            stop = time.time()
+            print stop - self.start
+            reactor.stop()
 
 
 def generate_token(secret_key, project_id, user_id):
@@ -106,7 +128,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     factory = WebSocketClientFactory(URL)
-    factory.protocol = ClientProtocol
+    factory.protocol = ThroughputClientProtocol
 
     for i in range(NUM_CLIENTS):
         connectWS(factory)
