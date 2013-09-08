@@ -3,7 +3,6 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
-import six
 import uuid
 import tornado.web
 import tornado.escape
@@ -14,12 +13,8 @@ from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
 
-import zmq
-from zmq.eventloop.zmqstream import ZMQStream
-
 from ..log import logger
 from ..handlers import BaseHandler
-from ..core import ADMIN_CHANNEL
 
 from .forms import ProjectForm, NamespaceForm
 
@@ -412,34 +407,11 @@ class ProjectSettingsHandler(BaseHandler):
 
 class AdminSocketHandler(SockJSConnection):
 
-    def on_message_published(self, message):
-        actual_message = message[1]
-        if six.PY3:
-            actual_message = actual_message.decode()
-        self.send(actual_message)
-
     @coroutine
     def subscribe(self):
         self.uid = uuid.uuid4().hex
-
-        subscribe_socket = self.application.zmq_context.socket(zmq.SUB)
-
-        if self.application.zmq_pub_sub_proxy:
-            subscribe_socket.connect(self.application.zmq_xpub)
-        else:
-            for address in self.application.zmq_sub_address:
-                subscribe_socket.connect(address)
-
         connections = self.application.admin_connections
         connections[self.uid] = self
-
-        subscribe_socket.setsockopt_string(
-            zmq.SUBSCRIBE, six.u(ADMIN_CHANNEL)
-        )
-
-        self.subscribe_stream = ZMQStream(subscribe_socket)
-        self.subscribe_stream.on_recv(self.on_message_published)
-
         logger.info('admin connected')
 
     def unsubscribe(self):
@@ -451,10 +423,6 @@ class AdminSocketHandler(SockJSConnection):
             del connections[self.uid]
         except KeyError:
             pass
-
-        if hasattr(self, 'subscribe_stream'):
-            self.subscribe_stream.on_recv(None)
-            self.subscribe_stream.close()
 
         logger.info('admin disconnected')
 
