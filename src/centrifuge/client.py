@@ -23,7 +23,6 @@ from tornado.gen import coroutine, Return, Task
 from jsonschema import validate, ValidationError
 
 import zmq
-from zmq.eventloop.zmqstream import ZMQStream
 
 from . import auth
 from .core import Response, create_subscription_name
@@ -52,7 +51,6 @@ class Client(object):
         self.info = info
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
-        self.sub_stream = None
         self.user_info = {}
         self.default_user_info = None
         self.project_id = None
@@ -69,10 +67,6 @@ class Client(object):
     @coroutine
     def clean(self):
 
-        if self.sub_stream and not self.sub_stream.closed():
-            self.sub_stream.stop_on_recv()
-            self.sub_stream.close()
-
         self.presence_ping.stop()
 
         project_id = self.project_id
@@ -85,28 +79,23 @@ class Client(object):
 
         connections = self.application.connections
 
-        if not project_id in connections:
-            raise Return((True, None))
-
-        if not self.user in connections[project_id]:
-            raise Return((True, None))
-
         try:
             del connections[project_id][self.user][self.uid]
         except KeyError:
             pass
 
-        # clean connections
-        if not connections[project_id][self.user]:
-            try:
-                del connections[project_id][self.user]
-            except KeyError:
-                pass
-            if not connections[project_id]:
+        if project_id in connections and self.user in connections[project_id]:
+            # clean connections
+            if not connections[project_id][self.user]:
                 try:
-                    del connections[project_id]
+                    del connections[project_id][self.user]
                 except KeyError:
                     pass
+                if not connections[project_id]:
+                    try:
+                        del connections[project_id]
+                    except KeyError:
+                        pass
 
         for namespace, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
@@ -114,23 +103,33 @@ class Client(object):
                     project_id, namespace, channel, self.uid
                 )
 
+                channel_to_unsubscribe = create_subscription_name(
+                    project_id,
+                    namespace,
+                    channel
+                )
+
+                try:
+                    del self.application.subscriptions[channel_to_unsubscribe][self.uid]
+                except KeyError:
+                    pass
+
+                try:
+                    if not self.application.subscriptions[channel_to_unsubscribe]:
+                        self.application.sub_stream.setsockopt_string(
+                            zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
+                        )
+                        del self.application.subscriptions[channel_to_unsubscribe]
+                except KeyError:
+                    pass
+
         self.channels = None
         self.user_info = None
         self.sock = None
         raise Return((True, None))
 
     def send(self, response):
-        self.sock.send(response.as_message())
-
-    def message_published(self, message):
-        """
-        Called when message received from one of channels client subscribed to.
-        """
-        actual_message = message[1]
-        if six.PY3:
-            actual_message = actual_message.decode()
-        response = Response(method="message", body=actual_message)
-        self.send(response)
+        self.sock.send(response)
 
     @coroutine
     def message_received(self, message):
@@ -141,7 +140,7 @@ class Client(object):
             data = json_decode(message)
         except ValueError:
             response.error = 'malformed JSON data'
-            self.send(response)
+            self.send(response.as_message())
             yield self.sock.close()
             raise Return((True, None))
 
@@ -149,7 +148,7 @@ class Client(object):
             validate(data, req_schema)
         except ValidationError as e:
             response.error = str(e)
-            self.send(response)
+            self.send(response.as_message())
             yield self.sock.close()
             raise Return((True, None))
 
@@ -163,7 +162,7 @@ class Client(object):
 
         if method != 'connect' and not self.is_authenticated:
             response.error = 'unauthorized'
-            self.send(response)
+            self.send(response.as_message())
             yield self.sock.close()
             raise Return((True, None))
 
@@ -171,7 +170,7 @@ class Client(object):
 
         if not func:
             response.error = "unknown method %s" % method
-            self.send(response)
+            self.send(response.as_message())
             yield self.sock.close()
             raise Return((True, None))
 
@@ -179,12 +178,12 @@ class Client(object):
             validate(params, client_params_schema[method])
         except ValidationError as e:
             response = Response(uid=uid, method=method, error=str(e))
-            self.send(response)
+            self.send(response.as_message())
             yield self.sock.close()
             raise Return((True, None))
 
         response.body, response.error = yield func(params)
-        self.send(response)
+        self.send(response.as_message())
         raise Return((True, None))
 
     @coroutine
@@ -315,18 +314,6 @@ class Client(object):
         )
         self.presence_ping.start()
 
-        context = self.application.zmq_context
-        subscribe_socket = context.socket(zmq.SUB)
-
-        if self.application.zmq_pub_sub_proxy:
-            subscribe_socket.connect(self.application.zmq_xpub)
-        else:
-            for address in self.application.zmq_sub_address:
-                subscribe_socket.connect(address)
-
-        self.sub_stream = ZMQStream(subscribe_socket)
-        self.sub_stream.on_recv(self.message_published)
-
         raise Return((self.uid, None))
 
     @coroutine
@@ -382,9 +369,13 @@ class Client(object):
             channel
         )
 
-        self.sub_stream.setsockopt_string(
+        self.application.sub_stream.setsockopt_string(
             zmq.SUBSCRIBE, six.u(channel_to_subscribe)
         )
+
+        if channel_to_subscribe not in self.application.subscriptions:
+            self.application.subscriptions[channel_to_subscribe] = {}
+        self.application.subscriptions[channel_to_subscribe][self.uid] = self
 
         if namespace_name not in self.channels:
             self.channels[namespace_name] = {}
@@ -434,9 +425,16 @@ class Client(object):
             namespace_name,
             channel
         )
-        self.sub_stream.setsockopt_string(
-            zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
-        )
+
+        try:
+            del self.application.subscriptions[channel_to_unsubscribe][self.uid]
+        except KeyError:
+            pass
+
+        if not self.application.subscriptions[channel_to_unsubscribe]:
+            self.application.sub_stream.setsockopt_string(
+                zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
+            )
 
         try:
             del self.channels[namespace_name][channel]

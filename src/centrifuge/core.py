@@ -120,6 +120,9 @@ class Application(tornado.web.Application):
         # initialize dict to keep client's connections
         self.connections = {}
 
+        # initialize dict with channel subscriptions
+        self.subscriptions = {}
+
         # dict to keep ping from nodes
         # key - node address, value - timestamp of last ping
         self.nodes = {}
@@ -253,13 +256,17 @@ class Application(tornado.web.Application):
             six.u(CONTROL_CHANNEL)
         )
 
-        def listen_control_channel():
+        subscribe_socket.setsockopt_string(
+            zmq.SUBSCRIBE, six.u(ADMIN_CHANNEL)
+        )
+
+        def listen_socket():
             # wrap sub socket into ZeroMQ stream and set its on_recv callback
             self.sub_stream = ZMQStream(subscribe_socket)
-            self.sub_stream.on_recv(self.handle_control_message)
+            self.sub_stream.on_recv(self.dispatch_published_message)
 
         tornado.ioloop.IOLoop.instance().add_callback(
-            listen_control_channel
+            listen_socket
         )
 
     def init_callbacks(self):
@@ -310,13 +317,41 @@ class Application(tornado.web.Application):
         publish(self.pub_stream, CONTROL_CHANNEL, message)
 
     @coroutine
-    def handle_control_message(self, multipart_message):
+    def dispatch_published_message(self, multipart_message):
+        channel = multipart_message[0]
+        actual_message = multipart_message[1]
+        if six.PY3:
+            actual_message = actual_message.decode()
+        if channel == CONTROL_CHANNEL:
+            yield self.handle_control_message(actual_message)
+        elif channel == ADMIN_CHANNEL:
+            yield self.handle_admin_message(actual_message)
+        else:
+            yield self.handle_channel_message(channel, actual_message)
+
+    @coroutine
+    def handle_admin_message(self, message):
+        for uid, connection in six.iteritems(self.admin_connections):
+            if uid in self.admin_connections:
+                connection.send(message)
+
+    @coroutine
+    def handle_channel_message(self, channel, message):
+        if channel not in self.subscriptions:
+            raise Return((True, None))
+
+        response = Response(method="message", body=message)
+        prepared_response = response.as_message()
+
+        for uid, client in six.iteritems(self.subscriptions[channel]):
+            if channel in self.subscriptions and uid in self.subscriptions[channel]:
+                client.send(prepared_response)
+
+    @coroutine
+    def handle_control_message(self, message):
         """
         Handle control message.
         """
-        # extract actual message
-        message = multipart_message[1]
-
         message = json_decode(message)
 
         app_id = message.get("app_id")
