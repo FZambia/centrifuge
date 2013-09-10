@@ -22,9 +22,9 @@
     }
 
     function extend(destination, source) {
-      destination.prototype = Object.create(source.prototype);
-      destination.prototype.constructor = destination;
-      return source.prototype;
+        destination.prototype = Object.create(source.prototype);
+        destination.prototype.constructor = destination;
+        return source.prototype;
     }
 
     /**
