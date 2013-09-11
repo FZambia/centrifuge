@@ -20,3 +20,4 @@ argv[4] - num connections
 
 
 1) Trough 200 clients: 16-19 sec
+2) After refactor and using single ZeroMQ socket - 13 sec
