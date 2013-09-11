@@ -25,7 +25,7 @@ from jsonschema import validate, ValidationError
 import zmq
 
 from . import auth
-from .core import Response, create_subscription_name
+from .core import Response, create_subscription_name, publish
 from .log import logger
 from .schema import req_schema, client_params_schema
 
@@ -97,15 +97,15 @@ class Client(object):
                     except KeyError:
                         pass
 
-        for namespace, channels in six.iteritems(self.channels):
+        for namespace_name, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 yield self.application.state.remove_presence(
-                    project_id, namespace, channel, self.uid
+                    project_id, namespace_name, channel, self.uid
                 )
 
                 channel_to_unsubscribe = create_subscription_name(
                     project_id,
-                    namespace,
+                    namespace_name,
                     channel
                 )
 
@@ -122,6 +122,8 @@ class Client(object):
                         del self.application.subscriptions[channel_to_unsubscribe]
                 except KeyError:
                     pass
+
+                self.send_leave_message(namespace_name, channel)
 
         self.channels = None
         self.user_info = None
@@ -387,6 +389,8 @@ class Client(object):
             project_id, namespace_name, channel, self.uid, user_info
         )
 
+        self.send_join_message(namespace_name, channel)
+
         raise Return((True, None))
 
     @coroutine
@@ -444,6 +448,8 @@ class Client(object):
         yield self.application.state.remove_presence(
             project_id, namespace_name, channel, self.uid
         )
+
+        self.send_leave_message(namespace_name, channel)
 
         raise Return((True, None))
 
@@ -559,3 +565,37 @@ class Client(object):
         if not namespace:
             raise Return((None, self.application.NAMESPACE_NOT_FOUND))
         raise Return((namespace, None))
+
+    def send_join_message(self, namespace_name, channel):
+        subscription_name = create_subscription_name(
+            self.project_id, namespace_name, channel
+        )
+        user_info = self.get_user_info(namespace_name, channel)
+        message = {
+            "namespace": namespace_name,
+            "channel": channel,
+            "data": json_decode(user_info)
+        }
+        publish(
+            self.application.pub_stream,
+            subscription_name,
+            json_encode(message),
+            method='join'
+        )
+
+    def send_leave_message(self, namespace_name, channel):
+        subscription_name = create_subscription_name(
+            self.project_id, namespace_name, channel
+        )
+        user_info = self.get_user_info(namespace_name, channel)
+        message = {
+            "namespace": namespace_name,
+            "channel": channel,
+            "data": json_decode(user_info)
+        }
+        publish(
+            self.application.pub_stream,
+            subscription_name,
+            json_encode(message),
+            method='leave'
+        )

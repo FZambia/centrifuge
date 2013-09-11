@@ -39,12 +39,15 @@ DEFAULT_PRESENCE_PING_INTERVAL = 25
 # receiving presence ping
 DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
+DEFAULT_PUBLISH_METHOD = 'message'
 
-def publish(stream, channel, message):
+
+def publish(stream, channel, message, method=None):
     """
     Publish message into channel of stream.
     """
-    to_publish = [utf8(channel), utf8(message)]
+    method = method or DEFAULT_PUBLISH_METHOD
+    to_publish = [utf8(channel), utf8(method), utf8(message)]
     stream.send_multipart(to_publish)
 
 
@@ -319,15 +322,16 @@ class Application(tornado.web.Application):
     @coroutine
     def dispatch_published_message(self, multipart_message):
         channel = multipart_message[0]
-        actual_message = multipart_message[1]
+        method = multipart_message[1]
+        message_data = multipart_message[2]
         if six.PY3:
-            actual_message = actual_message.decode()
+            message_data = message_data.decode()
         if channel == CONTROL_CHANNEL:
-            yield self.handle_control_message(actual_message)
+            yield self.handle_control_message(message_data)
         elif channel == ADMIN_CHANNEL:
-            yield self.handle_admin_message(actual_message)
+            yield self.handle_admin_message(message_data)
         else:
-            yield self.handle_channel_message(channel, actual_message)
+            yield self.handle_channel_message(channel, method, message_data)
 
     @coroutine
     def handle_admin_message(self, message):
@@ -336,11 +340,11 @@ class Application(tornado.web.Application):
                 connection.send(message)
 
     @coroutine
-    def handle_channel_message(self, channel, message):
+    def handle_channel_message(self, channel, method, message):
         if channel not in self.subscriptions:
             raise Return((True, None))
 
-        response = Response(method="message", body=message)
+        response = Response(method=method, body=message)
         prepared_response = response.as_message()
 
         for uid, client in six.iteritems(self.subscriptions[channel]):

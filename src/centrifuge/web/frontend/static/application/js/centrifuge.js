@@ -911,6 +911,46 @@
         }
     };
 
+    centrifuge_proto._joinResponse = function(message) {
+        if (message.body) {
+            //noinspection JSValidateTypes
+            var subscription, path;
+            var body = JSON.parse(message.body);
+            path = this._makePath(body.namespace, body.channel);
+            subscription = this._subscriptions[path];
+            if (!subscription) {
+                path = this._makePath(null, body.channel);
+                subscription = this._subscriptions[path];
+                if (!subscription) {
+                    return;
+                }
+            }
+            subscription.trigger('join', [body]);
+        } else {
+            this._debug('Unknown message', message);
+        }
+    };
+
+    centrifuge_proto._leaveResponse = function(message) {
+        if (message.body) {
+            //noinspection JSValidateTypes
+            var subscription, path;
+            var body = JSON.parse(message.body);
+            path = this._makePath(body.namespace, body.channel);
+            subscription = this._subscriptions[path];
+            if (!subscription) {
+                path = this._makePath(null, body.channel);
+                subscription = this._subscriptions[path];
+                if (!subscription) {
+                    return;
+                }
+            }
+            subscription.trigger('leave', [body]);
+        } else {
+            this._debug('Unknown message', message);
+        }
+    };
+
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
             //noinspection JSValidateTypes
@@ -960,6 +1000,12 @@
                 break;
             case 'history':
                 this._historyResponse(message);
+                break;
+            case 'join':
+                this._joinResponse(message);
+                break;
+            case 'leave':
+                this._leaveResponse(message);
                 break;
             case 'message':
                 this._messageResponse(message);
