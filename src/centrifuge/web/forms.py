@@ -149,6 +149,14 @@ class NamespaceForm(Form):
         description="maximum amount of messages in history for channels in this namespace"
     )
 
+    join_leave = BooleanField(
+        label="join/leave messages",
+        validators=[],
+        default=True,
+        description="send join(leave) messages when client subscribes on channel "
+                    "(unsubscribes from channel)"
+    )
+
     auth_address = TextField(
         label='auth url address',
         validators=[

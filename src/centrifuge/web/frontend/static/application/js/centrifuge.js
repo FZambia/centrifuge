@@ -878,12 +878,16 @@
     };
 
     centrifuge_proto._presenceResponse = function (message) {
-        var namespace = message.params["namespace"];
-        var channel = message.params["channel"];
+        var namespace = message.body["namespace"];
+        var channel = message.body["channel"];
         var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            return
+            path = this._makePath(null, channel);
+            subscription = this._subscriptions[path];
+            if (!subscription) {
+                return;
+            }
         }
         if (message.error === null) {
             subscription.trigger('presence', [message.body]);
@@ -895,12 +899,16 @@
     };
 
     centrifuge_proto._historyResponse = function (message) {
-        var namespace = message.params["namespace"];
-        var channel = message.params["channel"];
+        var namespace = message.body["namespace"];
+        var channel = message.body["channel"];
         var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            return
+            path = this._makePath(null, channel);
+            subscription = this._subscriptions[path];
+            if (!subscription) {
+                return;
+            }
         }
         if (message.error === null) {
             subscription.trigger('history', [message.body]);
@@ -913,8 +921,8 @@
 
     centrifuge_proto._joinResponse = function(message) {
         if (message.body) {
-            //noinspection JSValidateTypes
             var subscription, path;
+            //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
             path = this._makePath(body.namespace, body.channel);
             subscription = this._subscriptions[path];
@@ -933,8 +941,8 @@
 
     centrifuge_proto._leaveResponse = function(message) {
         if (message.body) {
-            //noinspection JSValidateTypes
             var subscription, path;
+            //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
             path = this._makePath(body.namespace, body.channel);
             subscription = this._subscriptions[path];
@@ -953,8 +961,8 @@
 
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
-            //noinspection JSValidateTypes
             var subscription, path;
+            //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
             path = this._makePath(body.namespace, body.channel);
             subscription = this._subscriptions[path];

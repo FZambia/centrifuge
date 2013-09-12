@@ -619,8 +619,15 @@ class Application(tornado.web.Application):
         namespace_name = namespace['name']
 
         channel = params.get("channel")
+        message = {
+            "namespace": namespace_name,
+            "channel": channel,
+            "data": []
+        }
         data, error = yield self.state.get_history(project_id, namespace_name, channel)
-        raise Return((data, error))
+        if data:
+            message['data'] = data
+        raise Return((message, error))
 
     @coroutine
     def process_presence(self, project, params):
@@ -637,8 +644,15 @@ class Application(tornado.web.Application):
         namespace_name = namespace['name']
 
         channel = params.get("channel")
+        message = {
+            "namespace": namespace_name,
+            "channel": channel,
+            "data": {}
+        }
         data, error = yield self.state.get_presence(project_id, namespace_name, channel)
-        raise Return((data, error))
+        if data:
+            message['data'] = data
+        raise Return((message, error))
 
     @coroutine
     def process_unsubscribe(self, project, params):

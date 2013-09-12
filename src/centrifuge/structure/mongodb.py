@@ -229,7 +229,8 @@ def namespace_create(db, project, **kwargs):
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
         'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address']
+        'auth_address': kwargs['auth_address'],
+        'join_leave': kwargs['join_leave']
     }
     namespace, error = yield insert(db.namespace, haystack)
     if error:
@@ -249,7 +250,8 @@ def namespace_edit(db, namespace, **kwargs):
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
         'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address']
+        'auth_address': kwargs['auth_address'],
+        'join_leave': kwargs['join_leave']
     }
     _res, error = yield update(
         db.namespace,

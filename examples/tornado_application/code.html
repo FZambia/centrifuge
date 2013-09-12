@@ -38,7 +38,7 @@
             subscription.on('subscribe:success', function(){
                 subscription.presence(function(message) {
                     var count = 0;
-                    for (var key in message){
+                    for (var key in message.data){
                         count++;
                     }
                     draw_message('Now in this room: ' + count + ' clients');

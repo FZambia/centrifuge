@@ -227,7 +227,8 @@ class NamespaceFormHandler(BaseHandler):
             'history': form.history.data,
             'history_size': form.history_size.data,
             'is_private': form.is_private.data,
-            'auth_address': form.auth_address.data
+            'auth_address': form.auth_address.data,
+            'join_leave': form.join_leave.data
         }
 
         if not namespace_name:
