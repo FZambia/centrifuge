@@ -123,7 +123,11 @@ class Client(object):
                 except KeyError:
                     pass
 
-                self.send_leave_message(namespace_name, channel)
+                project, error = yield self.get_project(self.project_id)
+                if not error and project:
+                    namespace, error = yield self.get_namespace(project, {"namespace": namespace_name})
+                    if namespace and namespace.get("join_leave", False):
+                        self.send_leave_message(namespace_name, channel)
 
         self.channels = None
         self.user_info = None
@@ -289,7 +293,10 @@ class Client(object):
 
     @coroutine
     def handle_connect(self, params):
-
+        """
+        Authenticate client's connection, initialize required
+        variables in case of successful authentication.
+        """
         if self.is_authenticated:
             raise Return((True, None))
 
@@ -321,7 +328,7 @@ class Client(object):
     @coroutine
     def handle_subscribe(self, params):
         """
-        Subscribe authenticated connection on channels.
+        Subscribe client on channel.
         """
         project, error = yield self.get_project(self.project_id)
         if error:
@@ -389,14 +396,15 @@ class Client(object):
             project_id, namespace_name, channel, self.uid, user_info
         )
 
-        self.send_join_message(namespace_name, channel)
+        if namespace.get('join_leave', False):
+            self.send_join_message(namespace_name, channel)
 
         raise Return((True, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
         """
-        Unsubscribe authenticated connection from channels.
+        Unsubscribe client from channel.
         """
         project, error = yield self.get_project(self.project_id)
         if error:
@@ -413,16 +421,6 @@ class Client(object):
             raise Return((True, None))
 
         project_id = self.project_id
-
-        namespaces, error = yield self.application.structure.namespaces_by_name().get(
-            project_id, {}
-        )
-        if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-
-        if namespace_name not in namespaces:
-            # attempt to unsubscribe from not allowed namespace
-            raise Return((True, None))
 
         channel_to_unsubscribe = self.application.create_subscription_name(
             project_id,
@@ -449,7 +447,8 @@ class Client(object):
             project_id, namespace_name, channel, self.uid
         )
 
-        self.send_leave_message(namespace_name, channel)
+        if namespace.get('join_leave', False):
+            self.send_leave_message(namespace_name, channel)
 
         raise Return((True, None))
 
@@ -460,7 +459,9 @@ class Client(object):
 
     @coroutine
     def handle_publish(self, params):
-
+        """
+        Publish message into channel.
+        """
         project, error = yield self.get_project(self.project_id)
         if error:
             raise Return((None, error))
@@ -486,7 +487,9 @@ class Client(object):
 
     @coroutine
     def handle_presence(self, params):
-
+        """
+        Get presence information for channel.
+        """
         project, error = yield self.get_project(self.project_id)
         if error:
             raise Return((None, error))
@@ -511,7 +514,9 @@ class Client(object):
 
     @coroutine
     def handle_history(self, params):
-
+        """
+        Get message history for channel.
+        """
         project, error = yield self.get_project(self.project_id)
         if error:
             raise Return((None, error))
@@ -567,6 +572,10 @@ class Client(object):
         raise Return((namespace, None))
 
     def send_join_message(self, namespace_name, channel):
+        """
+        Send message to all channel subscribers when client
+        subscribed on channel.
+        """
         subscription_name = create_subscription_name(
             self.project_id, namespace_name, channel
         )
@@ -584,6 +593,10 @@ class Client(object):
         )
 
     def send_leave_message(self, namespace_name, channel):
+        """
+        Send message to all channel subscribers when client
+        unsubscribed from channel.
+        """
         subscription_name = create_subscription_name(
             self.project_id, namespace_name, channel
         )

@@ -1,5 +1,5 @@
 *.pyc
 src/config_dev.json
 src/centrifuge.db
-src/dump.rdb
+*.rdb
 docs/_build/*

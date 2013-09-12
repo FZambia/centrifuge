@@ -48,10 +48,10 @@ def on_connection_ready(structure, ready_callback):
               'default_namespace varchar(32))'
 
     namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
-               '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
-               'is_watching bool, presence bool, history bool, history_size integer, ' \
-               'is_private bool, auth_address varchar(255), join_leave bool)'
+                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
+                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
+                'is_watching bool, presence bool, history bool, history_size integer, ' \
+                'is_private bool, auth_address varchar(255), join_leave bool)'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, namespace, ())
@@ -101,7 +101,8 @@ def project_create(db, **kwargs):
     }
 
     query = "INSERT INTO projects (_id, name, display_name, " \
-            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key, default_namespace) " \
+            "auth_address, max_auth_attempts, back_off_interval, " \
+            "back_off_max_timeout, secret_key, default_namespace) " \
             "VALUES (%(_id)s, %(name)s, %(display_name)s, " \
             "%(auth_address)s, %(max_auth_attempts)s, %(back_off_interval)s, " \
             "%(back_off_max_timeout)s, %(secret_key)s, %(default_namespace)s)"

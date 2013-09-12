@@ -39,10 +39,10 @@ def init_storage(structure, settings, ready_callback):
               'default_namespace varchar(32))'
 
     namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
-               '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
-               'is_watching bool, presence bool, history bool, history_size integer, ' \
-               'is_private bool, auth_address varchar(255), join_leave bool)'
+                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
+                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
+                'is_watching bool, presence bool, history bool, history_size integer, ' \
+                'is_private bool, auth_address varchar(255), join_leave bool)'
 
     cursor.execute(project, ())
     conn.commit()

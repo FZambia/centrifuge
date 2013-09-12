@@ -792,6 +792,20 @@
         return subscription;
     };
 
+    centrifuge_proto._findSubscription = function (namespace, channel) {
+        var subscription;
+        var path = this._makePath(namespace, channel);
+        subscription = this._subscriptions[path];
+        if (!subscription) {
+            path = this._makePath(null, channel);
+            subscription = this._subscriptions[path];
+            if (!subscription) {
+                return null;
+            }
+        }
+        return subscription;
+    };
+
     centrifuge_proto._createSubscription = function (path) {
         var subscription = new Subscription(this, path);
         this._subscriptions[path] = subscription;
@@ -851,7 +865,7 @@
         var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            return
+            return;
         }
         if (message.error === null) {
             subscription.trigger('unsubscribe:success', [message]);
@@ -867,7 +881,7 @@
         var path = this._makePath(namespace, channel);
         var subscription = this._subscriptions[path];
         if (!subscription) {
-            return
+            return;
         }
         if (message.error === null) {
             subscription.trigger('publish:success', [message]);
@@ -880,14 +894,9 @@
     centrifuge_proto._presenceResponse = function (message) {
         var namespace = message.body["namespace"];
         var channel = message.body["channel"];
-        var path = this._makePath(namespace, channel);
-        var subscription = this._subscriptions[path];
+        var subscription = this._findSubscription(namespace, channel);
         if (!subscription) {
-            path = this._makePath(null, channel);
-            subscription = this._subscriptions[path];
-            if (!subscription) {
-                return;
-            }
+            return;
         }
         if (message.error === null) {
             subscription.trigger('presence', [message.body]);
@@ -901,14 +910,9 @@
     centrifuge_proto._historyResponse = function (message) {
         var namespace = message.body["namespace"];
         var channel = message.body["channel"];
-        var path = this._makePath(namespace, channel);
-        var subscription = this._subscriptions[path];
+        var subscription = this._findSubscription(namespace, channel);
         if (!subscription) {
-            path = this._makePath(null, channel);
-            subscription = this._subscriptions[path];
-            if (!subscription) {
-                return;
-            }
+            return;
         }
         if (message.error === null) {
             subscription.trigger('history', [message.body]);
@@ -921,17 +925,11 @@
 
     centrifuge_proto._joinResponse = function(message) {
         if (message.body) {
-            var subscription, path;
             //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
-            path = this._makePath(body.namespace, body.channel);
-            subscription = this._subscriptions[path];
+            var subscription = this._findSubscription(body.namespace, body.channel);
             if (!subscription) {
-                path = this._makePath(null, body.channel);
-                subscription = this._subscriptions[path];
-                if (!subscription) {
-                    return;
-                }
+                return;
             }
             subscription.trigger('join', [body]);
         } else {
@@ -941,17 +939,11 @@
 
     centrifuge_proto._leaveResponse = function(message) {
         if (message.body) {
-            var subscription, path;
             //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
-            path = this._makePath(body.namespace, body.channel);
-            subscription = this._subscriptions[path];
+            var subscription = this._findSubscription(body.namespace, body.channel);
             if (!subscription) {
-                path = this._makePath(null, body.channel);
-                subscription = this._subscriptions[path];
-                if (!subscription) {
-                    return;
-                }
+                return;
             }
             subscription.trigger('leave', [body]);
         } else {
@@ -961,17 +953,11 @@
 
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
-            var subscription, path;
             //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
-            path = this._makePath(body.namespace, body.channel);
-            subscription = this._subscriptions[path];
+            var subscription = this._findSubscription(body.namespace, body.channel);
             if (!subscription) {
-                path = this._makePath(null, body.channel);
-                subscription = this._subscriptions[path];
-                if (!subscription) {
-                    return;
-                }
+                return;
             }
             subscription.trigger('message', [body]);
         } else {
@@ -1044,6 +1030,8 @@
     centrifuge_proto.disconnect = centrifuge_proto._disconnect;
 
     centrifuge_proto.getSubscription = centrifuge_proto._getSubscription;
+
+    centrifuge_proto.findSubscription = centrifuge_proto._findSubscription;
 
     centrifuge_proto.removeSubscription = centrifuge_proto._removeSubscription;
 
@@ -1233,11 +1221,10 @@
         define(function () {
             return Centrifuge;
         });
-    }
-    else if (typeof module === 'object' && module.exports) {
+    } else if (typeof module === 'object' && module.exports) {
+        //noinspection JSUnresolvedVariable
         module.exports = Centrifuge;
-    }
-    else {
+    } else {
         //noinspection JSUnusedGlobalSymbols
         this.Centrifuge = Centrifuge;
     }
