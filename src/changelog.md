@@ -1,8 +1,15 @@
+v0.2.3
+======
+* use only one ZeroMQ SUB socket for process instead of having own socket for every client.
+* join/leave events for channels (structure affected).
+* fix bug with Centrifuge javascript client when importing with RequireJS.
+* possibility to provide structure in configuration file (useful for tests and non-dynamic structure configuration)
+
 v0.2.2
 ======
-* fix project setting caching in Client's instance class.
+* fix project settings caching in Client's instance class.
 * fix unsubscribe admin API command behaviour.
-* repo clean ups
+* repo clean ups.
 
 v0.2.1
 ======
@@ -10,12 +17,12 @@ v0.2.1
 
 v0.2.0
 ======
-* global code refactoring
-* presence support for channels
-* history support for channels
+* global code refactoring.
+* presence support for channels.
+* history support for channels.
 * Simple javascript client to communicate with Centrifuge.
-* Bootstrap 3.0 for web interface
-* SQLite for structure store - now no need in installing PostgreSQL or MongoDB
+* Bootstrap 3.0 for web interface.
+* SQLite for structure store - now no need in installing PostgreSQL or MongoDB.
 * Categories renamed into namespaces.
 * Possibility to set default namespace.
 
