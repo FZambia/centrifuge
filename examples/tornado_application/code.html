@@ -38,12 +38,21 @@
             subscription.on('subscribe:success', function(){
                 subscription.presence(function(message) {
                     var count = 0;
-                    for (var key in message){
+                    for (var key in message.data){
                         count++;
                     }
                     draw_message('Now in this room: ' + count + ' clients');
                 });
+
             });
+
+            subscription.on('join', function(message) {
+                draw_message('Someone joined channel (uid ' + message.data["client_id"] + ')');
+            });
+
+            subscription.on('leave', function(message) {
+                draw_message('Someone left channel (uid ' + message.data["client_id"] + ')');
+            })
 
         });
 

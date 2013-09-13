@@ -48,10 +48,10 @@ def on_connection_ready(structure, ready_callback):
               'default_namespace varchar(32))'
 
     namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
-               '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-               'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
-               'is_watching bool, presence bool, history bool, history_size integer, ' \
-               'is_private bool, auth_address varchar(255))'
+                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
+                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
+                'is_watching bool, presence bool, history bool, history_size integer, ' \
+                'is_private bool, auth_address varchar(255), join_leave bool)'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, namespace, ())
@@ -101,7 +101,8 @@ def project_create(db, **kwargs):
     }
 
     query = "INSERT INTO projects (_id, name, display_name, " \
-            "auth_address, max_auth_attempts, back_off_interval, back_off_max_timeout, secret_key, default_namespace) " \
+            "auth_address, max_auth_attempts, back_off_interval, " \
+            "back_off_max_timeout, secret_key, default_namespace) " \
             "VALUES (%(_id)s, %(name)s, %(display_name)s, " \
             "%(auth_address)s, %(max_auth_attempts)s, %(back_off_interval)s, " \
             "%(back_off_max_timeout)s, %(secret_key)s, %(default_namespace)s)"
@@ -207,14 +208,16 @@ def namespace_create(db, project, **kwargs):
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
         'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address']
+        'auth_address': kwargs['auth_address'],
+        'join_leave': kwargs['join_leave']
     }
 
     query = "INSERT INTO namespaces (_id, project_id, name, publish, " \
             "is_watching, presence, history, history_size, is_private, " \
-            "auth_address) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
+            "auth_address, join_leave) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
             "%(publish)s, %(is_watching)s, %(presence)s, " \
-            "%(history)s, %(history_size)s, %(is_private)s, %(auth_address)s)"
+            "%(history)s, %(history_size)s, %(is_private)s, %(auth_address)s, " \
+            "%(join_leave)s)"
 
     try:
         yield momoko.Op(
@@ -240,14 +243,15 @@ def namespace_edit(db, namespace, **kwargs):
         'history': kwargs['history'],
         'history_size': kwargs['history_size'],
         'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address']
+        'auth_address': kwargs['auth_address'],
+        'join_leave': kwargs['join_leave']
     }
 
     query = "UPDATE namespaces SET name=%(name)s, publish=%(publish)s, " \
             "is_watching=%(is_watching)s, presence=%(presence)s, " \
             "history=%(history)s, history_size=%(history_size)s, " \
-            "is_private=%(is_private)s, auth_address=%(auth_address)s " \
-            "WHERE _id=%(_id)s"
+            "is_private=%(is_private)s, auth_address=%(auth_address)s, " \
+            "join_leave=%(join_leave)s WHERE _id=%(_id)s"
 
     try:
         yield momoko.Op(

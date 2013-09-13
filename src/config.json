@@ -8,11 +8,39 @@
     "structure": {
         "storage": "centrifuge.structure.sqlite",
         "update_interval": 60,
+        "settings": {}
+    },
+    "structure_config": {
+        "storage": "centrifuge.structure.config",
         "settings": {
-            "host": "localhost",
-            "port": 27017,
-            "name": "centrifuge",
-            "pool_size": 10
+            "projects": [
+                {
+                    "_id": "1",
+                    "name": "project",
+                    "display_name": "project",
+                    "auth_address": "http://localhost:3000/validate",
+                    "max_auth_attempts": 5,
+                    "back_off_interval": 100,
+                    "back_off_max_timeout": 5000,
+                    "secret_key": "secret",
+                    "default_namespace": "1"
+                }
+            ],
+            "namespaces": [
+                {
+                    "_id": "1",
+                    "project": "1",
+                    "name": "python",
+                    "publish": true,
+                    "is_watching": true,
+                    "presence": true,
+                    "history": true,
+                    "history_size": 20,
+                    "is_private": true,
+                    "auth_address": "",
+                    "join_leave": true
+                }
+            ]
         }
     }
 }

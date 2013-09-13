@@ -36,6 +36,7 @@ from centrifuge.web.handlers import Http404Handler
 from centrifuge.web.handlers import ProjectCreateHandler
 from centrifuge.web.handlers import NamespaceFormHandler
 from centrifuge.web.handlers import ProjectSettingsHandler
+from centrifuge.web.handlers import StructureDumpHandler
 
 
 define(
@@ -126,6 +127,9 @@ def create_application_handlers():
         ),
         tornado.web.url(
             r'/logout$', LogoutHandler, name="logout"
+        ),
+        tornado.web.url(
+            r'/dumps$', StructureDumpHandler, name="dump_structure"
         )
     ]
 
