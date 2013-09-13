@@ -12,6 +12,7 @@ import tornado.gen
 from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
+from tornado.escape import json_encode
 
 from ..log import logger
 from ..handlers import BaseHandler
@@ -449,3 +450,21 @@ class Http404Handler(BaseHandler):
 
     def get(self):
         self.render("http404.html")
+
+
+class StructureDumpHandler(BaseHandler):
+
+    @coroutine
+    def get(self):
+        projects, error = yield self.application.structure.project_list()
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        namespaces, error = yield self.application.structure.namespace_list()
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        data = {
+            "projects": projects,
+            "namespaces": namespaces
+        }
+        self.set_header("Content-Type", "application/json")
+        self.finish(json_encode(data))
