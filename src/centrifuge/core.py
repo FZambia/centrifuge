@@ -475,13 +475,6 @@ class Application(tornado.web.Application):
         raise Return((result, error))
 
     @coroutine
-    def handle_publish(self, params):
-        """
-        Handle publishing new message.
-        """
-        pass
-
-    @coroutine
     def process_call(self, project, method, params):
         """
         Process HTTP call. It can be new message publishing or
