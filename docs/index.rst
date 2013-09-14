@@ -8,6 +8,6 @@ Centrifuge
 
 Welcome to Centrifuge's documentation.
 
-**Centrifuge 0.2.0 is currently under active development, something can change in final release**
+**Centrifuge is currently under active development.**
 
 .. include:: contents.rst.inc

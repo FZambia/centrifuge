@@ -75,6 +75,17 @@ information about project and user IDs. Token is similar to HTTP cookie, client 
 not show it to anyone else. Remember that you must  always use channels in private
 namespaces when working with data of limited access.
 
+You can combine Centrifuge initialization and configuration and write in this way:
+
+.. code-block:: javascript
+
+    centrifuge = new Centrifuge({
+        url: "",
+        project:"",
+        user: "",
+        token: ""
+    });
+
 Now centrifuge client configured and you are ready to start communicating.
 
 It is as simple as:
@@ -95,10 +106,22 @@ in this way:
 .. code-block:: javascript
 
     centrifuge.on('connect', function() {
-        // now you can subscribe
+        // now your client connected
     });
 
-It is very simple to subscribe on channel of certain namespace. Just write:
+Also you ``disconnect`` and ``error`` events available:
+
+.. code-block:: javascript
+
+    centrifuge.on('disconnect', function() {
+        // do whatever you need in case of disconnect
+    });
+
+    centrifuge.on('error', function(error_message) {
+        // called every time error occurred
+    });
+
+When your client connected, it is time to subscribe on channel of certain namespace. Just write:
 
 .. code-block:: javascript
 
@@ -116,12 +139,31 @@ soon as our subscription request returned successful subscription response:
 .. code-block:: javascript
 
     subscription.on('subscribe:success', function() {
+
+        // publish into channel
         subscription.publish("hello");
-        subscription.presence(function(data) {console.log(data)});
-        subscription.history (function(data) {console.log(data)});
+
+        // get presence information (who is currently subscribed on this channel)
+        subscription.presence(function(message) {
+            console.log(message);
+        });
+
+        // get history (last messages sent) for this channel
+        subscription.history (function(message) {
+            console.log(message);
+        });
+
+        subscription.on('join', function(message) {
+            // called when someone subscribes on channel
+        });
+
+        subscription.on('leave', function(message) {
+            // called when someone unsubscribes from channel
+        });
+
     });
 
-And finally you can unsubscribe from subscription:
+You can unsubscribe from subscription:
 
 .. code-block:: javascript
 
@@ -133,4 +175,5 @@ In some cases you need to disconnect your client from Centrifuge:
 
     centrifuge.disconnect();
 
-After calling this client will not try to reestablish connection periodically.
+After calling this client will not try to reestablish connection periodically. You must call
+``connect`` method manually.
