@@ -689,7 +689,7 @@
     };
 
     centrifuge_proto._makePath = function (namespace, channel) {
-        if (namespace === null || namespace == undefined) {
+        if (namespace === '' || namespace === null || namespace == undefined) {
             return '/' + channel;
         }
         return '/' + namespace + '/' + channel;
@@ -1028,6 +1028,8 @@
     };
 
     centrifuge_proto.parsePath = centrifuge_proto._parsePath;
+
+    centrifuge_proto.makePath = centrifuge_proto._makePath;
 
     centrifuge_proto.isConnected = centrifuge_proto._isConnected;
 
