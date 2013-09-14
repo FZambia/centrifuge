@@ -54,13 +54,15 @@ function syntaxHighlight(json) {
             // sock js connection
             var connection = null;
 
-            // in Firefox esc key closes xhr and websocket connections
-            // so we should prevent it to happen
-            if (window.addEventListener) {
-                window.addEventListener('keydown', function(e) {
-                    (e.keyCode == 27 && e.preventDefault());
-                });
-            }
+            try {
+                // in Firefox esc key closes xhr and websocket connections
+                // so we should prevent it to happen
+                if (window.addEventListener) {
+                    window.addEventListener('keydown', function(e) {
+                        (e.keyCode == 27 && e.preventDefault());
+                    });
+                }
+            } catch(e) {}
 
 			// set all event handlers on this element
             var global_content = $(options.global_content_element);
