@@ -40,32 +40,16 @@ class SchemaTest(TestCase):
 
         del schema["namespace"]
 
-        try:
-            validate(schema, admin_params_schema["publish"])
-        except ValidationError:
-            pass
-        else:
-            assert False
-
-    def test_admin_params_schema_subscribe(self):
-        schema = {
-            "user": "test",
-            "to": {
-                "test": ["test"]
-            }
-        }
-
         self.assertEqual(
-            validate(schema, admin_params_schema["subscribe"]),
+            validate(schema, admin_params_schema["publish"]),
             None
         )
 
     def test_admin_params_schema_unsubscribe(self):
         schema = {
             "user": "test",
-            "from": {
-                "test": ["test"]
-            }
+            "namespace": "channel",
+            "channel": "test"
         }
 
         self.assertEqual(
@@ -75,9 +59,8 @@ class SchemaTest(TestCase):
 
     def test_client_params_schema_subscribe(self):
         schema = {
-            "to": {
-                "test": ["test"]
-            }
+            "namespace": "channel",
+            "channel": "test"
         }
 
         self.assertEqual(
@@ -87,9 +70,8 @@ class SchemaTest(TestCase):
 
     def test_client_params_schema_unsubscribe(self):
         schema = {
-            "from": {
-                "test": ["test"]
-            }
+            "namespace": "channel",
+            "channel": "test"
         }
 
         self.assertEqual(
@@ -101,12 +83,11 @@ class SchemaTest(TestCase):
         schema = {
             "token": "test",
             "user": "test",
-            "project_id": "test",
-            "permissions": {}
+            "project": "test",
         }
 
         self.assertEqual(
-            validate(schema, client_params_schema["auth"]),
+            validate(schema, client_params_schema["connect"]),
             None
         )
 

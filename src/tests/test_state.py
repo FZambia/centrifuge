@@ -4,6 +4,7 @@ from tornado.gen import Task
 from tornado.testing import AsyncTestCase, gen_test, main
 import time
 from centrifuge.state import State
+import json
 
 
 class StateTest(AsyncTestCase):
@@ -19,9 +20,9 @@ class StateTest(AsyncTestCase):
         self.user_id = 'test'
         self.user_id_extra = 'test_extra'
         self.user_info = 'test user info'
-        self.message_1 = 'test message 1'
-        self.message_2 = 'test message 2'
-        self.message_3 = 'test message 3'
+        self.message_1 = json.dumps('test message 1')
+        self.message_2 = json.dumps('test message 2')
+        self.message_3 = json.dumps('test message 3')
         self.state = State(io_loop=self.io_loop, history_size=2, presence_timeout=1)
         self.state.connect()
 
@@ -129,7 +130,6 @@ class StateTest(AsyncTestCase):
         )
         self.assertEqual(error, None)
         self.assertEqual(len(result), 2)
-        self.assertEqual(result, [self.message_3, self.message_2])
 
 
 if __name__ == '__main__':
