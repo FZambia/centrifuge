@@ -422,7 +422,7 @@ class Client(object):
 
         project_id = self.project_id
 
-        channel_to_unsubscribe = self.application.create_subscription_name(
+        channel_to_unsubscribe = create_subscription_name(
             project_id,
             namespace_name,
             channel
