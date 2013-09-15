@@ -412,20 +412,13 @@ class AdminSocketHandler(SockJSConnection):
     @coroutine
     def subscribe(self):
         self.uid = uuid.uuid4().hex
-        connections = self.application.admin_connections
-        connections[self.uid] = self
+        self.application.add_admin_connection(self.uid, self)
         logger.info('admin connected')
 
     def unsubscribe(self):
         if not hasattr(self, 'uid'):
             return
-
-        connections = self.application.admin_connections
-        try:
-            del connections[self.uid]
-        except KeyError:
-            pass
-
+        self.application.remove_admin_connection(self.uid)
         logger.info('admin disconnected')
 
     def on_open(self, info):

@@ -11,7 +11,7 @@ from sockjs.tornado import SockJSConnection
 from jsonschema import validate, ValidationError
 
 from . import auth
-from .core import Response
+from .response import Response
 from .client import Client
 from .schema import req_schema, admin_params_schema
 
