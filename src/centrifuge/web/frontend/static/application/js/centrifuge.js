@@ -874,6 +874,7 @@
             return;
         }
         if (message.error === null) {
+            subscription.subscribed = true;
             subscription.trigger('subscribe:success', [message]);
         } else {
             subscription.trigger('subscribe:error', [message]);
@@ -1075,6 +1076,23 @@
         }
     };
 
+    centrifuge_proto.unsubscribe = function (path) {
+        if (arguments.length < 1) {
+            throw 'Illegal arguments number: required 1, got ' + arguments.length;
+        }
+        if (!isString(path)) {
+            throw 'Illegal argument type: channel must be a string';
+        }
+        if (this.isDisconnected()) {
+            return;
+        }
+
+        var current_subscription = this._getSubscription(path);
+        if (current_subscription !== null) {
+            current_subscription.unsubscribe();
+        }
+    };
+
     centrifuge_proto.publish = function (path, data, callback) {
         var subscription = this.getSubscription(path);
         if (subscription === null) {
@@ -1116,6 +1134,7 @@
         var matches = this.parsePath();
         this.namespace = matches[0];
         this.channel = matches[1];
+        this.subscribed = false;
     }
 
     extend(Subscription, EventEmitter);
@@ -1153,6 +1172,7 @@
     };
 
     sub_proto.unsubscribe = function () {
+        this.subscribed = false;
         this._centrifuge._removeSubscription(this.path);
         var centrifugeMessage = {
             "method": "unsubscribe",

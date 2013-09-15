@@ -26,7 +26,15 @@ class SchemaTest(TestCase):
 
         self.assertEqual(validate(schema, req_schema), None)
 
-    def test_admin_params_schema_broadcast(self):
+        schema["method"] = 1
+        try:
+            validate(schema, req_schema)
+        except ValidationError:
+            pass
+        else:
+            self.assertTrue(False)
+
+    def test_admin_params_schema_publish(self):
         schema = {
             "namespace": "test",
             "channel": "test",
@@ -79,7 +87,7 @@ class SchemaTest(TestCase):
             None
         )
 
-    def test_client_params_schema_auth(self):
+    def test_client_params_schema_connect(self):
         schema = {
             "token": "test",
             "user": "test",

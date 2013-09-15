@@ -146,6 +146,8 @@ class Application(tornado.web.Application):
 
         self.pre_publish_callbacks = []
 
+        self.post_publish_callbacks = []
+
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
@@ -284,6 +286,11 @@ class Application(tornado.web.Application):
         for callable_path in pre_publish_callbacks:
             callback = utils.namedAny(callable_path)
             self.pre_publish_callbacks.append(callback)
+
+        post_publish_callbacks = config.get('post_publish_callbacks', [])
+        for callable_path in post_publish_callbacks:
+            callback = utils.namedAny(callable_path)
+            self.post_publish_callbacks.append(callback)
 
     def send_ping(self, message):
         publish(self.pub_stream, CONTROL_CHANNEL, message)
@@ -587,12 +594,17 @@ class Application(tornado.web.Application):
             raise Return((None, error))
 
         if isinstance(message, dict):
-            # event stored successfully and we can make callbacks
+            # event prepared for publishing
             result, error = yield self.publish_message(
                 message, allowed_namespaces
             )
             if error:
                 raise Return((None, error))
+
+            for callback in self.post_publish_callbacks:
+                result, error = yield callback(message)
+                if error:
+                    logger.error(str(error))
         else:
             # message is error description
             raise Return((None, message))
