@@ -8,28 +8,16 @@ import uuid
 import time
 from functools import partial
 
-import zmq
-from zmq.eventloop.zmqstream import ZMQStream
-
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
-from tornado.escape import json_decode, json_encode
-from tornado.escape import utf8
+from tornado.escape import json_encode
 
 from . import utils
 from .structure import Structure
 from .state import State
 from .log import logger
-
-
-# separate important parts of channel name by this
-CHANNEL_NAME_SEPARATOR = ':'
-
-
-# add sequence of symbols to the end of each channel name to
-# prevent name overlapping
-CHANNEL_SUFFIX = '>>>'
+from .pubsub import ZmqPubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
 
 
 # in seconds, client's send presence ping to Redis once in this interval
@@ -39,58 +27,6 @@ DEFAULT_PRESENCE_PING_INTERVAL = 25
 # in seconds, how long we must consider presence info valid after
 # receiving presence ping
 DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
-
-
-DEFAULT_PUBLISH_METHOD = 'message'
-
-
-def publish(stream, channel, message, method=None):
-    """
-    Publish message into channel of stream.
-    """
-    method = method or DEFAULT_PUBLISH_METHOD
-    to_publish = [utf8(channel), utf8(method), utf8(message)]
-    stream.send_multipart(to_publish)
-
-
-def create_subscription_name(project_id, namespace, channel):
-    """
-    Create subscription name to catch messages from specific
-    project, namespace and channel.
-    """
-    return str(CHANNEL_NAME_SEPARATOR.join([
-        project_id,
-        namespace,
-        channel,
-        CHANNEL_SUFFIX
-    ]))
-
-
-# channel for administrative interface - watch for messages travelling around.
-ADMIN_CHANNEL = '_admin' + CHANNEL_SUFFIX
-
-
-# channel for sharing commands among all nodes.
-CONTROL_CHANNEL = '_control' + CHANNEL_SUFFIX
-
-
-class Response(object):
-
-    def __init__(self, uid=None, method=None, params=None, error=None, body=None):
-        self.uid = uid
-        self.method = method
-        self.params = params
-        self.error = error
-        self.body = body
-
-    def as_message(self):
-        return {
-            'uid': self.uid,
-            'method': self.method,
-            'params': self.params,
-            'error': self.error,
-            'body': self.body
-        }
 
 
 class Application(tornado.web.Application):
@@ -114,19 +50,16 @@ class Application(tornado.web.Application):
 
     def __init__(self, *args, **kwargs):
 
-        self.zmq_context = zmq.Context()
-
         # create unique uid for this application
         self.uid = uuid.uuid4().hex
 
-        # initialize dict to keep admin connections
+        self.pubsub = None
+
+        # initialize dict to keep administrator's connections
         self.admin_connections = {}
 
         # initialize dict to keep client's connections
         self.connections = {}
-
-        # initialize dict with channel subscriptions
-        self.subscriptions = {}
 
         # dict to keep ping from nodes
         # key - node address, value - timestamp of last ping
@@ -134,12 +67,6 @@ class Application(tornado.web.Application):
 
         # application structure (projects, namespaces etc)
         self.structure = None
-
-        # initialize dict to keep channel presence
-        self.presence = {}
-
-        # initialize dict to keep channel history
-        self.history = {}
 
         # initialize dict to keep back-off information for projects
         self.back_off = {}
@@ -154,7 +81,7 @@ class Application(tornado.web.Application):
     def initialize(self):
         self.init_callbacks()
         self.init_structure()
-        self.init_sockets()
+        self.init_pubsub()
         self.init_state()
         self.init_ping()
 
@@ -211,70 +138,11 @@ class Application(tornado.web.Application):
             )
             tornado.ioloop.IOLoop.instance().add_callback(self.state.connect)
 
-    def init_sockets(self):
+    def init_pubsub(self):
         """
         Routine to create all application-wide ZeroMQ sockets.
         """
-        options = self.settings['options']
-
-        self.zmq_pub_sub_proxy = options.zmq_pub_sub_proxy
-
-        # create PUB socket to publish instance events into it
-        publish_socket = self.zmq_context.socket(zmq.PUB)
-        # do not try to send messages after closing
-        publish_socket.setsockopt(zmq.LINGER, 0)
-
-        if self.zmq_pub_sub_proxy:
-            # application started with XPUB/XSUB proxy
-            self.zmq_xsub = options.zmq_xsub
-            publish_socket.connect(self.zmq_xsub)
-        else:
-            # application started without XPUB/XSUB proxy
-            if options.zmq_pub_port_shift:
-                # calculate zmq pub port number
-                zmq_pub_port = options.port + options.zmq_pub_port_shift
-            else:
-                zmq_pub_port = options.zmq_pub_port
-
-            self.zmq_pub_port = zmq_pub_port
-
-            publish_socket.bind(
-                "tcp://%s:%s" % (options.zmq_pub_listen, str(self.zmq_pub_port))
-            )
-
-        # wrap pub socket into ZeroMQ stream
-        self.pub_stream = ZMQStream(publish_socket)
-
-        # create SUB socket listening to all events from all app instances
-        subscribe_socket = self.zmq_context.socket(zmq.SUB)
-
-        if self.zmq_pub_sub_proxy:
-            # application started with XPUB/XSUB proxy
-            self.zmq_xpub = options.zmq_xpub
-            subscribe_socket.connect(self.zmq_xpub)
-        else:
-            # application started without XPUB/XSUB proxy
-            self.zmq_sub_address = options.zmq_sub_address
-            for address in self.zmq_sub_address:
-                subscribe_socket.connect(address)
-
-        subscribe_socket.setsockopt_string(
-            zmq.SUBSCRIBE,
-            six.u(CONTROL_CHANNEL)
-        )
-
-        subscribe_socket.setsockopt_string(
-            zmq.SUBSCRIBE, six.u(ADMIN_CHANNEL)
-        )
-
-        def listen_socket():
-            # wrap sub socket into ZeroMQ stream and set its on_recv callback
-            self.sub_stream = ZMQStream(subscribe_socket)
-            self.sub_stream.on_recv(self.dispatch_published_message)
-
-        tornado.ioloop.IOLoop.instance().add_callback(
-            listen_socket
-        )
+        self.pubsub = ZmqPubSub(self)
 
     def init_callbacks(self):
         """
@@ -293,7 +161,7 @@ class Application(tornado.web.Application):
             self.post_publish_callbacks.append(callback)
 
     def send_ping(self, message):
-        publish(self.pub_stream, CONTROL_CHANNEL, message)
+        self.pubsub.publish(CONTROL_CHANNEL, message)
 
     def review_ping(self):
         now = time.time()
@@ -314,7 +182,7 @@ class Application(tornado.web.Application):
             'method': 'ping',
             'params': {'uid': self.uid}
         }
-        send_ping = partial(publish, self.pub_stream, CONTROL_CHANNEL, json_encode(message))
+        send_ping = partial(self.pubsub.publish, CONTROL_CHANNEL, json_encode(message))
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, ping.start
@@ -326,65 +194,57 @@ class Application(tornado.web.Application):
         )
 
     def send_control_message(self, message):
-        publish(self.pub_stream, CONTROL_CHANNEL, message)
+        self.pubsub.publish(CONTROL_CHANNEL, message)
 
-    @coroutine
-    def dispatch_published_message(self, multipart_message):
-        channel = multipart_message[0]
-        method = multipart_message[1]
-        message_data = multipart_message[2]
-        if six.PY3:
-            message_data = message_data.decode()
-        if channel == CONTROL_CHANNEL:
-            yield self.handle_control_message(message_data)
-        elif channel == ADMIN_CHANNEL:
-            yield self.handle_admin_message(message_data)
-        else:
-            yield self.handle_channel_message(channel, method, message_data)
-
-    @coroutine
-    def handle_admin_message(self, message):
-        for uid, connection in six.iteritems(self.admin_connections):
-            if uid in self.admin_connections:
-                connection.send(message)
-
-    @coroutine
-    def handle_channel_message(self, channel, method, message):
-        if channel not in self.subscriptions:
-            raise Return((True, None))
-
-        response = Response(method=method, body=message)
-        prepared_response = response.as_message()
-
-        for uid, client in six.iteritems(self.subscriptions[channel]):
-            if channel in self.subscriptions and uid in self.subscriptions[channel]:
-                client.send(prepared_response)
-
-    @coroutine
-    def handle_control_message(self, message):
+    def add_connection(self, project_id, user, uid, client):
         """
-        Handle control message.
+        Register client's connection.
         """
-        message = json_decode(message)
+        if project_id not in self.connections:
+            self.connections[project_id] = {}
+        if user and user not in self.connections:
+            self.connections[project_id][user] = {}
+        if user:
+            self.connections[project_id][user][uid] = client
 
-        app_id = message.get("app_id")
-        method = message.get("method")
-        params = message.get("params")
+    def remove_connection(self, project_id, user, uid):
+        """
+        Unregister client's connection
+        """
+        try:
+            del self.connections[project_id][user][uid]
+        except KeyError:
+            pass
 
-        if app_id and app_id == self.uid:
-            # application id must be set when we don't want to do
-            # make things twice for the same application. Setting
-            # app_id means that we don't want to process control
-            # message when it is appear in application instance if
-            # application uid matches app_id
-            raise Return((True, None))
+        if project_id in self.connections and user in self.connections[project_id]:
+            # clean connections
+            if self.connections[project_id][user]:
+                return
+            try:
+                del self.connections[project_id][user]
+            except KeyError:
+                pass
+            if self.connections[project_id]:
+                return
+            try:
+                del self.connections[project_id]
+            except KeyError:
+                pass
 
-        func = getattr(self, 'handle_%s' % method, None)
-        if not func:
-            raise Return((None, 'method not found'))
+    def add_admin_connection(self, uid, client):
+        """
+        Register administrator's connection (from web-interface).
+        """
+        self.admin_connections[uid] = client
 
-        result, error = yield func(params)
-        raise Return((result, error))
+    def remove_admin_connection(self, uid):
+        """
+        Unregister administrator's connection.
+        """
+        try:
+            del self.admin_connections[uid]
+        except KeyError:
+            pass
 
     @coroutine
     def handle_ping(self, params):
@@ -428,15 +288,10 @@ class Application(tornado.web.Application):
                 # unsubscribe from all channels
                 for ns, channels in six.iteritems(connection.channels):
                     for chan in channels:
-                        channel_to_unsubscribe = create_subscription_name(
-                            project_id, namespace_name, chan
-                        )
-                        connection.sub_stream.setsockopt_string(
-                            zmq.UNSUBSCRIBE,
-                            six.u(channel_to_unsubscribe)
-                        )
-
-                connection.channels = {}
+                        yield connection.handle_unsubscribe({
+                            "namespace": ns,
+                            "channel": chan
+                        })
 
             elif namespace_name and not channel:
                 # unsubscribe from all channels in namespace
@@ -444,34 +299,18 @@ class Application(tornado.web.Application):
                     if namespace_name != cat:
                         continue
                     for chan in channels:
-                        channel_to_unsubscribe = create_subscription_name(
-                            project_id, namespace_name, chan
-                        )
-                        connection.sub_stream.setsockopt_string(
-                            zmq.UNSUBSCRIBE,
-                            six.u(channel_to_unsubscribe)
-                        )
-                try:
-                    del connection.channels[namespace_name]
-                except KeyError:
-                    pass
+                        yield connection.handle_unsubscribe({
+                            "namespace": namespace_name,
+                            "channel": chan
+                        })
                 raise Return((True, None))
 
             else:
                 # unsubscribe from certain channel
-                channel_to_unsubscribe = create_subscription_name(
-                    project_id, namespace_name, channel
-                )
-
-                connection.sub_stream.setsockopt_string(
-                    zmq.UNSUBSCRIBE,
-                    six.u(channel_to_unsubscribe)
-                )
-
-                try:
-                    del connection.channels[namespace_name][channel]
-                except KeyError:
-                    pass
+                yield connection.handle_unsubscribe({
+                    "namespace": namespace_name,
+                    "channel": channel
+                })
 
         raise Return((True, None))
 
@@ -503,11 +342,7 @@ class Application(tornado.web.Application):
             "method": method,
             "params": params
         }
-        publish(
-            self.pub_stream,
-            CONTROL_CHANNEL,
-            json_encode(to_publish)
-        )
+        self.pubsub.publish(CONTROL_CHANNEL, json_encode(to_publish))
         result, error = True, None
         raise Return((result, error))
 
@@ -524,14 +359,14 @@ class Application(tornado.web.Application):
 
         if allowed_namespaces[namespace_name]['is_watching']:
             # send to admin channel
-            publish(self.pub_stream, ADMIN_CHANNEL, message)
+            self.pubsub.publish(ADMIN_CHANNEL, message)
 
         # send to event channel
-        subscription_name = create_subscription_name(
+        subscription_key = self.pubsub.get_subscription_key(
             project_id, namespace_name, channel
         )
 
-        publish(self.pub_stream, subscription_name, message)
+        self.pubsub.publish(subscription_key, message)
 
         yield self.state.add_history_message(
             project_id, namespace_name, channel, message,

@@ -22,10 +22,8 @@ from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
 
-import zmq
-
 from . import auth
-from .core import Response, create_subscription_name, publish
+from .response import Response
 from .log import logger
 from .schema import req_schema, client_params_schema
 
@@ -77,25 +75,9 @@ class Client(object):
         if not self.is_authenticated:
             raise Return((True, None))
 
-        connections = self.application.connections
-
-        try:
-            del connections[project_id][self.user][self.uid]
-        except KeyError:
-            pass
-
-        if project_id in connections and self.user in connections[project_id]:
-            # clean connections
-            if not connections[project_id][self.user]:
-                try:
-                    del connections[project_id][self.user]
-                except KeyError:
-                    pass
-                if not connections[project_id]:
-                    try:
-                        del connections[project_id]
-                    except KeyError:
-                        pass
+        self.application.remove_connection(
+            project_id, self.user, self.uid
+        )
 
         for namespace_name, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
@@ -103,29 +85,15 @@ class Client(object):
                     project_id, namespace_name, channel, self.uid
                 )
 
-                channel_to_unsubscribe = create_subscription_name(
-                    project_id,
-                    namespace_name,
-                    channel
+                self.application.pubsub.remove_subscription(
+                    project_id, namespace_name, channel, self
                 )
-
-                try:
-                    del self.application.subscriptions[channel_to_unsubscribe][self.uid]
-                except KeyError:
-                    pass
-
-                try:
-                    if not self.application.subscriptions[channel_to_unsubscribe]:
-                        self.application.sub_stream.setsockopt_string(
-                            zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
-                        )
-                        del self.application.subscriptions[channel_to_unsubscribe]
-                except KeyError:
-                    pass
 
                 project, error = yield self.get_project(self.project_id)
                 if not error and project:
-                    namespace, error = yield self.get_namespace(project, {"namespace": namespace_name})
+                    namespace, error = yield self.get_namespace(
+                        project, {"namespace": namespace_name}
+                    )
                     if namespace and namespace.get("join_leave", False):
                         self.send_leave_message(namespace_name, channel)
 
@@ -348,16 +316,7 @@ class Client(object):
 
         project_id = self.project_id
 
-        connections = self.application.connections
-
-        if project_id not in connections:
-            connections[project_id] = {}
-
-        if self.user and self.user not in connections:
-            connections[project_id][self.user] = {}
-
-        if self.user:
-            connections[project_id][self.user][self.uid] = self
+        self.application.add_connection(project_id, self.user, self.uid, self)
 
         is_private = namespace.get('is_private', False)
 
@@ -375,19 +334,9 @@ class Client(object):
             if not is_authorized:
                 raise Return((None, self.application.PERMISSION_DENIED))
 
-        channel_to_subscribe = create_subscription_name(
-            project_id,
-            namespace_name,
-            channel
+        self.application.pubsub.add_subscription(
+            project_id, namespace_name, channel, self
         )
-
-        self.application.sub_stream.setsockopt_string(
-            zmq.SUBSCRIBE, six.u(channel_to_subscribe)
-        )
-
-        if channel_to_subscribe not in self.application.subscriptions:
-            self.application.subscriptions[channel_to_subscribe] = {}
-        self.application.subscriptions[channel_to_subscribe][self.uid] = self
 
         if namespace_name not in self.channels:
             self.channels[namespace_name] = {}
@@ -425,25 +374,9 @@ class Client(object):
 
         project_id = self.project_id
 
-        channel_to_unsubscribe = create_subscription_name(
-            project_id,
-            namespace_name,
-            channel
+        self.application.pubsub.remove_subscription(
+            project_id, namespace_name, channel, self
         )
-
-        try:
-            del self.application.subscriptions[channel_to_unsubscribe][self.uid]
-        except KeyError:
-            pass
-
-        try:
-            if not self.application.subscriptions[channel_to_unsubscribe]:
-                self.application.sub_stream.setsockopt_string(
-                    zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
-                )
-                del self.application.subscriptions[channel_to_unsubscribe]
-        except KeyError:
-            pass
 
         try:
             del self.channels[namespace_name][channel]
@@ -589,7 +522,7 @@ class Client(object):
         Send message to all channel subscribers when client
         subscribed on channel.
         """
-        subscription_name = create_subscription_name(
+        subscription_key = self.application.pubsub.create_subscription_key(
             self.project_id, namespace_name, channel
         )
         user_info = self.get_user_info(namespace_name, channel)
@@ -598,11 +531,8 @@ class Client(object):
             "channel": channel,
             "data": json_decode(user_info)
         }
-        publish(
-            self.application.pub_stream,
-            subscription_name,
-            json_encode(message),
-            method='join'
+        self.application.pubsub.publish(
+            subscription_key, json_encode(message), method='join'
         )
 
     def send_leave_message(self, namespace_name, channel):
@@ -610,7 +540,7 @@ class Client(object):
         Send message to all channel subscribers when client
         unsubscribed from channel.
         """
-        subscription_name = create_subscription_name(
+        subscription_key = self.application.pubsub.create_subscription_key(
             self.project_id, namespace_name, channel
         )
         user_info = self.get_user_info(namespace_name, channel)
@@ -619,9 +549,6 @@ class Client(object):
             "channel": channel,
             "data": json_decode(user_info)
         }
-        publish(
-            self.application.pub_stream,
-            subscription_name,
-            json_encode(message),
-            method='leave'
+        self.application.pubsub.publish(
+            subscription_key, json_encode(message), method='leave'
         )

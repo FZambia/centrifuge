@@ -204,20 +204,7 @@ def main():
     app.initialize()
 
     # summarize run configuration writing it into logger
-    logger.info("Application started")
     logger.info("Tornado port: {0}".format(options.port))
-    if app.zmq_pub_sub_proxy:
-        logger.info(
-            "ZeroMQ XPUB: {0}, XSUB: {1}".format(
-                app.zmq_xpub, app.zmq_xsub,
-            )
-        )
-    else:
-        logger.info(
-            "ZeroMQ PUB - {0}; subscribed to {1}".format(
-                app.zmq_pub_port, app.zmq_sub_address
-            )
-        )
 
     # finally, let's go
     try:
