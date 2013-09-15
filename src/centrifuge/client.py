@@ -180,6 +180,9 @@ class Client(object):
             yield self.sock.close()
             raise Return((True, None))
 
+        if method not in client_params_schema:
+            raise Return((None, 'unknown method %s' % method))
+
         try:
             validate(params, client_params_schema[method])
         except ValidationError as e:
@@ -433,15 +436,25 @@ class Client(object):
         except KeyError:
             pass
 
-        if not self.application.subscriptions[channel_to_unsubscribe]:
-            self.application.sub_stream.setsockopt_string(
-                zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
-            )
+        try:
+            if not self.application.subscriptions[channel_to_unsubscribe]:
+                self.application.sub_stream.setsockopt_string(
+                    zmq.UNSUBSCRIBE, six.u(channel_to_unsubscribe)
+                )
+                del self.application.subscriptions[channel_to_unsubscribe]
+        except KeyError:
+            pass
 
         try:
             del self.channels[namespace_name][channel]
         except KeyError:
             pass
+
+        if namespace_name in self.channels and not self.channels[namespace_name]:
+            try:
+                del self.channels[namespace_name]
+            except KeyError:
+                pass
 
         yield self.application.state.remove_presence(
             project_id, namespace_name, channel, self.uid

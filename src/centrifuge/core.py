@@ -35,9 +35,11 @@ CHANNEL_SUFFIX = '>>>'
 # in seconds, client's send presence ping to Redis once in this interval
 DEFAULT_PRESENCE_PING_INTERVAL = 25
 
+
 # in seconds, how long we must consider presence info valid after
 # receiving presence ping
 DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
+
 
 DEFAULT_PUBLISH_METHOD = 'message'
 
