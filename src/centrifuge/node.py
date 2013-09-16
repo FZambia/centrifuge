@@ -8,9 +8,9 @@ import sys
 import json
 import tornado
 import tornado.web
-import tornado.httpserver
 import tornado.ioloop
 import tornado.options
+import tornado.httpserver
 from tornado.options import define, options
 from sockjs.tornado import SockJSRouter
 

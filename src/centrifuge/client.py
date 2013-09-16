@@ -522,7 +522,7 @@ class Client(object):
         Send message to all channel subscribers when client
         subscribed on channel.
         """
-        subscription_key = self.application.pubsub.create_subscription_key(
+        subscription_key = self.application.pubsub.get_subscription_key(
             self.project_id, namespace_name, channel
         )
         user_info = self.get_user_info(namespace_name, channel)
@@ -540,7 +540,7 @@ class Client(object):
         Send message to all channel subscribers when client
         unsubscribed from channel.
         """
-        subscription_key = self.application.pubsub.create_subscription_key(
+        subscription_key = self.application.pubsub.get_subscription_key(
             self.project_id, namespace_name, channel
         )
         user_info = self.get_user_info(namespace_name, channel)

@@ -9,7 +9,7 @@ from ..utils import Form
 
 
 # regex pattern to match project and namespace names
-NAME_RE = re.compile('^[^_]+[A-z0-9]{2,}$')
+NAME_RE = re.compile('^[^_]+[A-z0-9@\-_\.]{2,}$')
 
 DEFAULT_MAX_AUTH_ATTEMPTS = 5
 

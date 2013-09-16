@@ -603,8 +603,9 @@
         this._messageId = 0;
         this._clientId = null;
         this._subscriptions = {};
-        this._fullRegex = /^\/([^_]+[A-z0-9]{2,})\/(.+)$/;
-        this._channelOnlyRegex = /^\/(.+)$/;
+        this._sep = ':';
+        this._fullRegex = /^([^_]+[A-z0-9_@\-]{2,}):([A-z0-9_@\-\.]+)$/;
+        this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
         this._config = {
             retry: 3000,
             debug: false,
@@ -690,9 +691,16 @@
 
     centrifuge_proto._makePath = function (namespace, channel) {
         if (namespace === '' || namespace === null || namespace == undefined) {
-            return '/' + channel;
+            if (!this._channelOnlyRegex.test(channel)) {
+                throw "Invalid channel name " + channel;
+            }
+            return channel;
         }
-        return '/' + namespace + '/' + channel;
+        var path = namespace + this._sep + channel;
+        if (!this._fullRegex.test(path)) {
+            throw "Invalid path " + path;
+        }
+        return path;
     };
 
     centrifuge_proto._setStatus = function (newStatus) {
@@ -1173,7 +1181,7 @@
 
     sub_proto.unsubscribe = function () {
         this.subscribed = false;
-        this._centrifuge._removeSubscription(this.path);
+        this._centrifuge._removeSubscription(this._path);
         var centrifugeMessage = {
             "method": "unsubscribe",
             "params": {
