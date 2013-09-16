@@ -8,8 +8,8 @@ Version: %{version}
 Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
-BuildRequires: python rpm-build redhat-rpm-config
-Requires: python
+BuildRequires: python rpm-build redhat-rpm-config zeromq3-devel
+Requires: python supervisor zeromq3
 License: BSD
 
 
@@ -62,6 +62,8 @@ mv %{name} %{buildroot}%{__prefix}/
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/src/config.json %{buildroot}%{_sysconfdir}/%{name}/centrifuge.json
 
+# supervisor config
+%{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/deploy/centrifuge.conf %{buildroot}%{_sysconfdir}/supervisor/conf.d/centrifuge.conf
 
 mkdir -p %{buildroot}/var/log/%{name}
 mkdir -p %{buildroot}/var/run/%{name}
@@ -73,6 +75,9 @@ if [ $1 -gt 1 ]; then
     echo "Upgraded"
 else
     echo "Installed"
+    echo "1. Fill Supervisor config file for Centrifuge"
+    echo "2. Fill Centrifuge's json config file"
+    echo "3. Run Centrifuge"
 
     # logs
     mkdir -p /var/log/%{name}
@@ -88,6 +93,7 @@ rm -rf %{buildroot}
 %{__prefix}/%{name}/
 %{_initrddir}/%{name}/
 %config(noreplace) %{_sysconfdir}/%{name}/centrifuge.json
+%config(noreplace) %{_sysconfdir}/supervisor/conf.d/centrifuge.conf
 
 %defattr(-,%{name},%{name})
 /var/log/%{name}/

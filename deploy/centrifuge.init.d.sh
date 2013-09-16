@@ -1,13 +1,5 @@
 #!/bin/sh
-name="cyclone_sse"
-
-# exchange sync daemon startup script
-#
-# chkconfig: - 85 15
-# processname: $prog
-# config: /etc/sysconfig/$prog
-# pidfile: /var/run/$prog.pid
-# description: $prog
+name="centrifuge"
 
 prog="$(basename $0)"
 
@@ -16,37 +8,27 @@ prog="$(basename $0)"
 
 [ -f "/etc/sysconfig/$prog" ] && . /etc/sysconfig/$prog
 
-pidfile="/var/run/${prog}.pid"
-lockfile="/var/lock/subsys/${prog}"
-uid=`id -u ${name}`
-gid=`id -g ${name}`
-cyclone_sse_options=`cat /etc/${name}/cyclone_sse.conf`
-
-export PYTHONPATH=/opt/cyclone_sse/src
-opts="/opt/cyclone_sse/env/bin/twistd --uid=${uid} --gid=${gid} --pidfile=${pidfile} --logfile=/var/log/${prog}.log cyclone-sse ${cyclone_sse_options}"
-
+opts="supervisorctl start centrifuge all"
 
 RETVAL=0
 
 start() {
         echo -n $"Starting $prog: "
-        ${opts}
+        supervisorctl start centrifuge all
         RETVAL=$?
         echo
-        [ $RETVAL = 0 ] && touch ${lockfile}
         return $RETVAL
 }
 
 stop() {
         echo -n $"Stopping $prog: "
-        killproc -p ${pidfile} ${prog}
+        supervisorctl stop centrifuge all
         RETVAL=$?
         echo
-        [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
 }
 
 rh_status() {
-        status -p ${pidfile} ${prog}
+        echo "use supervisor to check status"
 }
 
 case "$1" in
