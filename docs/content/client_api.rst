@@ -125,14 +125,14 @@ When your client connected, it is time to subscribe on channel of certain namesp
 
 .. code-block:: javascript
 
-    var subscription = centrifuge.subscribe('/namespace/channel', function(message) {
+    var subscription = centrifuge.subscribe('namespace:channel', function(message) {
         // called when message received from this channel
     });
 
 
 If namespace of channel has publish option on you can publish messages into this
 channel. But you can not do it immediately after subscription request. You can
-only publish when ``subscribe:success`` event will occure. The same in case of presence
+only publish when ``subscribe:success`` event will be fired. The same in case of presence
 and history requests. Lets publish message, get presence and get history data as
 soon as our subscription request returned successful subscription response:
 
