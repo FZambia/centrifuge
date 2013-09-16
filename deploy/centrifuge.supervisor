@@ -1,5 +1,0 @@
-[program:centrifuge]
-process_name = centrifuge-%(process_num)s
-command = centrifuge --conf=%(here)s/../src/config.json --port=%(process_num)s --zmq_port_shift=1000 --log_file_prefix=/tmp/%(program_name)s-%(process_num)s.log
-numprocs = 1
-numprocs_start = 8000

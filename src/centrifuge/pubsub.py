@@ -65,10 +65,11 @@ class ZmqPubSub(object):
             self.zmq_xsub = options.zmq_xsub
             publish_socket.connect(self.zmq_xsub)
         else:
+
             # application started without XPUB/XSUB proxy
             if options.zmq_pub_port_shift:
                 # calculate zmq pub port number
-                zmq_pub_port = options.port + options.zmq_pub_port_shift
+                zmq_pub_port = options.port - options.zmq_pub_port_shift
             else:
                 zmq_pub_port = options.zmq_pub_port
 
