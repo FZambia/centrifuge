@@ -1,3 +1,9 @@
+v0.2.4
+======
+* fix unsubscribe Client method
+* decouple ZeroMQ specific code into separate file
+* use ":" instead of "/" as namespace and channel separator.
+
 v0.2.3
 ======
 * use only one ZeroMQ SUB socket for process instead of having own socket for every client.
