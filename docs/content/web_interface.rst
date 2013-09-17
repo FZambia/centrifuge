@@ -7,13 +7,13 @@ Web interface
 Centrifuge comes with administrative web interface. Using it you can create
 edit or delete projects and namespaces, manage users etc.
 
-.. image:: web_project_list.png
+.. image:: img/web_project_list.png
     :width: 650 px
 
 
 Also you can watch for new events appearing in your projects in real-time.
 
-.. image:: web_project_detail.png
+.. image:: img/web_project_detail.png
     :width: 650 px
 
 
@@ -39,7 +39,7 @@ When you have running Centrifuge's instance and want to create web application u
 first you should do is to add your project into Centrifuge. It's very simple - just fill
 the form.
 
-.. image:: project_create.png
+.. image:: img/project_create.png
     :width: 650 px
 
 **name** - unique project name, must be written using ascii symbols only. This is project
