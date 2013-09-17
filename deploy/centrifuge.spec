@@ -69,7 +69,6 @@ mkdir -p %{buildroot}/var/log/%{name}
 mkdir -p %{buildroot}/var/run/%{name}
 
 %post
-chmod +x /usr/bin/%{name}
 
 if [ $1 -gt 1 ]; then
     echo "Upgraded"
