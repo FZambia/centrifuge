@@ -46,9 +46,7 @@ Basic usage from browser
 ------------------------
 
 ```javascript
-var centrifuge = new Centrifuge();
-
-centrifuge.configure({
+var centrifuge = new Centrifuge({
     url: 'http://localhost:8000/connection',  // Centrifuge SockJS connection endpoint
     token: 'TOKEN', // token based on project's secret key, project ID and user ID
     project: 'PROJECT_ID', // project ID from Centrifuge admin interface
