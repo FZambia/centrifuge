@@ -12,7 +12,6 @@ import tornado.ioloop
 import tornado.options
 import tornado.httpserver
 from tornado.options import define, options
-from sockjs.tornado import SockJSRouter
 
 from zmq.eventloop import ioloop
 
@@ -23,20 +22,6 @@ ioloop.install()
 
 from centrifuge.core import Application
 from centrifuge.log import logger
-
-from centrifuge.handlers import ApiHandler
-from centrifuge.handlers import SockjsConnection
-from centrifuge.handlers import Client
-
-from centrifuge.web.handlers import MainHandler
-from centrifuge.web.handlers import AuthHandler
-from centrifuge.web.handlers import LogoutHandler
-from centrifuge.web.handlers import AdminSocketHandler
-from centrifuge.web.handlers import Http404Handler
-from centrifuge.web.handlers import ProjectCreateHandler
-from centrifuge.web.handlers import NamespaceFormHandler
-from centrifuge.web.handlers import ProjectSettingsHandler
-from centrifuge.web.handlers import StructureDumpHandler
 
 
 define(
@@ -83,6 +68,26 @@ define(
 define(
     "config", default='config.json', help="JSON config file", type=str
 )
+
+
+tornado.options.parse_command_line()
+
+
+from sockjs.tornado import SockJSRouter
+
+from centrifuge.handlers import ApiHandler
+from centrifuge.handlers import SockjsConnection
+from centrifuge.handlers import Client
+
+from centrifuge.web.handlers import MainHandler
+from centrifuge.web.handlers import AuthHandler
+from centrifuge.web.handlers import LogoutHandler
+from centrifuge.web.handlers import AdminSocketHandler
+from centrifuge.web.handlers import Http404Handler
+from centrifuge.web.handlers import ProjectCreateHandler
+from centrifuge.web.handlers import NamespaceFormHandler
+from centrifuge.web.handlers import ProjectSettingsHandler
+from centrifuge.web.handlers import StructureDumpHandler
 
 
 def stop_running(msg):
@@ -156,8 +161,6 @@ def create_application_handlers():
 
 
 def main():
-
-    tornado.options.parse_command_line()
 
     try:
         custom_settings = json.load(open(options.config, 'r'))
