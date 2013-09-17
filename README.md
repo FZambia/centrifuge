@@ -49,27 +49,32 @@ Basic usage from browser
 var centrifuge = new Centrifuge();
 
 centrifuge.configure({
-    url: 'http://{{centrifuge_address}}/connection',  // use SockJS endpoint (SockJS library must be imported)
-    token: '{{auth_data["token"]}}', // token based on project's ID and user ID
-    project: '{{auth_data["project"]}}', // project ID from Centrifuge admin interface
-    user: '{{auth_data["user"]}}', // your application user ID (can be empty for anonymous access)
+    url: 'http://localhost:8000/connection',  // Centrifuge SockJS connection endpoint
+    token: 'TOKEN', // token based on project's secret key, project ID and user ID
+    project: 'PROJECT_ID', // project ID from Centrifuge admin interface
+    user: 'USER_ID', // your application user ID (can be empty for anonymous access)
 });
 
 centrifuge.on('connect', function() {
 
     console.log('connected');
 
-    var subscription = centrifuge.subscribe('/python/django', function(message) {
+    var subscription = centrifuge.subscribe('django', function(message) {
         console.log(message);
     });
 
-    subscription.on('subscribe:success', function(){
+    subscription.on('ready', function(){
         subscription.presence(function(message) {
-            var count = 0;
-            for (var key in message){
-                count++;
-            }
-            console.log('Now in this room: ' + count + ' clients');
+            // information about who connected to channel at moment received
+        });
+        subscription.history(function(message) {
+            // information about last messages sent into channel received
+        });
+        subscription.on('join', function(message) {
+            // someone connected to channel
+        });
+        subscription.on('leave', function(message) {
+            // someone disconnected from channel
         });
     });
 

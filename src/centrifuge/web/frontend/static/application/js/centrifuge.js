@@ -884,8 +884,10 @@
         if (message.error === null) {
             subscription.subscribed = true;
             subscription.trigger('subscribe:success', [message]);
+            subscription.trigger('ready', [message]);
         } else {
             subscription.trigger('subscribe:error', [message]);
+            subscription.trigger('error', [message]);
             this.trigger('error', [message]);
         }
     };
