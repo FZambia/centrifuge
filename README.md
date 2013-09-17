@@ -58,6 +58,7 @@ centrifuge.on('connect', function() {
     console.log('connected');
 
     var subscription = centrifuge.subscribe('django', function(message) {
+        // message from channel received
         console.log(message);
     });
 
