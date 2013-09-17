@@ -75,6 +75,8 @@ class Application(tornado.web.Application):
 
         self.post_publish_callbacks = []
 
+        self.presence_ping_interval = DEFAULT_PRESENCE_PING_INTERVAL*1000
+
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
@@ -120,12 +122,14 @@ class Application(tornado.web.Application):
     def init_state(self):
         config = self.settings['config']
         state_config = config.get("state", {})
-        self.presence_ping_interval = state_config.get(
-            'presence_ping_interval', DEFAULT_PRESENCE_PING_INTERVAL
-        )*1000
         if not state_config:
             self.state = State(fake=True)
         else:
+            # override presence ping interval
+            presence_ping_interval = state_config.get('presence_ping_interval')
+            if presence_ping_interval:
+                self.presence_ping_interval = presence_ping_interval*1000
+
             host = state_config.get("host", "localhost")
             port = state_config.get("port", 6379)
             self.state = State(
