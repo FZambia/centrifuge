@@ -59,7 +59,7 @@ class Client(object):
     @coroutine
     def close(self):
         yield self.clean()
-        logger.info('client destroyed (uid: %s)' % self.uid)
+        logger.debug('client destroyed (uid: %s)' % self.uid)
         raise Return((True, None))
 
     @coroutine
