@@ -114,8 +114,8 @@ class ApiHandler(BaseHandler):
 class SockjsConnection(SockJSConnection):
 
     def on_open(self, info):
-        self.client = Client(self, info)
         if self.session:
+            self.client = Client(self, info)
             if self.session.transport_name != 'rawwebsocket':
                 self.session.start_heartbeat()
         else:
@@ -128,6 +128,7 @@ class SockjsConnection(SockJSConnection):
 
     @coroutine
     def on_close(self):
-        yield self.client.close()
-        del self.client
+        if hasattr(self, 'client'):
+            yield self.client.close()
+            del self.client
         raise Return((True, None))
