@@ -8,7 +8,7 @@ Version: %{version}
 Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
-BuildRequires: python rpm-build redhat-rpm-config zeromq3-devel
+BuildRequires: python rpm-build redhat-rpm-config zeromq3-devel postgresql-devel
 Requires: python supervisor zeromq3
 License: BSD
 
@@ -67,6 +67,7 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 
 mkdir -p %{buildroot}/var/log/%{name}
 mkdir -p %{buildroot}/var/run/%{name}
+mkdir -p %{buildroot}/var/db/%{name}
 
 %post
 
@@ -77,9 +78,6 @@ else
     echo "1. Fill Supervisor config file for Centrifuge"
     echo "2. Fill Centrifuge's json config file"
     echo "3. Run Centrifuge"
-
-    # logs
-    mkdir -p /var/log/%{name}
 fi
 
 
@@ -97,3 +95,4 @@ rm -rf %{buildroot}
 %defattr(-,%{name},%{name})
 /var/log/%{name}/
 /var/run/%{name}/
+/var/db/%{name}/
