@@ -13,8 +13,7 @@ If you have machine with those operating systems installed then you are ready to
 Centrifuge also requires python
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Python 2.6 and Python 2.7 are optimal. It's designed to run on python 3.3 too,
-but not heavily tested yet.
+Python 2.6, Python 2.7 or Python 3.3 required.
 
 You can find nice guide about how to install Python on Mac OS X and Linux 
 `here <https://python-guide.readthedocs.org/en/latest/starting/install/osx/>`_ and
@@ -74,10 +73,10 @@ Or for Red Hat:
 
 .. code-block:: bash
 
-    yum install zeromq
+    yum install zeromq3
 
 
-Also if you have problems with installing Centrifuge on Python 3, make sure you have `distribute`
+Also if you have problems with installing Centrifuge on Python 3.3 or later, make sure you have `distribute`
 installed:
 
 .. code-block:: bash
@@ -125,4 +124,4 @@ Finally run Centrifuge
 Go to http://localhost:8000/ and make sure that it is running.
 
 
-Congratulations, we are done!
+Congratulations, we are done here!

@@ -4,7 +4,7 @@ Client API
 .. _client_api:
 
 
-Javascript client designed to be very simple. I think the most difficult part of it is
+Javascript client is designed to be very simple. I think the most difficult part of it is
 configuration. But lets go through its API step by step.
 
 When you have Centrifuge instance running - it is time to communicate with it from browser.

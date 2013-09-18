@@ -6,7 +6,7 @@ Overview
 What is it
 ----------
 
-Centrifuge is a simple platform for real-time message broadcasting in web applications.
+Centrifuge is a simple server for real-time messaging in web applications.
 
 This is something like `Pusher <http://pusher.com/>`_ or `Pubnub <http://pubnub.com/>`_ services - not so powerful yet, but open-source,
 self hosted and easy to setup. The closest analogue is `Faye <https://github.com/faye/faye>`_.
@@ -39,12 +39,13 @@ or `PostgreSQL <http://www.postgresql.org/>`_ backends instead of SQLite for str
 When it can be helpful
 ----------------------
 
-Everywhere you need real-time web page updates and do not want to use existing
-external hosted services like pusher.com or pubnub.com.
+Everywhere you need real-time web page updates and do not want to use existing external hosted services
+like pusher.com or pubnub.com.
 
 There are tons of use cases where Centrifuge could be helpful - chat, graphs,
-comments, counters, games etc. Or you just want to know how many users currently
-watching web page.
+comments, counters, games etc.
+
+Or you just want to know how many users currently watching web page and who are they.
 
 
 How it works

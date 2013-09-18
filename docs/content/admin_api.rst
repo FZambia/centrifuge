@@ -15,9 +15,11 @@ using HTTP API. If your backend written on Python you can use Cent API client. I
 other language don't worry - I will describe how to communicate with Centrifuge API endpoint
 right now.
 
-Centrifuge API url path is ``/api/ PROJECT_ID``. All you need to do is to send correctly
-constructed POST request to this endpoint. This request must have two POST parameters:
-``data`` and ``sign``. Data is a base64 encoded json string and sign is an hmac based on
+Centrifuge API url path is ``/api/ PROJECT_ID``, where PROJECT_ID must be replaced with your project ID
+(you can see it in Centrifuge's web interface).
+
+All you need to do is to send correctly constructed POST request to this endpoint. This request must have
+two POST parameters: ``data`` and ``sign``. Data is a base64 encoded json string and sign is an hmac based on
 project secret key, project ID and encoded data.
 
 Data is originally a json object with two properties:

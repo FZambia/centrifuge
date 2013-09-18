@@ -127,33 +127,16 @@ Supervisord configuration example
 In 'deploy' folder of Centrifuge's repo you can find supervisord configuration
 example. Something like this:
 
-supervisord.conf:
 
-.. code-block:: bash
-
-    [unix_http_server]
-    file=/tmp/supervisor.sock
-
-    [inet_http_server]
-    port=127.0.0.1:9001
-
-    [supervisord]
-    logfile=/tmp/supervisord.log
-    pidfile=/tmp/supervisord.pid
-
-    [rpcinterface:supervisor]
-    supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
-
-    [include]
-    files = *.supervisor
-
-
-centrifuge.supervisor
+centrifuge.conf (put it into ``/etc/supervisor/conf.d/centrifuge.conf``)
 
 .. code-block:: bash
 
     [program:centrifuge]
-    process_name = centrifuge-%(process_num)s
-    command = centrifuge --conf=%(here)s/../src/config.json --port=%(process_num)s --log_file_prefix=/tmp/%(program_name)s-%(process_num)s.log
-    numprocs = 1
+    process_name = %(process_num)s
+    environment=PYTHONPATH="/opt/centrifuge/src/src"
+    directory = /opt/centrifuge/src/src
+    command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge-%(process_num)s.log --config=/opt/centrifuge/src/src/config.json --port=%(process_num)s --zmq_pub_port_shift=1000 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
+    numprocs = 2
     numprocs_start = 8000
+    user = centrifuge
