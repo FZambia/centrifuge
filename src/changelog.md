@@ -1,3 +1,9 @@
+v0.2.5
+======
+* fix AttributeError when Redis not configured
+* doc improvements
+* fix possible error in SockJS handler
+
 v0.2.4
 ======
 * fix unsubscribe Client method
