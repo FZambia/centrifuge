@@ -147,6 +147,7 @@ class Application(tornado.web.Application):
         Routine to create all application-wide ZeroMQ sockets.
         """
         self.pubsub = ZmqPubSub(self)
+        self.pubsub.init_sockets()
 
     def init_callbacks(self):
         """

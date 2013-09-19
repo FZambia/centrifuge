@@ -46,8 +46,6 @@ class ZmqPubSub(object):
         self.subscriptions = {}
         self.sub_stream = None
 
-        self.init_sockets()
-
     def init_sockets(self):
         self.zmq_context = zmq.Context()
         options = self.application.settings['options']

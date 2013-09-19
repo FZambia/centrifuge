@@ -4,7 +4,8 @@ from tornado.gen import Task, coroutine, Return
 from tornado.testing import AsyncTestCase, gen_test
 from centrifuge.client import Client
 from centrifuge.schema import client_params_schema
-from centrifuge.core import Application, create_subscription_name
+from centrifuge.core import Application
+from centrifuge.pubsub import ZmqPubSub
 import json
 
 
@@ -65,7 +66,8 @@ class ClientTest(AsyncTestCase):
         self.client.channels = {}
         self.client.presence_ping = FakePeriodic()
         self.client.application = Application()
-        self.client.application.sub_stream = FakeSocket()
+        self.client.application.pubsub = ZmqPubSub(self.client.application)
+        self.client.application.pubsub.sub_stream = FakeSocket()
         self.client.application.state = FakeState()
 
     @gen_test
@@ -106,8 +108,8 @@ class ClientTest(AsyncTestCase):
         self.assertTrue(self.client.user in conns[self.client.project_id])
         self.assertTrue(self.client.uid in conns[self.client.project_id][self.client.user])
 
-        subs = self.client.application.subscriptions
-        subscription = create_subscription_name(
+        subs = self.client.application.pubsub.subscriptions
+        subscription = self.client.application.pubsub.get_subscription_key(
             self.client.project_id, params["namespace"], params["channel"]
         )
         self.assertTrue(subscription in subs)
