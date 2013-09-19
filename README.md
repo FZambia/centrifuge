@@ -116,3 +116,7 @@ Pull requests are welcome! But, please, follow next principles:
 * python 2.6, 2.7 and 3.3 compatible
 
 P.S. If BSD license of Centrifuge does not allow you to use it, tell me and I'll consider to change license.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/FZambia/centrifuge/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
