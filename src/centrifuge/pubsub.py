@@ -195,7 +195,7 @@ class ZmqPubSub(object):
             # application uid matches app_id
             raise Return((True, None))
 
-        func = getattr(self, 'handle_%s' % method, None)
+        func = getattr(self.application, 'handle_%s' % method, None)
         if not func:
             raise Return((None, 'method not found'))
 
