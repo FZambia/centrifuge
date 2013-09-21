@@ -1,3 +1,7 @@
+v0.2.6
+======
+* fix handling control messages
+
 v0.2.5
 ======
 * fix AttributeError when Redis not configured
