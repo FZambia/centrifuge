@@ -39,10 +39,15 @@ class MultiDictWrapper(object):
         # This object is tightly coupled to the handler...
         # which certainly isn't nice, but it's the
         # way it's gonna have to be for now.
-        self.handler = weakref.ref(handler)
+        if handler:
+            self.handler = weakref.ref(handler)
+        else:
+            self.handler = None
 
     @property
     def _arguments(self):
+        if not self.handler:
+            return {}
         return self.handler().request.arguments
 
     def __iter__(self):

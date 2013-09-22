@@ -112,9 +112,6 @@ admin_params_schema = {
     "namespace_edit": {
         "type": "object",
         "properties": {
-            "id": {
-                "type": "string"
-            },
             "name": {
                 "type": "string"
             },
@@ -143,15 +140,16 @@ admin_params_schema = {
                 "type": "boolean"
             }
         },
-        "required": ["id", "name"]
+        "required": ["name"]
     },
     "namespace_delete": {
         "type": "object",
         "properties": {
-            "id": {
+            "name": {
                 "type": "string"
             }
-        }
+        },
+        "required": ["name"]
     }
 }
 

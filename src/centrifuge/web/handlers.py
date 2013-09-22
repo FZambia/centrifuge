@@ -17,7 +17,7 @@ from tornado.escape import json_encode
 from ..log import logger
 from ..handlers import BaseHandler
 
-from .forms import ProjectForm, NamespaceForm
+from ..forms import ProjectForm, NamespaceForm
 
 
 class LogoutHandler(BaseHandler):

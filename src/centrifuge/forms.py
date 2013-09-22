@@ -5,7 +5,7 @@
 
 import re
 from wtforms import TextField, IntegerField, BooleanField, validators, SelectField
-from ..utils import Form
+from .utils import Form
 
 
 # regex pattern to match project and namespace names
@@ -30,7 +30,7 @@ class DictToObject(object):
     this class does exactly this.
     http://stackoverflow.com/questions/1305532/convert-python-dict-to-object
     """
-    def __init__(self, **entries):
+    def __init__(self, entries):
         self.__dict__.update(entries)
 
 

@@ -213,7 +213,7 @@ def namespace_create(cursor, project, **kwargs):
         on_error(e)
     else:
         cursor.connection.commit()
-        raise Return((to_insert, None))
+        raise Return((to_return, None))
 
 
 @coroutine

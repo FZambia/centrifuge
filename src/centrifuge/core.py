@@ -17,6 +17,7 @@ from . import utils
 from .structure import Structure
 from .state import State
 from .log import logger
+from .forms import NamespaceForm, DictToObject
 from .pubsub import ZmqPubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
 
 
@@ -414,7 +415,9 @@ class Application(tornado.web.Application):
 
     @coroutine
     def process_publish(self, project, params, allowed_namespaces=None, client_id=None):
-
+        """
+        Publish message into appropriate channel.
+        """
         if allowed_namespaces is None:
             project_namespaces, error = yield self.structure.get_project_namespaces(project)
             if error:
@@ -448,6 +451,9 @@ class Application(tornado.web.Application):
 
     @coroutine
     def process_history(self, project, params):
+        """
+        Return a list of last messages sent into channel.
+        """
         project_id = project['_id']
 
         namespace_name = params.get('namespace')
@@ -473,6 +479,9 @@ class Application(tornado.web.Application):
 
     @coroutine
     def process_presence(self, project, params):
+        """
+        Return current presence information for channel.
+        """
         project_id = project['_id']
 
         namespace_name = params.get('namespace')
@@ -498,7 +507,9 @@ class Application(tornado.web.Application):
 
     @coroutine
     def process_unsubscribe(self, project, params):
-
+        """
+        Unsubscribe user from channels.
+        """
         params["project"] = project
         message = {
             'app_id': self.uid,
@@ -516,17 +527,56 @@ class Application(tornado.web.Application):
 
     @coroutine
     def process_namespace_list(self, project, params):
+        """
+        Return a list of all namespaces for project.
+        """
         namespaces, error = yield self.structure.get_project_namespaces(project)
         raise Return((namespaces, error))
 
     @coroutine
     def process_namespace_create(self, project, params):
-        raise Return((None, 'not implemented yet'))
+        """
+        Create new namespace in project or update if already exists.
+        """
+        form = NamespaceForm(None, DictToObject(params))
+
+        if form.validate():
+            existing_namespace, error = yield self.structure.get_namespace_by_name(
+                project, form.name.data
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            if existing_namespace:
+                namespace, error = yield self.structure.namespace_edit(
+                    existing_namespace, **form.data
+                )
+            else:
+                namespace, error = yield self.structure.namespace_create(
+                    project,
+                    **form.data
+                )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            raise Return((namespace, None))
+        else:
+            raise Return((None, form.errors))
 
     @coroutine
     def process_namespace_edit(self, project, params):
-        raise Return((None, 'not implemented yet'))
+        """
+        Edit project namespace.
+        """
+        result, error = yield self.process_namespace_create(project, params)
+        raise Return((result, error))
 
     @coroutine
     def process_namespace_delete(self, project, params):
-        raise Return((None, 'not implemented yet'))
+        """
+        Delete project namespace.
+        """
+        result, error = yield self.structure.namespace_delete(
+            project, params["name"]
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((True, None))
