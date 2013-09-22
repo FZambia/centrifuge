@@ -546,18 +546,17 @@ class Application(tornado.web.Application):
             )
             if error:
                 raise Return((None, self.INTERNAL_SERVER_ERROR))
+
             if existing_namespace:
-                namespace, error = yield self.structure.namespace_edit(
-                    existing_namespace, **form.data
-                )
+                form.name.errors.append("duplicate name")
+                raise Return((None, form.errors))
             else:
                 namespace, error = yield self.structure.namespace_create(
-                    project,
-                    **form.data
+                    project, **form.data
                 )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            raise Return((namespace, None))
+                if error:
+                    raise Return((None, self.INTERNAL_SERVER_ERROR))
+                raise Return((namespace, None))
         else:
             raise Return((None, form.errors))
 
@@ -566,8 +565,27 @@ class Application(tornado.web.Application):
         """
         Edit project namespace.
         """
-        result, error = yield self.process_namespace_create(project, params)
-        raise Return((result, error))
+        form = NamespaceForm(None, DictToObject(params))
+
+        if form.validate():
+            existing_namespace, error = yield self.structure.get_namespace_by_name(
+                project, form.name.data
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+
+            if not existing_namespace:
+                form.name.errors.append(self.NAMESPACE_NOT_FOUND)
+                raise Return((None, form.errors))
+            else:
+                namespace, error = yield self.structure.namespace_edit(
+                    existing_namespace, **form.data
+                )
+                if error:
+                    raise Return((None, self.INTERNAL_SERVER_ERROR))
+                raise Return((namespace, None))
+        else:
+            raise Return((None, form.errors))
 
     @coroutine
     def process_namespace_delete(self, project, params):
