@@ -220,29 +220,17 @@ class NamespaceFormHandler(BaseHandler):
             )
             return
 
-        kwargs = {
-            'name': form.name.data,
-            'publish': form.publish.data,
-            'is_watching': form.is_watching.data,
-            'presence': form.presence.data,
-            'history': form.history.data,
-            'history_size': form.history_size.data,
-            'is_private': form.is_private.data,
-            'auth_address': form.auth_address.data,
-            'join_leave': form.join_leave.data
-        }
-
         if not namespace_name:
             namespace, error = yield self.application.structure.namespace_create(
                 self.project,
-                **kwargs
+                **form.data
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message="error creating project")
         else:
             namespace, error = yield self.application.structure.namespace_edit(
                 self.namespace,
-                **kwargs
+                **form.data
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message="error creating project")
