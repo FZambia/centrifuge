@@ -197,7 +197,7 @@ class ZmqPubSub(object):
 
         func = getattr(self.application, 'handle_%s' % method, None)
         if not func:
-            raise Return((None, 'method not found'))
+            raise Return((None, self.application.METHOD_NOT_FOUND))
 
         result, error = yield func(params)
         raise Return((result, error))

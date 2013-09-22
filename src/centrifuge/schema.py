@@ -71,6 +71,87 @@ admin_params_schema = {
             }
         },
         "required": ["user"]
+    },
+    "namespace_list": {
+        "type": "object",
+        "properties": {}
+    },
+    "namespace_create": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string"
+            },
+            "publish": {
+                "type": "boolean"
+            },
+            "is_watching": {
+                "type": "boolean"
+            },
+            "presence": {
+                "type": "boolean"
+            },
+            "history": {
+                "type": "boolean"
+            },
+            "history_size": {
+                "type": "integer"
+            },
+            "is_private": {
+                "type": "boolean"
+            },
+            "auth_address": {
+                "type": "string"
+            },
+            "join_leave": {
+                "type": "boolean"
+            }
+        },
+        "required": ["name"]
+    },
+    "namespace_edit": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "string"
+            },
+            "name": {
+                "type": "string"
+            },
+            "publish": {
+                "type": "boolean"
+            },
+            "is_watching": {
+                "type": "boolean"
+            },
+            "presence": {
+                "type": "boolean"
+            },
+            "history": {
+                "type": "boolean"
+            },
+            "history_size": {
+                "type": "integer"
+            },
+            "is_private": {
+                "type": "boolean"
+            },
+            "auth_address": {
+                "type": "string"
+            },
+            "join_leave": {
+                "type": "boolean"
+            }
+        },
+        "required": ["id", "name"]
+    },
+    "namespace_delete": {
+        "type": "object",
+        "properties": {
+            "id": {
+                "type": "string"
+            }
+        }
     }
 }
 

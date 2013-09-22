@@ -44,6 +44,8 @@ class Application(tornado.web.Application):
 
     INTERNAL_SERVER_ERROR = 'internal server error'
 
+    METHOD_NOT_FOUND = 'method not found'
+
     PROJECT_NOT_FOUND = 'project not found'
 
     NAMESPACE_NOT_FOUND = 'namespace not found'
@@ -330,8 +332,8 @@ class Application(tornado.web.Application):
     @coroutine
     def process_call(self, project, method, params):
         """
-        Process HTTP call. It can be new message publishing or
-        new command.
+        Process HTTP call. It can be new message publishing,
+        some API command etc.
         """
         assert isinstance(project, dict)
 
@@ -341,15 +343,8 @@ class Application(tornado.web.Application):
             # noinspection PyCallingNonCallable
             result, error = yield handle_func(project, params)
             raise Return((result, error))
-
-        params["project"] = project
-        to_publish = {
-            "method": method,
-            "params": params
-        }
-        self.pubsub.publish(CONTROL_CHANNEL, json_encode(to_publish))
-        result, error = True, None
-        raise Return((result, error))
+        else:
+            raise Return((None, self.METHOD_NOT_FOUND))
 
     @coroutine
     def publish_message(self, message, allowed_namespaces):
@@ -518,3 +513,20 @@ class Application(tornado.web.Application):
         self.send_control_message(json_encode(message))
 
         raise Return((result, error))
+
+    @coroutine
+    def process_namespace_list(self, project, params):
+        namespaces, error = yield self.structure.get_project_namespaces(project)
+        raise Return((namespaces, error))
+
+    @coroutine
+    def process_namespace_create(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_namespace_edit(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_namespace_delete(self, project, params):
+        raise Return((None, 'not implemented yet'))

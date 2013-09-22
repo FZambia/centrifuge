@@ -95,7 +95,7 @@ class ApiHandler(BaseHandler):
             response.method = method
 
             if method not in admin_params_schema:
-                response.error = "method not found"
+                response.error = self.application.METHOD_NOT_FOUND
             else:
                 try:
                     validate(params, admin_params_schema[method])
