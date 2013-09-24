@@ -40,9 +40,10 @@ def init_storage(structure, settings, ready_callback):
 
     namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
                 '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
-                'is_watching bool, presence bool, history bool, history_size integer, ' \
-                'is_private bool, auth_address varchar(255), join_leave bool)'
+                'name varchar(100) NOT NULL, ' \
+                'publish bool, is_watching bool, presence bool, history bool, ' \
+                'history_size integer, is_private bool, auth_address varchar(255), join_leave bool, ' \
+                'UNIQUE (project_id, name) ON CONFLICT ABORT)'
 
     cursor.execute(project, ())
     conn.commit()
