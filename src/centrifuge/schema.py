@@ -76,80 +76,36 @@ admin_params_schema = {
         "type": "object",
         "properties": {}
     },
-    "namespace_create": {
+    "namespace_get": {
         "type": "object",
         "properties": {
-            "name": {
+            "_id": {
                 "type": "string"
-            },
-            "publish": {
-                "type": "boolean"
-            },
-            "is_watching": {
-                "type": "boolean"
-            },
-            "presence": {
-                "type": "boolean"
-            },
-            "history": {
-                "type": "boolean"
-            },
-            "history_size": {
-                "type": "integer"
-            },
-            "is_private": {
-                "type": "boolean"
-            },
-            "auth_address": {
-                "type": "string"
-            },
-            "join_leave": {
-                "type": "boolean"
             }
         },
-        "required": ["name"]
+        "required": ["_id"]
+    },
+    "namespace_create": {
+        "type": "object",
+        "properties": {}
     },
     "namespace_edit": {
         "type": "object",
         "properties": {
-            "name": {
+            "_id": {
                 "type": "string"
-            },
-            "publish": {
-                "type": "boolean"
-            },
-            "is_watching": {
-                "type": "boolean"
-            },
-            "presence": {
-                "type": "boolean"
-            },
-            "history": {
-                "type": "boolean"
-            },
-            "history_size": {
-                "type": "integer"
-            },
-            "is_private": {
-                "type": "boolean"
-            },
-            "auth_address": {
-                "type": "string"
-            },
-            "join_leave": {
-                "type": "boolean"
             }
         },
-        "required": ["name"]
+        "required": ["_id"]
     },
     "namespace_delete": {
         "type": "object",
         "properties": {
-            "name": {
+            "_id": {
                 "type": "string"
             }
         },
-        "required": ["name"]
+        "required": ["_id"]
     }
 }
 

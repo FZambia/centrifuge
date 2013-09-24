@@ -17,7 +17,7 @@ from . import utils
 from .structure import Structure
 from .state import State
 from .log import logger
-from .forms import NamespaceForm, DictToObject
+from .forms import NamespaceForm
 from .pubsub import ZmqPubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
 
 
@@ -336,8 +336,6 @@ class Application(tornado.web.Application):
         Process HTTP call. It can be new message publishing,
         some API command etc.
         """
-        assert isinstance(project, dict)
-
         handle_func = getattr(self, "process_%s" % method, None)
 
         if handle_func:
@@ -526,19 +524,57 @@ class Application(tornado.web.Application):
         raise Return((result, error))
 
     @coroutine
+    def process_project_list(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_get(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_create(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_edit(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_delete(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
     def process_namespace_list(self, project, params):
         """
         Return a list of all namespaces for project.
         """
-        namespaces, error = yield self.structure.get_project_namespaces(project)
-        raise Return((namespaces, error))
+        if not project:
+            namespaces, error = yield self.structure.namespace_list()
+        else:
+            namespaces, error = yield self.structure.get_project_namespaces(project)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((namespaces, None))
+
+    @coroutine
+    def process_namespace_get(self, project, params):
+        """
+        Return a list of all namespaces for project.
+        """
+        namespace_id = params.get('_id')
+        namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+        raise Return((namespace, None))
 
     @coroutine
     def process_namespace_create(self, project, params):
         """
         Create new namespace in project or update if already exists.
         """
-        form = NamespaceForm(None, DictToObject(params))
+        form = NamespaceForm(params)
 
         if form.validate():
             existing_namespace, error = yield self.structure.get_namespace_by_name(
@@ -565,25 +601,41 @@ class Application(tornado.web.Application):
         """
         Edit project namespace.
         """
-        form = NamespaceForm(None, DictToObject(params))
+        namespace, error = yield self.structure.get_namespace_by_id(
+            params.pop('_id')
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+
+        if "name" not in params:
+            params["name"] = namespace["name"]
+
+        form = NamespaceForm(params)
 
         if form.validate():
-            existing_namespace, error = yield self.structure.get_namespace_by_name(
-                project, form.name.data
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
 
-            if not existing_namespace:
-                form.name.errors.append(self.NAMESPACE_NOT_FOUND)
-                raise Return((None, form.errors))
-            else:
-                namespace, error = yield self.structure.namespace_edit(
-                    existing_namespace, **form.data
+            if "name" in params and params["name"] != namespace["name"]:
+
+                existing_namespace, error = yield self.structure.get_namespace_by_name(
+                    project, params["name"]
                 )
                 if error:
                     raise Return((None, self.INTERNAL_SERVER_ERROR))
-                raise Return((namespace, None))
+                if existing_namespace:
+                    form.name.errors.append("duplicate name")
+                    raise Return((None, form.errors))
+
+            updated_namespace = namespace.copy()
+            updated_namespace.update(params)
+            namespace, error = yield self.structure.namespace_edit(
+                namespace, **updated_namespace
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            raise Return((namespace, None))
         else:
             raise Return((None, form.errors))
 
@@ -592,8 +644,16 @@ class Application(tornado.web.Application):
         """
         Delete project namespace.
         """
+        existing_namespace, error = yield self.structure.get_namespace_by_id(
+            params["_id"]
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not existing_namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+
         result, error = yield self.structure.namespace_delete(
-            project, params["name"]
+            project, existing_namespace["name"]
         )
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
