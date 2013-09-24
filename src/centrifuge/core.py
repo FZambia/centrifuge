@@ -51,6 +51,8 @@ class Application(tornado.web.Application):
 
     NAMESPACE_NOT_FOUND = 'namespace not found'
 
+    DUPLICATE_NAME = 'duplicate name'
+
     def __init__(self, *args, **kwargs):
 
         # create unique uid for this application
@@ -346,6 +348,21 @@ class Application(tornado.web.Application):
             raise Return((None, self.METHOD_NOT_FOUND))
 
     @coroutine
+    def process_project_call(self, project, method, params):
+        """
+        Process HTTP call. It can be new message publishing,
+        some API command etc.
+        """
+        handle_func = getattr(self, "process_%s" % method, None)
+
+        if handle_func:
+            # noinspection PyCallingNonCallable
+            result, error = yield handle_func(project, params)
+            raise Return((result, error))
+        else:
+            raise Return((None, self.METHOD_NOT_FOUND))
+
+    @coroutine
     def publish_message(self, message, allowed_namespaces):
         """
         Publish event into PUB socket stream
@@ -524,34 +541,11 @@ class Application(tornado.web.Application):
         raise Return((result, error))
 
     @coroutine
-    def process_project_list(self, project, params):
-        raise Return((None, 'not implemented yet'))
-
-    @coroutine
-    def process_project_get(self, project, params):
-        raise Return((None, 'not implemented yet'))
-
-    @coroutine
-    def process_project_create(self, project, params):
-        raise Return((None, 'not implemented yet'))
-
-    @coroutine
-    def process_project_edit(self, project, params):
-        raise Return((None, 'not implemented yet'))
-
-    @coroutine
-    def process_project_delete(self, project, params):
-        raise Return((None, 'not implemented yet'))
-
-    @coroutine
     def process_namespace_list(self, project, params):
         """
         Return a list of all namespaces for project.
         """
-        if not project:
-            namespaces, error = yield self.structure.namespace_list()
-        else:
-            namespaces, error = yield self.structure.get_project_namespaces(project)
+        namespaces, error = yield self.structure.get_project_namespaces(project)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((namespaces, None))
@@ -625,7 +619,7 @@ class Application(tornado.web.Application):
                 if error:
                     raise Return((None, self.INTERNAL_SERVER_ERROR))
                 if existing_namespace:
-                    form.name.errors.append("duplicate name")
+                    form.name.errors.append(self.DUPLICATE_NAME)
                     raise Return((None, form.errors))
 
             updated_namespace = namespace.copy()
@@ -658,3 +652,23 @@ class Application(tornado.web.Application):
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((True, None))
+
+    @coroutine
+    def process_project_list(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_get(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_create(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_edit(self, project, params):
+        raise Return((None, 'not implemented yet'))
+
+    @coroutine
+    def process_project_delete(self, project, params):
+        raise Return((None, 'not implemented yet'))

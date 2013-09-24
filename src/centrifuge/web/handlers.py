@@ -113,7 +113,7 @@ class ProjectCreateHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if existing_project:
-            form.name.errors.append('duplicate name')
+            form.name.errors.append(self.application.DUPLICATE_NAME)
             self.render(
                 'project/create.html', form=form,
                 render_control=render_control, render_label=render_label
@@ -213,7 +213,7 @@ class NamespaceFormHandler(BaseHandler):
             raise tornado.web.HTTPError(500, log_message=str(error))
 
         if (not namespace_id and existing_namespace) or (existing_namespace and existing_namespace['_id'] != namespace_id):
-            form.name.errors.append('duplicate name')
+            form.name.errors.append(self.application.DUPLICATE_NAME)
             self.render(
                 'namespace/create.html', form=form, project=self.project,
                 render_control=render_control, render_label=render_label
@@ -312,7 +312,7 @@ class ProjectSettingsHandler(BaseHandler):
                 self.redirect(self.reverse_url("main"))
                 return
             else:
-                self.redirect(self.reverse_url("project_settings", self.project['name'], "edit"))
+                self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
 
         else:
             # edit project
@@ -352,7 +352,7 @@ class ProjectSettingsHandler(BaseHandler):
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
-            self.redirect(self.reverse_url("project_settings", form.name.data, "edit"))
+            self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
 
     @tornado.web.authenticated
     @coroutine
