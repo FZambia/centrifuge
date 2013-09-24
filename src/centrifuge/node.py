@@ -125,7 +125,7 @@ def create_application_handlers():
             name="namespace_edit"
         ),
         tornado.web.url(
-            r'/api/([^/]+)$', ApiHandler, name="api"
+            r'/api/([^/]+)$', ApiHandler, name="project_api"
         ),
         tornado.web.url(
             r'/auth$', AuthHandler, name="auth"
@@ -205,6 +205,13 @@ def main():
     Client.application = app
 
     app.initialize()
+
+    magic_api_suffix = custom_settings.get('magic_api_suffix')
+    magic_project_param = custom_settings.get('magic_project_param')
+    if magic_api_suffix:
+        app.MAGIC_API_SUFFIX = magic_api_suffix
+    if magic_project_param:
+        app.MAGIC_PROJECT_PARAM = magic_project_param
 
     # summarize run configuration writing it into logger
     logger.info("Tornado port: {0}".format(options.port))

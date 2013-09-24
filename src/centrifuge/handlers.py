@@ -13,7 +13,7 @@ from jsonschema import validate, ValidationError
 from . import auth
 from .response import Response
 from .client import Client
-from .schema import req_schema, admin_params_schema
+from .schema import req_schema, project_api_schema, owner_api_schema
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -60,20 +60,32 @@ class ApiHandler(BaseHandler):
         if not sign:
             raise tornado.web.HTTPError(400, log_message="no data sign")
 
-        project, error = yield self.application.structure.get_project_by_id(project_id)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        if not project:
-            raise tornado.web.HTTPError(404, log_message="project not found")
-
         encoded_data = self.get_argument('data', None)
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no data")
 
-        result, error = yield self.application.structure.check_auth(project, sign, encoded_data)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        if not result:
+        is_owner_request = False
+        if project_id == self.application.MAGIC_API_SUFFIX:
+            is_owner_request = True
+
+        if is_owner_request:
+            api_secret = self.application.settings["config"].get('api_secret', 'secret')
+            secret = api_secret
+            project = None
+        else:
+            project, error = yield self.application.structure.get_project_by_id(project_id)
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+            if not project:
+                raise tornado.web.HTTPError(404, log_message="project not found")
+
+            secret = project['secret_key']
+
+        is_valid = auth.check_sign(
+            secret, project_id, encoded_data, sign
+        )
+
+        if not is_valid:
             raise tornado.web.HTTPError(401, log_message="unauthorized")
 
         data = auth.decode_data(encoded_data)
@@ -94,11 +106,26 @@ class ApiHandler(BaseHandler):
             response.uid = req_id
             response.method = method
 
-            if method not in admin_params_schema:
+            schema = project_api_schema
+
+            if is_owner_request and method in owner_api_schema:
+                schema = owner_api_schema
+
+            elif is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
+                project_id = params.pop("project")
+                project, error = yield self.application.structure.get_project_by_id(
+                    project_id
+                )
+                if error:
+                    raise tornado.web.HTTPError(500, log_message=str(error))
+                if not project:
+                    raise tornado.web.HTTPError(404, log_message="project not found")
+
+            if method not in schema:
                 response.error = self.application.METHOD_NOT_FOUND
             else:
                 try:
-                    validate(params, admin_params_schema[method])
+                    validate(params, schema[method])
                 except ValidationError as e:
                     response.error = str(e)
                 else:

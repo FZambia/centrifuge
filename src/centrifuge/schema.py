@@ -20,7 +20,15 @@ req_schema = {
     "required": ["method", "params"]
 }
 
-admin_params_schema = {
+owner_only_methods = [
+    "project_list",
+    "project_get",
+    "project_create",
+    "project_edit",
+    "project_delete"
+]
+
+server_api_schema = {
     "publish": {
         "type": "object",
         "properties": {
@@ -106,13 +114,48 @@ admin_params_schema = {
             }
         },
         "required": ["_id"]
+    },
+    "project_list": {
+        "type": "object",
+        "properties": {}
+    },
+    "project_get": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        },
+        "required": ["_id"]
+    },
+    "project_create": {
+        "type": "object",
+        "properties": {}
+    },
+    "project_edit": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        },
+        "required": ["_id"]
+    },
+    "project_delete": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        },
+        "required": ["_id"]
     }
 }
 
-client_params_schema = {
-    "publish": admin_params_schema["publish"],
-    "presence": admin_params_schema["presence"],
-    "history": admin_params_schema["history"],
+client_api_schema = {
+    "publish": server_api_schema["publish"],
+    "presence": server_api_schema["presence"],
+    "history": server_api_schema["history"],
     "subscribe": {
         "type": "object",
         "properties": {

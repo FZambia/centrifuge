@@ -17,7 +17,7 @@ from . import utils
 from .structure import Structure
 from .state import State
 from .log import logger
-from .forms import NamespaceForm
+from .forms import NamespaceForm, ProjectForm
 from .pubsub import ZmqPubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
 
 
@@ -31,6 +31,12 @@ DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
 
 class Application(tornado.web.Application):
+
+    # magic fake project ID for admin API.
+    MAGIC_API_SUFFIX = '_'
+
+    # magic param name to allow owner make operations with project API
+    MAGIC_PROJECT_PARAM = 'project'
 
     # milliseconds
     PING_INTERVAL = 5000
@@ -332,6 +338,7 @@ class Application(tornado.web.Application):
         result, error = yield self.structure.update()
         raise Return((result, error))
 
+    # noinspection PyCallingNonCallable
     @coroutine
     def process_call(self, project, method, params):
         """
@@ -341,23 +348,10 @@ class Application(tornado.web.Application):
         handle_func = getattr(self, "process_%s" % method, None)
 
         if handle_func:
-            # noinspection PyCallingNonCallable
-            result, error = yield handle_func(project, params)
-            raise Return((result, error))
-        else:
-            raise Return((None, self.METHOD_NOT_FOUND))
-
-    @coroutine
-    def process_project_call(self, project, method, params):
-        """
-        Process HTTP call. It can be new message publishing,
-        some API command etc.
-        """
-        handle_func = getattr(self, "process_%s" % method, None)
-
-        if handle_func:
-            # noinspection PyCallingNonCallable
-            result, error = yield handle_func(project, params)
+            if project is not None:
+                result, error = yield handle_func(project, params)
+            else:
+                result, error = yield handle_func(params)
             raise Return((result, error))
         else:
             raise Return((None, self.METHOD_NOT_FOUND))
@@ -578,7 +572,7 @@ class Application(tornado.web.Application):
                 raise Return((None, self.INTERNAL_SERVER_ERROR))
 
             if existing_namespace:
-                form.name.errors.append("duplicate name")
+                form.name.errors.append(self.DUPLICATE_NAME)
                 raise Return((None, form.errors))
             else:
                 namespace, error = yield self.structure.namespace_create(
@@ -654,21 +648,101 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def process_project_list(self, project, params):
-        raise Return((None, 'not implemented yet'))
+    def process_project_list(self, params):
+        projects, error = yield self.structure.project_list()
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((projects, None))
 
     @coroutine
-    def process_project_get(self, project, params):
-        raise Return((None, 'not implemented yet'))
+    def process_project_get(self, params):
+        project_id = params.get('_id')
+        project, error = yield self.structure.get_project_by_id(project_id)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+        raise Return((project, None))
 
     @coroutine
-    def process_project_create(self, project, params):
-        raise Return((None, 'not implemented yet'))
+    def process_project_create(self, params):
+
+        form = ProjectForm(params)
+
+        if form.validate():
+            existing_project, error = yield self.structure.get_project_by_name(
+                form.name.data
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+
+            if existing_project:
+                form.name.errors.append(self.DUPLICATE_NAME)
+                raise Return((None, form.errors))
+            else:
+                project, error = yield self.structure.project_create(
+                    **form.data
+                )
+                if error:
+                    raise Return((None, self.INTERNAL_SERVER_ERROR))
+                raise Return((project, None))
+        else:
+            raise Return((None, form.errors))
 
     @coroutine
-    def process_project_edit(self, project, params):
-        raise Return((None, 'not implemented yet'))
+    def process_project_edit(self, params):
+        """
+        Edit project namespace.
+        """
+        project, error = yield self.structure.get_project_by_name(
+            params.pop('_id')
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
+        if "name" not in params:
+            params["name"] = project["name"]
+
+        form = ProjectForm(params)
+
+        if form.validate():
+
+            if "name" in params and params["name"] != project["name"]:
+
+                existing_project, error = yield self.structure.get_project_by_name(
+                    params["name"]
+                )
+                if error:
+                    raise Return((None, self.INTERNAL_SERVER_ERROR))
+                if existing_project:
+                    form.name.errors.append(self.DUPLICATE_NAME)
+                    raise Return((None, form.errors))
+
+            updated_project = project.copy()
+            updated_project.update(params)
+            project, error = yield self.structure.project_edit(
+                project, **updated_project
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            raise Return((project, None))
+        else:
+            raise Return((None, form.errors))
 
     @coroutine
-    def process_project_delete(self, project, params):
-        raise Return((None, 'not implemented yet'))
+    def process_project_delete(self, params):
+        existing_project, error = yield self.structure.get_project_by_id(
+            params["_id"]
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not existing_project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
+        result, error = yield self.structure.project_delete(existing_project)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((True, None))
