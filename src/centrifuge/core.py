@@ -535,7 +535,7 @@ class Application(tornado.web.Application):
         raise Return((result, error))
 
     @coroutine
-    def dump_structure(self, project, params):
+    def process_dump_structure(self, project, params):
 
         projects, error = yield self.structure.project_list()
         if error:
