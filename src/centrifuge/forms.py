@@ -11,15 +11,16 @@ from .utils import Form
 # regex pattern to match project and namespace names
 NAME_RE = re.compile('^[^_]+[A-z0-9@\-_\.]{2,}$')
 
+# how many times we are trying to authorize subscription by default
 DEFAULT_MAX_AUTH_ATTEMPTS = 5
 
-# milliseconds
+# milliseconds, increment for back-off
 DEFAULT_BACK_OFF_INTERVAL = 100
 
-# milliseconds
+# milliseconds, max timeout between auth attempts
 DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 
-
+# how many messages keep in channel history by default
 DEFAULT_HISTORY_SIZE = 20
 
 

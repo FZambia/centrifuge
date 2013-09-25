@@ -20,12 +20,8 @@ req_schema = {
     "required": ["method", "params"]
 }
 
-owner_only_api_methods = [
-    "project_list", "project_create"
-]
-
-limited_api_methods = [
-    "project_get", "project_edit", "project_delete"
+owner_api_methods = [
+    "project_list", "project_create", "dump_structure"
 ]
 
 server_api_schema = {
@@ -146,6 +142,10 @@ server_api_schema = {
                 "type": "string"
             }
         }
+    },
+    "regenerate_secret_key": {
+        "type": "object",
+        "properties": {}
     },
     "dump_structure": {
         "type": "object",

@@ -11,9 +11,10 @@ from sockjs.tornado import SockJSConnection
 from jsonschema import validate, ValidationError
 
 from . import auth
+from .log import logger
 from .response import Response
 from .client import Client
-from .schema import req_schema, server_api_schema
+from .schema import req_schema, server_api_schema, owner_api_methods
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -66,13 +67,15 @@ class ApiHandler(BaseHandler):
 
         is_owner_request = False
 
-        if project_id == self.application.MAGIC_API_SUFFIX:
+        if project_id == self.application.MAGIC_PROJECT_ID:
+            # API request aims to be from superuser
             is_owner_request = True
 
         if is_owner_request:
-            secret = self.application.settings["config"].get('api_secret')
+            # use api secret key from configuration to check sign
+            secret = self.application.settings["config"].get("api_secret")
             if not secret:
-                raise tornado.web.HTTPError(501, log_message="no api secret in configuration file")
+                raise tornado.web.HTTPError(501, log_message="no api_secret in configuration file")
             project = None
 
         else:
@@ -81,6 +84,8 @@ class ApiHandler(BaseHandler):
                 raise tornado.web.HTTPError(500, log_message=str(error))
             if not project:
                 raise tornado.web.HTTPError(404, log_message="project not found")
+
+            # use project secret key to validate sign
             secret = project['secret_key']
 
         is_valid = auth.check_sign(
@@ -112,13 +117,14 @@ class ApiHandler(BaseHandler):
 
             if is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
 
-                project_id = params.pop(self.application.MAGIC_PROJECT_PARAM)
+                project_id = params[self.application.MAGIC_PROJECT_PARAM]
 
                 project, error = yield self.application.structure.get_project_by_id(
                     project_id
                 )
                 if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
+                    logger.error(error)
+                    response.error = self.application.INTERNAL_SERVER_ERROR
                 if not project:
                     response.error = self.application.PROJECT_NOT_FOUND
 
@@ -126,6 +132,9 @@ class ApiHandler(BaseHandler):
                 params.pop(self.application.MAGIC_PROJECT_PARAM)
             except KeyError:
                 pass
+
+            if not is_owner_request and method in owner_api_methods:
+                response.error = self.application.PERMISSION_DENIED
 
             if not response.error:
                 if method not in schema:
