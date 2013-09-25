@@ -20,12 +20,12 @@ req_schema = {
     "required": ["method", "params"]
 }
 
-owner_only_methods = [
-    "project_list",
-    "project_get",
-    "project_create",
-    "project_edit",
-    "project_delete"
+owner_only_api_methods = [
+    "project_list", "project_create"
+]
+
+limited_api_methods = [
+    "project_get", "project_edit", "project_delete"
 ]
 
 server_api_schema = {
@@ -125,8 +125,7 @@ server_api_schema = {
             "_id": {
                 "type": "string"
             }
-        },
-        "required": ["_id"]
+        }
     },
     "project_create": {
         "type": "object",
@@ -138,8 +137,7 @@ server_api_schema = {
             "_id": {
                 "type": "string"
             }
-        },
-        "required": ["_id"]
+        }
     },
     "project_delete": {
         "type": "object",
@@ -147,8 +145,7 @@ server_api_schema = {
             "_id": {
                 "type": "string"
             }
-        },
-        "required": ["_id"]
+        }
     }
 }
 

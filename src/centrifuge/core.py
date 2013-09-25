@@ -348,10 +348,7 @@ class Application(tornado.web.Application):
         handle_func = getattr(self, "process_%s" % method, None)
 
         if handle_func:
-            if project is not None:
-                result, error = yield handle_func(project, params)
-            else:
-                result, error = yield handle_func(params)
+            result, error = yield handle_func(project, params)
             raise Return((result, error))
         else:
             raise Return((None, self.METHOD_NOT_FOUND))
@@ -648,24 +645,22 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def process_project_list(self, params):
+    def process_project_list(self, project, params):
         projects, error = yield self.structure.project_list()
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((projects, None))
 
     @coroutine
-    def process_project_get(self, params):
-        project_id = params.get('_id')
-        project, error = yield self.structure.get_project_by_id(project_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
+    def process_project_get(self, project, params):
+
         if not project:
             raise Return((None, self.PROJECT_NOT_FOUND))
+
         raise Return((project, None))
 
     @coroutine
-    def process_project_create(self, params):
+    def process_project_create(self, project, params):
 
         form = ProjectForm(params)
 
@@ -690,16 +685,10 @@ class Application(tornado.web.Application):
             raise Return((None, form.errors))
 
     @coroutine
-    def process_project_edit(self, params):
+    def process_project_edit(self, project, params):
         """
         Edit project namespace.
         """
-        project, error = yield self.structure.get_project_by_name(
-            params.pop('_id')
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
         if not project:
             raise Return((None, self.PROJECT_NOT_FOUND))
 
@@ -733,16 +722,12 @@ class Application(tornado.web.Application):
             raise Return((None, form.errors))
 
     @coroutine
-    def process_project_delete(self, params):
-        existing_project, error = yield self.structure.get_project_by_id(
-            params["_id"]
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not existing_project:
+    def process_project_delete(self, project, params):
+
+        if not project:
             raise Return((None, self.PROJECT_NOT_FOUND))
 
-        result, error = yield self.structure.project_delete(existing_project)
+        result, error = yield self.structure.project_delete(project)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((True, None))

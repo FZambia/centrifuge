@@ -55,7 +55,8 @@ class ProjectForm(Form):
     display_name = TextField(
         label='display name',
         validators=[
-            validators.Length(min=3, max=50)
+            validators.Length(min=3, max=50),
+            validators.Optional()
         ],
         description="human readable project name"
     )

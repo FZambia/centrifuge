@@ -13,7 +13,7 @@ from jsonschema import validate, ValidationError
 from . import auth
 from .response import Response
 from .client import Client
-from .schema import req_schema, project_api_schema, owner_api_schema
+from .schema import req_schema, server_api_schema
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -65,20 +65,22 @@ class ApiHandler(BaseHandler):
             raise tornado.web.HTTPError(400, log_message="no data")
 
         is_owner_request = False
+
         if project_id == self.application.MAGIC_API_SUFFIX:
             is_owner_request = True
 
         if is_owner_request:
-            api_secret = self.application.settings["config"].get('api_secret', 'secret')
-            secret = api_secret
+            secret = self.application.settings["config"].get('api_secret')
+            if not secret:
+                raise tornado.web.HTTPError(501, log_message="no api secret in configuration file")
             project = None
+
         else:
             project, error = yield self.application.structure.get_project_by_id(project_id)
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
             if not project:
                 raise tornado.web.HTTPError(404, log_message="project not found")
-
             secret = project['secret_key']
 
         is_valid = auth.check_sign(
@@ -106,34 +108,39 @@ class ApiHandler(BaseHandler):
             response.uid = req_id
             response.method = method
 
-            schema = project_api_schema
+            schema = server_api_schema
 
-            if is_owner_request and method in owner_api_schema:
-                schema = owner_api_schema
+            if is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
 
-            elif is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
-                project_id = params.pop("project")
+                project_id = params.pop(self.application.MAGIC_PROJECT_PARAM)
+
                 project, error = yield self.application.structure.get_project_by_id(
                     project_id
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 if not project:
-                    raise tornado.web.HTTPError(404, log_message="project not found")
+                    response.error = self.application.PROJECT_NOT_FOUND
 
-            if method not in schema:
-                response.error = self.application.METHOD_NOT_FOUND
-            else:
-                try:
-                    validate(params, schema[method])
-                except ValidationError as e:
-                    response.error = str(e)
+            try:
+                params.pop(self.application.MAGIC_PROJECT_PARAM)
+            except KeyError:
+                pass
+
+            if not response.error:
+                if method not in schema:
+                    response.error = self.application.METHOD_NOT_FOUND
                 else:
-                    result, error = yield self.application.process_call(
-                        project, method, params
-                    )
-                    response.body = result
-                    response.error = error
+                    try:
+                        validate(params, schema[method])
+                    except ValidationError as e:
+                        response.error = str(e)
+                    else:
+                        result, error = yield self.application.process_call(
+                            project, method, params
+                        )
+                        response.body = result
+                        response.error = error
 
         self.json_response(response.as_message())
 
