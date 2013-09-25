@@ -1,3 +1,8 @@
+v0.2.8
+======
+* experimental structure API support
+
+
 v0.2.7
 ======
 * fix unique constraints for SQLite and PostgreSQL
