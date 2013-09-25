@@ -176,10 +176,13 @@ class Application(tornado.web.Application):
             callback = utils.namedAny(callable_path)
             self.post_publish_callbacks.append(callback)
 
-    def send_ping(self, message):
-        self.pubsub.publish(CONTROL_CHANNEL, message)
+    def send_ping(self, ping_message):
+        self.pubsub.publish(CONTROL_CHANNEL, ping_message)
 
     def review_ping(self):
+        """
+        Remove outdated information about other nodes.
+        """
         now = time.time()
         outdated = []
         for node, updated_at in self.nodes.items():
@@ -214,7 +217,7 @@ class Application(tornado.web.Application):
 
     def add_connection(self, project_id, user, uid, client):
         """
-        Register client's connection.
+        Register new client's connection.
         """
         if project_id not in self.connections:
             self.connections[project_id] = {}
@@ -225,7 +228,7 @@ class Application(tornado.web.Application):
 
     def remove_connection(self, project_id, user, uid):
         """
-        Unregister client's connection
+        Remove client's connection
         """
         try:
             del self.connections[project_id][user][uid]
@@ -255,7 +258,7 @@ class Application(tornado.web.Application):
 
     def remove_admin_connection(self, uid):
         """
-        Unregister administrator's connection.
+        Remove administrator's connection.
         """
         try:
             del self.admin_connections[uid]
@@ -608,10 +611,8 @@ class Application(tornado.web.Application):
 
     @coroutine
     def process_project_delete(self, project, params):
-
         if not project:
             raise Return((None, self.PROJECT_NOT_FOUND))
-
         result, error = yield self.structure.project_delete(project)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
