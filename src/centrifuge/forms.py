@@ -5,22 +5,34 @@
 
 import re
 from wtforms import TextField, IntegerField, BooleanField, validators, SelectField
-from ..utils import Form
+from .utils import Form
 
 
 # regex pattern to match project and namespace names
 NAME_RE = re.compile('^[^_]+[A-z0-9@\-_\.]{2,}$')
 
+# how many times we are trying to authorize subscription by default
 DEFAULT_MAX_AUTH_ATTEMPTS = 5
 
-# milliseconds
+# milliseconds, increment for back-off
 DEFAULT_BACK_OFF_INTERVAL = 100
 
-# milliseconds
+# milliseconds, max timeout between auth attempts
 DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 
-
+# how many messages keep in channel history by default
 DEFAULT_HISTORY_SIZE = 20
+
+
+class DictToObject(object):
+    """
+    WTForm works with object attributes to extract field values.
+    Sometimes it is useful to construct objects from dictionaries,
+    this class does exactly this.
+    http://stackoverflow.com/questions/1305532/convert-python-dict-to-object
+    """
+    def __init__(self, entries):
+        self.__dict__.update(entries)
 
 
 class ProjectForm(Form):
@@ -44,7 +56,8 @@ class ProjectForm(Form):
     display_name = TextField(
         label='display name',
         validators=[
-            validators.Length(min=3, max=50)
+            validators.Length(min=3, max=50),
+            validators.Optional()
         ],
         description="human readable project name"
     )

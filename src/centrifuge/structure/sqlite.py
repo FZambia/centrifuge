@@ -31,14 +31,14 @@ def init_storage(structure, settings, ready_callback):
     conn.row_factory = dict_factory
     cursor = conn.cursor()
 
-    project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24) UNIQUE, ' \
-              'name varchar(100) NOT NULL UNIQUE, display_name ' \
+    project = 'CREATE TABLE IF NOT EXISTS projects (id INTEGER PRIMARY KEY AUTOINCREMENT, ' \
+              '_id varchar(24) UNIQUE, name varchar(100) NOT NULL UNIQUE, display_name ' \
               'varchar(100) NOT NULL, auth_address varchar(255), ' \
               'max_auth_attempts integer, back_off_interval integer, ' \
               'back_off_max_timeout integer, secret_key varchar(32), ' \
               'default_namespace varchar(32))'
 
-    namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
+    namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id INTEGER PRIMARY KEY AUTOINCREMENT, ' \
                 '_id varchar(24) UNIQUE, project_id varchar(24), ' \
                 'name varchar(100) NOT NULL, ' \
                 'publish bool, is_watching bool, presence bool, history bool, ' \
@@ -214,7 +214,7 @@ def namespace_create(cursor, project, **kwargs):
         on_error(e)
     else:
         cursor.connection.commit()
-        raise Return((to_insert, None))
+        raise Return((to_return, None))
 
 
 @coroutine

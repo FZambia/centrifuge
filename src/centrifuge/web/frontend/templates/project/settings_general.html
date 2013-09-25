@@ -33,7 +33,7 @@
     <fieldset>
         <legend>{{_("Namespaces")}}</legend>
         <div class="row-fluid">
-            <a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['name']) }}">{{_("Create new namespace")}}</a>
+            <a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['_id']) }}">{{_("Create new namespace")}}</a>
             <br /><br />
             <table class="table table-striped">
                 {% for namespace in namespaces %}
@@ -42,12 +42,7 @@
                             <h4>{{namespace['name']}}</h4>
                         </td>
                         <td class="col-lg-1">
-                            <a href="{{ handler.reverse_url("namespace_edit", project['name'], namespace['name']) }}" class="btn btn-primary">{{_("Edit")}}</a>
-                            <!--<form action="" method="post" class="pull-right form-delete">
-                                {% raw xsrf_form_html() %}
-                                <input type="hidden" name="namespace_name" value="{{namespace['name']}}" />
-                                <button type="submit" name="submit" value="namespace_del" class="btn btn-default">{{_("delete")}}</button>
-                            </form>-->
+                            <a href="{{ handler.reverse_url("namespace_edit", project['_id'], namespace['_id']) }}" class="btn btn-primary">{{_("Edit")}}</a>
                         </td>
                     </tr>
                 {% end %}

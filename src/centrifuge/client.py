@@ -25,7 +25,7 @@ from jsonschema import validate, ValidationError
 from . import auth
 from .response import Response
 from .log import logger
-from .schema import req_schema, client_params_schema
+from .schema import req_schema, client_api_schema
 
 
 @coroutine
@@ -148,11 +148,11 @@ class Client(object):
             yield self.sock.close()
             raise Return((True, None))
 
-        if method not in client_params_schema:
+        if method not in client_api_schema:
             raise Return((None, 'unknown method %s' % method))
 
         try:
-            validate(params, client_params_schema[method])
+            validate(params, client_api_schema[method])
         except ValidationError as e:
             response = Response(uid=uid, method=method, error=str(e))
             self.send(response.as_message())

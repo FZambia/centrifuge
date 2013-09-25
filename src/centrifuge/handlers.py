@@ -11,9 +11,10 @@ from sockjs.tornado import SockJSConnection
 from jsonschema import validate, ValidationError
 
 from . import auth
+from .log import logger
 from .response import Response
 from .client import Client
-from .schema import req_schema, admin_params_schema
+from .schema import req_schema, server_api_schema, owner_api_methods
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -60,20 +61,38 @@ class ApiHandler(BaseHandler):
         if not sign:
             raise tornado.web.HTTPError(400, log_message="no data sign")
 
-        project, error = yield self.application.structure.get_project_by_id(project_id)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        if not project:
-            raise tornado.web.HTTPError(404, log_message="project not found")
-
         encoded_data = self.get_argument('data', None)
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no data")
 
-        result, error = yield self.application.structure.check_auth(project, sign, encoded_data)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        if not result:
+        is_owner_request = False
+
+        if project_id == self.application.MAGIC_PROJECT_ID:
+            # API request aims to be from superuser
+            is_owner_request = True
+
+        if is_owner_request:
+            # use api secret key from configuration to check sign
+            secret = self.application.settings["config"].get("api_secret")
+            if not secret:
+                raise tornado.web.HTTPError(501, log_message="no api_secret in configuration file")
+            project = None
+
+        else:
+            project, error = yield self.application.structure.get_project_by_id(project_id)
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
+            if not project:
+                raise tornado.web.HTTPError(404, log_message="project not found")
+
+            # use project secret key to validate sign
+            secret = project['secret_key']
+
+        is_valid = auth.check_sign(
+            secret, project_id, encoded_data, sign
+        )
+
+        if not is_valid:
             raise tornado.web.HTTPError(401, log_message="unauthorized")
 
         data = auth.decode_data(encoded_data)
@@ -94,19 +113,43 @@ class ApiHandler(BaseHandler):
             response.uid = req_id
             response.method = method
 
-            if method not in admin_params_schema:
-                response.error = "method not found"
-            else:
-                try:
-                    validate(params, admin_params_schema[method])
-                except ValidationError as e:
-                    response.error = str(e)
+            schema = server_api_schema
+
+            if is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
+
+                project_id = params[self.application.MAGIC_PROJECT_PARAM]
+
+                project, error = yield self.application.structure.get_project_by_id(
+                    project_id
+                )
+                if error:
+                    logger.error(error)
+                    response.error = self.application.INTERNAL_SERVER_ERROR
+                if not project:
+                    response.error = self.application.PROJECT_NOT_FOUND
+
+            try:
+                params.pop(self.application.MAGIC_PROJECT_PARAM)
+            except KeyError:
+                pass
+
+            if not is_owner_request and method in owner_api_methods:
+                response.error = self.application.PERMISSION_DENIED
+
+            if not response.error:
+                if method not in schema:
+                    response.error = self.application.METHOD_NOT_FOUND
                 else:
-                    result, error = yield self.application.process_call(
-                        project, method, params
-                    )
-                    response.body = result
-                    response.error = error
+                    try:
+                        validate(params, schema[method])
+                    except ValidationError as e:
+                        response.error = str(e)
+                    else:
+                        result, error = yield self.application.process_call(
+                            project, method, params
+                        )
+                        response.body = result
+                        response.error = error
 
         self.json_response(response.as_message())
 

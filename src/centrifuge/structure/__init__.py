@@ -261,16 +261,3 @@ class Structure:
             'regenerate_project_secret_key', *args, **kwargs
         )
         raise Return((result, error))
-
-    @coroutine
-    def check_auth(self, project, sign, encoded_data):
-        is_authenticated = auth.check_sign(
-            project['secret_key'],
-            project['_id'],
-            encoded_data,
-            sign
-        )
-        if not is_authenticated:
-            raise Return((None, None))
-
-        raise Return((True, None))

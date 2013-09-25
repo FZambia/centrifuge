@@ -20,7 +20,11 @@ req_schema = {
     "required": ["method", "params"]
 }
 
-admin_params_schema = {
+owner_api_methods = [
+    "project_list", "project_create", "dump_structure"
+]
+
+server_api_schema = {
     "publish": {
         "type": "object",
         "properties": {
@@ -71,13 +75,88 @@ admin_params_schema = {
             }
         },
         "required": ["user"]
+    },
+    "namespace_list": {
+        "type": "object",
+        "properties": {}
+    },
+    "namespace_get": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        },
+        "required": ["_id"]
+    },
+    "namespace_create": {
+        "type": "object",
+        "properties": {}
+    },
+    "namespace_edit": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        },
+        "required": ["_id"]
+    },
+    "namespace_delete": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        },
+        "required": ["_id"]
+    },
+    "project_list": {
+        "type": "object",
+        "properties": {}
+    },
+    "project_get": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        }
+    },
+    "project_create": {
+        "type": "object",
+        "properties": {}
+    },
+    "project_edit": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        }
+    },
+    "project_delete": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            }
+        }
+    },
+    "regenerate_secret_key": {
+        "type": "object",
+        "properties": {}
+    },
+    "dump_structure": {
+        "type": "object",
+        "properties": {}
     }
 }
 
-client_params_schema = {
-    "publish": admin_params_schema["publish"],
-    "presence": admin_params_schema["presence"],
-    "history": admin_params_schema["history"],
+client_api_schema = {
+    "publish": server_api_schema["publish"],
+    "presence": server_api_schema["presence"],
+    "history": server_api_schema["history"],
     "subscribe": {
         "type": "object",
         "properties": {

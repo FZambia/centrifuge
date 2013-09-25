@@ -39,10 +39,22 @@ class MultiDictWrapper(object):
         # This object is tightly coupled to the handler...
         # which certainly isn't nice, but it's the
         # way it's gonna have to be for now.
-        self.handler = weakref.ref(handler)
+        if handler and isinstance(handler, dict):
+            self.handler = handler
+        elif handler:
+            self.handler = weakref.ref(handler)
+        else:
+            self.handler = None
 
     @property
     def _arguments(self):
+        if not self.handler:
+            return {}
+        if isinstance(self.handler, dict):
+            to_return = {}
+            for key, value in six.iteritems(self.handler):
+                to_return.setdefault(key, []).append(value)
+            return to_return
         return self.handler().request.arguments
 
     def __iter__(self):
@@ -60,9 +72,13 @@ class MultiDictWrapper(object):
         # get_arguments by default strips whitespace from the input data,
         # so we pass strip=False to stop that in case we need to validate
         # on whitespace.
+        if isinstance(self.handler, dict):
+            return self._arguments.get(name, [])
         return self.handler().get_arguments(name, strip=False)
 
     def __getitem__(self, name):
+        if isinstance(self.handler, dict):
+            return self.handler.get(name)
         return self.handler().get_argument(name)
 
 

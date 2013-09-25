@@ -271,6 +271,9 @@ function syntaxHighlight(json) {
 
             var render_project = function(project, container) {
                 var prepared_project = prepare_project(project);
+                if (prepared_project['display_name'] === '' || !prepared_project['display_name']) {
+                    prepared_project['display_name'] = prepared_project['name'];
+                }
                 var html = project_template.render(prepared_project);
                 container.append(html);
             };
