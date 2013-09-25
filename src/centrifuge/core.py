@@ -32,11 +32,11 @@ DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
 class Application(tornado.web.Application):
 
-    # magic fake project ID for admin API.
-    MAGIC_API_SUFFIX = '_'
+    # magic fake project ID for owner API purposes.
+    MAGIC_PROJECT_ID = '_'
 
-    # magic param name to allow owner make operations with project API
-    MAGIC_PROJECT_PARAM = 'project'
+    # magic project param name to allow owner make operations within project
+    MAGIC_PROJECT_PARAM = '_project'
 
     # milliseconds
     PING_INTERVAL = 5000

@@ -11,9 +11,10 @@ from sockjs.tornado import SockJSConnection
 from jsonschema import validate, ValidationError
 
 from . import auth
+from .log import logger
 from .response import Response
 from .client import Client
-from .schema import req_schema, server_api_schema
+from .schema import req_schema, server_api_schema, owner_api_methods
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -66,13 +67,13 @@ class ApiHandler(BaseHandler):
 
         is_owner_request = False
 
-        if project_id == self.application.MAGIC_API_SUFFIX:
+        if project_id == self.application.MAGIC_PROJECT_ID:
             is_owner_request = True
 
         if is_owner_request:
-            secret = self.application.settings["config"].get('api_secret')
+            secret = self.application.settings["cookie_secret"]
             if not secret:
-                raise tornado.web.HTTPError(501, log_message="no api secret in configuration file")
+                raise tornado.web.HTTPError(501, log_message="no cookie secret")
             project = None
 
         else:
@@ -118,7 +119,8 @@ class ApiHandler(BaseHandler):
                     project_id
                 )
                 if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
+                    logger.error(error)
+                    response.error = self.application.INTERNAL_SERVER_ERROR
                 if not project:
                     response.error = self.application.PROJECT_NOT_FOUND
 
@@ -126,6 +128,9 @@ class ApiHandler(BaseHandler):
                 params.pop(self.application.MAGIC_PROJECT_PARAM)
             except KeyError:
                 pass
+
+            if not is_owner_request and method in owner_api_methods:
+                response.error = self.application.PERMISSION_DENIED
 
             if not response.error:
                 if method not in schema:

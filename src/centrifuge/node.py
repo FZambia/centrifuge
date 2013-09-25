@@ -206,6 +206,10 @@ def main():
 
     app.initialize()
 
+    magic_project_id = custom_settings.get('magic_project_id')
+    if magic_project_id:
+        app.MAGIC_PROJECT_ID = magic_project_id
+
     magic_project_param = custom_settings.get('magic_project_param')
     if magic_project_param:
         app.MAGIC_PROJECT_PARAM = magic_project_param

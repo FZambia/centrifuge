@@ -20,12 +20,8 @@ req_schema = {
     "required": ["method", "params"]
 }
 
-owner_only_api_methods = [
+owner_api_methods = [
     "project_list", "project_create"
-]
-
-limited_api_methods = [
-    "project_get", "project_edit", "project_delete"
 ]
 
 server_api_schema = {
