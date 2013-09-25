@@ -68,12 +68,14 @@ class ApiHandler(BaseHandler):
         is_owner_request = False
 
         if project_id == self.application.MAGIC_PROJECT_ID:
+            # API request aims to be from superuser
             is_owner_request = True
 
         if is_owner_request:
-            secret = self.application.settings["cookie_secret"]
+            # use api secret key from configuration to check sign
+            secret = self.application.settings["config"].get("api_secret")
             if not secret:
-                raise tornado.web.HTTPError(501, log_message="no cookie secret")
+                raise tornado.web.HTTPError(501, log_message="no api_secret in configuration file")
             project = None
 
         else:
@@ -82,6 +84,8 @@ class ApiHandler(BaseHandler):
                 raise tornado.web.HTTPError(500, log_message=str(error))
             if not project:
                 raise tornado.web.HTTPError(404, log_message="project not found")
+
+            # use project secret key to validate sign
             secret = project['secret_key']
 
         is_valid = auth.check_sign(
@@ -113,7 +117,7 @@ class ApiHandler(BaseHandler):
 
             if is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
 
-                project_id = params.pop(self.application.MAGIC_PROJECT_PARAM)
+                project_id = params[self.application.MAGIC_PROJECT_PARAM]
 
                 project, error = yield self.application.structure.get_project_by_id(
                     project_id

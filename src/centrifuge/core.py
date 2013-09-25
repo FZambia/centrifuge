@@ -532,6 +532,101 @@ class Application(tornado.web.Application):
         raise Return((result, error))
 
     @coroutine
+    def process_project_list(self, project, params):
+        projects, error = yield self.structure.project_list()
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((projects, None))
+
+    @coroutine
+    def process_project_get(self, project, params):
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+        raise Return((project, None))
+
+    @coroutine
+    def process_project_create(self, project, params):
+
+        form = ProjectForm(params)
+
+        if form.validate():
+            existing_project, error = yield self.structure.get_project_by_name(
+                form.name.data
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+
+            if existing_project:
+                form.name.errors.append(self.DUPLICATE_NAME)
+                raise Return((None, form.errors))
+            else:
+                project, error = yield self.structure.project_create(
+                    **form.data
+                )
+                if error:
+                    raise Return((None, self.INTERNAL_SERVER_ERROR))
+                raise Return((project, None))
+        else:
+            raise Return((None, form.errors))
+
+    @coroutine
+    def process_project_edit(self, project, params):
+        """
+        Edit project namespace.
+        """
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
+        if "name" not in params:
+            params["name"] = project["name"]
+
+        form = ProjectForm(params)
+
+        if form.validate():
+
+            if "name" in params and params["name"] != project["name"]:
+
+                existing_project, error = yield self.structure.get_project_by_name(
+                    params["name"]
+                )
+                if error:
+                    raise Return((None, self.INTERNAL_SERVER_ERROR))
+                if existing_project:
+                    form.name.errors.append(self.DUPLICATE_NAME)
+                    raise Return((None, form.errors))
+
+            updated_project = project.copy()
+            updated_project.update(params)
+            project, error = yield self.structure.project_edit(
+                project, **updated_project
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            raise Return((project, None))
+        else:
+            raise Return((None, form.errors))
+
+    @coroutine
+    def process_project_delete(self, project, params):
+
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
+        result, error = yield self.structure.project_delete(project)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((True, None))
+
+    @coroutine
+    def process_regenerate_secret_key(self, project, params):
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+        result, error = yield self.structure.regenerate_project_secret_key(project)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        raise Return((result, None))
+
+    @coroutine
     def process_namespace_list(self, project, params):
         """
         Return a list of all namespaces for project.
@@ -640,94 +735,6 @@ class Application(tornado.web.Application):
         result, error = yield self.structure.namespace_delete(
             project, existing_namespace["name"]
         )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((True, None))
-
-    @coroutine
-    def process_project_list(self, project, params):
-        projects, error = yield self.structure.project_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((projects, None))
-
-    @coroutine
-    def process_project_get(self, project, params):
-
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        raise Return((project, None))
-
-    @coroutine
-    def process_project_create(self, project, params):
-
-        form = ProjectForm(params)
-
-        if form.validate():
-            existing_project, error = yield self.structure.get_project_by_name(
-                form.name.data
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-            if existing_project:
-                form.name.errors.append(self.DUPLICATE_NAME)
-                raise Return((None, form.errors))
-            else:
-                project, error = yield self.structure.project_create(
-                    **form.data
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                raise Return((project, None))
-        else:
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_project_edit(self, project, params):
-        """
-        Edit project namespace.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        if "name" not in params:
-            params["name"] = project["name"]
-
-        form = ProjectForm(params)
-
-        if form.validate():
-
-            if "name" in params and params["name"] != project["name"]:
-
-                existing_project, error = yield self.structure.get_project_by_name(
-                    params["name"]
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                if existing_project:
-                    form.name.errors.append(self.DUPLICATE_NAME)
-                    raise Return((None, form.errors))
-
-            updated_project = project.copy()
-            updated_project.update(params)
-            project, error = yield self.structure.project_edit(
-                project, **updated_project
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            raise Return((project, None))
-        else:
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_project_delete(self, project, params):
-
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        result, error = yield self.structure.project_delete(project)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((True, None))

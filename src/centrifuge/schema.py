@@ -142,6 +142,10 @@ server_api_schema = {
                 "type": "string"
             }
         }
+    },
+    "regenerate_secret_key": {
+        "type": "object",
+        "properties": {}
     }
 }
 
