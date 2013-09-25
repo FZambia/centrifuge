@@ -3,7 +3,7 @@ from __future__ import print_function
 from tornado.gen import Task, coroutine, Return
 from tornado.testing import AsyncTestCase, gen_test
 from centrifuge.client import Client
-from centrifuge.schema import client_params_schema
+from centrifuge.schema import client_api_schema
 from centrifuge.core import Application
 from centrifuge.pubsub import ZmqPubSub
 import json
@@ -79,7 +79,7 @@ class ClientTest(AsyncTestCase):
         result, error = yield self.client.message_received(message)
         self.assertTrue(error is not None)
 
-        client_params_schema["test"] = {
+        client_api_schema["test"] = {
             "type": "object"
         }
         result, error = yield self.client.message_received(message)

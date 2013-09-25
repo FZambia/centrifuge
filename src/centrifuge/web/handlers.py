@@ -101,7 +101,9 @@ class ProjectCreateHandler(BaseHandler):
     @tornado.web.authenticated
     @coroutine
     def post(self):
+
         form = ProjectForm(self)
+
         if not form.validate():
             self.render(
                 'project/create.html', form=form,
@@ -109,7 +111,9 @@ class ProjectCreateHandler(BaseHandler):
             )
             return
 
-        existing_project, error = yield self.application.structure.get_project_by_name(form.name.data)
+        existing_project, error = yield self.application.structure.get_project_by_name(
+            form.name.data
+        )
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
         if existing_project:
@@ -121,12 +125,7 @@ class ProjectCreateHandler(BaseHandler):
             return
 
         project, error = yield self.application.structure.project_create(
-            name=form.name.data,
-            display_name=form.display_name.data,
-            auth_address=form.auth_address.data,
-            max_auth_attempts=form.max_auth_attempts.data,
-            back_off_interval=form.back_off_interval.data,
-            back_off_max_timeout=form.back_off_max_timeout.data
+            **form.data
         )
         if error:
             raise tornado.web.HTTPError(500, log_message="error creating project")
@@ -192,9 +191,13 @@ class NamespaceFormHandler(BaseHandler):
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
-                self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
+                self.redirect(
+                    self.reverse_url("project_settings", self.project['_id'], 'general')
+                )
             else:
-                self.redirect(self.reverse_url("namespace_edit", self.project['_id'], namespace_id))
+                self.redirect(
+                    self.reverse_url("namespace_edit", self.project['_id'], namespace_id)
+                )
             return
 
         form = NamespaceForm(self)
@@ -338,17 +341,12 @@ class ProjectSettingsHandler(BaseHandler):
                 )
                 return
 
-            default_namespace = form.default_namespace.data or None
+            data = form.data.copy()
+            data['default_namespace'] = form.default_namespace.data or None
 
             res, error = yield self.application.structure.project_edit(
                 self.project,
-                name=form.name.data,
-                display_name=form.display_name.data,
-                auth_address=form.auth_address.data,
-                max_auth_attempts=form.max_auth_attempts.data,
-                back_off_interval=form.back_off_interval.data,
-                back_off_max_timeout=form.back_off_max_timeout.data,
-                default_namespace=default_namespace
+                **data
             )
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))

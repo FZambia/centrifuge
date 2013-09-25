@@ -146,6 +146,10 @@ server_api_schema = {
                 "type": "string"
             }
         }
+    },
+    "dump_structure": {
+        "type": "object",
+        "properties": {}
     }
 }
 
