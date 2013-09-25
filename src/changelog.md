@@ -1,3 +1,8 @@
+v0.2.7
+======
+* fix unique constraints for SQLite and PostgreSQL
+* add client_id to default user info
+
 v0.2.6
 ======
 * fix handling control messages

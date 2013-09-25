@@ -287,7 +287,7 @@ class Client(object):
         self.is_authenticated = True
         self.project_id = project_id
         self.user = user
-        self.default_user_info = json_encode({'user_id': self.user})
+        self.default_user_info = json_encode({'user_id': self.user, 'client_id': self.uid})
         self.channels = {}
         self.presence_ping = PeriodicCallback(
             self.send_presence_ping, self.application.presence_ping_interval

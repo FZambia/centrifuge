@@ -49,9 +49,10 @@ def on_connection_ready(structure, ready_callback):
 
     namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
                 '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-                'name varchar(100) NOT NULL UNIQUE, publish bool, ' \
+                'name varchar(100) NOT NULL, publish bool, ' \
                 'is_watching bool, presence bool, history bool, history_size integer, ' \
-                'is_private bool, auth_address varchar(255), join_leave bool)'
+                'is_private bool, auth_address varchar(255), join_leave bool, ' \
+                'constraint namespaces_unique unique(project_id, name))'
 
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, namespace, ())
