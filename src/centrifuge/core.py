@@ -649,6 +649,8 @@ class Application(tornado.web.Application):
         """
         Return a list of all namespaces for project.
         """
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
         namespaces, error = yield self.structure.get_project_namespaces(project)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
@@ -672,6 +674,9 @@ class Application(tornado.web.Application):
         """
         Create new namespace in project or update if already exists.
         """
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
         form = NamespaceForm(params)
 
         if form.validate():
@@ -699,6 +704,9 @@ class Application(tornado.web.Application):
         """
         Edit project namespace.
         """
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
         namespace, error = yield self.structure.get_namespace_by_id(
             params.pop('_id')
         )
@@ -742,6 +750,9 @@ class Application(tornado.web.Application):
         """
         Delete project namespace.
         """
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
         existing_namespace, error = yield self.structure.get_namespace_by_id(
             params["_id"]
         )
