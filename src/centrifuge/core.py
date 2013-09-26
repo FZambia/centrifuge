@@ -704,9 +704,6 @@ class Application(tornado.web.Application):
         """
         Edit project namespace.
         """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
         namespace, error = yield self.structure.get_namespace_by_id(
             params.pop('_id')
         )
@@ -715,6 +712,15 @@ class Application(tornado.web.Application):
 
         if not namespace:
             raise Return((None, self.NAMESPACE_NOT_FOUND))
+
+        if not project:
+            project, error = yield self.structure.get_project_by_id(
+                namespace['project_id']
+            )
+            if error:
+                raise Return((None, self.INTERNAL_SERVER_ERROR))
+            if not project:
+                raise Return((None, self.PROJECT_NOT_FOUND))
 
         if "name" not in params:
             params["name"] = namespace["name"]
@@ -750,9 +756,6 @@ class Application(tornado.web.Application):
         """
         Delete project namespace.
         """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
         namespace_id = params["_id"]
 
         existing_namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
