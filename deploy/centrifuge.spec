@@ -48,7 +48,6 @@ find %{name}/ -type f -name "*.py[co]" -delete
 # replace builddir path
 find %{name}/ -type f -exec sed -i "s:%{_builddir}:%{__prefix}:" {} \;
 
-
 %install
 mkdir -p %{buildroot}%{__prefix}/%{name}
 mv %{name} %{buildroot}%{__prefix}/
@@ -61,7 +60,7 @@ mv %{name} %{buildroot}%{__prefix}/
 
 # configs
 mkdir -p %{buildroot}%{_sysconfdir}/%{name}
-%{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/src/config.json %{buildroot}%{_sysconfdir}/%{name}/centrifuge.json
+%{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/deploy/centrifuge.json %{buildroot}%{_sysconfdir}/%{name}/centrifuge.json
 
 # supervisord
 %{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/deploy/supervisord.conf %{buildroot}%{_sysconfdir}/%{name}/supervisord.conf

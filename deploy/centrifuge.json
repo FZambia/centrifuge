@@ -1,0 +1,13 @@
+{
+    "password": "password",
+    "cookie_secret": "secret",
+    "api_secret": "secret",
+    "state": null,
+    "structure": {
+        "storage": "centrifuge.structure.sqlite",
+        "update_interval": 60,
+        "settings": {
+            "path": "/var/db/centrifuge/centrifuge.db"
+        }
+    }
+}
