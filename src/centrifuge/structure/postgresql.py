@@ -265,17 +265,16 @@ def namespace_edit(db, namespace, **kwargs):
 
 
 @coroutine
-def namespace_delete(db, project, namespace_name):
+def namespace_delete(db, namespace_id):
     """
     Delete namespace from project. Also delete all related entries from
     event collection.
     """
     haystack = {
-        'project_id': project['_id'],
-        'name': namespace_name
+        '_id': namespace_id
     }
 
-    query = "DELETE FROM namespaces WHERE name=%(name)s AND project_id=%(project_id)s"
+    query = "DELETE FROM namespaces WHERE _id=%(_id)s"
 
     try:
         yield momoko.Op(

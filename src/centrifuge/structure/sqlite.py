@@ -256,13 +256,13 @@ def namespace_edit(cursor, namespace, **kwargs):
 
 
 @coroutine
-def namespace_delete(cursor, project, namespace_name):
+def namespace_delete(cursor, namespace_id):
     """
     Delete namespace from project. Also delete all related entries from
     event collection.
     """
-    haystack = (namespace_name, project['_id'])
-    query = "DELETE FROM namespaces WHERE name=? AND project_id=?"
+    haystack = (namespace_id,)
+    query = "DELETE FROM namespaces WHERE _id=?"
     try:
         cursor.execute(query, haystack)
     except Exception as e:

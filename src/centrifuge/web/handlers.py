@@ -187,7 +187,7 @@ class NamespaceFormHandler(BaseHandler):
         if submit == 'namespace_delete':
             if self.get_argument('confirm', None) == self.namespace["name"]:
                 res, error = yield self.application.structure.namespace_delete(
-                    self.project, self.namespace["name"]
+                    namespace_id
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))

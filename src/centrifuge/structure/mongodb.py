@@ -265,14 +265,13 @@ def namespace_edit(db, namespace, **kwargs):
 
 
 @coroutine
-def namespace_delete(db, project, namespace_name):
+def namespace_delete(db, namespace_id):
     """
     Delete namespace from project. Also delete all related entries from
     event collection.
     """
     haystack = {
-        'project': project['_id'],
-        'name': namespace_name
+        '_id': namespace_id
     }
     _res, error = yield remove(db.namespace, haystack)
     if error:

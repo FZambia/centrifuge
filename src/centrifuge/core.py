@@ -753,17 +753,15 @@ class Application(tornado.web.Application):
         if not project:
             raise Return((None, self.PROJECT_NOT_FOUND))
 
-        existing_namespace, error = yield self.structure.get_namespace_by_id(
-            params["_id"]
-        )
+        namespace_id = params["_id"]
+
+        existing_namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         if not existing_namespace:
             raise Return((None, self.NAMESPACE_NOT_FOUND))
 
-        result, error = yield self.structure.namespace_delete(
-            project, existing_namespace["name"]
-        )
+        result, error = yield self.structure.namespace_delete(namespace_id)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((True, None))
