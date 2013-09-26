@@ -8,13 +8,11 @@ prog="$(basename $0)"
 
 [ -f "/etc/sysconfig/$prog" ] && . /etc/sysconfig/$prog
 
-opts="supervisorctl start centrifuge all"
-
 RETVAL=0
 
 start() {
         echo -n $"Starting $prog: "
-        supervisorctl start centrifuge all
+        /opt/centrifuge/env/bin/supervisorctl start centrifuge all
         RETVAL=$?
         echo
         return $RETVAL
@@ -22,7 +20,7 @@ start() {
 
 stop() {
         echo -n $"Stopping $prog: "
-        supervisorctl stop centrifuge all
+        /opt/centrifuge/env/bin/supervisorctl stop centrifuge all
         RETVAL=$?
         echo
 }
@@ -40,7 +38,7 @@ case "$1" in
                 stop
         ;;
         status)
-                rh_status
+                /opt/centrifuge/env/bin/supervisorctl centrifuge status
                 RETVAL=$?
         ;;
         restart)
