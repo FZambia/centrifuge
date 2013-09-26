@@ -14,6 +14,8 @@ from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
 from tornado.escape import json_encode
 
+import six
+
 from ..log import logger
 from ..handlers import BaseHandler
 
@@ -54,8 +56,6 @@ class MainHandler(BaseHandler):
     def get(self):
         """
         Render main template with additional data.
-        Here we need information about namespaces and sources.
-        Also information about watching and marked objects.
         """
         user = self.current_user.decode()
 
@@ -63,16 +63,11 @@ class MainHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
-        project_namespaces, error = yield self.application.structure.get_namespaces_for_projects()
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-
         context = {
             'js_data': tornado.escape.json_encode({
                 'current_user': user,
                 'socket_url': '/socket',
-                'projects': projects,
-                'namespaces': project_namespaces
+                'projects': projects
             })
         }
         self.render("main.html", **context)
@@ -102,35 +97,150 @@ class ProjectCreateHandler(BaseHandler):
     @coroutine
     def post(self):
 
-        form = ProjectForm(self)
+        params = dict((k, ''.join(v)) for k, v in self.request.arguments.iteritems())
+        result, error = yield self.application.process_project_create(None, params, error_form=True)
 
-        if not form.validate():
+        if error and isinstance(error, six.string_types):
+            # server error
+            raise tornado.web.HTTPError(500)
+        elif error:
+            # error is form with errors in this case
             self.render(
-                'project/create.html', form=form,
+                'project/create.html', form=error,
                 render_control=render_control, render_label=render_label
             )
-            return
+        else:
+            self.redirect(self.reverse_url('main'))
 
-        existing_project, error = yield self.application.structure.get_project_by_name(
-            form.name.data
-        )
+
+class ProjectSettingsHandler(BaseHandler):
+    """
+    Edit project setting.
+    This part of application requires more careful implementation.
+    """
+    @coroutine
+    def get_project(self, project_id):
+        project, error = yield self.application.structure.get_project_by_id(project_id)
+        if not project:
+            raise tornado.web.HTTPError(404)
+        raise Return((project, None))
+
+    @coroutine
+    def get_general(self):
+        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
-        if existing_project:
-            form.name.errors.append(self.application.DUPLICATE_NAME)
-            self.render(
-                'project/create.html', form=form,
-                render_control=render_control, render_label=render_label
-            )
-            return
+        data = {
+            'user': self.current_user,
+            'project': self.project,
+            'namespaces': namespaces
+        }
+        raise Return((data, None))
 
-        project, error = yield self.application.structure.project_create(
-            **form.data
-        )
+    @coroutine
+    def post_general(self, submit):
+
+        if submit != 'regenerate_secret':
+            raise tornado.web.HTTPError(400)
+
+        # regenerate public and secret key
+        res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
         if error:
-            raise tornado.web.HTTPError(500, log_message="error creating project")
+            raise tornado.web.HTTPError(500, log_message=str(error))
 
-        self.redirect(self.reverse_url('main'))
+        self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
+
+    @coroutine
+    def get_namespace_choices(self):
+        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+
+        namespace_choices = [(x['_id'], x['name']) for x in namespaces]
+        namespace_choices.insert(0, ('', '--------'))
+        raise Return((namespace_choices, None))
+
+    @coroutine
+    def get_edit(self):
+        namespace_choices, error = yield self.get_namespace_choices()
+        data = {
+            'user': self.current_user,
+            'project': self.project,
+            'form': ProjectForm(self, namespace_choices=namespace_choices, **self.project),
+            'render_control': render_control,
+            'render_label': render_label
+        }
+        raise Return((data, None))
+
+    @coroutine
+    def post_edit(self, submit):
+
+        if submit == 'project_del':
+            # completely remove project
+            confirm = self.get_argument('confirm', None)
+            if confirm == self.project['name']:
+                res, error = yield self.application.structure.project_delete(self.project)
+                if error:
+                    raise tornado.web.HTTPError(500, log_message=str(error))
+                self.redirect(self.reverse_url("main"))
+            else:
+                self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
+
+        else:
+            # edit project
+            params = dict((k, ''.join(v)) for k, v in self.request.arguments.iteritems())
+            result, error = yield self.application.process_project_edit(self.project, params, error_form=True)
+            if error and isinstance(error, six.string_types):
+                # server error
+                raise tornado.web.HTTPError(500)
+            elif error:
+                # error is form with errors in this case
+                self.render(
+                    'project/settings_edit.html', project=self.project,
+                    form=error, render_control=render_control, render_label=render_label
+                )
+            else:
+                self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
+
+    @tornado.web.authenticated
+    @coroutine
+    def get(self, project_name, section):
+
+        self.project, error = yield self.get_project(project_name)
+
+        if section == 'general':
+            template_name = 'project/settings_general.html'
+            func = self.get_general
+
+        elif section == 'edit':
+            template_name = 'project/settings_edit.html'
+            func = self.get_edit
+
+        else:
+            raise tornado.web.HTTPError(404)
+
+        data, error = yield func()
+
+        self.render(template_name, **data)
+
+    @tornado.web.authenticated
+    @coroutine
+    def post(self, project_name, section):
+
+        self.project, error = yield self.get_project(
+            project_name
+        )
+
+        submit = self.get_argument('submit', None)
+
+        if section == 'general':
+            yield self.post_general(submit)
+
+        elif section == 'edit':
+            yield self.post_edit(submit)
+
+        else:
+            raise tornado.web.HTTPError(404)
 
 
 class NamespaceFormHandler(BaseHandler):
@@ -184,6 +294,7 @@ class NamespaceFormHandler(BaseHandler):
             self.namespace, error = yield self.get_namespace(namespace_id)
 
         submit = self.get_argument('submit', None)
+
         if submit == 'namespace_delete':
             if self.get_argument('confirm', None) == self.namespace["name"]:
                 res, error = yield self.application.structure.namespace_delete(
@@ -198,199 +309,32 @@ class NamespaceFormHandler(BaseHandler):
                 self.redirect(
                     self.reverse_url("namespace_edit", self.project['_id'], namespace_id)
                 )
-            return
-
-        form = NamespaceForm(self)
-
-        if not form.validate():
-            self.render(
-                'namespace/create.html', form=form, project=self.project,
-                render_control=render_control, render_label=render_label
-            )
-            return
-
-        existing_namespace, error = yield self.application.structure.get_namespace_by_name(
-            self.project, form.name.data
-        )
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-
-        if (not namespace_id and existing_namespace) or (existing_namespace and existing_namespace['_id'] != namespace_id):
-            form.name.errors.append(self.application.DUPLICATE_NAME)
-            self.render(
-                'namespace/create.html', form=form, project=self.project,
-                render_control=render_control, render_label=render_label
-            )
-            return
-
-        if not namespace_id:
-            namespace, error = yield self.application.structure.namespace_create(
-                self.project,
-                **form.data
-            )
-            if error:
-                raise tornado.web.HTTPError(500, log_message="error creating project")
         else:
-            namespace, error = yield self.application.structure.namespace_edit(
-                self.namespace,
-                **form.data
-            )
-            if error:
-                raise tornado.web.HTTPError(500, log_message="error creating project")
+            params = dict((k, ''.join(v)) for k, v in self.request.arguments.iteritems())
 
-        self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
-
-
-class ProjectSettingsHandler(BaseHandler):
-    """
-    Edit project setting.
-    This part of application requires more careful implementation.
-    """
-    @coroutine
-    def get_project(self, project_id):
-
-        project, error = yield self.application.structure.get_project_by_id(project_id)
-        if not project:
-            raise tornado.web.HTTPError(404)
-
-        raise Return((project, None))
-
-    @coroutine
-    def get_general(self):
-        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-
-        data = {
-            'user': self.current_user,
-            'project': self.project,
-            'namespaces': namespaces
-        }
-        raise Return((data, None))
-
-    @coroutine
-    def post_general(self, submit):
-
-        url = self.reverse_url("project_settings", self.project['_id'], 'general')
-
-        if submit == 'regenerate_secret':
-            # regenerate public and secret key
-            res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-
-        self.redirect(url)
-
-    @coroutine
-    def get_namespace_choices(self):
-        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-        namespace_choices = [(x['_id'], x['name']) for x in namespaces]
-        namespace_choices.insert(0, ('', '--------'))
-        raise Return((namespace_choices, None))
-
-    @coroutine
-    def get_edit(self):
-        namespace_choices, error = yield self.get_namespace_choices()
-        data = {
-            'user': self.current_user,
-            'project': self.project,
-            'form': ProjectForm(self, namespace_choices=namespace_choices, **self.project),
-            'render_control': render_control,
-            'render_label': render_label
-        }
-        raise Return((data, None))
-
-    @coroutine
-    def post_edit(self, submit):
-
-        if submit == 'project_del':
-            # completely remove project
-            confirm = self.get_argument('confirm', None)
-            if confirm == self.project['name']:
-                res, error = yield self.application.structure.project_delete(self.project)
-                if error:
-                    raise tornado.web.HTTPError(500, log_message=str(error))
-                self.redirect(self.reverse_url("main"))
-                return
+            if namespace_id:
+                template_name = 'namespace/edit.html'
+                params['_id'] = namespace_id
+                result, error = yield self.application.process_namespace_edit(
+                    self.project, params, error_form=True
+                )
             else:
-                self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
-
-        else:
-            # edit project
-            namespace_choices, error = yield self.get_namespace_choices()
-            form = ProjectForm(self, namespace_choices=namespace_choices)
-            if not form.validate():
-                self.render(
-                    'project/settings_edit.html', project=self.project,
-                    form=form, render_control=render_control, render_label=render_label
+                template_name = 'namespace/create.html'
+                result, error = yield self.application.process_namespace_create(
+                    self.project, params, error_form=True
                 )
-                return
 
-            existing_project, error = yield self.application.structure.get_project_by_name(form.name.data)
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-
-            if existing_project and existing_project['_id'] != self.project['_id']:
-                form.name.errors.append('duplicate name')
+            if error and isinstance(error, six.string_types):
+                # server error
+                raise tornado.web.HTTPError(500)
+            elif error:
+                # error is form with errors in this case
                 self.render(
-                    'project/settings_edit.html', form=form,
-                    render_control=render_control, render_label=render_label,
-                    project=self.project
+                    template_name, form=error, project=self.project,
+                    render_control=render_control, render_label=render_label
                 )
-                return
-
-            data = form.data.copy()
-            data['default_namespace'] = form.default_namespace.data or None
-
-            res, error = yield self.application.structure.project_edit(
-                self.project,
-                **data
-            )
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-            self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
-
-    @tornado.web.authenticated
-    @coroutine
-    def get(self, project_name, section):
-
-        self.project, error = yield self.get_project(project_name)
-
-        if section == 'general':
-            template_name = 'project/settings_general.html'
-            func = self.get_general
-
-        elif section == 'edit':
-            template_name = 'project/settings_edit.html'
-            func = self.get_edit
-
-        else:
-            raise tornado.web.HTTPError(404)
-
-        data, error = yield func()
-
-        self.render(template_name, **data)
-
-    @tornado.web.authenticated
-    @coroutine
-    def post(self, project_name, section):
-
-        self.project, error = yield self.get_project(
-            project_name
-        )
-
-        submit = self.get_argument('submit', None)
-
-        if section == 'general':
-            yield self.post_general(submit)
-
-        elif section == 'edit':
-            yield self.post_edit(submit)
-
-        else:
-            raise tornado.web.HTTPError(404)
+            else:
+                self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
 
 
 class AdminSocketHandler(SockJSConnection):

@@ -32,7 +32,6 @@ function syntaxHighlight(json) {
                 current_user: {},
                 project_tab: '_projects',
                 projects: [],
-                namespaces: {},
                 socket_url: '/socket',
                 global_content_element: '#main-content',
                 global_tabs_element: '#tabs',

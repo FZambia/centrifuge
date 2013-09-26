@@ -101,7 +101,7 @@ class ProjectForm(Form):
     default_namespace = SelectField(
         label='default namespace',
         validators=[],
-        default=None
+        default=''
     )
 
     def validate_name(self, field):

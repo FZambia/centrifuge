@@ -565,7 +565,7 @@ class Application(tornado.web.Application):
         raise Return((project, None))
 
     @coroutine
-    def process_project_create(self, project, params):
+    def process_project_create(self, project, params, error_form=False):
 
         form = ProjectForm(params)
 
@@ -578,6 +578,8 @@ class Application(tornado.web.Application):
 
             if existing_project:
                 form.name.errors.append(self.DUPLICATE_NAME)
+                if error_form:
+                    raise Return((None, form))
                 raise Return((None, form.errors))
             else:
                 project, error = yield self.structure.project_create(
@@ -587,10 +589,12 @@ class Application(tornado.web.Application):
                     raise Return((None, self.INTERNAL_SERVER_ERROR))
                 raise Return((project, None))
         else:
+            if error_form:
+                raise Return((None, form))
             raise Return((None, form.errors))
 
     @coroutine
-    def process_project_edit(self, project, params):
+    def process_project_edit(self, project, params, error_form=False):
         """
         Edit project namespace.
         """
@@ -600,7 +604,13 @@ class Application(tornado.web.Application):
         if "name" not in params:
             params["name"] = project["name"]
 
-        form = ProjectForm(params)
+        namespaces, error = yield self.structure.get_project_namespaces(project)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+
+        namespace_choices = [(x['_id'], x['name']) for x in namespaces]
+        namespace_choices.insert(0, ('', ''))
+        form = ProjectForm(params, namespace_choices=namespace_choices)
 
         if form.validate():
 
@@ -613,6 +623,8 @@ class Application(tornado.web.Application):
                     raise Return((None, self.INTERNAL_SERVER_ERROR))
                 if existing_project:
                     form.name.errors.append(self.DUPLICATE_NAME)
+                    if error_form:
+                        raise Return((None, form))
                     raise Return((None, form.errors))
 
             updated_project = project.copy()
@@ -624,6 +636,8 @@ class Application(tornado.web.Application):
                 raise Return((None, self.INTERNAL_SERVER_ERROR))
             raise Return((project, None))
         else:
+            if error_form:
+                raise Return((None, form))
             raise Return((None, form.errors))
 
     @coroutine
@@ -670,7 +684,7 @@ class Application(tornado.web.Application):
         raise Return((namespace, None))
 
     @coroutine
-    def process_namespace_create(self, project, params):
+    def process_namespace_create(self, project, params, error_form=False):
         """
         Create new namespace in project or update if already exists.
         """
@@ -688,6 +702,8 @@ class Application(tornado.web.Application):
 
             if existing_namespace:
                 form.name.errors.append(self.DUPLICATE_NAME)
+                if error_form:
+                    raise Return((None, form))
                 raise Return((None, form.errors))
             else:
                 namespace, error = yield self.structure.namespace_create(
@@ -697,10 +713,12 @@ class Application(tornado.web.Application):
                     raise Return((None, self.INTERNAL_SERVER_ERROR))
                 raise Return((namespace, None))
         else:
+            if error_form:
+                raise Return((None, form))
             raise Return((None, form.errors))
 
     @coroutine
-    def process_namespace_edit(self, project, params):
+    def process_namespace_edit(self, project, params, error_form=False):
         """
         Edit project namespace.
         """
@@ -738,6 +756,8 @@ class Application(tornado.web.Application):
                     raise Return((None, self.INTERNAL_SERVER_ERROR))
                 if existing_namespace:
                     form.name.errors.append(self.DUPLICATE_NAME)
+                    if error_form:
+                        raise Return((None, form))
                     raise Return((None, form.errors))
 
             updated_namespace = namespace.copy()
@@ -749,6 +769,8 @@ class Application(tornado.web.Application):
                 raise Return((None, self.INTERNAL_SERVER_ERROR))
             raise Return((namespace, None))
         else:
+            if error_form:
+                raise Return((None, form))
             raise Return((None, form.errors))
 
     @coroutine
