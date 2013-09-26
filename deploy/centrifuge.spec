@@ -74,6 +74,7 @@ mkdir -p %{buildroot}/var/db/%{name}
 %post
 
 if [ $1 -gt 1 ]; then
+    /etc/init.d/centrifuge restart
     echo "Upgraded"
 else
     echo "Installed"
