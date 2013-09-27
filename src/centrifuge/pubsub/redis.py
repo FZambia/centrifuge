@@ -6,6 +6,7 @@
 import six
 
 import toredis
+from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
 from tornado.escape import json_decode
 
@@ -43,13 +44,16 @@ class PubSub(object):
         self.application = application
         self.subscriptions = {}
         self.client = None
-
-    def initialize(self):
+        self.connection_check = PeriodicCallback(self.check_connection, 1000)
 
         self.subscriber = toredis.Client()
-
         self.publisher = toredis.Client()
 
+    def initialize(self):
+        self.connect()
+        logger.info("Redis PUB/SUB")
+
+    def connect(self):
         try:
             self.subscriber.connect(host="localhost", port=6379)
             self.publisher.connect(host="localhost", port=6379)
@@ -59,7 +63,16 @@ class PubSub(object):
         self.subscriber.subscribe(CONTROL_CHANNEL, callback=self.dispatch_published_message)
         self.subscriber.subscribe(ADMIN_CHANNEL, callback=self.dispatch_published_message)
 
-        logger.info("Redis PUB/SUB")
+        for subscription in self.subscriptions.copy():
+            self.subscriber.subscribe(subscription, callback=self.dispatch_published_message)
+
+        self.connection_check.stop()
+        self.connection_check.start()
+
+    def check_connection(self):
+        if not self.subscriber.is_connected() or not self.publisher.is_connected():
+            logger.info('reconnecting to Redis')
+            self.connect()
 
     def publish(self, channel, message, method=None):
         """

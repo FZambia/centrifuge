@@ -19,8 +19,8 @@ from .state import State
 from .log import logger
 from .forms import NamespaceForm, ProjectForm
 
-from pubsub.zeromq import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
-#from pubsub.redis import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
+#from pubsub.zeromq import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
+from pubsub.redis import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
 
 
 # in seconds, client's send presence ping to Redis once in this interval
