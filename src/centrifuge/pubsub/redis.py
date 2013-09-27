@@ -64,6 +64,8 @@ class PubSub(object):
         self.subscriber.subscribe(ADMIN_CHANNEL, callback=self.dispatch_published_message)
 
         for subscription in self.subscriptions.copy():
+            if subscription not in self.subscriptions:
+                continue
             self.subscriber.subscribe(subscription, callback=self.dispatch_published_message)
 
         self.connection_check.stop()
