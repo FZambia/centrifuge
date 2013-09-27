@@ -200,11 +200,11 @@ class Structure:
             self.on_error(error)
 
         # share knowledge about required structure update with all system
-        message = json_encode({
+        message = {
             "app_id": self.application.uid,
             "method": "update_structure",
             "params": {}
-        })
+        }
         self.application.send_control_message(message)
 
         # update structure of current instance

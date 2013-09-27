@@ -946,43 +946,37 @@
         }
     };
 
-    centrifuge_proto._joinResponse = function(message) {
-        if (message.body) {
-            //noinspection JSValidateTypes
-            var body = JSON.parse(message.body);
-            var subscription = this._findSubscription(body.namespace, body.channel);
-            if (!subscription) {
-                return;
-            }
-            subscription.trigger('join', [body]);
-        } else {
-            this._debug('Unknown message', message);
+    centrifuge_proto._joinResponse = function(body) {
+        var subscription = this._findSubscription(body.namespace, body.channel);
+        if (!subscription) {
+            return;
         }
+        subscription.trigger('join', [body]);
     };
 
-    centrifuge_proto._leaveResponse = function(message) {
-        if (message.body) {
-            //noinspection JSValidateTypes
-            var body = JSON.parse(message.body);
-            var subscription = this._findSubscription(body.namespace, body.channel);
-            if (!subscription) {
-                return;
-            }
-            subscription.trigger('leave', [body]);
-        } else {
-            this._debug('Unknown message', message);
+    centrifuge_proto._leaveResponse = function(body) {
+        var subscription = this._findSubscription(body.namespace, body.channel);
+        if (!subscription) {
+            return;
         }
+        subscription.trigger('leave', [body]);
     };
 
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
             //noinspection JSValidateTypes
             var body = JSON.parse(message.body);
-            var subscription = this._findSubscription(body.namespace, body.channel);
-            if (!subscription) {
-                return;
+            if (body.message_type === 'join') {
+                this._joinResponse(body);
+            } else if (body.message_type === 'leave') {
+                this._leaveResponse(body);
+            } else if (body.message_type === 'message') {
+                var subscription = this._findSubscription(body.namespace, body.channel);
+                if (!subscription) {
+                    return;
+                }
+                subscription.trigger('message', [body]);
             }
-            subscription.trigger('message', [body]);
         } else {
             this._debug('Unknown message', message);
         }

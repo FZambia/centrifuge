@@ -11,10 +11,10 @@ from zmq.eventloop.zmqstream import ZMQStream
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
-from tornado.escape import utf8, json_decode
+from tornado.escape import utf8, json_decode, json_encode
 
-from .response import Response
-from .log import logger
+from ..response import Response
+from ..log import logger
 
 
 # separate important parts of channel name by this
@@ -37,7 +37,7 @@ CONTROL_CHANNEL = '_control' + CHANNEL_SUFFIX
 DEFAULT_PUBLISH_METHOD = 'message'
 
 
-class ZmqPubSub(object):
+class PubSub(object):
     """
     This class manages application PUB/SUB logic.
     """
@@ -46,7 +46,14 @@ class ZmqPubSub(object):
         self.subscriptions = {}
         self.sub_stream = None
 
-    def init_sockets(self):
+    def initialize(self):
+        from zmq.eventloop import ioloop
+
+
+        # Install ZMQ ioloop instead of a tornado ioloop
+        # http://zeromq.github.com/pyzmq/eventloop.html
+        ioloop.install()
+
         self.zmq_context = zmq.Context()
         options = self.application.settings['options']
 
@@ -125,7 +132,9 @@ class ZmqPubSub(object):
         Publish message into channel of stream.
         """
         method = method or DEFAULT_PUBLISH_METHOD
-        to_publish = [utf8(channel), utf8(method), utf8(message)]
+        message["message_type"] = method
+        message = json_encode(message)
+        to_publish = [utf8(channel), utf8(message)]
         self.pub_stream.send_multipart(to_publish)
 
     def get_subscription_key(self, project_id, namespace, channel):
@@ -147,8 +156,7 @@ class ZmqPubSub(object):
         application handler.
         """
         channel = multipart_message[0]
-        method = multipart_message[1]
-        message_data = multipart_message[2]
+        message_data = multipart_message[1]
         if six.PY3:
             message_data = message_data.decode()
         if channel == CONTROL_CHANNEL:
@@ -156,7 +164,7 @@ class ZmqPubSub(object):
         elif channel == ADMIN_CHANNEL:
             yield self.handle_admin_message(message_data)
         else:
-            yield self.handle_channel_message(channel, method, message_data)
+            yield self.handle_channel_message(channel, message_data)
 
     @coroutine
     def handle_admin_message(self, message):
@@ -165,11 +173,12 @@ class ZmqPubSub(object):
                 connection.send(message)
 
     @coroutine
-    def handle_channel_message(self, channel, method, message):
+    def handle_channel_message(self, channel, message):
+
         if channel not in self.subscriptions:
             raise Return((True, None))
 
-        response = Response(method=method, body=message)
+        response = Response(method="message", body=message)
         prepared_response = response.as_message()
 
         for uid, client in six.iteritems(self.subscriptions[channel]):

@@ -18,7 +18,9 @@ from .structure import Structure
 from .state import State
 from .log import logger
 from .forms import NamespaceForm, ProjectForm
-from .pubsub import ZmqPubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
+
+from pubsub.zeromq import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
+#from pubsub.redis import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
 
 
 # in seconds, client's send presence ping to Redis once in this interval
@@ -168,8 +170,8 @@ class Application(tornado.web.Application):
         """
         Initialize and configure pub/sub manager.
         """
-        self.pubsub = ZmqPubSub(self)
-        self.pubsub.init_sockets()
+        self.pubsub = PubSub(self)
+        self.pubsub.initialize()
 
     def init_callbacks(self):
         """
@@ -214,7 +216,7 @@ class Application(tornado.web.Application):
             'method': 'ping',
             'params': {'uid': self.uid}
         }
-        send_ping = partial(self.pubsub.publish, CONTROL_CHANNEL, json_encode(message))
+        send_ping = partial(self.pubsub.publish, CONTROL_CHANNEL, message)
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, ping.start
@@ -386,8 +388,6 @@ class Application(tornado.web.Application):
         namespace_name = message['namespace']
         channel = message['channel']
 
-        message = json_encode(message)
-
         if allowed_namespaces[namespace_name]['is_watching']:
             # send to admin channel
             self.pubsub.publish(ADMIN_CHANNEL, message)
@@ -398,6 +398,8 @@ class Application(tornado.web.Application):
         )
 
         self.pubsub.publish(subscription_key, message)
+
+        message = json_encode(message)
 
         yield self.state.add_history_message(
             project_id, namespace_name, channel, message,
@@ -551,7 +553,7 @@ class Application(tornado.web.Application):
         result, error = yield self.handle_unsubscribe(params)
 
         # send to other nodes
-        self.send_control_message(json_encode(message))
+        self.send_control_message(message)
 
         raise Return((result, error))
 
