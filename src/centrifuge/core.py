@@ -64,6 +64,7 @@ class Application(tornado.web.Application):
         # create unique uid for this application
         self.uid = uuid.uuid4().hex
 
+        # PUB/SUB manager
         self.pubsub = None
 
         # initialize dict to keep administrator's connections
@@ -76,16 +77,19 @@ class Application(tornado.web.Application):
         # key - node address, value - timestamp of last ping
         self.nodes = {}
 
-        # application structure (projects, namespaces etc)
+        # application structure manager (projects, namespaces etc)
         self.structure = None
 
         # initialize dict to keep back-off information for projects
         self.back_off = {}
 
+        # list of coroutines that must be done before message publish
         self.pre_publish_callbacks = []
 
+        # list of coroutines that must be done after message publish
         self.post_publish_callbacks = []
 
+        # how often this node should send ping to other nodes
         self.presence_ping_interval = DEFAULT_PRESENCE_PING_INTERVAL*1000
 
         # initialize tornado's application
@@ -99,6 +103,10 @@ class Application(tornado.web.Application):
         self.init_ping()
 
     def init_structure(self):
+        """
+        Initialize structure manager using settings provided
+        in configuration file.
+        """
         custom_settings = self.settings['config']
         structure_settings = custom_settings.get('structure', {})
 
@@ -131,6 +139,9 @@ class Application(tornado.web.Application):
         logger.info("Storage module: {0}".format(storage_module))
 
     def init_state(self):
+        """
+        Initialize state manager (for presence/history data).
+        """
         config = self.settings['config']
         state_config = config.get("state", {})
         if not state_config:
@@ -155,7 +166,7 @@ class Application(tornado.web.Application):
 
     def init_pubsub(self):
         """
-        Routine to create all application-wide ZeroMQ sockets.
+        Initialize and configure pub/sub manager.
         """
         self.pubsub = ZmqPubSub(self)
         self.pubsub.init_sockets()
@@ -195,7 +206,9 @@ class Application(tornado.web.Application):
                 pass
 
     def init_ping(self):
-
+        """
+        Start periodic tasks for sending ping and reviewing ping.
+        """
         message = {
             'app_id': self.uid,
             'method': 'ping',
@@ -213,6 +226,10 @@ class Application(tornado.web.Application):
         )
 
     def send_control_message(self, message):
+        """
+        Send message to CONTROL channel. We use this channel to
+        share commands between running instances.
+        """
         self.pubsub.publish(CONTROL_CHANNEL, message)
 
     def add_connection(self, project_id, user, uid, client):
@@ -267,12 +284,15 @@ class Application(tornado.web.Application):
 
     @coroutine
     def handle_ping(self, params):
+        """
+        Ping message received.
+        """
         self.nodes[params.get('uid')] = time.time()
 
     @coroutine
     def handle_unsubscribe(self, params):
         """
-        Unsubscribe client from certain channels.
+        Unsubscribe message received - unsubscribe client from certain channels.
         """
         project = params.get("project")
         user = params.get("user")
@@ -336,7 +356,8 @@ class Application(tornado.web.Application):
     @coroutine
     def handle_update_structure(self, params):
         """
-        Handle request to update structure.
+        Update structure message received - structure changed and other
+        node sent us a signal about update.
         """
         result, error = yield self.structure.update()
         raise Return((result, error))
@@ -345,8 +366,8 @@ class Application(tornado.web.Application):
     @coroutine
     def process_call(self, project, method, params):
         """
-        Process HTTP call. It can be new message publishing,
-        some API command etc.
+        Call appropriate method from this class according to specified method.
+        Note, that all permission checking must be done before calling this method.
         """
         handle_func = getattr(self, "process_%s" % method, None)
 

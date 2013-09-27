@@ -116,7 +116,6 @@ class ProjectCreateHandler(BaseHandler):
 class ProjectSettingsHandler(BaseHandler):
     """
     Edit project setting.
-    This part of application requires more careful implementation.
     """
     @coroutine
     def get_project(self, project_id):
@@ -143,7 +142,7 @@ class ProjectSettingsHandler(BaseHandler):
         if submit != 'regenerate_secret':
             raise tornado.web.HTTPError(400)
 
-        # regenerate public and secret key
+        # regenerate project secret key
         res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
@@ -343,13 +342,13 @@ class AdminSocketHandler(SockJSConnection):
     def subscribe(self):
         self.uid = uuid.uuid4().hex
         self.application.add_admin_connection(self.uid, self)
-        logger.info('admin connected')
+        logger.debug('admin connected')
 
     def unsubscribe(self):
         if not hasattr(self, 'uid'):
             return
         self.application.remove_admin_connection(self.uid)
-        logger.info('admin disconnected')
+        logger.debug('admin disconnected')
 
     def on_open(self, info):
         try:
