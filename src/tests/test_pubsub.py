@@ -10,12 +10,6 @@ from centrifuge.pubsub.base import BasePubSub
 from centrifuge.core import Application
 
 
-class FakeSocket(object):
-
-    def setsockopt_string(self, *args, **kwargs):
-        return True
-
-
 class FakeClient(object):
 
     uid = 'test'
@@ -26,7 +20,6 @@ class CoreTest(TestCase):
     def setUp(self):
         self.application = Application()
         self.pubsub = BasePubSub(self.application)
-        self.pubsub.sub_stream = FakeSocket()
 
         self.project_id = 'test'
         self.namespace = 'test'

@@ -26,12 +26,6 @@ class FakeState(object):
         raise Return((True, None))
 
 
-class FakeSocket(object):
-
-    def setsockopt_string(self, *args, **kwargs):
-        return True
-
-
 class FakePeriodic(object):
 
     def stop(self):
@@ -67,7 +61,6 @@ class ClientTest(AsyncTestCase):
         self.client.presence_ping = FakePeriodic()
         self.client.application = Application()
         self.client.application.pubsub = BasePubSub(self.client.application)
-        self.client.application.pubsub.sub_stream = FakeSocket()
         self.client.application.state = FakeState()
 
     @gen_test
