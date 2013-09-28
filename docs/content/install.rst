@@ -86,6 +86,30 @@ installed:
     easy_install pip
 
 
+From version ``0.2.8`` there is experimental Redis PUB/SUB support in Centrifuge. This means that you
+can run Centrifuge using Redis instead of ZeroMQ. In this case you can even build Centrifuge without
+extra dependency on ZeroMQ libraries.
+
+.. code-block:: bash
+
+    python setup.py install --without-zmq
+
+
+If you don't need MongoDB or PostgreSQL for structure storing you can also remove dependencies on them
+using:
+
+.. code-block:: bash
+
+    python setup.py install --without-postgresql --without-mongodb
+
+Finally if you don't need Redis for PUB/SUB or presence/history data, you can build Centrifuge
+without dependencies on Redis packages:
+
+.. code-block:: bash
+
+    python setup.py install --without-redis
+
+
 Structure database
 ~~~~~~~~~~~~~~~~~~
 
