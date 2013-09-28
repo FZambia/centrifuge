@@ -217,6 +217,13 @@ def main():
     AdminSocketHandler.application = app
     Client.application = app
 
+    if options.redis:
+        from centrifuge.pubsub.redis import PubSub
+    else:
+        from centrifuge.pubsub.zeromq import PubSub
+
+    app.pubsub = PubSub(app)
+
     app.initialize()
 
     magic_project_id = custom_settings.get('magic_project_id')

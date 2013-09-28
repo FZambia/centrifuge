@@ -19,8 +19,7 @@ from .state import State
 from .log import logger
 from .forms import NamespaceForm, ProjectForm
 
-#from pubsub.zeromq import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
-from pubsub.redis import PubSub, CONTROL_CHANNEL, ADMIN_CHANNEL
+from pubsub.base import BasePubSub
 
 
 # in seconds, client's send presence ping to Redis once in this interval
@@ -66,8 +65,8 @@ class Application(tornado.web.Application):
         # create unique uid for this application
         self.uid = uuid.uuid4().hex
 
-        # PUB/SUB manager
-        self.pubsub = None
+        # PUB/SUB manager class
+        self.pubsub = BasePubSub(self)
 
         # initialize dict to keep administrator's connections
         self.admin_connections = {}
@@ -170,7 +169,6 @@ class Application(tornado.web.Application):
         """
         Initialize and configure pub/sub manager.
         """
-        self.pubsub = PubSub(self)
         self.pubsub.initialize()
 
     def init_callbacks(self):
@@ -190,7 +188,7 @@ class Application(tornado.web.Application):
             self.post_publish_callbacks.append(callback)
 
     def send_ping(self, ping_message):
-        self.pubsub.publish(CONTROL_CHANNEL, ping_message)
+        self.pubsub.publish_control_message(ping_message)
 
     def review_ping(self):
         """
@@ -216,7 +214,7 @@ class Application(tornado.web.Application):
             'method': 'ping',
             'params': {'uid': self.uid}
         }
-        send_ping = partial(self.pubsub.publish, CONTROL_CHANNEL, message)
+        send_ping = partial(self.pubsub.publish_control_message, message)
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, ping.start
@@ -232,7 +230,7 @@ class Application(tornado.web.Application):
         Send message to CONTROL channel. We use this channel to
         share commands between running instances.
         """
-        self.pubsub.publish(CONTROL_CHANNEL, message)
+        self.pubsub.publish_control_message(message)
 
     def add_connection(self, project_id, user, uid, client):
         """
@@ -390,7 +388,7 @@ class Application(tornado.web.Application):
 
         if allowed_namespaces[namespace_name]['is_watching']:
             # send to admin channel
-            self.pubsub.publish(ADMIN_CHANNEL, message)
+            self.pubsub.publish_admin_message(message)
 
         # send to event channel
         subscription_key = self.pubsub.get_subscription_key(

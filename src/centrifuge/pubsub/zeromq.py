@@ -4,55 +4,26 @@
 # All rights reserved.
 
 import six
-
 import zmq
 from zmq.eventloop.zmqstream import ZMQStream
-
 import tornado.web
 import tornado.ioloop
-from tornado.gen import coroutine, Return
-from tornado.escape import utf8, json_decode, json_encode
+from tornado.gen import coroutine
+from tornado.escape import utf8, json_encode
 
-from ..response import Response
 from ..log import logger
+from .base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
 
 
-# separate important parts of channel name by this
-CHANNEL_NAME_SEPARATOR = ':'
-
-
-# add sequence of symbols to the end of each channel name to
-# prevent name overlapping
-CHANNEL_SUFFIX = '>>>'
-
-
-# channel for administrative interface - watch for messages travelling around.
-ADMIN_CHANNEL = '_admin' + CHANNEL_SUFFIX
-
-
-# channel for sharing commands among all nodes.
-CONTROL_CHANNEL = '_control' + CHANNEL_SUFFIX
-
-
-DEFAULT_PUBLISH_METHOD = 'message'
-
-
-class PubSub(object):
+class PubSub(BasePubSub):
     """
     This class manages application PUB/SUB logic.
     """
     def __init__(self, application):
-        self.application = application
-        self.subscriptions = {}
+        super(PubSub, self).__init__(application)
         self.sub_stream = None
 
     def initialize(self):
-        from zmq.eventloop import ioloop
-
-
-        # Install ZMQ ioloop instead of a tornado ioloop
-        # http://zeromq.github.com/pyzmq/eventloop.html
-        ioloop.install()
 
         self.zmq_context = zmq.Context()
         options = self.application.settings['options']
@@ -131,23 +102,11 @@ class PubSub(object):
         """
         Publish message into channel of stream.
         """
-        method = method or DEFAULT_PUBLISH_METHOD
+        method = method or self.DEFAULT_PUBLISH_METHOD
         message["message_type"] = method
         message = json_encode(message)
         to_publish = [utf8(channel), utf8(message)]
         self.pub_stream.send_multipart(to_publish)
-
-    def get_subscription_key(self, project_id, namespace, channel):
-        """
-        Create subscription name to catch messages from specific
-        project, namespace and channel.
-        """
-        return str(CHANNEL_NAME_SEPARATOR.join([
-            project_id,
-            namespace,
-            channel,
-            CHANNEL_SUFFIX
-        ]))
 
     @coroutine
     def dispatch_published_message(self, multipart_message):
@@ -166,83 +125,12 @@ class PubSub(object):
         else:
             yield self.handle_channel_message(channel, message_data)
 
-    @coroutine
-    def handle_admin_message(self, message):
-        for uid, connection in six.iteritems(self.application.admin_connections):
-            if uid in self.application.admin_connections:
-                connection.send(message)
-
-    @coroutine
-    def handle_channel_message(self, channel, message):
-
-        if channel not in self.subscriptions:
-            raise Return((True, None))
-
-        response = Response(method="message", body=message)
-        prepared_response = response.as_message()
-
-        for uid, client in six.iteritems(self.subscriptions[channel]):
-            if channel in self.subscriptions and uid in self.subscriptions[channel]:
-                client.send(prepared_response)
-
-    @coroutine
-    def handle_control_message(self, message):
-        """
-        Handle control message.
-        """
-        message = json_decode(message)
-
-        app_id = message.get("app_id")
-        method = message.get("method")
-        params = message.get("params")
-
-        if app_id and app_id == self.application.uid:
-            # application id must be set when we don't want to do
-            # make things twice for the same application. Setting
-            # app_id means that we don't want to process control
-            # message when it is appear in application instance if
-            # application uid matches app_id
-            raise Return((True, None))
-
-        func = getattr(self.application, 'handle_%s' % method, None)
-        if not func:
-            raise Return((None, self.application.METHOD_NOT_FOUND))
-
-        result, error = yield func(params)
-        raise Return((result, error))
-
-    def add_subscription(self, project_id, namespace_name, channel, client):
-        """
-        Subscribe application on channel if necessary and register client
-        to receive messages from that channel.
-        """
-        subscription_key = self.get_subscription_key(project_id, namespace_name, channel)
+    def subscribe_key(self, subscription_key):
         self.sub_stream.setsockopt_string(
             zmq.SUBSCRIBE, six.u(subscription_key)
         )
 
-        if subscription_key not in self.subscriptions:
-            self.subscriptions[subscription_key] = {}
-
-        self.subscriptions[subscription_key][client.uid] = client
-
-    def remove_subscription(self, project_id, namespace_name, channel, client):
-        """
-        Unsubscribe application from channel if necessary and unregister client
-        from receiving messages from that channel.
-        """
-        subscription_key = self.get_subscription_key(project_id, namespace_name, channel)
-
-        try:
-            del self.subscriptions[subscription_key][client.uid]
-        except KeyError:
-            pass
-
-        try:
-            if not self.subscriptions[subscription_key]:
-                self.sub_stream.setsockopt_string(
-                    zmq.UNSUBSCRIBE, six.u(subscription_key)
-                )
-                del self.subscriptions[subscription_key]
-        except KeyError:
-            pass
+    def unsubscribe_key(self, subscription_key):
+        self.sub_stream.setsockopt_string(
+            zmq.UNSUBSCRIBE, six.u(subscription_key)
+        )

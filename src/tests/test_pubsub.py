@@ -6,7 +6,7 @@ import os
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, path)
 
-from centrifuge.pubsub import ZmqPubSub
+from centrifuge.pubsub.base import BasePubSub
 from centrifuge.core import Application
 
 
@@ -25,7 +25,7 @@ class CoreTest(TestCase):
 
     def setUp(self):
         self.application = Application()
-        self.pubsub = ZmqPubSub(self.application)
+        self.pubsub = BasePubSub(self.application)
         self.pubsub.sub_stream = FakeSocket()
 
         self.project_id = 'test'
