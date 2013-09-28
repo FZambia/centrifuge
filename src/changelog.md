@@ -1,3 +1,7 @@
+v0.2.9
+======
+* fix API bug
+
 v0.2.8
 ======
 * experimental structure API support
