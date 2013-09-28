@@ -83,6 +83,10 @@ def render_label(label):
     return label(class_="col-lg-2 control-label")
 
 
+def params_from_request(request):
+    return dict((k, ''.join([x.decode() for x in v])) for k, v in six.iteritems(request.arguments))
+
+
 class ProjectCreateHandler(BaseHandler):
 
     @tornado.web.authenticated
@@ -97,7 +101,7 @@ class ProjectCreateHandler(BaseHandler):
     @coroutine
     def post(self):
 
-        params = dict((k, ''.join(v)) for k, v in self.request.arguments.iteritems())
+        params = params_from_request(self.request)
         result, error = yield self.application.process_project_create(None, params, error_form=True)
 
         if error and isinstance(error, six.string_types):
@@ -187,7 +191,7 @@ class ProjectSettingsHandler(BaseHandler):
 
         else:
             # edit project
-            params = dict((k, ''.join(v)) for k, v in self.request.arguments.iteritems())
+            params = params_from_request(self.request)
             result, error = yield self.application.process_project_edit(self.project, params, error_form=True)
             if error and isinstance(error, six.string_types):
                 # server error
@@ -309,7 +313,7 @@ class NamespaceFormHandler(BaseHandler):
                     self.reverse_url("namespace_edit", self.project['_id'], namespace_id)
                 )
         else:
-            params = dict((k, ''.join(v)) for k, v in self.request.arguments.iteritems())
+            params = params_from_request(self.request)
 
             if namespace_id:
                 template_name = 'namespace/edit.html'

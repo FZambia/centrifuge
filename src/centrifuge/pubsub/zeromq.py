@@ -117,6 +117,7 @@ class PubSub(BasePubSub):
         channel = multipart_message[0]
         message_data = multipart_message[1]
         if six.PY3:
+            channel = channel.decode()
             message_data = message_data.decode()
         if channel == CONTROL_CHANNEL:
             yield self.handle_control_message(message_data)

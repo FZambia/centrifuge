@@ -71,12 +71,17 @@ class PubSub(BasePubSub):
         Got message, decide what is it and dispatch into right
         application handler.
         """
-        if multipart_message[0] != 'message':
+        msg_type = multipart_message[0]
+        if six.PY3:
+            msg_type = msg_type.decode()
+
+        if msg_type != 'message':
             return
 
         channel = multipart_message[1]
         message_data = multipart_message[2]
         if six.PY3:
+            channel = channel.decode()
             message_data = message_data.decode()
         if channel == CONTROL_CHANNEL:
             yield self.handle_control_message(message_data)

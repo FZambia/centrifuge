@@ -19,7 +19,7 @@ from .state import State
 from .log import logger
 from .forms import NamespaceForm, ProjectForm
 
-from pubsub.base import BasePubSub
+from .pubsub.base import BasePubSub
 
 
 # in seconds, client's send presence ping to Redis once in this interval
