@@ -649,7 +649,7 @@ class Application(tornado.web.Application):
                     raise Return((None, form.errors))
 
             updated_project = project.copy()
-            updated_project.update(params)
+            updated_project.update(form.data)
             project, error = yield self.structure.project_edit(
                 project, **updated_project
             )
@@ -782,7 +782,7 @@ class Application(tornado.web.Application):
                     raise Return((None, form.errors))
 
             updated_namespace = namespace.copy()
-            updated_namespace.update(params)
+            updated_namespace.update(form.data)
             namespace, error = yield self.structure.namespace_edit(
                 namespace, **updated_namespace
             )
