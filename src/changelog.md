@@ -1,6 +1,8 @@
 v0.2.8
 ======
 * experimental structure API support
+* experimental Redis support for PUB/SUB
+* setup.py options to build Centrifuge without ZeroMQ, PostgreSQL, MongoDB or Redis support.
 
 
 v0.2.7
