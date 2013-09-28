@@ -23,18 +23,6 @@ define(
 )
 
 define(
-    "redis", default=False, help="use Redis for PUB/SUB", type=bool
-)
-
-define(
-    "redis_host", default="localhost", help="Redis host", type=str
-)
-
-define(
-    "redis_port", default=6379, help="Redis port", type=int
-)
-
-define(
     "zmq_pub_listen", default="127.0.0.1", help="zmq pub listen", type=str
 )
 
@@ -65,6 +53,18 @@ define(
 define(
     "zmq_xpub", default="tcp://localhost:6001", type=str,
     help="XPUB socket address"
+)
+
+define(
+    "redis", default=False, help="use Redis for PUB/SUB (default - ZeroMQ)", type=bool
+)
+
+define(
+    "redis_host", default="localhost", help="Redis host", type=str
+)
+
+define(
+    "redis_port", default=6379, help="Redis port", type=int
 )
 
 define(

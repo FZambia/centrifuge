@@ -31,7 +31,7 @@ class PubSub(BasePubSub):
         self.host = options.redis_host
         self.port = options.redis_port
         self.connect()
-        logger.info("Redis PUB/SUB")
+        logger.info("Redis PUB/SUB at {0}:{1}".format(self.host, self.port))
 
     def connect(self):
         try:
