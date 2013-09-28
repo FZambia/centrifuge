@@ -532,7 +532,7 @@ class Client(object):
             "data": json_decode(user_info)
         }
         self.application.pubsub.publish(
-            subscription_key, json_encode(message), method='join'
+            subscription_key, message, method='join'
         )
 
     def send_leave_message(self, namespace_name, channel):
@@ -550,5 +550,5 @@ class Client(object):
             "data": json_decode(user_info)
         }
         self.application.pubsub.publish(
-            subscription_key, json_encode(message), method='leave'
+            subscription_key, message, method='leave'
         )

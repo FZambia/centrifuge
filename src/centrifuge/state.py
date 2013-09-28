@@ -74,13 +74,13 @@ class State(object):
             self.connect()
 
     def get_presence_hash_key(self, project_id, namespace, channel):
-        return "presence:hash:%s:%s:%s" % (project_id, namespace, channel)
+        return "centrifuge:presence:hash:%s:%s:%s" % (project_id, namespace, channel)
 
     def get_presence_set_key(self, project_id, namespace, channel):
-        return "presence:set:%s:%s:%s" % (project_id, namespace, channel)
+        return "centrifuge:presence:set:%s:%s:%s" % (project_id, namespace, channel)
 
     def get_history_list_key(self, project_id, namespace, channel):
-        return "history:%s:%s:%s" % (project_id, namespace, channel)
+        return "centrifuge:history:%s:%s:%s" % (project_id, namespace, channel)
 
     @coroutine
     def add_presence(self, project_id, namespace, channel, uid, user_info, presence_timeout=None):

@@ -13,16 +13,6 @@ import tornado.options
 import tornado.httpserver
 from tornado.options import define, options
 
-from zmq.eventloop import ioloop
-
-
-# Install ZMQ ioloop instead of a tornado ioloop
-# http://zeromq.github.com/pyzmq/eventloop.html
-ioloop.install()
-
-from centrifuge.core import Application
-from centrifuge.log import logger
-
 
 define(
     "debug", default=False, help="tornado debug mode", type=bool
@@ -66,12 +56,35 @@ define(
 )
 
 define(
+    "redis", default=False, help="use Redis for PUB/SUB (default - ZeroMQ)", type=bool
+)
+
+define(
+    "redis_host", default="localhost", help="Redis host", type=str
+)
+
+define(
+    "redis_port", default=6379, help="Redis port", type=int
+)
+
+define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
 
 tornado.options.parse_command_line()
 
+
+if not options.redis:
+
+    from zmq.eventloop import ioloop
+
+    # Install ZMQ ioloop instead of a tornado ioloop
+    # http://zeromq.github.com/pyzmq/eventloop.html
+    ioloop.install()
+
+from centrifuge.log import logger
+from centrifuge.core import Application
 
 from sockjs.tornado import SockJSRouter
 
@@ -203,6 +216,13 @@ def main():
     # create references to application from SockJS handlers
     AdminSocketHandler.application = app
     Client.application = app
+
+    if options.redis:
+        from centrifuge.pubsub.redis import PubSub
+    else:
+        from centrifuge.pubsub.zeromq import PubSub
+
+    app.pubsub = PubSub(app)
 
     app.initialize()
 

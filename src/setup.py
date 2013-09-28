@@ -8,6 +8,23 @@ if sys.argv[-1] == 'test':
     sys.exit(1 if status > 127 else status)
 
 
+with_zmq = True
+with_redis = True
+with_mongodb = True
+with_postgresql = True
+
+
+for arg in sys.argv:
+    if arg.startswith('--without-zmq'):
+        with_zmq = False
+    elif arg.startswith('--without-redis'):
+        with_redis = False
+    elif arg.startswith('--without-mongodb'):
+        with_mongodb = False
+    elif arg.startswith('--without-postgresql'):
+        with_postgresql = False
+
+
 def full_split(path, result=None):
     """
     Split a path name into components (the opposite of os.path.join)
@@ -67,14 +84,20 @@ install_requires = [
     'six==1.3.0',
     'tornado==3.1.1',
     'sockjs-tornado==1.0.0',
-    'pyzmq==13.1.0',
-    'motor==0.1.1',
-    'Momoko==1.0.0',
     'jsonschema==1.2.0',
     'toro==0.5',
-    'WTForms==1.0.4',
-    'toredis-fork==0.1.2'
+    'WTForms==1.0.4'
 ]
+
+
+if with_zmq:
+    install_requires.append('pyzmq==13.1.0')
+if with_redis:
+    install_requires.append('toredis-fork==0.1.2')
+if with_mongodb:
+    install_requires.append('motor==0.1.1')
+if with_postgresql:
+    install_requires.append('Momoko==1.0.0')
 
 
 def long_description():

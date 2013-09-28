@@ -5,7 +5,7 @@ from tornado.testing import AsyncTestCase, gen_test
 from centrifuge.client import Client
 from centrifuge.schema import client_api_schema
 from centrifuge.core import Application
-from centrifuge.pubsub import ZmqPubSub
+from centrifuge.pubsub.base import BasePubSub
 import json
 
 
@@ -24,12 +24,6 @@ class FakeState(object):
     @coroutine
     def remove_presence(self, *args, **kwargs):
         raise Return((True, None))
-
-
-class FakeSocket(object):
-
-    def setsockopt_string(self, *args, **kwargs):
-        return True
 
 
 class FakePeriodic(object):
@@ -66,8 +60,7 @@ class ClientTest(AsyncTestCase):
         self.client.channels = {}
         self.client.presence_ping = FakePeriodic()
         self.client.application = Application()
-        self.client.application.pubsub = ZmqPubSub(self.client.application)
-        self.client.application.pubsub.sub_stream = FakeSocket()
+        self.client.application.pubsub = BasePubSub(self.client.application)
         self.client.application.state = FakeState()
 
     @gen_test

@@ -6,14 +6,8 @@ import os
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, path)
 
-from centrifuge.pubsub import ZmqPubSub
+from centrifuge.pubsub.base import BasePubSub
 from centrifuge.core import Application
-
-
-class FakeSocket(object):
-
-    def setsockopt_string(self, *args, **kwargs):
-        return True
 
 
 class FakeClient(object):
@@ -25,8 +19,7 @@ class CoreTest(TestCase):
 
     def setUp(self):
         self.application = Application()
-        self.pubsub = ZmqPubSub(self.application)
-        self.pubsub.sub_stream = FakeSocket()
+        self.pubsub = BasePubSub(self.application)
 
         self.project_id = 'test'
         self.namespace = 'test'

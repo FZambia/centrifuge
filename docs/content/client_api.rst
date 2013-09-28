@@ -13,7 +13,7 @@ First, import javascript client into your web page:
 
 .. code-block:: html
 
-    <script src="https://raw.github.com/FZambia/centrifuge/master/src/centrifuge/web/frontend/static/application/js/centrifuge.js"></script>
+    <script src="https://raw.github.com/FZambia/centrifuge/master/javascript/centrifuge.js"></script>
 
 Javascript client built on top of Event Emitter written by `Oliver Caldwell <https://github.com/Wolfy87>`_.
 

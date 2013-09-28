@@ -161,6 +161,14 @@ And to start proxy:
 Now instances connected through XPUB/XSUB proxy. Success!
 
 
+If you want to use Redis for PUB/SUB communication instead of ZeroMQ you
+should run Centrifuge in this way:
+
+.. code-block:: bash
+
+    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379
+
+
 Our next step will be talking about how presence and history data for channels work.
 For this tasks Centrifuge uses Redis. All instances of Centrifuge must have access to
 information about presence and message history. Redis settings must be set up in
