@@ -3,7 +3,8 @@ v0.2.8
 * experimental structure API support
 * experimental Redis support for PUB/SUB
 * setup.py options to build Centrifuge without ZeroMQ, PostgreSQL, MongoDB or Redis support.
-
+* javascript client now lives on top of repo in a folder `javascript`
+* rpm improvements
 
 v0.2.7
 ======
