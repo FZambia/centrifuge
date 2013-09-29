@@ -155,9 +155,11 @@ class Application(tornado.web.Application):
 
             host = state_config.get("host", "localhost")
             port = state_config.get("port", 6379)
+            db = state_config.get("db", 0)
             self.state = State(
                 host=host,
                 port=port,
+                db=db,
                 presence_timeout=state_config.get(
                     "presence_expire_interval",
                     DEFAULT_PRESENCE_EXPIRE_INTERVAL

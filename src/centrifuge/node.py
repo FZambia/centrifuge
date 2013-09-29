@@ -68,6 +68,10 @@ define(
 )
 
 define(
+    "redis_db", default=0, help="Redis database number", type=int
+)
+
+define(
     "config", default='config.json', help="JSON config file", type=str
 )
 

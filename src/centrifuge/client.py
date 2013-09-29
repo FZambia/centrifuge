@@ -241,10 +241,10 @@ class Client(object):
 
             try:
                 response = yield http_client.fetch(request)
-            except:
+            except Exception as e:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
-                pass
+                logger.debug(e)
             else:
                 # reset back-off attempts
                 self.application.back_off[project_id] = 0

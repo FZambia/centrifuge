@@ -40,9 +40,10 @@ def dict_from_list(key_value_list):
 
 class State(object):
 
-    def __init__(self, host="localhost", port=6379, io_loop=None, fake=False, presence_timeout=60, history_size=20):
+    def __init__(self, host="localhost", port=6379, db=0, io_loop=None, fake=False, presence_timeout=60, history_size=20):
         self.host = host
         self.port = port
+        self.db = db
         self.io_loop = io_loop
         self.fake = fake
         self.client = None
@@ -51,6 +52,10 @@ class State(object):
         self.client = toredis.Client(io_loop=self.io_loop)
         self.client.state = self
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
+
+    def on_select(self, res):
+        if res != "OK":
+            logger.error("state select database: {0}".format(res))
 
     def connect(self):
         """
@@ -64,6 +69,9 @@ class State(object):
             self.client.connect(host=self.host, port=self.port)
         except Exception as e:
             logger.error("error connecting to Redis server: %s" % (str(e)))
+        else:
+            if self.db and isinstance(self.db, int):
+                self.client.select(self.db, callback=self.on_select)
 
         self.connection_check.stop()
         self.connection_check.start()
