@@ -87,7 +87,6 @@ function syntaxHighlight(json) {
 
             // jsrender templates
             var event_template = $('#event_template');
-            var project_template = $('#project_template');
             var tab_template = $('#tab_template');
             var tab_pane_template = $('#tab_pane_template');
 
@@ -98,12 +97,9 @@ function syntaxHighlight(json) {
                 }
             };
 
-            var clear_element_content = function(element) {
-                element.find('*').remove();
-            };
-
             var make_tab_text = function(name, display_name) {
                 if (display_name === '' || !display_name) {
+                    console.log(display_name);
                     return name;
                 }
                 return display_name;
@@ -129,17 +125,13 @@ function syntaxHighlight(json) {
                 return $('#' + project['name']);
             };
 
-            var get_current_user_id = function() {
-                return options.current_user['_id'];
-            };
-
             var prepare_html = function(html) {
                 return html;
             };
 
             var get_project_event_counter = function(project) {
             	var project_id = project['_id'];
-                return $('#project-' + project_id).find('.project-event-counter');
+                return $('#tab-' + project_id).find('.project-event-counter');
             };
 
             var get_project_event_counter_value = function(counter) {
@@ -176,7 +168,7 @@ function syntaxHighlight(json) {
             var clear_project_event_counter = function(project) {
                 var counter = get_project_event_counter(project);
                 highlight_counter(counter, false);
-                set_project_event_counter_value(counter, '&nbsp;');
+                counter.addClass('hidden');
             };
 
             var incr_project_event_counter = function(project) {
@@ -190,6 +182,7 @@ function syntaxHighlight(json) {
                     new_value = 1;
                 }
                 set_project_event_counter_value(counter, new_value);
+                counter.removeClass('hidden');
             };
 
             var handle_event_message = function(data) {
@@ -292,7 +285,7 @@ function syntaxHighlight(json) {
             };
 
             var create_tab = function(project) {
-                project['tab_text'] = make_tab_text(project['name'], project['display_name']).toLowerCase();
+                project['tab_text'] = make_tab_text(project['name'], project['display_name']);
                 var tab_content = tab_pane_template.render(project);
                 var tab_element = tab_template.render(project);
                 $('#tab-content').append(tab_content);
@@ -328,7 +321,6 @@ function syntaxHighlight(json) {
 			var route = function(tab) {
 				var project_id = tab.attr('data-id');
                 var project = get_project_by_id(project_id);
-                console.log(project);
                 highlight_tab(project, false);
                 if (project['_id'] !== '_projects') {
                     $('#project-settings').attr('href', '/project/' + project['_id'] + '/settings/general').show();

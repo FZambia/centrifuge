@@ -16,6 +16,9 @@ input:-webkit-autofill {
 .nav > li > a:hover, .nav > li > a:focus {
     background: #D4D4D4;
 }
+.project-tab {
+    font-size: 20px;
+}
 form {
     margin-top: 40px;
 }
@@ -100,9 +103,6 @@ label {
 }
 .project-meta {
     color: #999999;
-}
-.project-event-counter {
-    font-size: 30px;
 }
 .connection-status {
     margin-left: 15px;
