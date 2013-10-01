@@ -1,6 +1,18 @@
 html {
     overflow-y: scroll;
 }
+body, pre {
+    background: url('../img/bg.png');
+}
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+    background: url('../img/bg.png')
+}
+input, select, option {
+    background-color: #F5F3F3 !important;
+}
+input:-webkit-autofill {
+    color: #fff !important;
+}
 form {
     margin-top: 40px;
 }
@@ -18,9 +30,7 @@ label {
     border-radius: 0;
 }
 #wrap {
-	/* Negative indent footer by it's height */
-	margin: 0 auto;
-    margin-top: 20px;
+	margin: 20px auto;
 	width: 80%;
     max-width: 1400px;
     padding-bottom: 30px;
@@ -46,7 +56,6 @@ label {
 .label-counter {
 	margin-left: 5px;
 }
-
 .right {
 	text-align: right !important;
 }
@@ -56,18 +65,10 @@ label {
 .hidden {
 	display: none;
 }
-
 .event {
 	margin-left: 20px;
 	margin-bottom: 25px;
 }
-
-.string { color: green; }
-.number { color: darkorange; }
-.boolean { color: blue; }
-.null { color: magenta; }
-.key { color: red; }
-
 .event-header {
     border-radius: 2px 2px 0 0;
     box-shadow: none;
@@ -87,13 +88,9 @@ label {
 
 .project {
     margin-left: 0 !important;
-    margin-bottom: 20px;
+    margin-bottom: 60px;
 }
-.project-header {
-    height:50px;
-    line-height:50px;
-    margin-left: 15px;
-}
+.project-header {}
 .project-name {
     font-size: 30px;
     font-family: Tahoma,Geneva,sans-serif;
@@ -103,12 +100,10 @@ label {
 }
 .project-meta {
     color: #999999;
-    margin-left: 15px;
 }
 .project-event-counter {
     font-size: 30px;
 }
-
 .connection-status {
     margin-bottom: 15px;
     margin-top: 15px;
@@ -121,7 +116,6 @@ label {
 .not-connected {
     color: darkred;
 }
-
 .bs-callout {
     border-left: 5px solid #EEEEEE;
     margin: 4px 0;
@@ -135,6 +129,11 @@ label {
     width: 100%;
 }
 .bs-callout-danger {
-    background-color: #FCF2F2;
+    background-color: #FFDDDD;
     border-color: #DFB5B4;
 }
+.string { color: green; }
+.number { color: darkorange; }
+.boolean { color: blue; }
+.null { color: magenta; }
+.key { color: red; }

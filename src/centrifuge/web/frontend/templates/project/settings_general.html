@@ -9,7 +9,7 @@
     <fieldset>
         <legend>{{_("Client credentials")}}</legend>
         <div class="row-fluid">
-            <table class="table table-striped">
+            <table class="table">
                 <tr>
                     <td>{{_("Project Id")}}</td>
                     <td><span class="credential">{{project['_id']}}</span></td>
@@ -35,7 +35,7 @@
         <div class="row-fluid">
             <a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['_id']) }}">{{_("Create new namespace")}}</a>
             <br /><br />
-            <table class="table table-striped">
+            <table class="table">
                 {% for namespace in namespaces %}
                     <tr class="project-namespace">
                         <td class="col-lg-11">
