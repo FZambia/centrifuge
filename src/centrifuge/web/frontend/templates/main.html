@@ -56,12 +56,6 @@
 
 <script type="text/x-jsrender" id="tab_pane_template">
     <div class="tab-pane in active" id="{{!>name}}" data-id="{{!>_id}}">
-        <div class="connection-status">
-            <span class="connected">
-                <img src="{{ static_url('application/img/loader.gif') }}">&nbsp;&nbsp;&nbsp;{{_("waiting for messages...")}}
-            </span>
-            <span class="not-connected" style="display:none;">{{_("disconnected")}}</span>
-        </div>
         <div class="log"></div>
     </div>
 </script>
@@ -73,16 +67,33 @@
 </script>
 
 <div id="main-content">
-    <ul class="nav nav-tabs" id="tabs">
-        <li><a href="#_projects" id="tab-_projects" data-id="_projects" data-name="_projects" data-toggle="tab">{{_("projects")}}</a></li>
-    </ul>
     <div class="row">
-        <div class="col-lg-12">
-            <div class="tab-content" id="tab-content">
-                <div class="tab-pane" id="_projects"></div>
+        <div class="col-lg-3">
+            <ul class="nav nav-pills nav-stacked" id="tabs">
+                <li class="">
+                    <a href="#_projects" id="tab-_projects" data-id="_projects" data-tab-open="_projects" data-name="_projects" data-toggle="tab">
+                        {{_("All projects")}}
+                        <span class="label label-success pull-right">5</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-lg-9">
+            <div class="status-bar" style="padding: 6px;">
+                <span class="connected">
+                    <img style="width: 14px;" src="{{ static_url('application/img/loader.gif') }}">&nbsp;{{_("waiting for messages...")}}
+                </span>
+                <span class="not-connected" style="display:none;">{{_("disconnected")}}</span>
+                <a href="#" id="project-settings" class="pull-right">MANAGEMENT</a>
+            </div>
+            <div class="row">
+                <div class="tab-content" id="tab-content">
+                    <div class="tab-pane" id="_projects"></div>
+                </div>
             </div>
         </div>
     </div>
+
 </div>
 {% end %}
 

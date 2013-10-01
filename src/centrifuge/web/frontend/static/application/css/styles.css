@@ -13,15 +13,15 @@ input, select, option {
 input:-webkit-autofill {
     color: #fff !important;
 }
+.nav > li > a:hover, .nav > li > a:focus {
+    background: #D4D4D4;
+}
 form {
     margin-top: 40px;
 }
 .form-control {
     padding-left: 2px;
-    width: 50%;
-}
-.tab-content {
-    padding-top: 20px;
+    max-width: 500px;
 }
 label {
     font-weight: normal;
@@ -105,8 +105,6 @@ label {
     font-size: 30px;
 }
 .connection-status {
-    margin-bottom: 15px;
-    margin-top: 15px;
     margin-left: 15px;
     font-size: 18px;
 }
@@ -120,7 +118,7 @@ label {
     border-left: 5px solid #EEEEEE;
     margin: 4px 0;
     padding: 5px 30px 5px 5px;
-    width: 50%;
+    max-width: 500px;
 }
 .bs-callout-large {
     border-left: 5px solid #EEEEEE;

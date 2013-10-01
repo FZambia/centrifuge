@@ -102,11 +102,11 @@ function syntaxHighlight(json) {
                 element.find('*').remove();
             };
 
-            var make_tab_text = function(name) {
-                if (name.length > options.max_tab_text_length) {
-                    return name.toString().slice(0, options.max_tab_text_length) + '...';
+            var make_tab_text = function(name, display_name) {
+                if (display_name === '' || !display_name) {
+                    return name;
                 }
-                return name;
+                return display_name;
             };
 
             var get_active_tab_id = function() {
@@ -261,32 +261,6 @@ function syntaxHighlight(json) {
                 connect();
             };
 
-            var prepare_project = function(project) {
-                if (project['owner'] == get_current_user_id()) {
-                    project['is_owner'] = true;
-                }
-                return project;
-            };
-
-            var render_project = function(project, container) {
-                var prepared_project = prepare_project(project);
-                if (prepared_project['display_name'] === '' || !prepared_project['display_name']) {
-                    prepared_project['display_name'] = prepared_project['name'];
-                }
-                var html = project_template.render(prepared_project);
-                container.append(html);
-            };
-
-            var render_project_list = function() {
-                var container = get_content_for_project(global_projects[options.project_tab]);
-                clear_element_content(container);
-                for (index in options.projects) {
-                    //noinspection JSUnfilteredForInLoop
-                    var project = options.projects[index];
-                    render_project(project, container);
-                }
-            };
-
             var show_event = function(event_id, fade) {
                 var event_element = $('#event-' + event_id);
                 if (fade === true) {
@@ -318,7 +292,7 @@ function syntaxHighlight(json) {
             };
 
             var create_tab = function(project) {
-                project['tab_text'] = make_tab_text(project['name']).toLowerCase();
+                project['tab_text'] = make_tab_text(project['name'], project['display_name']).toLowerCase();
                 var tab_content = tab_pane_template.render(project);
                 var tab_element = tab_template.render(project);
                 $('#tab-content').append(tab_content);
@@ -335,10 +309,6 @@ function syntaxHighlight(json) {
 
             global_content.on('click', '[data-tab-open]', function() {
                 var project_id = $(this).attr('data-tab-open');
-                if (!(project_id in global_projects)) {
-                    global_tabs.find('a:first').tab('show');
-                    return false;
-                }
                 var project = global_projects[project_id];
                 open_tab(project);
                 highlight_tab(project, false);
@@ -358,21 +328,21 @@ function syntaxHighlight(json) {
 			var route = function(tab) {
 				var project_id = tab.attr('data-id');
                 var project = get_project_by_id(project_id);
+                console.log(project);
                 highlight_tab(project, false);
-                clear_project_event_counter(project);
-                switch (project_id) {
-                    case options.project_tab:
-                        break;
-                    default:
-                        $.noop();
+                if (project['_id'] !== '_projects') {
+                    $('#project-settings').attr('href', '/project/' + project['_id'] + '/settings/general').show();
+                } else {
+                    $('#project-settings').hide();
                 }
+                clear_project_event_counter(project);
 			};
 
             var initialize = function() {
 
                 create_socket_connection();
 
-                render_project_list();
+                //render_project_list();
 
                 if (options.projects) {
                     for (var index in options.projects) {
