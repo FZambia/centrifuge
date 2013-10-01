@@ -84,7 +84,7 @@ def render_label(label):
 
 
 def params_from_request(request):
-    return dict((k, ''.join([x.decode() for x in v])) for k, v in six.iteritems(request.arguments))
+    return dict((k, ''.join([x.decode('utf-8') for x in v])) for k, v in six.iteritems(request.arguments))
 
 
 class ProjectCreateHandler(BaseHandler):
