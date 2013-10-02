@@ -1,4 +1,4 @@
-<form class="form-horizontal" method="post" action="">
+<form class="form-horizontal form-main" method="post" action="">
     {% raw xsrf_form_html() %}
     {% for field in form %}
         <div class="form-group {% if field.errors %}has-error{% end %}">

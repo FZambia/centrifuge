@@ -3,16 +3,16 @@
 {% block title %}{{_("Project settings")}}{% end %}
 
 {% block content %}
-<div class="row-fluid">
-    <ul class="nav nav-tabs" id="tabs">
-        <li class="{% block tab_general %}{% end %}"><a href="{{reverse_url("project_settings", project['_id'], 'general')}}">{{_("General")}}</a></li>
-        <li class="{% block tab_edit %}{% end %}"><a href="{{reverse_url("project_settings", project['_id'], 'edit')}}">{{_("Edit")}}</a></li>
-    </ul>
-    <div class="row-fluid">
-        <div class="span12">
-            <div class="tab-content" id="tab-content">
-                <div class="tab-pane active in" id="{% block section_active %}{% end %}">{% block section %}{% end %}</div>
-            </div>
+<div class="row">
+    <div class="col-lg-3">
+        <ul class="nav nav-pills nav-stacked" id="tabs">
+            <li class="{% block tab_general %}{% end %}"><a href="{{reverse_url("project_settings", project['_id'], 'general')}}">{{_("General")}}</a></li>
+            <li class="{% block tab_edit %}{% end %}"><a href="{{reverse_url("project_settings", project['_id'], 'edit')}}">{{_("Edit")}}</a></li>
+        </ul>
+    </div>
+    <div class="col-lg-9">
+        <div class="tab-content" id="tab-content">
+            <div class="tab-pane active in" id="{% block section_active %}{% end %}">{% block section %}{% end %}</div>
         </div>
     </div>
 </div>

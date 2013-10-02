@@ -4,6 +4,10 @@ html {
 body, pre {
     background: url('../img/bg.png');
 }
+h4 {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
 .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
     background: url('../img/bg.png')
 }
@@ -16,11 +20,8 @@ input:-webkit-autofill {
 .nav > li > a:hover, .nav > li > a:focus {
     background: #D4D4D4;
 }
-.project-tab {
+#tabs a {
     font-size: 20px;
-}
-form {
-    margin-top: 40px;
 }
 .form-control {
     padding-left: 2px;
@@ -68,8 +69,10 @@ label {
 .hidden {
 	display: none;
 }
+.row .col-lg-3, .row .col-lg-9 {
+    padding-top:10px;
+}
 .event {
-	margin-left: 20px;
 	margin-bottom: 25px;
 }
 .event-header {

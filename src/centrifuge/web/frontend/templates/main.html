@@ -54,27 +54,20 @@
                 <li class="">
                     <a class="project-tab" href="#_projects" id="tab-_projects" data-id="_projects" data-tab-open="_projects" data-name="_projects" data-toggle="tab">
                         {{_("All projects")}}
-                        <span class="label label-success pull-right project-event-counter">5</span>
+                        <span class="label label-success pull-right project-event-counter hidden">0</span>
                     </a>
                 </li>
             </ul>
         </div>
         <div class="col-lg-9">
-            <div class="status-bar" style="padding: 6px;">
-                <span class="connected">
-                    <img style="width: 14px;" src="{{ static_url('application/img/loader.gif') }}">&nbsp;{{_("waiting for messages...")}}
-                </span>
-                <span class="not-connected" style="display:none;">{{_("disconnected")}}</span>
-                <a href="#" id="project-settings" class="pull-right">MANAGEMENT</a>
-            </div>
-            <div class="row">
-                <div class="tab-content" id="tab-content">
-                    <div class="tab-pane" id="_projects"></div>
-                </div>
+            <a href="#" class="btn btn-success" id="project-settings">{{_("project management")}}</a>
+            <span class="pull-right connected" title="connected, waiting for messages..."><img src="{{ static_url('application/img/loader.gif') }}"></span>
+            <span class="pull-right not-connected" style="display: none;">{{ _("disconnected") }}</span>
+            <div class="tab-content" id="tab-content">
+                <div class="tab-pane" id="_projects"></div>
             </div>
         </div>
     </div>
-
 </div>
 {% end %}
 

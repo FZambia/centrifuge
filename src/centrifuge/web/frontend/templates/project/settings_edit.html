@@ -6,22 +6,18 @@
 
 {% block section %}
 
-    <legend>{{_("Edit project")}} "{{project['name']}}"</legend>
-    {% include '../form.html' %}
 
-    <fieldset>
-        <legend>{{_("Danger zone")}}</legend>
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="bs-callout-large bs-callout-danger">
-                    {{_("Remove Project. This action will also remove all data related to this project.")}}
-                </div>
-                <form class="form-inline" method="post" action="">
-                    {% raw xsrf_form_html() %}
-                    <input type="text" class="form-control" style="width: 50%;" name="confirm" placeholder="{{_("Type project unique name")}}">
-                    <button type="submit" name="submit" value="project_del" class="btn btn-danger">{{_("I understand. Delete project.")}}</button>
-                </form>
-            </div>
-        </div>
-    </fieldset>
+<h4>{{_("Edit project")}} "{{project['name']}}"</h4>
+{% include '../form.html' %}
+
+<h4>{{_("Danger zone")}}</h4>
+<div class="bs-callout-large bs-callout-danger">
+    {{_("Remove Project. This action will also remove all data related to this project.")}}
+</div>
+<form class="form-inline" method="post" action="">
+    {% raw xsrf_form_html() %}
+    <input type="text" class="form-control" style="width: 50%;" name="confirm" placeholder="{{_("Type project unique name")}}">
+    <button type="submit" name="submit" value="project_del" class="btn btn-danger">{{_("I understand. Delete project.")}}</button>
+</form>
+
 {% end %}
