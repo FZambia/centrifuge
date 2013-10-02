@@ -21,7 +21,7 @@ input:-webkit-autofill {
     background: #D4D4D4;
 }
 #tabs a {
-    font-size: 20px;
+    font-size: 18px;
 }
 .form-control {
     padding-left: 2px;
@@ -127,7 +127,7 @@ label {
     border-left: 5px solid #EEEEEE;
     margin: 10px 0;
     padding: 15px 30px 15px 15px;
-    width: 100%;
+    max-width: 700px;
 }
 .bs-callout-danger {
     background-color: #FFDDDD;
@@ -138,3 +138,16 @@ label {
 .boolean { color: blue; }
 .null { color: magenta; }
 .key { color: red; }
+
+.box404 {
+    text-align: center;
+}
+.text404 {
+    font-size: 40px;
+}
+.code404 {
+    font-size: 160px;
+}
+.back404 {
+    margin-top: 50px;
+}

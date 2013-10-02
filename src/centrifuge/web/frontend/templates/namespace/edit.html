@@ -1,8 +1,12 @@
-{% extends '../base.html' %}
+{% extends '../project/settings.html' %}
 
 {% block title %}{{_("Centrifuge")}}{% end %}
 
-{% block content %}
+{% block tab_general %}active{% end %}
+
+{% block section_active %}general{% end %}
+
+{% block section %}
     <h4>{{_("Edit namespace in project")}} {{ project['name'] }}</h4>
     {% include '../form.html' %}
 

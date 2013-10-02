@@ -28,7 +28,7 @@ function syntaxHighlight(json) {
             var defaults = {
                 tab_prefix: "/tab_",
                 max_tab_text_length: 10,
-                max_events_amount: 100,
+                max_events_amount: 50,
                 current_user: {},
                 project_tab: '_projects',
                 projects: [],
@@ -90,6 +90,8 @@ function syntaxHighlight(json) {
             var tab_template = $('#tab_template');
             var tab_pane_template = $('#tab_pane_template');
 
+            var project_settings_button = $('#project-settings');
+
             var show_hashed_tab = function() {
                 var hash = document.location.hash;
                 if (hash) {
@@ -99,7 +101,6 @@ function syntaxHighlight(json) {
 
             var make_tab_text = function(name, display_name) {
                 if (display_name === '' || !display_name) {
-                    console.log(display_name);
                     return name;
                 }
                 return display_name;
@@ -148,14 +149,6 @@ function syntaxHighlight(json) {
                 counter.html(prefix + value.toString());
             };
 
-            var highlight_counter = function(counter, enable) {
-                if (enable === true) {
-                    counter.parents('.pill:first').removeClass('pill-info').addClass('pill-success').find('i').removeClass('text-info').addClass('text-success');
-                } else {
-                    counter.parents('.pill:first').removeClass('pill-success').addClass('pill-info').find('i').removeClass('text-success').addClass('text-info');
-                }
-            };
-
             var highlight_tab = function(project, enable) {
                 var tab = get_tab_for_project(project);
                 if (enable === true) {
@@ -167,7 +160,7 @@ function syntaxHighlight(json) {
 
             var clear_project_event_counter = function(project) {
                 var counter = get_project_event_counter(project);
-                highlight_counter(counter, false);
+                set_project_event_counter_value(counter, 0);
                 counter.addClass('hidden');
             };
 
@@ -175,7 +168,6 @@ function syntaxHighlight(json) {
                 var new_value;
                 var counter = get_project_event_counter(project);
                 var current_value = get_project_event_counter_value(counter);
-                highlight_counter(counter, true);
                 if (Boolean(current_value)) {
                     new_value = current_value + 1;
                 } else {
@@ -219,10 +211,8 @@ function syntaxHighlight(json) {
                 });
 
                 connection.onopen = function() {
-                    //console.log('Connected.');
                     $('.not-connected').hide();
                     $('.connected').show();
-                    $('.pill').removeClass('pill-danger');
                 };
 
                 connection.onmessage = function(e) {
@@ -231,12 +221,10 @@ function syntaxHighlight(json) {
                 };
 
                 connection.onclose = function() {
-                    //console.log('Disconnected.');
                     connection = null;
                     window.setTimeout(function(){
                         $('.connected').hide();
                         $('.not-connected').show();
-                        $('.pill').addClass('pill-danger');
                         window.setTimeout(connect, 1000);
                     }, 3000);
                 };
@@ -322,10 +310,10 @@ function syntaxHighlight(json) {
 				var project_id = tab.attr('data-id');
                 var project = get_project_by_id(project_id);
                 highlight_tab(project, false);
-                if (project['_id'] !== '_projects') {
-                    $('#project-settings').attr('href', '/project/' + project['_id'] + '/settings/general').show();
+                if (project['_id'] !== options.project_tab) {
+                    project_settings_button.attr('href', '/project/' + project['_id'] + '/settings/general').show();
                 } else {
-                    $('#project-settings').hide();
+                    project_settings_button.hide();
                 }
                 clear_project_event_counter(project);
 			};
@@ -333,8 +321,6 @@ function syntaxHighlight(json) {
             var initialize = function() {
 
                 create_socket_connection();
-
-                //render_project_list();
 
                 if (options.projects) {
                     for (var index in options.projects) {
