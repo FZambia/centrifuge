@@ -1,26 +1,3 @@
-function prettify(json) {
-    return syntaxHighlight(JSON.stringify(json, undefined, 4));
-}
-
-function syntaxHighlight(json) {
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        var cls = 'number';
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                cls = 'key';
-            } else {
-                cls = 'string';
-            }
-        } else if (/true|false/.test(match)) {
-            cls = 'boolean';
-        } else if (/null/.test(match)) {
-            cls = 'null';
-        }
-        return '<span class="' + cls + '">' + match + '</span>';
-    });
-}
-
 (function($) {
     $.extend({
         centrifuge_main : function(custom_options) {
@@ -30,7 +7,7 @@ function syntaxHighlight(json) {
                 max_tab_text_length: 10,
                 max_events_amount: 50,
                 current_user: {},
-                project_tab: '_projects',
+                project_tab: '_info',
                 projects: [],
                 socket_url: '/socket',
                 global_content_element: '#main-content',
@@ -259,7 +236,7 @@ function syntaxHighlight(json) {
                 var html = event_template.render({
                     'event_id': event_id,
                     'channel': channel,
-                    'data': prettify(event_data),
+                    'data': prettify_json(event_data),
                     'namespace': namespace,
                     'project': project
                 });

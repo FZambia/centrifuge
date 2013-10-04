@@ -68,7 +68,9 @@ class MainHandler(BaseHandler):
                 'current_user': user,
                 'socket_url': '/socket',
                 'projects': projects
-            })
+            }),
+            'node_count': len(self.application.nodes) + 1,
+            'pubsub': self.application.pubsub.NAME
         }
         self.render("main.html", **context)
 

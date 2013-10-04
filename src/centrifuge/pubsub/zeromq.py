@@ -19,6 +19,8 @@ class PubSub(BasePubSub):
     """
     This class manages application PUB/SUB logic.
     """
+    NAME = 'ZeroMQ'
+
     def __init__(self, application):
         super(PubSub, self).__init__(application)
         self.sub_stream = None

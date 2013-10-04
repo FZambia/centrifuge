@@ -73,7 +73,7 @@ label {
     padding-top:10px;
 }
 .event {
-	margin-bottom: 25px;
+	margin: 10px 0 10px 0;
 }
 .event-header {
     border-radius: 2px 2px 0 0;
@@ -172,4 +172,23 @@ label {
 }
 .box-success {
     background: none repeat scroll 0 0 #88CC88;
+}
+.general-info-item {
+    margin-bottom: 20px;
+}
+.stat-row {
+    margin-bottom: 20px;
+}
+.stat-key {
+    font-size: 24px;
+}
+.stat-value {
+    font-size: 24px;
+}
+#data-editor {
+    max-width: 500px;
+    height: 150px;
+}
+#form-result{
+    margin-top: 10px;
 }

@@ -6,119 +6,8 @@
 
 {% block extra_head %}
     <script type="text/javascript" src="{{ static_url('libs/ace/src-min-noconflict/ace.js') }}"></script>
-    <script>
-        function prettify(json) {
-            return syntaxHighlight(JSON.stringify(json, undefined, 4));
-        }
-
-        function syntaxHighlight(json) {
-            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-                var cls = 'number';
-                if (/^"/.test(match)) {
-                    if (/:$/.test(match)) {
-                        cls = 'key';
-                    } else {
-                        cls = 'string';
-                    }
-                } else if (/true|false/.test(match)) {
-                    cls = 'boolean';
-                } else if (/null/.test(match)) {
-                    cls = 'null';
-                }
-                return '<span class="' + cls + '">' + match + '</span>';
-            });
-        }
-
-        $(function(){
-            var editor = ace.edit("data-editor");
-            editor.setTheme("ace/theme/monokai");
-            //editor.renderer.setShowGutter(false);
-            editor.setShowPrintMargin(false);
-            editor.setFontSize(12);
-            editor.getSession().setMode('ace/mode/json');
-            editor.getSession().setUseSoftTabs(true);
-            editor.getSession().setUseWrapMode(true);
-            editor.getSession().setMode("ace/mode/json");
-
-            var result_template = $('#result_template');
-
-            var form = $('form');
-            var textarea = $('#data');
-            var submit_button = form.find('[type="submit"]');
-            var form_message = $('#form-message');
-            var form_result = $('#action-result');
-
-            function show_error(text) {
-                console.log(form_message.length);
-
-                form_message.stop().hide().removeClass('box-success').addClass('box-error').text(text).fadeIn();
-            }
-
-            function show_success(text) {
-                form_message.stop().hide().removeClass('box-error').addClass('box-success').text(text).fadeIn();
-            }
-
-            function post_action(url, data) {
-                $.post(url, data, function(data){
-                    var html = result_template.render({
-                        "data": prettify(data)
-                    });
-                    form_result.html(html);
-                    show_success("successfully sent");
-                    submit_button.attr('disabled', false);
-                }, "json");
-            }
-
-            form.on('submit', function(){
-                if (textarea.is(':disabled') === false) {
-                    var val = editor.getSession().getValue();
-                    if (val) {
-                        try {
-                            var json = JSON.stringify(JSON.parse(val));
-                            textarea.val(json);
-                        } catch (e) {
-                            show_error("malformed JSON");
-                            return false;
-                        }
-                    } else {
-                        show_error("JSON data required");
-                        return false;
-                    }
-                }
-                var to_send = $(this).serialize();
-                var url = $(this).attr('action');
-                submit_button.attr('disabled', true);
-                post_action(url, to_send);
-                return false;
-            });
-
-            var extra_fields = ["data", "user"];
-
-            var method_fields = {
-                "publish": ["data"],
-                "presence": [],
-                "history": [],
-                "unsubscribe": ["user"]
-            };
-
-            $('[name="method"]').on('change', function(){
-                var method = $(this).val();
-                var extra = method_fields[method];
-                for (var i in extra) {
-                    var field = $('#' + extra[i]);
-                    field.attr('disabled', false).parents('.form-group:first').show();
-                }
-                for (var k in extra_fields) {
-                    var field_name = extra_fields[k];
-                    if (extra.indexOf(field_name) === -1) {
-                        $('#' + field_name).attr('disabled', true).parents('.form-group:first').hide();
-                    }
-                }
-            }).trigger('change');
-
-        })
-    </script>
+    <script type="text/javascript" src="{{ static_url('application/js/prettify.js') }}"></script>
+    <script type="text/javascript" src="{{ static_url('application/js/actions.js') }}"></script>
 {% end %}
 
 {% block section %}
@@ -155,15 +44,15 @@
             </div>
             <div class="form-group">
                 <label for="data">Data</label>
-                <div style="max-width: 500px; height: 150px;" id="data-editor"></div>
+                <div id="data-editor"></div>
                 <textarea style="display: none;" id="data" name="data"></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Submit</button>
-            <span id="form-message" class="box box-error" style="display: none">Malformed JSON</span>
+            <span id="form-message" class="box box-error" style="display: none"></span>
         </form>
     </div>
-    <div style="margin-top: 10px;">
-        <pre id="action-result">
+    <div>
+        <pre id="form-result">
             <span class="text-muted">{{ _("Here will be results") }}</span>
         </pre>
     </div>
