@@ -427,13 +427,17 @@ class Application(tornado.web.Application):
         if not namespace:
             raise Return(("namespace not found in allowed namespaces", None))
 
+        data = params.get('data', None)
+        if not isinstance(data, dict) and not isinstance(data, list):
+            raise Return(("malformed JSON data", None))
+
         message = {
             'project_id': project['_id'],
             'namespace': namespace['name'],
             'uid': uuid.uuid4().hex,
             'client_id': client_id,
             'channel': params.get('channel'),
-            'data': params.get('data', None)
+            'data': data
         }
 
         for callback in self.pre_publish_callbacks:

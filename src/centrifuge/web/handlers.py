@@ -12,7 +12,7 @@ import tornado.gen
 from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
-from tornado.escape import json_encode
+from tornado.escape import json_encode, json_decode
 
 import six
 
@@ -205,6 +205,33 @@ class ProjectSettingsHandler(BaseHandler):
             else:
                 self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
 
+    @coroutine
+    def get_actions(self):
+        data, error = yield self.get_general()
+        raise Return((data, None))
+
+    @coroutine
+    def post_actions(self):
+        params = params_from_request(self.request)
+        method = params.pop('method')
+        params.pop('_xsrf')
+        data = params.get('data', None)
+        if data is not None:
+            try:
+                data = json_decode(data)
+            except Exception as e:
+                logger.error(e)
+            else:
+                params["data"] = data
+
+        result, error = yield self.application.process_call(self.project, method, params)
+
+        self.set_header("Content-Type", "application/json")
+        self.finish(json_encode({
+            "data": result,
+            "error": error
+        }))
+
     @tornado.web.authenticated
     @coroutine
     def get(self, project_name, section):
@@ -218,6 +245,10 @@ class ProjectSettingsHandler(BaseHandler):
         elif section == 'edit':
             template_name = 'project/settings_edit.html'
             func = self.get_edit
+
+        elif section == 'actions':
+            template_name = 'project/settings_actions.html'
+            func = self.get_actions
 
         else:
             raise tornado.web.HTTPError(404)
@@ -241,6 +272,9 @@ class ProjectSettingsHandler(BaseHandler):
 
         elif section == 'edit':
             yield self.post_edit(submit)
+
+        elif section == 'actions':
+            yield self.post_actions()
 
         else:
             raise tornado.web.HTTPError(404)

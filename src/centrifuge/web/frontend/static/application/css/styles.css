@@ -151,3 +151,25 @@ label {
 .back404 {
     margin-top: 50px;
 }
+.box {
+    border-color: rgba(0, 0, 0, 0.3);
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2) inset;
+    color: rgba(0, 0, 0, 0.8);
+    border-radius: 4px 4px 4px 4px;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: normal;
+    margin-bottom: 0;
+    padding: 6px 12px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.box-error {
+    background: none repeat scroll 0 0 #CC8888;
+}
+.box-success {
+    background: none repeat scroll 0 0 #88CC88;
+}

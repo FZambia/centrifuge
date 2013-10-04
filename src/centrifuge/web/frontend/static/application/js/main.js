@@ -220,6 +220,9 @@ function syntaxHighlight(json) {
                     handle_event_message(body);
                 };
 
+                connection.onerror = function(e) {
+                    console.log(e);
+                };
                 connection.onclose = function() {
                     connection = null;
                     window.setTimeout(function(){

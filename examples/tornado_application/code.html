@@ -31,7 +31,7 @@
             draw_message('connected');
 
             var subscription = centrifuge.subscribe('python:django', function(message) {
-                var msg = safe_tags_replace(message.data) + ' <span class="muted">from ' + message.client_id + '</span>';
+                var msg = safe_tags_replace(message.data["input"]) + ' <span class="muted">from ' + message.client_id + '</span>';
                 draw_message(msg);
             });
 
@@ -80,7 +80,7 @@
             var input = $(this).find('input[type="text"]');
 
             if (centrifuge.isConnected() === true) {
-                var subscription = centrifuge.publish('python:django', input.val(), function() {
+                var subscription = centrifuge.publish('python:django', {"input": input.val()}, function() {
                     console.log('message successfully sent');
                 });
                 console.log(subscription);
