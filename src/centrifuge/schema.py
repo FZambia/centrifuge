@@ -83,6 +83,18 @@ server_api_schema = {
         "type": "object",
         "properties": {}
     },
+    "namespace_by_name": {
+        "type": "object",
+        "properties": {
+            "_id": {
+                "type": "string"
+            },
+            "name": {
+                "type": "string"
+            }
+        },
+        "required": ["name"]
+    },
     "namespace_get": {
         "type": "object",
         "properties": {
@@ -125,6 +137,15 @@ server_api_schema = {
                 "type": "string"
             }
         }
+    },
+    "project_by_name": {
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string"
+            }
+        },
+        "required": ["name"]
     },
     "project_create": {
         "type": "object",

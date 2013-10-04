@@ -592,6 +592,17 @@ class Application(tornado.web.Application):
         raise Return((project, None))
 
     @coroutine
+    def process_project_by_name(self, project, params):
+        project, error = yield self.structure.get_project_by_name(
+            params.get("name")
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+        raise Return((project, None))
+
+    @coroutine
     def process_project_create(self, project, params, error_form=False):
 
         form = ProjectForm(params)
@@ -704,6 +715,20 @@ class Application(tornado.web.Application):
         """
         namespace_id = params.get('_id')
         namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+        raise Return((namespace, None))
+
+    @coroutine
+    def process_namespace_by_name(self, project, params):
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+
+        namespace, error = yield self.structure.get_namespace_by_name(
+            project, params.get("name")
+        )
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         if not namespace:
