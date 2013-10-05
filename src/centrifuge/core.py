@@ -428,8 +428,6 @@ class Application(tornado.web.Application):
             raise Return(("namespace not found in allowed namespaces", None))
 
         data = params.get('data', None)
-        if not isinstance(data, dict) and not isinstance(data, list):
-            raise Return(("malformed JSON data", None))
 
         message = {
             'project_id': project['_id'],

@@ -33,12 +33,9 @@ server_api_schema = {
             },
             "channel": {
                 "type": "string"
-            },
-            "data": {
-                "type": ["object", "array"]
             }
         },
-        "required": ["channel", "data"]
+        "required": ["channel"]
     },
     "presence": {
         "type": "object",
