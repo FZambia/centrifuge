@@ -29,7 +29,7 @@ or [PostgreSQL](http://www.postgresql.org/) backends instead of SQLite.
 Please,
 
 * read the [documentation](https://centrifuge.readthedocs.org/en/latest/)
-* watch [screencast](http://www.youtube.com/watch?v=RCLnCexzfOk) - rather outdated though.
+* watch [screencast](http://www.youtube.com/watch?v=RCLnCexzfOk) - rather outdated but with pleasant background music.
 * look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples).
 
 
