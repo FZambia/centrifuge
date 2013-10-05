@@ -63,27 +63,30 @@ connects to Centrifuge and sending authorization request to ``auth address``).
 So project created, we are ready to continue.
 
 
-Project settings
-~~~~~~~~~~~~~~~~
+Project management
+~~~~~~~~~~~~~~~~~~
 
 .. _project settings:
 
 
-Settings has several panels to customize your project.
+Project management has several panels to control project:
 
-First, you can regenerate your **secret key**. Secret key - is a key for encoding
-all requests to Centrifuge from project administrators. If you want to send new
-message to your project's clients you must send encrypted request (there is Cent -
-python tools to communicate with Centrifuge, it also has terminal client to send
-properly encoded requests to Centrifuge). Look at Cent documentation for more
-information
+1) **General**
 
-In project settings you can also manage **namespaces**. Namespaces is a required
-property for every new message. They help to manage permissions and behavior.
-Every namespace must have unique name and can be one-way or bidirectional. In
-bidirectional namespaces authorized clients can broadcast new events themselves.
-This is important for chat-like applications.
+Here you can see project credentials and regenerate project **secret key**.
+Secret key - is a key for signing all API requests to Centrifuge.
 
-You can change project settings which you set during creating project.
+You can also manage **namespaces**. Namespace is a way to customize channel
+properties. You create namespace with certain options and then each channel
+which belongs to this namespace will have those options.
 
-Finally, you can delete project.
+2) **Edit**
+
+Here you can edit project options you set during creating project.
+
+Also from this tab project can be deleted.
+
+3) **Actions**
+
+Manage your channels from web interface. You can request presence or history info
+from here, publish new message into channel or unsubscribe user from channel by user ID.
