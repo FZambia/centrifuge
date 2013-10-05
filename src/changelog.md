@@ -1,6 +1,7 @@
 v0.3.0
 ======
 * centrifuge.dom.js - jQuery plugin to add real-time even easier.
+* Base Pub/Sub for single node.
 * Refactor web interface, make it more mobile and human friendly, add 'actions' section to make channel operations.
 * Restrict data to valid JSON while publishing.
 * A couple of API methods to get project and namespace by name.
