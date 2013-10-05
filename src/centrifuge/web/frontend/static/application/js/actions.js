@@ -6,7 +6,6 @@ $(function(){
     editor.getSession().setMode('ace/mode/json');
     editor.getSession().setUseSoftTabs(true);
     editor.getSession().setUseWrapMode(true);
-    editor.getSession().setMode("ace/mode/json");
 
     var result_template = $('#result_template');
     var form = $('form');
