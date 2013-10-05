@@ -1,0 +1,64 @@
+{% extends 'settings.html' %}
+
+{% block tab_actions %}active{% end %}
+
+{% block section_active %}actions{% end %}
+
+{% block extra_head %}
+    <script type="text/javascript" src="{{ static_url('libs/ace/src-min-noconflict/ace.js') }}"></script>
+    <script type="text/javascript" src="{{ static_url('application/js/prettify.js') }}"></script>
+    <script type="text/javascript" src="{{ static_url('application/js/actions.js') }}"></script>
+{% end %}
+
+{% block section %}
+
+    <h4>{{_("Admin API actions")}}</h4>
+
+    <div>
+        <form role="form" method="POST" action="">
+            {% raw xsrf_form_html() %}
+            <div class="form-group">
+                <label for="method">Method</label>
+                <select class="form-control" name="method" id="method">
+                    <option value="publish">publish</option>
+                    <option value="presence">presence</option>
+                    <option value="history">history</option>
+                    <option value="unsubscribe">unsubscribe</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="namespace">Namespace</label>
+                <select class="form-control" name="namespace" id="namespace">
+                    {% for namespace in namespaces %}
+                        <option value="{{ namespace['name'] }}">{{ namespace['name'] }}</option>
+                    {% end %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="channel">Channel</label>
+                <input type="text" class="form-control" name="channel" id="channel">
+            </div>
+            <div class="form-group">
+                <label for="user">User ID</label>
+                <input type="text" class="form-control" name="user" id="user">
+            </div>
+            <div class="form-group">
+                <label for="data">Data</label>
+                <div id="data-editor"></div>
+                <textarea style="display: none;" id="data" name="data"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <span id="form-message" class="box box-error" style="display: none"></span>
+        </form>
+    </div>
+    <div>
+        <pre id="form-result">
+            <span class="text-muted">{{ _("Here will be results") }}</span>
+        </pre>
+    </div>
+
+    <script type="text/x-jsrender" id="result_template">
+        {{!:data}}
+    </script>
+
+{% end %}

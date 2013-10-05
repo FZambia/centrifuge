@@ -5,49 +5,40 @@
 {% block section_active %}general{% end %}
 
 {% block section %}
-<div class="row-fluid">
-    <fieldset>
-        <legend>{{_("Client credentials")}}</legend>
-        <div class="row-fluid">
-            <table class="table table-striped">
-                <tr>
-                    <td>{{_("Project Id")}}</td>
-                    <td><span class="credential">{{project['_id']}}</span></td>
-                </tr>
-                <tr>
-                    <td>{{_("Secret Key")}}</td>
-                    <td><span class="credential">{{project['secret_key']}}</span></td>
-                </tr>
-            </table>
-            <form method="post" action="" class="pull-right">
-                {% raw xsrf_form_html() %}
-                <button type="submit" name="submit" value="regenerate_secret" class="btn btn-danger pull-right">
-                    {{_("Regenerate secret key")}}
-                </button>
-            </form>
-        </div>
-    </fieldset>
-</div>
 
-<div class="row-fluid" style="margin-top: 20px;">
-    <fieldset>
-        <legend>{{_("Namespaces")}}</legend>
-        <div class="row-fluid">
-            <a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['_id']) }}">{{_("Create new namespace")}}</a>
-            <br /><br />
-            <table class="table table-striped">
-                {% for namespace in namespaces %}
-                    <tr class="project-namespace">
-                        <td class="col-lg-11">
-                            <h4>{{namespace['name']}}</h4>
-                        </td>
-                        <td class="col-lg-1">
-                            <a href="{{ handler.reverse_url("namespace_edit", project['_id'], namespace['_id']) }}" class="btn btn-primary">{{_("Edit")}}</a>
-                        </td>
-                    </tr>
-                {% end %}
-            </table>
-        </div>
-    </fieldset>
-</div>
+
+<h4>{{_("Client credentials")}}</h4>
+<table class="table table-main"  style="max-width: 700px;">
+    <tr>
+        <td>{{_("Project Id")}}</td>
+        <td><span class="credential">{{project['_id']}}</span></td>
+    </tr>
+    <tr>
+        <td>{{_("Secret Key")}}</td>
+        <td><span class="credential">{{project['secret_key']}}</span></td>
+    </tr>
+</table>
+<form method="post" action="" >
+    {% raw xsrf_form_html() %}
+    <button type="submit" name="submit" value="regenerate_secret" class="btn btn-danger">
+        {{_("Regenerate secret key")}}
+    </button>
+</form>
+
+<h4>{{_("Namespaces")}}</h4>
+<a class="btn btn-primary" href="{{ handler.reverse_url("namespace_create", project['_id']) }}">{{_("Create new namespace")}}</a>
+<br /><br />
+<table class="table" style="max-width: 700px;">
+    {% for namespace in namespaces %}
+        <tr class="project-namespace">
+            <td class="col-lg-11">
+                {{namespace['name']}}
+            </td>
+            <td class="col-lg-1">
+                <a href="{{ handler.reverse_url("namespace_edit", project['_id'], namespace['_id']) }}" class="btn btn-primary pull-right">{{_("Edit")}}</a>
+            </td>
+        </tr>
+    {% end %}
+</table>
+
 {% end %}

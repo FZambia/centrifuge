@@ -35,6 +35,8 @@ class BasePubSub(object):
     """
     DEFAULT_PUBLISH_METHOD = 'message'
 
+    NAME = 'Base (single node compatible only)'
+
     def __init__(self, application):
         self.application = application
         self.subscriptions = {}

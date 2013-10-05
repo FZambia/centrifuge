@@ -4,6 +4,7 @@
 
 {% block extra_scripts %}
 <script type="text/javascript" src="{{ static_url('libs/sockjs/sockjs-0.3.4.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('application/js/prettify.js') }}"></script>
 <script type="text/javascript" src="{{ static_url('application/js/main.js') }}"></script>
 <script type="text/javascript">
     $(document).ready(function() {
@@ -32,54 +33,50 @@
     </div>
 </script>
 
-<script type="text/x-jsrender" id="project_template">
-    <div class="project {{!if is_owner}}project-own{{!/if}} col-lg-4" id="project-{{!>_id}}" data-project-id="{{!>_id}}" data-project-name="{{!>name}}" data-project-display="{{!>display_name}}">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="project-header">
-                    <a href="#" class="project-name" data-tab-open="{{!>_id}}">{{!>display_name}}</a>
-                    <a href="#" data-tab-open="{{!>_id}}" style="margin: 0 auto;">
-                        <span class="pill"><i class="text-info project-event-counter"></i></span>
-                    </a>
-                </div>
-                <div class="project-meta">
-                    <div>
-                        {{!>name}}
-                        &nbsp;
-                        <a href="/project/{{!>_id}}/settings/general" class="project-settings">{{_("settings")}}</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</script>
-
 <script type="text/x-jsrender" id="tab_pane_template">
     <div class="tab-pane in active" id="{{!>name}}" data-id="{{!>_id}}">
-        <div class="connection-status">
-            <span class="connected">
-                <img src="{{ static_url('application/img/loader.gif') }}">&nbsp;&nbsp;&nbsp;{{_("waiting for events...")}}
-            </span>
-            <span class="not-connected" style="display:none;">{{_("Disconnected")}}</span>
-        </div>
         <div class="log"></div>
     </div>
 </script>
 
 <script type="text/x-jsrender" id="tab_template">
     <li>
-        <a href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-tab-open="{{!>_id}}" data-toggle="tab">{{!>tab_text}}</a>
+        <a class="project-tab" href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-tab-open="{{!>_id}}" data-toggle="tab">
+            {{!>tab_text}}
+            <span class="label label-success pull-right project-event-counter hidden">0</span>
+        </a>
     </li>
 </script>
 
 <div id="main-content">
-    <ul class="nav nav-tabs" id="tabs">
-        <li><a href="#_projects" id="tab-_projects" data-id="_projects" data-name="_projects" data-toggle="tab">{{_("projects")}}</a></li>
-    </ul>
     <div class="row">
-        <div class="col-lg-12">
+        <div class="col-lg-3">
+            <ul class="nav nav-pills nav-stacked" id="tabs">
+                <li class="general-info-item">
+                    <a class="info-tab" href="#_info" id="tab-_info" data-id="_info" data-tab-open="_info" data-name="_info" data-toggle="tab">
+                        {{_("General information")}}
+                        <span class="label label-success pull-right project-event-counter hidden">0</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-lg-9">
+            <a href="#" class="btn btn-success" id="project-settings">{{_("project management")}}</a>
+            <span class="pull-right connected" title="connected, waiting for messages..."><img src="{{ static_url('application/img/loader.gif') }}"></span>
+            <span class="pull-right not-connected" style="display: none;">{{ _("disconnected") }}</span>
             <div class="tab-content" id="tab-content">
-                <div class="tab-pane" id="_projects"></div>
+                <div class="tab-pane" id="_info">
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("PUB/SUB mechanism") }}:</span>
+                        &nbsp;
+                        <span class="stat-value">{{ pubsub }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("Nodes running") }}:</span>
+                        &nbsp;
+                        <span class="stat-value">{{ node_count }}</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

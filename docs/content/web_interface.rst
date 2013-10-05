@@ -7,13 +7,9 @@ Web interface
 Centrifuge comes with administrative web interface. Using it you can create
 edit or delete projects and namespaces, manage users etc.
 
-.. image:: img/web_project_list.png
-    :width: 650 px
-
-
 Also you can watch for new events appearing in your projects in real-time.
 
-.. image:: img/web_project_detail.png
+.. image:: img/main.png
     :width: 650 px
 
 
@@ -38,9 +34,6 @@ Creating new project
 When you have running Centrifuge's instance and want to create web application using it -
 first you should do is to add your project into Centrifuge. It's very simple - just fill
 the form.
-
-.. image:: img/project_create.png
-    :width: 650 px
 
 **name** - unique project name, must be written using ascii symbols only. This is project
 slug, human-readable identity.
@@ -70,33 +63,30 @@ connects to Centrifuge and sending authorization request to ``auth address``).
 So project created, we are ready to continue.
 
 
-Project settings
-~~~~~~~~~~~~~~~~
+Project management
+~~~~~~~~~~~~~~~~~~
 
 .. _project settings:
 
 
-Settings has several panels to customize your project.
+Project management has several panels to control project:
 
-.. image:: img/project_settings.png
-    :width: 650 px
+1) **General**
 
-First, you can regenerate your **secret key**. Secret key - is a key for encoding
-all requests to Centrifuge from project administrators. If you want to send new
-message to your project's clients you must send encrypted request (there is Cent -
-python tools to communicate with Centrifuge, it also has terminal client to send
-properly encoded requests to Centrifuge). Look at Cent documentation for more
-information
+Here you can see project credentials and regenerate project **secret key**.
+Secret key - is a key for signing all API requests to Centrifuge.
 
-In project settings you can also manage **namespaces**. Namespaces is a required
-property for every new message. They help to manage permissions and behavior.
-Every namespace must have unique name and can be one-way or bidirectional. In
-bidirectional namespaces authorized clients can broadcast new events themselves.
-This is important for chat-like applications.
+You can also manage **namespaces**. Namespace is a way to customize channel
+properties. You create namespace with certain options and then each channel
+which belongs to this namespace will have those options.
 
-.. image:: img/namespace_create.png
-    :width: 650 px
+2) **Edit**
 
-You can change project settings which you set during creating project.
+Here you can edit project options you set during creating project.
 
-Finally, you can delete project.
+Also from this tab project can be deleted.
+
+3) **Actions**
+
+Manage your channels from web interface. You can request presence or history info
+from here, publish new message into channel or unsubscribe user from channel by user ID.

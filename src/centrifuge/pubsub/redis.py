@@ -18,6 +18,8 @@ class PubSub(BasePubSub):
     """
     This class manages application PUB/SUB logic.
     """
+    NAME = 'Redis'
+
     def __init__(self, application):
         super(PubSub, self).__init__(application)
         self.subscriber = toredis.Client()
