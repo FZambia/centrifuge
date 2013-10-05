@@ -7,13 +7,9 @@ Web interface
 Centrifuge comes with administrative web interface. Using it you can create
 edit or delete projects and namespaces, manage users etc.
 
-.. image:: img/web_project_list.png
-    :width: 650 px
-
-
 Also you can watch for new events appearing in your projects in real-time.
 
-.. image:: img/web_project_detail.png
+.. image:: img/main.png
     :width: 650 px
 
 
@@ -38,9 +34,6 @@ Creating new project
 When you have running Centrifuge's instance and want to create web application using it -
 first you should do is to add your project into Centrifuge. It's very simple - just fill
 the form.
-
-.. image:: img/project_create.png
-    :width: 650 px
 
 **name** - unique project name, must be written using ascii symbols only. This is project
 slug, human-readable identity.
@@ -78,9 +71,6 @@ Project settings
 
 Settings has several panels to customize your project.
 
-.. image:: img/project_settings.png
-    :width: 650 px
-
 First, you can regenerate your **secret key**. Secret key - is a key for encoding
 all requests to Centrifuge from project administrators. If you want to send new
 message to your project's clients you must send encrypted request (there is Cent -
@@ -93,9 +83,6 @@ property for every new message. They help to manage permissions and behavior.
 Every namespace must have unique name and can be one-way or bidirectional. In
 bidirectional namespaces authorized clients can broadcast new events themselves.
 This is important for chat-like applications.
-
-.. image:: img/namespace_create.png
-    :width: 650 px
 
 You can change project settings which you set during creating project.
 

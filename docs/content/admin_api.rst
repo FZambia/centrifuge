@@ -22,14 +22,26 @@ All you need to do is to send correctly constructed POST request to this endpoin
 two POST parameters: ``data`` and ``sign``. Data is a base64 encoded json string and sign is an hmac based on
 project secret key, project ID and encoded data.
 
-Data is originally a json object with two properties:
-method and params. Method is the name of action you want to do. It can be publish,
-unsubscribe, presence, history. Params is an object with method arguments.
+Data is originally a json object with two properties: ``method`` and ``params``.
+
+``method`` is a name of action you want to do.
+
+``params`` is an object with method arguments.
+
+There are methods for managing project structure and
+methods which allow to manage channels.
+
+
+Methods for managing channels
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These are **publish**, **unsubscribe**, **presence**, **history**.
 
 Lets just go through each of methods and look what they do and which params you need
 to provide.
 
-publish - send message into channel of namespace.
+**publish** - send message into channel of namespace. ``data`` is an actual information
+you want to send into channel. **It must be valid JSON**.
 
 .. code-block:: javascript
 
@@ -38,11 +50,11 @@ publish - send message into channel of namespace.
         "params": {
             "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME",
-            "data": "hello"
+            "data": {}
         }
     }
 
-unsubscribe - unsubscribe user from channel.
+**unsubscribe** - unsubscribe user with certain ID from channel.
 
 .. code-block:: javascript
 
@@ -54,7 +66,7 @@ unsubscribe - unsubscribe user from channel.
             "user": "USER ID"
     }
 
-presence - get channel presence information.
+**presence** - get channel presence information (all clients currently subscribed on this channel).
 
 .. code-block:: javascript
 
@@ -65,7 +77,7 @@ presence - get channel presence information.
             "channel": "CHANNEL NAME"
     }
 
-history - get channel history information.
+**history** - get channel history information (list of last messages sent into channel).
 
 .. code-block:: javascript
 
@@ -76,7 +88,50 @@ history - get channel history information.
             "channel": "CHANNEL NAME"
     }
 
-That's all for API commands. Now you know the way to control your channels.
+
+Now let's see on API which allow you to change project structure.
+
+Methods for managing structure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are lots of them. But in most cases you won't need them as Centrifuge has web
+interface which helps with managing structure task.
+
+**project_get** - get information about project options
+
+**project_edit** - edit project options
+
+**project_delete** - completely delete project
+
+**regenerate_secret_key** - regenerate secret key for project (be careful with this)
+
+**namespace_list** - get all project namespaces.
+
+**namespace_get** - get namespace by its ``_id``
+
+**namespace_edit** - edit namespace by its ``_id``
+
+**namespace_delete** - delete namespace by its ``_id``
+
+
+Methods above available for project administrators using project secret key.
+
+But Centrifuge has another level of permissions which allows to run every
+command above and also these:
+
+**project_list** - get all projects
+
+**project_create** - create new project
+
+**dump_structure** - get all current structure.
+
+
+You can access these methods using ``_`` (by default) for Project ID and
+``api_secret`` from configuration file instead of project secret key (see
+``[superuser]`` section in ``Cent`` description below). But using
+this kind of API you need to provide project ID where necessary including
+``_project`` (by default) key into params (which value is a project ID).
+
 
 
 Cent
@@ -98,6 +153,12 @@ By default Cent uses `.centrc` configuration file from your home directory.
 Here is an example of config file's content:
 
 .. code-block:: bash
+
+    [superuser]
+    address = http://localhost:8000/api
+    project_id = _
+    secret_key = secret_key_from_configuration_file
+    timeout = 5
 
     [python]
     address = http://localhost:8000/api
