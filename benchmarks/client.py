@@ -36,7 +36,6 @@ class ClientProtocol(WebSocketClientProtocol):
     _subscribed = False
 
     def centrifuge_connect(self):
-
         message = {
             "method": "connect",
             "params": {
@@ -66,7 +65,7 @@ class ClientProtocol(WebSocketClientProtocol):
             "params": {
                 "namespace": "test",
                 "channel": "test",
-                "data": "test"
+                "data": {"input": "test"}
             }
         }
 
@@ -166,7 +165,7 @@ if __name__ == '__main__':
 
     for _ in range(NUM_CLIENTS):
         factory = WebsocketFactory(URL)
-        factory.protocol = ReceiveClientProtocol
+        factory.protocol = ThroughputClientProtocol
         connectWS(factory)
 
     reactor.run()

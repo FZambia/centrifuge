@@ -56,7 +56,11 @@ define(
 )
 
 define(
-    "redis", default=False, help="use Redis for PUB/SUB (default - ZeroMQ)", type=bool
+    "base", default=False, help="use Base PUB/SUB (single node compatible only)", type=bool
+)
+
+define(
+    "redis", default=False, help="use Redis for PUB/SUB", type=bool
 )
 
 define(
@@ -221,7 +225,9 @@ def main():
     AdminSocketHandler.application = app
     Client.application = app
 
-    if options.redis:
+    if options.base:
+        from centrifuge.pubsub.base import BasePubSub as PubSub
+    elif options.redis:
         from centrifuge.pubsub.redis import PubSub
     else:
         from centrifuge.pubsub.zeromq import PubSub
