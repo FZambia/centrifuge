@@ -35,7 +35,7 @@ func connect(ch_sub, ch_msg, ch_start chan int, url, origin, connect_message, su
         log.Fatal(err)
     }
     var msg = make([]byte, 512)
-    //var n int
+
     if _, err = ws.Read(msg); err != nil {
         log.Fatal(err)
     }
@@ -47,7 +47,7 @@ func connect(ch_sub, ch_msg, ch_start chan int, url, origin, connect_message, su
     if _, err = ws.Read(msg); err != nil {
         log.Fatal(err)
     }
-    //fmt.Printf("Received: %s.\n", msg[:n])
+
     ch_sub <- 1
 
     <-ch_start
@@ -81,7 +81,6 @@ func main() {
     subscribe_message := "{\"params\": {\"namespace\": \"test\", \"channel\": \"test\"}, \"method\": \"subscribe\"}"
     publish_message := "{\"params\": {\"data\": {\"input\": \"test\"}, \"namespace\": \"test\", \"channel\": \"test\"}, \"method\": \"publish\"}"
 
-
     ch_sub := make(chan int)
     ch_msg := make(chan int)
     ch_start := make(chan int)
@@ -92,6 +91,7 @@ func main() {
             connect(ch_sub, ch_msg, ch_start, url, origin, connect_message, subscribe_message, publish_message)
         }()
     }
+
     for {
         <-ch_sub
         clients_subscribed += 1
@@ -101,7 +101,7 @@ func main() {
         }
     }
 
-    fmt.Println("Ready to send")
+    fmt.Println("Lets go!")
 
     limit := concurrency*concurrency
 
@@ -118,7 +118,7 @@ func main() {
         if messages_received == limit {
             elapsed := time.Since(start)
             fmt.Printf("time: %s\n", elapsed)
-            fmt.Printf("messages: %d\n", limit)
+            fmt.Printf("total messages: %d\n", limit)
             break
         }
     }
