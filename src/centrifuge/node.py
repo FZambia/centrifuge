@@ -46,13 +46,11 @@ define(
 )
 
 define(
-    "zmq_xsub", default="tcp://localhost:6000", type=str,
-    help="XSUB socket address"
+    "zmq_xsub", default="tcp://localhost:6000", type=str, help="XSUB socket address"
 )
 
 define(
-    "zmq_xpub", default="tcp://localhost:6001", type=str,
-    help="XPUB socket address"
+    "zmq_xpub", default="tcp://localhost:6001", type=str, help="XPUB socket address"
 )
 
 define(
@@ -83,7 +81,7 @@ define(
 tornado.options.parse_command_line()
 
 
-if not options.redis:
+if not options.redis and not options.base:
 
     from zmq.eventloop import ioloop
 
