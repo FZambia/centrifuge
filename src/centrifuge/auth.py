@@ -12,6 +12,9 @@ import six
 def check_sign(secret_key, project_id, encoded_data, auth_sign):
     """
     Check that data from client was properly signed.
+    To do it create an HMAC with md5 hashing algorithm (python's default)
+    based on secret key, project ID and encoded data and compare result
+    with sign provided.
     """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(project_id))
@@ -21,7 +24,7 @@ def check_sign(secret_key, project_id, encoded_data, auth_sign):
 
 def decode_data(data):
     """
-    Decode string received from client.
+    Decode request body received from API client.
     """
     try:
         return json_decode(base64.b64decode(data))
@@ -31,7 +34,9 @@ def decode_data(data):
 
 def get_client_token(secret_key, project_id, user):
     """
-    Create token to validate information provided by new connection.
+    When client from browser connects to Centrifuge he must send his
+    user ID and ID of project. To validate that data we use HMAC to build
+    token.
     """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(user))
