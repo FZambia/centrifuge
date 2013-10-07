@@ -13,7 +13,10 @@
     </div>
     <div class="col-lg-9">
         <div class="tab-content" id="tab-content">
-            <div class="tab-pane active in" id="{% block section_active %}{% end %}">{% block section %}{% end %}</div>
+            <div class="tab-pane active in" id="{% block section_active %}{% end %}">
+                <h2 class="project-header">Project "{{ project["name"] }}"</h2>
+                {% block section %}{% end %}
+            </div>
         </div>
     </div>
 </div>

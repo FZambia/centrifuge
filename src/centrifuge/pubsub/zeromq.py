@@ -143,9 +143,7 @@ class PubSub(BasePubSub):
         Properly close ZeroMQ sockets.
         """
         if hasattr(self, 'pub_stream'):
-            print 2
             self.pub_stream.close()
         if hasattr(self, 'sub_stream'):
-            print 1
             self.sub_stream.stop_on_recv()
             self.sub_stream.close()
