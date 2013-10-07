@@ -10,8 +10,8 @@ from tornado.gen import coroutine
 from tornado.iostream import StreamClosedError
 from tornado.escape import json_encode
 
-from ..log import logger
-from .base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
+from centrifuge.log import logger
+from centrifuge.pubsub.base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
 
 
 class PubSub(BasePubSub):

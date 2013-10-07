@@ -16,18 +16,12 @@ def init_storage(structure, settings, callback):
 
 @coroutine
 def project_list(db):
-    """
-    Get all projects
-    """
     projects = db.get('projects', [])
     raise Return((projects, None))
 
 
 @coroutine
 def namespace_list(db):
-    """
-    Get all namespaces
-    """
     namespaces = db.get('namespaces', [])
     raise Return((namespaces, None))
 

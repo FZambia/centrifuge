@@ -181,6 +181,7 @@ def create_application_handlers():
 
 def main():
 
+    # load settings from configuration file
     try:
         custom_settings = json.load(open(options.config, 'r'))
     except IOError:
@@ -223,6 +224,7 @@ def main():
     AdminSocketHandler.application = app
     Client.application = app
 
+    # choose PUB/SUB mechanism
     if options.base:
         from centrifuge.pubsub.base import BasePubSub as PubSub
     elif options.redis:
@@ -242,7 +244,6 @@ def main():
     if magic_project_param:
         app.MAGIC_PROJECT_PARAM = magic_project_param
 
-    # summarize run configuration writing it into logger
     logger.info("Tornado port: {0}".format(options.port))
 
     # finally, let's go
@@ -251,12 +252,9 @@ def main():
     except KeyboardInterrupt:
         logger.info('interrupted')
     finally:
-        # clean
-        if hasattr(app, 'pub_stream'):
-            app.pub_stream.close()
-        if hasattr(app, 'sub_stream'):
-            app.sub_stream.stop_on_recv()
-            app.sub_stream.close()
+        # cleaning
+        if hasattr(app.pubsub, 'clean'):
+            app.pubsub.clean()
 
 
 if __name__ == '__main__':

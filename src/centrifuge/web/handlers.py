@@ -3,6 +3,7 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
+import six
 import uuid
 import tornado.web
 import tornado.escape
@@ -11,15 +12,12 @@ import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
-from sockjs.tornado import SockJSConnection
 from tornado.escape import json_encode, json_decode
+from sockjs.tornado import SockJSConnection
 
-import six
-
-from ..log import logger
-from ..handlers import BaseHandler
-
-from ..forms import ProjectForm, NamespaceForm
+from centrifuge.log import logger
+from centrifuge.handlers import BaseHandler
+from centrifuge.forms import ProjectForm, NamespaceForm
 
 
 class LogoutHandler(BaseHandler):

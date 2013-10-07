@@ -11,7 +11,7 @@ from tornado.escape import json_decode
 from tornado.iostream import StreamClosedError
 from six import PY3
 
-from .log import logger
+from centrifuge.log import logger
 
 
 if PY3:

@@ -5,7 +5,7 @@
 
 import re
 from wtforms import TextField, IntegerField, BooleanField, validators, SelectField
-from .utils import Form
+from centrifuge.utils import Form
 
 
 # regex pattern to match project and namespace names

@@ -13,13 +13,12 @@ import tornado.ioloop
 from tornado.gen import coroutine, Return
 from tornado.escape import json_encode
 
-from . import utils
-from .structure import Structure
-from .state import State
-from .log import logger
-from .forms import NamespaceForm, ProjectForm
-
-from .pubsub.base import BasePubSub
+from centrifuge import utils
+from centrifuge.structure import Structure
+from centrifuge.state import State
+from centrifuge.log import logger
+from centrifuge.forms import NamespaceForm, ProjectForm
+from centrifuge.pubsub.base import BasePubSub
 
 
 # in seconds, client's send presence ping to Redis once in this interval
@@ -36,16 +35,16 @@ class Application(tornado.web.Application):
     # magic fake project ID for owner API purposes.
     MAGIC_PROJECT_ID = '_'
 
-    # magic project param name to allow owner make operations within project
+    # magic project param name to allow owner make API operations within project
     MAGIC_PROJECT_PARAM = '_project'
 
-    # milliseconds
+    # in milliseconds, how often this application will send ping message
     PING_INTERVAL = 5000
 
-    # seconds
+    # in seconds
     PING_MAX_DELAY = 10
 
-    # milliseconds
+    # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
 
     PERMISSION_DENIED = 'permission denied'
@@ -84,10 +83,10 @@ class Application(tornado.web.Application):
         # initialize dict to keep back-off information for projects
         self.back_off = {}
 
-        # list of coroutines that must be done before message publish
+        # list of coroutines that must be done before message publishing
         self.pre_publish_callbacks = []
 
-        # list of coroutines that must be done after message publish
+        # list of coroutines that must be done after message publishing
         self.post_publish_callbacks = []
 
         # how often this node should send ping to other nodes

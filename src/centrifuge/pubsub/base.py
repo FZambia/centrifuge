@@ -8,8 +8,8 @@ from tornado.gen import coroutine, Return
 from tornado.escape import json_decode
 from tornado.escape import json_encode
 
-from ..response import Response
-from ..log import logger
+from centrifuge.response import Response
+from centrifuge.log import logger
 
 
 # separate important parts of channel name by this
@@ -173,4 +173,7 @@ class BasePubSub(object):
         pass
 
     def unsubscribe_key(self, subscription_key):
+        pass
+
+    def clean(self):
         pass

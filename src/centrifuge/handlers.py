@@ -10,11 +10,11 @@ from sockjs.tornado import SockJSConnection
 
 from jsonschema import validate, ValidationError
 
-from . import auth
-from .log import logger
-from .response import Response
-from .client import Client
-from .schema import req_schema, server_api_schema, owner_api_methods
+from centrifuge import auth
+from centrifuge.log import logger
+from centrifuge.response import Response
+from centrifuge.client import Client
+from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
 
 
 class BaseHandler(tornado.web.RequestHandler):

@@ -7,7 +7,8 @@ import sqlite3
 from tornado.gen import coroutine, Return
 import uuid
 from bson import ObjectId
-from ..log import logger
+
+from centrifuge.log import logger
 
 
 def dict_factory(cursor, row):

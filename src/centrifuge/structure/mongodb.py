@@ -8,7 +8,8 @@ import time
 import motor
 from bson import ObjectId
 from tornado.gen import Task, coroutine, Return
-from ..log import logger
+
+from centrifuge.log import logger
 
 
 def on_error(error):

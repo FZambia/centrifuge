@@ -9,7 +9,8 @@ import psycopg2.extras
 import uuid
 from bson import ObjectId
 from functools import partial
-from ..log import logger
+
+from centrifuge.log import logger
 
 
 def on_error(error):

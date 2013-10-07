@@ -11,8 +11,8 @@ import tornado.ioloop
 from tornado.gen import coroutine
 from tornado.escape import utf8, json_encode
 
-from ..log import logger
-from .base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
+from centrifuge.log import logger
+from centrifuge.pubsub.base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
 
 
 class PubSub(BasePubSub):
@@ -137,3 +137,15 @@ class PubSub(BasePubSub):
         self.sub_stream.setsockopt_string(
             zmq.UNSUBSCRIBE, six.u(subscription_key)
         )
+
+    def clean(self):
+        """
+        Properly close ZeroMQ sockets.
+        """
+        if hasattr(self, 'pub_stream'):
+            print 2
+            self.pub_stream.close()
+        if hasattr(self, 'sub_stream'):
+            print 1
+            self.sub_stream.stop_on_recv()
+            self.sub_stream.close()

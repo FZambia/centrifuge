@@ -4,11 +4,9 @@
 # All rights reserved.
 
 from tornado.gen import coroutine, Return
-from tornado.escape import json_encode
 from toro import Lock
 
-from .. import auth
-from ..log import logger
+from centrifuge.log import logger
 
 
 lock = Lock()

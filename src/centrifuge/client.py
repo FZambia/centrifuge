@@ -3,8 +3,8 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
-import uuid
 import six
+import uuid
 import time
 import random
 
@@ -22,10 +22,10 @@ from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
 
-from . import auth
-from .response import Response
-from .log import logger
-from .schema import req_schema, client_api_schema
+from centrifuge import auth
+from centrifuge.response import Response
+from centrifuge.log import logger
+from centrifuge.schema import req_schema, client_api_schema
 
 
 @coroutine
@@ -33,7 +33,8 @@ def sleep(seconds):
     """
     Non-blocking sleep.
     """
-    yield Task(IOLoop.instance().add_timeout, time.time()+seconds)
+    awake_at = time.time() + seconds
+    yield Task(IOLoop.instance().add_timeout, awake_at)
     raise Return((True, None))
 
 
@@ -519,7 +520,7 @@ class Client(object):
 
     def send_join_message(self, namespace_name, channel):
         """
-        Send message to all channel subscribers when client
+        Send join message to all channel subscribers when client
         subscribed on channel.
         """
         subscription_key = self.application.pubsub.get_subscription_key(
@@ -537,7 +538,7 @@ class Client(object):
 
     def send_leave_message(self, namespace_name, channel):
         """
-        Send message to all channel subscribers when client
+        Send leave message to all channel subscribers when client
         unsubscribed from channel.
         """
         subscription_key = self.application.pubsub.get_subscription_key(
