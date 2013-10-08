@@ -5,15 +5,22 @@ How it works
 
 Here I'll try to explain how Centrifuge actually works.
 
-In a few words: clients from browsers connect to Centrifuge, after connecting clients subscribe
-on channels. And every message which was published into channel will be broadcasted to connected
-clients.
+In a few words
+~~~~~~~~~~~~~~
 
+Clients from browsers connect to Centrifuge, after connecting clients subscribe
+on channels. And every message which was published into channel will be sent
+to all clients which are currently subscribed on this channel.
+
+
+In detail
+~~~~~~~~~
+
+This is an architecture diagram of Centrifuge:
 
 .. image:: img/centrifuge_architecture.png
     :width: 650 px
 
-Now in details.
 
 When you start Centrifuge instance you start Tornado instance on a certain port number.
 That port number can be configured using command-line option ``--port`` .
@@ -147,12 +154,6 @@ So if Redis available - information about presence and mesage history will be av
 for clients (there are options for namespaces which allow to disable presence and
 history for channels belonging to them).
 
-At this moment you can ask why not use Redis PUB/SUB mechanism instead of ZeroMQ PUB/SUB
-sockets for communicating and exchanging messages between instances? This is a fair question.
-There are some benchmarks I found which show significant performance difference - ZeroMQ
-just faster than Redis. But I think it is an open discussion and your thoughts are welcome.
-Mail me or create Github issue so we can make Centrifuge better in next releases.
-
 Finally let's talk about structure database. In Centrifuge you can create projects
 and namespaces in projects. This information must be stored somewhere and shared between
 all running instances. To achieve this SQLite or MongoDB or PostgreSQL can be used.
@@ -162,5 +163,3 @@ To avoid making query to database on every request all structure information loa
 into memory and then updated when something in structure changed and periodically to
 avoid inconsistency.
 
-Now you know main things about how Centrifuge works. As may noted that there are some
-possible single points of failure. You should deploy Centrifuge with awareness of this.
