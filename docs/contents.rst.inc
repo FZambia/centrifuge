@@ -3,6 +3,7 @@
 
    content/overview
    content/install
+   content/description
    content/configuration
    content/client_api
    content/admin_api

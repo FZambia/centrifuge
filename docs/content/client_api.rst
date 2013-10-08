@@ -65,8 +65,8 @@ for python:
         Create token to validate information provided by new connection.
         """
         sign = hmac.new(str(secret_key))
-        sign.update(user)
-        sign.update(project_id)
+        sign.update(str(user))
+        sign.update(str(project_id))
         token = sign.hexdigest()
         return token
 
