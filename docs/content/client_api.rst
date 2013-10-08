@@ -4,6 +4,9 @@ Client API
 .. _client_api:
 
 
+Simple javascript browser client
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Javascript client is designed to be very simple. I think the most difficult part of it is
 configuration. But lets go through its API step by step.
 
@@ -177,3 +180,9 @@ In some cases you need to disconnect your client from Centrifuge:
 
 After calling this client will not try to reestablish connection periodically. You must call
 ``connect`` method manually.
+
+
+Make it even more simple
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+To make things even more simple ``centrifuge.dom.js`` jQuery plugin can be used.
