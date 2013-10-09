@@ -195,3 +195,6 @@ label {
 .project-header {
     margin-top: 0;
 }
+.bottom_buffer {
+    margin-bottom: 40px;
+}
