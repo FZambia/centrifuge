@@ -68,7 +68,8 @@ class MainHandler(BaseHandler):
                 'projects': projects
             }),
             'node_count': len(self.application.nodes) + 1,
-            'pubsub': self.application.pubsub.NAME
+            'pubsub': getattr(self.application.pubsub, 'NAME', 'unknown'),
+            'storage': getattr(self.application.structure.storage, 'NAME', 'unknown')
         }
         self.render("main.html", **context)
 

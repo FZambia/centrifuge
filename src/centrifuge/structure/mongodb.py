@@ -12,6 +12,9 @@ from tornado.gen import Task, coroutine, Return
 from centrifuge.log import logger
 
 
+NAME = "MongoDB"
+
+
 def on_error(error):
     """
     General error wrapper.

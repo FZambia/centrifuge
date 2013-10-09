@@ -11,6 +11,9 @@ from bson import ObjectId
 from centrifuge.log import logger
 
 
+NAME = "SQLite"
+
+
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):

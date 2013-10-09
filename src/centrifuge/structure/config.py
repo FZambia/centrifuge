@@ -6,6 +6,9 @@
 from tornado.gen import coroutine, Return
 
 
+NAME = "Config"
+
+
 def init_storage(structure, settings, callback):
     """
     Use settings as database

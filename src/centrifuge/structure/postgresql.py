@@ -13,6 +13,9 @@ from functools import partial
 from centrifuge.log import logger
 
 
+NAME = "PostgreSQL"
+
+
 def on_error(error):
     """
     General error wrapper.
