@@ -229,7 +229,7 @@ class ProjectSettingsHandler(BaseHandler):
 
         self.set_header("Content-Type", "application/json")
         self.finish(json_encode({
-            "data": result,
+            "body": result,
             "error": error
         }))
 

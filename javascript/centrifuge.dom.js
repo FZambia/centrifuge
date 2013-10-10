@@ -14,6 +14,7 @@
                 channelAttr: 'data-centrifuge-channel',
                 messageEventNameAttr: 'data-centrifuge-message',
                 eventPrefix: 'centrifuge.',
+                fullMessage: true,
                 debug: false
             };
 
@@ -35,6 +36,27 @@
                     if (obj.hasOwnProperty(key)) size++;
                 }
                 return size;
+            }
+
+            function get_message_data(message) {
+                if (options.fullMessage === false) {
+                    return message.data;
+                }
+                return message;
+            }
+
+            function get_message_body(message) {
+                if (options.fullMessage === false) {
+                    return message.body;
+                }
+                return message;
+            }
+
+            function get_message_error(message) {
+                if (options.fullMessage === false) {
+                    return message.error;
+                }
+                return message;
             }
 
             function get_handler_subscription(handler, centrifuge) {
@@ -82,7 +104,7 @@
                     var subscription = get_handler_subscription(handler, centrifuge);
                     if (subscription) {
                         subscription.presence(function(message) {
-                            handler.trigger('centrifuge-presence-message', message);
+                            handler.trigger('centrifuge-presence-message', get_message_data(message));
                         });
                     }
                 });
@@ -92,7 +114,7 @@
                     var subscription = get_handler_subscription(handler, centrifuge);
                     if (subscription) {
                         subscription.history(function(message) {
-                            handler.trigger('centrifuge-history-message', message);
+                            handler.trigger('centrifuge-history-message', get_message_data(message));
                         });
                     }
                 });
@@ -115,30 +137,30 @@
                     debug(message);
                     var handler_event = handler.attr(options.messageEventNameAttr);
                     var message_event_name = options.eventPrefix + (handler_event || 'message');
-                    handler.trigger(message_event_name, message);
+                    handler.trigger(message_event_name, get_message_data(message));
                 });
 
                 subscription.on('subscribe:success', function(message) {
                     var subscribe_success_event_name = options.eventPrefix + 'subscribe:success';
-                    handler.trigger(subscribe_success_event_name, message);
+                    handler.trigger(subscribe_success_event_name, get_message_body(message));
                 });
 
                 subscription.on('subscribe:error', function(message) {
                     debug(message);
                     var subscribe_success_event_name = options.eventPrefix + 'subscribe:error';
-                    handler.trigger(subscribe_success_event_name, message);
+                    handler.trigger(subscribe_success_event_name, get_message_error(message));
                 });
 
                 subscription.on('join', function(message) {
                     debug(message);
                     var join_event_name = options.eventPrefix + 'join';
-                    handler.trigger(join_event_name, message.data);
+                    handler.trigger(join_event_name, get_message_data(message));
                 });
 
                 subscription.on('leave', function(message) {
                     debug(message);
                     var leave_event_name = options.eventPrefix + 'leave';
-                    handler.trigger(leave_event_name, message.data);
+                    handler.trigger(leave_event_name, get_message_data(message));
                 });
 
             }
