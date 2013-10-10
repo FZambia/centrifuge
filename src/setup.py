@@ -3,26 +3,31 @@ import sys
 from setuptools import setup
 
 
-if sys.argv[-1] == 'test':
-    status = os.system("python -m unittest discover -p 'test_*.py'")
-    sys.exit(1 if status > 127 else status)
-
-
 with_zmq = True
 with_redis = True
 with_mongodb = True
 with_postgresql = True
 
+filtered_args = []
 
 for arg in sys.argv:
-    if arg.startswith('--without-zmq'):
+    if arg == '--without-zmq':
         with_zmq = False
-    elif arg.startswith('--without-redis'):
+    elif arg == '--without-redis':
         with_redis = False
-    elif arg.startswith('--without-mongodb'):
+    elif arg == '--without-mongodb':
         with_mongodb = False
-    elif arg.startswith('--without-postgresql'):
+    elif arg == '--without-postgresql':
         with_postgresql = False
+    else:
+        filtered_args.append(arg)
+
+sys.argv = filtered_args
+
+
+if sys.argv[-1] == 'test':
+    status = os.system("python -m unittest discover -p 'test_*.py'")
+    sys.exit(1 if status > 127 else status)
 
 
 def full_split(path, result=None):
@@ -96,6 +101,9 @@ if with_redis:
     install_requires.append('toredis-fork==0.1.2')
 if with_mongodb:
     install_requires.append('motor==0.1.1')
+else:
+    # for bson module
+    install_requires.append('pymongo >= 2.6')
 if with_postgresql:
     install_requires.append('Momoko==1.0.0')
 

@@ -1,3 +1,10 @@
+v0.3.1
+======
+* web interface css improvements
+* fullMessage option for centrifuge.dom.js jQuery plugin
+* use absolute imports instead of relative
+* fix installation when set up without extra dependencies on mongodb
+
 v0.3.0
 ======
 * centrifuge.dom.js - jQuery plugin to add real-time even easier.
