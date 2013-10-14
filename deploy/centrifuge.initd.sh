@@ -29,6 +29,7 @@ start() {
         RETVAL=$?
         echo
         [ $RETVAL = 0 ] && { success; }
+        echo
         return $RETVAL
 }
 
@@ -38,7 +39,9 @@ stop() {
         /opt/centrifuge/env/bin/supervisorctl --configuration=/etc/centrifuge/supervisord.conf shutdown
         [ -f "/var/run/centrifuge/supervisord.pid" ] && rm -f `cat /var/run/centrifuge/supervisord.pid`
         RETVAL=$?
+        [ $RETVAL = 0 ] && { success; }
         echo
+        return $RETVAL
 }
 
 case "$1" in

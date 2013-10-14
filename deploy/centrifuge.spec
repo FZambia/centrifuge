@@ -1,6 +1,6 @@
 %define __prefix /opt
 %define __spec_install_post /usr/lib/rpm/brp-compress || :
-%define __descr "Real-time messaging server"
+%define __descr Real-time messaging server
 
 Name: centrifuge
 Summary: %{__descr}
