@@ -9,7 +9,7 @@ Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildRequires: python rpm-build redhat-rpm-config zeromq3-devel postgresql-devel
-Requires: python zeromq3 nginx
+Requires: python, zeromq3, nginx >= 1.3.13
 License: BSD
 
 
