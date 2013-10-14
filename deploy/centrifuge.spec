@@ -1,6 +1,6 @@
 %define __prefix /opt
 %define __spec_install_post /usr/lib/rpm/brp-compress || :
-%define __descr "Simple real-time messaging server"
+%define __descr "Real-time messaging server"
 
 Name: centrifuge
 Summary: %{__descr}
@@ -9,7 +9,7 @@ Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildRequires: python rpm-build redhat-rpm-config zeromq3-devel postgresql-devel
-Requires: python zeromq3
+Requires: python zeromq3 nginx
 License: BSD
 
 
