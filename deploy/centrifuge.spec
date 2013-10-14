@@ -14,10 +14,12 @@ License: BSD
 
 
 %description
+
 %{__descr}
 
 
 %prep
+
 if [ -d %{name} ]; then
     echo "Cleaning out stale build directory" 1>&2
     rm -rf %{name}
@@ -25,6 +27,7 @@ fi
 
 
 %pre
+
 /usr/bin/getent group %{name} || /usr/sbin/groupadd -r %{name}
 /usr/bin/getent passwd %{name} || /usr/sbin/useradd -r -d /opt/%{name}/ -s /bin/false %{name} -g %{name}
 
@@ -48,7 +51,9 @@ find %{name}/ -type f -name "*.py[co]" -delete
 # replace builddir path
 find %{name}/ -type f -exec sed -i "s:%{_builddir}:%{__prefix}:" {} \;
 
+
 %install
+
 mkdir -p %{buildroot}%{__prefix}/%{name}
 mv %{name} %{buildroot}%{__prefix}/
 
@@ -66,9 +71,14 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 %{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/deploy/supervisord.conf %{buildroot}%{_sysconfdir}/%{name}/supervisord.conf
 %{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/deploy/centrifuge.supervisor %{buildroot}%{_sysconfdir}/%{name}/centrifuge.supervisor
 
+# nginx
+%{__install} -p -D -m 0755 %{buildroot}%{__prefix}/%{name}/src/deploy/centrifuge.nginx.conf %{buildroot}%{_sysconfdir}/nginx/conf.d/centrifuge.conf
+
+# folders
 mkdir -p %{buildroot}/var/log/%{name}
 mkdir -p %{buildroot}/var/run/%{name}
 mkdir -p %{buildroot}/var/db/%{name}
+
 
 %post
 
@@ -77,10 +87,12 @@ if [ $1 -gt 1 ]; then
     echo "Upgraded"
 else
     echo "Installed"
-    echo "1. Fill Supervisor config file at /etc/centrifuge/supervisord.conf"
+    echo "0. Fill Supervisor config file at /etc/centrifuge/supervisord.conf"
     echo "1. Fill Supervisor config file for Centrifuge at /etc/centrifuge/centrifuge.supervisor"
     echo "2. Fill Centrifuge config file at /etc/centrifuge/centrifuge.json"
-    echo "3. Run /etc/init.d/centrifuge start"
+    echo "3. Fill Nginx config file for Centrifuge at /etc/nginx/conf.d/centrifuge.conf"
+    echo "4. Run /etc/init.d/centrifuge start"
+    echo "5. Reload nginx"
 fi
 
 
@@ -95,6 +107,7 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/%{name}/centrifuge.json
 %config(noreplace) %{_sysconfdir}/%{name}/centrifuge.supervisor
 %config(noreplace) %{_sysconfdir}/%{name}/supervisord.conf
+%config(noreplace) %{_sysconfdir}/nginx/conf.d/centrifuge.conf
 
 %defattr(-,%{name},%{name})
 /var/log/%{name}/
