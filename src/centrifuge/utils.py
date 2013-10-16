@@ -248,27 +248,3 @@ except ImportError:
             name = _resolve_name(name[level:], package, level)
         __import__(name)
         return sys.modules[name]
-
-
-@coroutine
-def request_urls(urls, body, connect_timeout=1, request_timeout=1):
-
-    client = AsyncHTTPClient()
-
-    keys = []
-    for i, url in enumerate(urls):
-        key = 'key_%s' % i
-        keys.append(key)
-
-        params = {
-            'url': url,
-            'method': 'POST',
-            'connect_timeout': connect_timeout,
-            'request_timeout': request_timeout,
-            'body': body
-        }
-        request = HTTPRequest(**params)
-        client.fetch(request, callback=(yield Callback(key)))
-
-    responses = yield WaitAll(keys)
-    raise Return((responses, None))

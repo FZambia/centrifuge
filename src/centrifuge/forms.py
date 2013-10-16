@@ -39,7 +39,7 @@ class ProjectForm(Form):
 
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
-        namespace_choices = kwargs.get('namespace_choices', None)
+        namespace_choices = kwargs.get('namespace_choices')
         if namespace_choices:
             self.default_namespace.choices = namespace_choices
         else:
@@ -68,7 +68,7 @@ class ProjectForm(Form):
             validators.URL(require_tld=False),
             validators.Optional()
         ],
-        description="url address to authorize clients"
+        description="your application's url address to authorize clients"
     )
 
     max_auth_attempts = IntegerField(
@@ -101,11 +101,9 @@ class ProjectForm(Form):
     default_namespace = SelectField(
         label='default namespace',
         validators=[],
-        default=''
+        default='',
+        description="namespace which will be used when no namespace provided in request params"
     )
-
-    def validate_name(self, field):
-        field.data = field.data.lower()
 
 
 class NamespaceForm(Form):
@@ -115,7 +113,7 @@ class NamespaceForm(Form):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique namespace name"
+        description="unique namespace name, ascii symbols only"
     )
 
     is_watching = BooleanField(
@@ -143,14 +141,16 @@ class NamespaceForm(Form):
         label='presence',
         validators=[],
         default=True,
-        description="check if you want to get presence info for channels in this namespace"
+        description="check if you want to use presence info for channels in "
+                    "this namespace (Redis required)"
     )
 
     history = BooleanField(
         label='history',
         validators=[],
         default=True,
-        description="check if you want to get history info for channels in this namespace"
+        description="check if you want to get history info for channels in "
+                    "this namespace (Redis required)"
     )
 
     history_size = IntegerField(
@@ -177,5 +177,5 @@ class NamespaceForm(Form):
             validators.Optional()
         ],
         description="url address to authorize clients specific for namespace "
-                    "(leave it blank to use auth url from project)"
+                    "(leave it blank to use auth address from project)"
     )
