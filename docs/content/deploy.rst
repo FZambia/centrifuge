@@ -140,3 +140,12 @@ centrifuge.conf (put it into ``/etc/supervisor/conf.d/centrifuge.conf``)
     numprocs = 2
     numprocs_start = 8000
     user = centrifuge
+
+
+Centos 6
+~~~~~~~~
+
+In `deploy` folder of repository you can find everything to build rpm for Centos 6.
+
+If you are not a Centos 6 user you can find a lot of useful things there, which were
+successfully tested in production environment.
