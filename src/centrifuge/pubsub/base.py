@@ -59,7 +59,8 @@ class BasePubSub(object):
     def publish_admin_message(self, message):
         self.publish(ADMIN_CHANNEL, message)
 
-    def get_subscription_key(self, project_id, namespace, channel):
+    @staticmethod
+    def get_subscription_key(project_id, namespace, channel):
         """
         Create subscription name to catch messages from specific
         project, namespace and channel.

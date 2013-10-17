@@ -24,6 +24,13 @@ class PubSub(BasePubSub):
     def __init__(self, application):
         super(PubSub, self).__init__(application)
         self.sub_stream = None
+        self.pub_stream = None
+        self.zmq_context = None
+        self.zmq_pub_sub_proxy = None
+        self.zmq_xpub = None
+        self.zmq_xsub = None
+        self.zmq_pub_port = None
+        self.zmq_sub_address = None
 
     def initialize(self):
 
@@ -142,8 +149,8 @@ class PubSub(BasePubSub):
         """
         Properly close ZeroMQ sockets.
         """
-        if hasattr(self, 'pub_stream'):
+        if hasattr(self, 'pub_stream') and self.pub_stream:
             self.pub_stream.close()
-        if hasattr(self, 'sub_stream'):
+        if hasattr(self, 'sub_stream') and self.sub_stream:
             self.sub_stream.stop_on_recv()
             self.sub_stream.close()

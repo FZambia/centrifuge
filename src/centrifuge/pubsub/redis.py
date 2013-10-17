@@ -25,6 +25,10 @@ class PubSub(BasePubSub):
         self.subscriber = toredis.Client()
         self.publisher = toredis.Client()
         self._need_reconnect = False
+        self.host = None
+        self.port = None
+        self.db = None
+        self.connection_check = None
 
     def initialize(self):
         options = self.application.settings['options']
@@ -55,7 +59,7 @@ class PubSub(BasePubSub):
     def on_publisher_select(self, res):
         if res != "OK":
             logger.error("select database for publisher: {0}".format(res))
-            return
+            self._need_reconnect = True
 
     def connect(self):
         """
@@ -123,7 +127,9 @@ class PubSub(BasePubSub):
             yield self.handle_channel_message(channel, message_data)
 
     def subscribe_key(self, subscription_key):
-        self.subscriber.subscribe(six.u(subscription_key), callback=self.dispatch_published_message)
+        self.subscriber.subscribe(
+            six.u(subscription_key), callback=self.dispatch_published_message
+        )
 
     def unsubscribe_key(self, subscription_key):
         self.subscriber.unsubscribe(six.u(subscription_key))
