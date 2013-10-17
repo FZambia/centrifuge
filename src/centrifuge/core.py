@@ -15,7 +15,7 @@ from tornado.escape import json_encode
 
 from centrifuge import utils
 from centrifuge.structure import Structure
-from centrifuge.state import State
+from centrifuge.state.base import BaseState as State
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.pubsub.base import BasePubSub
@@ -152,19 +152,14 @@ class Application(tornado.web.Application):
             if presence_ping_interval:
                 self.presence_ping_interval = presence_ping_interval*1000
 
-            host = state_config.get("host", "localhost")
-            port = state_config.get("port", 6379)
-            db = state_config.get("db", 0)
             self.state = State(
-                host=host,
-                port=port,
-                db=db,
+                self,
                 presence_timeout=state_config.get(
                     "presence_expire_interval",
                     DEFAULT_PRESENCE_EXPIRE_INTERVAL
                 )
             )
-            tornado.ioloop.IOLoop.instance().add_callback(self.state.connect)
+            tornado.ioloop.IOLoop.instance().add_callback(self.state.initialize)
 
     def init_pubsub(self):
         """
