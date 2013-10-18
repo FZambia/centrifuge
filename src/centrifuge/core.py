@@ -136,7 +136,7 @@ class Application(tornado.web.Application):
             # use base fake state
             self.state = State(self, fake=True)
         else:
-            state_storage = state_config.get('storage', 'centrifuge.state.base.BaseState')
+            state_storage = state_config.get('storage', 'centrifuge.state.base.State')
             state_storage_class = utils.namedAny(state_storage)
             self.state = state_storage_class(self)
             tornado.ioloop.IOLoop.instance().add_callback(self.state.initialize)
