@@ -1,3 +1,37 @@
+v0.3.2
+======
+* Base State - run single instance of Centrifuge with in-memory state storage
+
+Now single instance of Centrifuge can work without any extra dependencies
+on ZeroMQ or Redis. This can be done using Base PUB/SUB mechanism and
+Base State class.
+
+To use Base PUB/SUB mechanism you need to use `--base` command line option
+when running Centrifuge's instance:
+
+```bash
+centrifuge --config=centrifuge.json --base
+```
+
+To use Base State for presence and history you should properly fill `state`
+section of configuration JSON file:
+
+```javascript
+{
+    "password": "admin",
+    "cookie_secret": "secret",
+    "api_secret": "secret",
+    "state": {
+        "storage": "centrifuge.state.base.State",
+        "settings": {}
+    }
+}
+```
+
+One more time - Base options will work only when you use SINGLE INSTANCE of
+Centrifuge. If you want to use several instances you need to use Redis or
+ZeroMQ PUB/SUB and Redis State class (`centrifuge.state.redis.State`).
+
 v0.3.1
 ======
 * web interface css improvements
