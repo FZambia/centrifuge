@@ -7,6 +7,8 @@ import time
 from tornado.gen import coroutine, Return
 from six import iteritems
 
+from centrifuge.log import logger
+
 
 # in seconds, how often connected clients must send presence info to state storage
 DEFAULT_PRESENCE_PING_INTERVAL = 25
@@ -26,12 +28,14 @@ class State(object):
     In memory state storage. Suitable for using with single Centrifuge instance only.
     """
 
+    NAME = "Base - single node only"
+
     def __init__(self, application, io_loop=None, fake=False):
         self.application = application
         self.io_loop = io_loop
         self.fake = fake
 
-        self.config = self.application.settings["config"].get("state", {})
+        self.config = self.application.settings["config"].get("state", {}) or {}
 
         self.presence_ping_interval = self.config.get(
             'presence_ping_interval',
@@ -50,7 +54,7 @@ class State(object):
         self.history = {}
 
     def initialize(self):
-        pass
+        logger.info("Base State initialized")
 
     @staticmethod
     def get_presence_hash_key(project_id, namespace, channel):

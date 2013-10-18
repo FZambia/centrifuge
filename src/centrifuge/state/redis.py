@@ -41,6 +41,8 @@ def dict_from_list(key_value_list):
 
 class State(BaseState):
 
+    NAME = "Redis"
+
     def __init__(self, *args, **kwargs):
         super(State, self).__init__(*args, **kwargs)
         self.host = None
@@ -58,6 +60,7 @@ class State(BaseState):
         self.client.state = self
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self.connect()
+        logger.info("Redis State initialized")
 
     def on_select(self, res):
         if res != "OK":

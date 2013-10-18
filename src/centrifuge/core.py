@@ -134,6 +134,7 @@ class Application(tornado.web.Application):
         state_config = config.get("state", {})
         if not state_config:
             # use base fake state
+            logger.info("No State configured")
             self.state = State(self, fake=True)
         else:
             state_storage = state_config.get('storage', 'centrifuge.state.base.State')
