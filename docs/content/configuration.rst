@@ -16,8 +16,9 @@ Here is minimal configuration file required:
     {
         "password": "admin",
         "cookie_secret": "secret",
+        "api_secret": "secret",
         "structure": {
-            "module": "centrifuge.structure.sqlite",
+            "storage": "centrifuge.structure.sqlite",
             "settings": {
                 "path": "centrifuge.db"
             }
@@ -33,8 +34,9 @@ With MongoDB as structure storage:
     {
         "password": "admin",
         "cookie_secret": "secret",
+        "api_secret": "secret",
         "structure": {
-            "module": "centrifuge.structure.mongodb",
+            "storage": "centrifuge.structure.mongodb",
             "settings": {
                 "host": "localhost",
                 "port": 27017,
@@ -53,8 +55,9 @@ With PostgreSQL this file look like:
     {
         "password": "admin",
         "cookie_secret": "secret",
+        "api_secret": "secret",
         "structure": {
-            "module": "centrifuge.structure.postgresql",
+            "storage": "centrifuge.structure.postgresql",
             "settings": {
                 "host": "localhost",
                 "port": 27017,
@@ -66,16 +69,41 @@ With PostgreSQL this file look like:
         },
         "state": null
     }
-
-Channel presence and history require Redis. In examples above you can see "state"
-option set to ``null``. To enable presence and history fill this option with Redis
-settings:
+**In case of using single instance of Centrifuge** you can enable presence and history
+support without any dependencies. All data will be stored in memory of process. In
+this case when you restart process - you lose all information about presence and history.
+Here is a configuration with in-process-memory state enabled:
 
 .. code-block:: javascript
 
     {
         "password": "admin",
         "cookie_secret": "secret",
+        "api_secret": "secret",
+        "structure": {
+            "storage": "centrifuge.structure.sqlite",
+            "settings": {
+                "path": "centrifuge.db"
+            }
+        },
+        "state": {
+            "storage": "centrifuge.state.base.State",
+            "settings": {}
+        }
+    }
+
+
+
+
+But when you use several instances of Centrifuge - Redis required for presence and history data.
+Lets configure Centrifuge to use Redis as state storage:
+
+.. code-block:: javascript
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "api_secret": "secret",
         "structure": {
             "module": "centrifuge.structure.sqlite",
             "settings": {
@@ -83,24 +111,26 @@ settings:
             }
         },
         "state": {
-            "host": "localhost",
-            "port": 6379
+            "storage": "centrifuge.state.redis.State",
+            "settings": {
+                "host": "localhost",
+                "port": 6379
+            }
         }
     }
 
 
-Of course you should install and run Redis before running Centrifuge with it.
-
-
 Description:
 
-- **password** - administrator's password. Can be omitted during development.
+- **password** - administrator's web interface password.
 
-- **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret
+- **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret.
+
+- **api_secret** - administrator's API secret key.
 
 - **structure** - section with database settings in which persistent information will be stored.
 
-- **state** - Redis settings to enable history and presence data for channels.
+- **state** - settings to enable history and presence data for channels.
 
 
 Command-line options

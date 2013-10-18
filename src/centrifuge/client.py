@@ -54,6 +54,7 @@ class Client(object):
         self.default_user_info = None
         self.project_id = None
         self.channels = None
+        self.presence_ping = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -67,7 +68,8 @@ class Client(object):
     @coroutine
     def clean(self):
 
-        self.presence_ping.stop()
+        if self.presence_ping:
+            self.presence_ping.stop()
 
         project_id = self.project_id
 
@@ -291,10 +293,12 @@ class Client(object):
         self.user = user
         self.default_user_info = json_encode({'user_id': self.user, 'client_id': self.uid})
         self.channels = {}
-        self.presence_ping = PeriodicCallback(
-            self.send_presence_ping, self.application.presence_ping_interval
-        )
-        self.presence_ping.start()
+
+        if not self.application.state.fake:
+            self.presence_ping = PeriodicCallback(
+                self.send_presence_ping, self.application.state.presence_ping_interval
+            )
+            self.presence_ping.start()
 
         raise Return((self.uid, None))
 

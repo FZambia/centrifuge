@@ -7,11 +7,12 @@ import toredis
 import time
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
-from tornado.escape import json_decode
+from tornado.escape import json_decode, json_encode
 from tornado.iostream import StreamClosedError
 from six import PY3
 
 from centrifuge.log import logger
+from centrifuge.state.base import State as BaseState
 
 
 if PY3:
@@ -38,20 +39,28 @@ def dict_from_list(key_value_list):
     )
 
 
-class State(object):
+class State(BaseState):
 
-    def __init__(self, host="localhost", port=6379, db=0, io_loop=None, fake=False, presence_timeout=60, history_size=20):
-        self.host = host
-        self.port = port
-        self.db = db
-        self.io_loop = io_loop
-        self.fake = fake
+    NAME = "Redis"
+
+    def __init__(self, *args, **kwargs):
+        super(State, self).__init__(*args, **kwargs)
+        self.host = None
+        self.port = None
+        self.db = None
         self.client = None
-        self.presence_timeout = presence_timeout
-        self.history_size = history_size
+        self.connection_check = None
+
+    def initialize(self):
+        settings = self.config.get('settings', {})
+        self.host = settings.get("host", "localhost")
+        self.port = settings.get("port", 6379)
+        self.db = settings.get("db", 0)
         self.client = toredis.Client(io_loop=self.io_loop)
         self.client.state = self
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
+        self.connect()
+        logger.info("Redis State initialized")
 
     def on_select(self, res):
         if res != "OK":
@@ -81,14 +90,9 @@ class State(object):
             logger.info('reconnecting to Redis')
             self.connect()
 
-    def get_presence_hash_key(self, project_id, namespace, channel):
-        return "centrifuge:presence:hash:%s:%s:%s" % (project_id, namespace, channel)
-
-    def get_presence_set_key(self, project_id, namespace, channel):
+    @staticmethod
+    def get_presence_set_key(project_id, namespace, channel):
         return "centrifuge:presence:set:%s:%s:%s" % (project_id, namespace, channel)
-
-    def get_history_list_key(self, project_id, namespace, channel):
-        return "centrifuge:history:%s:%s:%s" % (project_id, namespace, channel)
 
     @coroutine
     def add_presence(self, project_id, namespace, channel, uid, user_info, presence_timeout=None):
@@ -160,7 +164,7 @@ class State(object):
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, namespace, channel)
         try:
-            yield Task(self.client.lpush, list_key, message)
+            yield Task(self.client.lpush, list_key, json_encode(message))
             yield Task(self.client.ltrim, list_key, 0, history_size - 1)
         except StreamClosedError as e:
             raise Return((None, e))
@@ -178,6 +182,6 @@ class State(object):
         try:
             data = yield Task(self.client.lrange, history_list_key, 0, -1)
         except StreamClosedError:
-            raise Return((None, 'history unavailable'))
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
         else:
             raise Return(([json_decode(x.decode()) for x in data], None))

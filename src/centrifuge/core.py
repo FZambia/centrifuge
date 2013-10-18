@@ -15,19 +15,10 @@ from tornado.escape import json_encode
 
 from centrifuge import utils
 from centrifuge.structure import Structure
-from centrifuge.state import State
+from centrifuge.state.base import State
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.pubsub.base import BasePubSub
-
-
-# in seconds, client's send presence ping to Redis once in this interval
-DEFAULT_PRESENCE_PING_INTERVAL = 25
-
-
-# in seconds, how long we must consider presence info valid after
-# receiving presence ping
-DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
 
 class Application(tornado.web.Application):
@@ -89,9 +80,6 @@ class Application(tornado.web.Application):
         # list of coroutines that must be done after message publishing
         self.post_publish_callbacks = []
 
-        # how often this node should send ping to other nodes
-        self.presence_ping_interval = DEFAULT_PRESENCE_PING_INTERVAL*1000
-
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
@@ -145,26 +133,14 @@ class Application(tornado.web.Application):
         config = self.settings['config']
         state_config = config.get("state", {})
         if not state_config:
-            self.state = State(fake=True)
+            # use base fake state
+            logger.info("No State configured")
+            self.state = State(self, fake=True)
         else:
-            # override presence ping interval
-            presence_ping_interval = state_config.get('presence_ping_interval')
-            if presence_ping_interval:
-                self.presence_ping_interval = presence_ping_interval*1000
-
-            host = state_config.get("host", "localhost")
-            port = state_config.get("port", 6379)
-            db = state_config.get("db", 0)
-            self.state = State(
-                host=host,
-                port=port,
-                db=db,
-                presence_timeout=state_config.get(
-                    "presence_expire_interval",
-                    DEFAULT_PRESENCE_EXPIRE_INTERVAL
-                )
-            )
-            tornado.ioloop.IOLoop.instance().add_callback(self.state.connect)
+            state_storage = state_config.get('storage', 'centrifuge.state.base.State')
+            state_storage_class = utils.namedAny(state_storage)
+            self.state = state_storage_class(self)
+            tornado.ioloop.IOLoop.instance().add_callback(self.state.initialize)
 
     def init_pubsub(self):
         """
@@ -397,8 +373,6 @@ class Application(tornado.web.Application):
         )
 
         self.pubsub.publish(subscription_key, message)
-
-        message = json_encode(message)
 
         yield self.state.add_history_message(
             project_id, namespace_name, channel, message,

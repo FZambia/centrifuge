@@ -69,8 +69,11 @@ class MainHandler(BaseHandler):
             }),
             'node_count': len(self.application.nodes) + 1,
             'pubsub': getattr(self.application.pubsub, 'NAME', 'unknown'),
-            'storage': getattr(self.application.structure.storage, 'NAME', 'unknown')
+            'structure': getattr(self.application.structure.storage, 'NAME', 'unknown'),
+            'state': getattr(self.application.state, 'NAME', 'unknown')
         }
+        if self.application.state.fake:
+            context['state'] = 'Not configured'
         self.render("main.html", **context)
 
 
