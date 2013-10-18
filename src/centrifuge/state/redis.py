@@ -12,7 +12,7 @@ from tornado.iostream import StreamClosedError
 from six import PY3
 
 from centrifuge.log import logger
-from centrifuge.state.base import BaseState
+from centrifuge.state.base import State as BaseState
 
 
 if PY3:
@@ -50,11 +50,10 @@ class State(BaseState):
         self.connection_check = None
 
     def initialize(self):
-        config = self.application.settings["config"]
-        state_config = config.get("state", {})
-        self.host = state_config.get("host", "localhost")
-        self.port = state_config.get("port", 6379)
-        self.db = state_config.get("db", 0)
+        settings = self.config.get('settings', {})
+        self.host = settings.get("host", "localhost")
+        self.port = settings.get("port", 6379)
+        self.db = settings.get("db", 0)
         self.client = toredis.Client(io_loop=self.io_loop)
         self.client.state = self
         self.connection_check = PeriodicCallback(self.check_connection, 1000)

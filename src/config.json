@@ -3,8 +3,11 @@
     "cookie_secret": "secret",
     "api_secret": "secret",
     "state": {
-        "host": "localhost",
-        "port": 6379
+        "storage": "centrifuge.state.redis.State",
+        "settings": {
+            "host": "localhost",
+            "port": 6379
+        }
     },
     "structure": {
         "storage": "centrifuge.structure.sqlite",

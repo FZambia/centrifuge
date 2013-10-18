@@ -8,17 +8,44 @@ from tornado.gen import coroutine, Return
 from six import iteritems
 
 
-class BaseState(object):
+# in seconds, how often connected clients must send presence info to state storage
+DEFAULT_PRESENCE_PING_INTERVAL = 25
+
+
+# in seconds, how long we must consider presence info valid after
+# receiving presence ping
+DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
+
+
+# how many messages keep in history for channel by default
+DEFAULT_HISTORY_SIZE = 20
+
+
+class State(object):
     """
     In memory state storage. Suitable for using with single Centrifuge instance only.
     """
 
-    def __init__(self, application, io_loop=None, fake=False, presence_timeout=60, history_size=20):
+    def __init__(self, application, io_loop=None, fake=False):
         self.application = application
         self.io_loop = io_loop
         self.fake = fake
-        self.presence_timeout = presence_timeout
-        self.history_size = history_size
+
+        self.config = self.application.settings["config"].get("state", {})
+
+        self.presence_ping_interval = self.config.get(
+            'presence_ping_interval',
+            DEFAULT_PRESENCE_PING_INTERVAL
+        )*1000
+
+        self.presence_timeout = self.config.get(
+            "presence_expire_interval",
+            DEFAULT_PRESENCE_EXPIRE_INTERVAL
+        )
+        self.history_size = self.config.get(
+            "default_history_size",
+            DEFAULT_HISTORY_SIZE
+        )
         self.presence = {}
         self.history = {}
 
