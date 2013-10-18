@@ -14,6 +14,9 @@ extremely fast and mature Python's async web server.
 Centrifuge uses [ZeroMQ](http://www.zeromq.org/) steroid sockets for internal
 communication and publish/subscribe operations. There is an also support
 for [Redis](http://redis.io/) PUB/SUB, so you can use it instead of ZeroMQ.
+You can also run full-featured instance of Centrifuge without extra dependencies
+on ZeroMQ and Redis - in this case you are limited in using only SINGLE instance
+of Centrifuge.
 
 To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be
