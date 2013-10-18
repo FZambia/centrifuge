@@ -374,8 +374,6 @@ class Application(tornado.web.Application):
 
         self.pubsub.publish(subscription_key, message)
 
-        message = json_encode(message)
-
         yield self.state.add_history_message(
             project_id, namespace_name, channel, message,
             history_size=allowed_namespaces[namespace_name]['history_size']

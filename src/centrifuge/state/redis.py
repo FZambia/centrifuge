@@ -7,7 +7,7 @@ import toredis
 import time
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
-from tornado.escape import json_decode
+from tornado.escape import json_decode, json_encode
 from tornado.iostream import StreamClosedError
 from six import PY3
 
@@ -164,7 +164,7 @@ class State(BaseState):
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, namespace, channel)
         try:
-            yield Task(self.client.lpush, list_key, message)
+            yield Task(self.client.lpush, list_key, json_encode(message))
             yield Task(self.client.ltrim, list_key, 0, history_size - 1)
         except StreamClosedError as e:
             raise Return((None, e))

@@ -5,6 +5,7 @@
 
 import time
 from tornado.gen import coroutine, Return
+from tornado.escape import json_decode
 from six import iteritems
 
 from centrifuge.log import logger
@@ -83,7 +84,7 @@ class State(object):
 
         self.presence[hash_key][uid] = {
             'expire_at': expire_at,
-            'user_info': user_info
+            'user_info': json_decode(user_info)
         }
 
         raise Return((True, None))
