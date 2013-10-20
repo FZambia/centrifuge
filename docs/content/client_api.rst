@@ -229,7 +229,7 @@ clients.
 Let's make it work in five steps.
 
 STEP 1) Add all necessary scripts into your web application's main template.
-These are ``jQuery``, ``SockJS``(optional), ``centrifuge.js``, ``centrifuge.dom.js``
+These are ``jQuery``, ``SockJS`` (optional), ``centrifuge.js``, ``centrifuge.dom.js``
 
 STEP 2) In main template initialize plugin:
 
