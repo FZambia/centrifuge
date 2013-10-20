@@ -141,7 +141,7 @@ soon as our subscription request returned successful subscription response:
 
 .. code-block:: javascript
 
-    subscription.on('subscribe:success', function() {
+    subscription.on('ready', function() {
 
         // publish into channel
         subscription.publish("hello");
