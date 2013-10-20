@@ -255,13 +255,13 @@ The values of connection address, token, user ID and project ID must provide you
 web app's backend.
 
 STEP 4) On the page with comments add the following html-element with channel and namespace
-names in attributes:
+names in attributes
 
 .. code-block:: html
 
     <div class="centrifuge" id="comments-handler" data-centrifuge-channel="comments" data-centrifuge-namespace=”public”></div>
 
-STEP 5) On the same page add some javascript:
+STEP 5) On the same page add some javascript
 
 .. code-block:: javascript
 
@@ -280,7 +280,7 @@ last two steps.
 In some scenarios you need to handle errors and disconnects. This can be done by listening
 for ``centrifuge.disconnect`` and ``centrifuge.error`` events on handler elements.
 
-For example:
+For example
 
 .. code-block:: javascript
 
