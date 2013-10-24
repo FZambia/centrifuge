@@ -6,21 +6,26 @@ Admin API
 Overview
 ~~~~~~~~
 
-When clients publish into channel - your application does not know about those messages.
-In most cases you need to receive event from client, process it, probably validate and save
+Namespace has an option called ``publish``. This option determine the possibility of
+browser clients to publish into channel. If client publishes a message into channel - your
+application does not receive about that message. This can be useful sometimes but in most
+cases you need to receive event from client, process it, probably validate and save
 into database and then broadcast to other connected clients. In this case you must not
-use channels which namespace allows publishing. The common pattern in this situation is
-receive new message via AJAX, do whatever you need with it and then publish into Centrifuge
-using HTTP API. If your backend written on Python you can use Cent API client. If you use
-other language don't worry - I will describe how to communicate with Centrifuge API endpoint
-right now.
+use channels which namespace allows publishing.
 
-Centrifuge API url path is ``/api/ PROJECT_ID``, where PROJECT_ID must be replaced with your project ID
-(you can see it in Centrifuge's web interface).
+The common pattern in this situation is receive new message via AJAX, do whatever you need
+with it and then publish into Centrifuge using HTTP API. If your backend written on Python
+you can use Cent API client. If you use other language don't worry - I will describe how to
+communicate with Centrifuge API endpoint right now.
 
-All you need to do is to send correctly constructed POST request to this endpoint. This request must have
-two POST parameters: ``data`` and ``sign``. Data is a base64 encoded json string and sign is an hmac based on
-project secret key, project ID and encoded data.
+Centrifuge API url path is ``/api/PROJECT_ID``, where PROJECT_ID must be replaced with your project ID
+(you can find it in Centrifuge's web interface). So if your Centrifuge domain is ``https://centrifuge.example.com``
+then an API address will be ``https://centrifuge.example.com/api/PROJECT_ID``.
+
+All you need to do to use HTTP API is to send correctly constructed POST request to this endpoint.
+
+This request must have two POST parameters: ``data`` and ``sign``. Data is a base64 encoded json string
+and sign is an hmac based on project secret key, project ID and encoded data.
 
 Data is originally a json object with two properties: ``method`` and ``params``.
 
@@ -28,14 +33,13 @@ Data is originally a json object with two properties: ``method`` and ``params``.
 
 ``params`` is an object with method arguments.
 
-There are methods for managing project structure and
-methods which allow to manage channels.
+There are methods for managing project structure and methods which allow to manage channels.
 
 
 Methods for managing channels
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-These are **publish**, **unsubscribe**, **presence**, **history**.
+Those are **publish**, **unsubscribe**, **presence**, **history**.
 
 Lets just go through each of methods and look what they do and which params you need
 to provide.
@@ -95,7 +99,7 @@ Methods for managing structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are lots of them. But in most cases you won't need them as Centrifuge has web
-interface which helps with managing structure task.
+interface to help with managing structure.
 
 **project_get** - get information about project options
 
@@ -138,7 +142,7 @@ Cent
 ~~~~
 
 Cent is a way to communicate with Centrifuge from python code or
-from console(terminal).
+from console (terminal).
 
 
 To install:
@@ -148,7 +152,7 @@ To install:
     pip install cent
 
 
-By default Cent uses `.centrc` configuration file from your home directory.
+By default Cent uses `.centrc` configuration file from your home directory (``~/.centrc``).
 
 Here is an example of config file's content:
 
@@ -160,7 +164,7 @@ Here is an example of config file's content:
     secret_key = secret_key_from_configuration_file
     timeout = 5
 
-    [python]
+    [football]
     address = http://localhost:8000/api
     project_id = 51b229f778b83c2eced3a76b
     secret_key = 994021f2dc354d7893d88b90d430498e
@@ -179,10 +183,10 @@ It is easy enough:
     cent python publish --params='{"namespace": "django", "channel": "news", "data": {"title": "Django 1.6 finally released", "text": "Release keynotes:..."}}'
 
 
-- *cent* is the name of program
-- *python* is the name of section in configuration file
-- *publish* is the method name you want to call
-- *--params* is a JSON string with method parameters, in this case of broadcast you should provide namespace, channel and data parameters.
+- **cent** is the name of program
+- **football** is the name of section in configuration file
+- **publish** is the method name you want to call
+- **--params** is a JSON string with method parameters, in this case of broadcast you should provide namespace, channel and data parameters.
 
 
 If request was successful you'll get something like this in response:
