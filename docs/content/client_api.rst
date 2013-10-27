@@ -78,6 +78,40 @@ information about project and user IDs. Token is similar to HTTP cookie, client 
 not show it to anyone else. Remember that you must  always use channels in private
 namespaces when working with data of limited access.
 
+Also you can optionally provide extra parameter ``info`` when connecting to Centrifuge:
+
+```javascript
+var centrifuge = new Centrifuge({
+    url: 'http://centrifuge.example.com',
+    token: 'token',
+    project: 'id',
+    user: 'id',
+    info: '{"first_name": "Alexandr", "last_name": "Emelin"}'
+});
+```
+
+``info`` is an additional information about user connecting to Centrifuge. It must
+be valid JSON string. But to prevent client sending wrong ``info`` this JSON string
+must be used while generating token:
+
+.. code-block:: python
+
+    import hmac
+
+    def get_client_token(secret_key, project_id, user, user_info=None):
+        sign = hmac.new(str(secret_key))
+        sign.update(project_id)
+        sign.update(user)
+        if user_info is not None:
+            sign.update(user_info)
+        token = sign.hexdigest()
+        return token
+
+
+If you don't want to use ``info`` - you can omit this parameter while connecting
+to Centrifuge. But if you omit it then make sure that it does not affect token
+generation - i.e. in this case you need to generate token without ``sign.update(user_info)``.
+
 You can combine Centrifuge initialization and configuration and write in this way:
 
 .. code-block:: javascript
@@ -259,15 +293,15 @@ names in attributes
 
 .. code-block:: html
 
-    <div class="centrifuge" id="comments-handler" data-centrifuge-channel="comments" data-centrifuge-namespace=”public”></div>
+    <div class="centrifuge" id="comments-handler" data-centrifuge-channel="comments" data-centrifuge-namespace="public"></div>
 
 STEP 5) On the same page add some javascript
 
 .. code-block:: javascript
 
     $(function() {
-        $(‘#comments-handler’).on(‘centrifuge.message’, function(message) {
-            $(‘body’).append(message.data);
+        $("#comments-handler").on("centrifuge.message", function(message) {
+            $("body").append(message.data);
         });
     });
 
@@ -284,7 +318,7 @@ For example
 
 .. code-block:: javascript
 
-    $(‘#comments-handler’).on(‘centrifuge.disconnect’, function(err) {
-        console.log('disconnected from Centrifuge');
+    $("#comments-handler").on("centrifuge.disconnect", function(err) {
+        console.log("disconnected from Centrifuge");
     });
 

@@ -4,10 +4,12 @@ Web interface
 .. _web_interface:
 
 
-Centrifuge comes with administrative web interface. Using it you can create
-edit or delete projects and namespaces, manage users etc.
+Centrifuge comes with administrative web interface.
 
-Also you can watch for new events appearing in your projects in real-time.
+Using it you can create, edit or delete projects, namespaces, publish
+JSON messages into channels etc.
+
+Also you can watch for new messages in your projects in real-time.
 
 .. image:: img/main.png
     :width: 650 px
