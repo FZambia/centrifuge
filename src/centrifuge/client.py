@@ -287,11 +287,10 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        print user_info
         if token != auth.get_client_token(secret_key, project_id, user, user_info=user_info):
             raise Return((None, "invalid token"))
 
-        if user_info:
+        if user_info is not None:
             try:
                 user_info = json_decode(user_info)
             except:
@@ -446,11 +445,16 @@ class Client(object):
         if not namespace['publish']:
             raise Return((None, 'publishing into this namespace not available'))
 
-        result, error = yield self.application.process_publish(
-            project,
-            params,
-            client_id=self.uid
-        )
+        user_info = self.get_user_info(namespace_name, channel)
+
+        try:
+            result, error = yield self.application.process_publish(
+                project,
+                params,
+                client=user_info
+            )
+        except Exception as err:
+            print err
         raise Return((result, error))
 
     @coroutine

@@ -384,7 +384,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, allowed_namespaces, params, client_id):
+    def prepare_message(self, project, allowed_namespaces, params, client):
         """
         Prepare message before actual publishing.
         """
@@ -408,7 +408,7 @@ class Application(tornado.web.Application):
             'project_id': project['_id'],
             'namespace': namespace['name'],
             'uid': uuid.uuid4().hex,
-            'client_id': client_id,
+            'client': client,
             'channel': params.get('channel'),
             'data': data
         }
@@ -423,7 +423,7 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, allowed_namespaces=None, client_id=None):
+    def process_publish(self, project, params, allowed_namespaces=None, client=None):
         """
         Publish message into appropriate channel.
         """
@@ -435,7 +435,7 @@ class Application(tornado.web.Application):
             allowed_namespaces = dict((x['name'], x) for x in project_namespaces)
 
         message, error = yield self.prepare_message(
-            project, allowed_namespaces, params, client_id
+            project, allowed_namespaces, params, client
         )
         if error:
             raise Return((None, error))
