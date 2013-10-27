@@ -17,7 +17,7 @@ except ImportError:
 
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from tornado.escape import json_decode, json_encode
+from tornado.escape import json_decode
 from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
@@ -40,8 +40,7 @@ def sleep(seconds):
 
 class Client(object):
     """
-    This class describes a single connection of client from
-    web browser.
+    This class describes a single connection of client.
     """
     application = None
 
@@ -68,7 +67,10 @@ class Client(object):
 
     @coroutine
     def clean(self):
-
+        """
+        Must be called when client connection closes. Here we are
+        making different clean ups.
+        """
         if self.presence_ping:
             self.presence_ping.stop()
 
@@ -109,13 +111,16 @@ class Client(object):
         raise Return((True, None))
 
     def send(self, response):
-        #import pdb
-        #pdb.set_trace()
+        """
+        Send message directly to client.
+        """
         self.sock.send(response)
 
     @coroutine
     def message_received(self, message):
-
+        """
+        Called when message from client received.
+        """
         response = Response()
 
         try:
@@ -173,6 +178,10 @@ class Client(object):
 
     @coroutine
     def send_presence_ping(self):
+        """
+        Update presence information for all channels this client
+        subscribed to.
+        """
         for namespace, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 user_info = self.get_user_info(namespace, channel)
@@ -182,8 +191,7 @@ class Client(object):
 
     def get_user_info(self, namespace_name, channel):
         """
-        Return namespace and channel specific user info or
-        default user info in case of error.
+        Return channel specific user info.
         """
         try:
             channel_user_info = self.channel_user_info[namespace_name][channel]
@@ -197,8 +205,8 @@ class Client(object):
 
     def update_channel_user_info(self, body, namespace_name, channel):
         """
-        Try to extract user info from response body and remember it
-        for namespace and channel.
+        Try to extract channel specific user info from response body
+        and keep it for channel.
         """
         try:
             info = json_decode(body)
@@ -211,7 +219,10 @@ class Client(object):
 
     @coroutine
     def authorize(self, auth_address, project, namespace_name, channel):
-
+        """
+        Send POST request to web application to ask it if current client
+        has a permission to subscribe on channel.
+        """
         project_id = self.project_id
 
         http_client = AsyncHTTPClient()
@@ -295,8 +306,9 @@ class Client(object):
         if user_info is not None:
             try:
                 user_info = json_decode(user_info)
-            except:
+            except Exception as err:
                 logger.debug("malformed JSON data in user_info")
+                logger.debug(err)
                 user_info = None
 
         self.is_authenticated = True
@@ -422,9 +434,12 @@ class Client(object):
         raise Return((True, None))
 
     def check_channel_permission(self, namespace, channel):
+        """
+        Check that user subscribed on channel.
+        """
         if namespace in self.channels and channel in self.channels[namespace]:
             return
-        raise Return((None, 'channel permission denied'))
+        raise Return((None, self.application.PERMISSION_DENIED))
 
     @coroutine
     def handle_publish(self, params):
@@ -449,16 +464,11 @@ class Client(object):
 
         user_info = self.get_user_info(namespace_name, channel)
 
-        try:
-            result, error = yield self.application.process_publish(
-                project,
-                params,
-                client=user_info
-            )
-        except Exception as err:
-            logger.error(err)
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-
+        result, error = yield self.application.process_publish(
+            project,
+            params,
+            client=user_info
+        )
         raise Return((result, error))
 
     @coroutine

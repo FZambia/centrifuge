@@ -35,8 +35,8 @@ def decode_data(data):
 def get_client_token(secret_key, project_id, user, user_info=None):
     """
     When client from browser connects to Centrifuge he must send his
-    user ID and ID of project. To validate that data we use HMAC to build
-    token.
+    user ID, ID of project and optionally user_info JSON string.
+    To validate that data we use md5 HMAC to build token.
     """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(project_id))

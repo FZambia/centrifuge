@@ -12,6 +12,6 @@
     "structure": {
         "storage": "centrifuge.structure.sqlite",
         "update_interval": 60,
-        "settings": {}
+        "settings": {"namespaces": [{"_id": "5246d5fe78b83ca72f063258", "name": "test", "presence": 1, "publish": 1, "is_watching": 1, "join_leave": 0, "auth_address": "", "history_size": 20, "project_id": "5245e34678b83c9d6f7e91ef", "id": 3, "is_private": 0, "history": 1}, {"_id": "5248459978b83cb07aac9d63", "name": "python", "presence": 1, "publish": 1, "is_watching": 1, "join_leave": 1, "auth_address": "http://localhost:3000/validate", "history_size": 20, "project_id": "5245e34678b83c9d6f7e91ef", "id": 4, "is_private": 1, "history": 1}, {"_id": "5250262d78b83c13b781fa2a", "name": "chelsea", "presence": 1, "publish": 0, "is_watching": 1, "join_leave": 1, "auth_address": "", "history_size": 20, "project_id": "524ee94678b83c091bf60873", "id": 5, "is_private": 0, "history": 1}], "projects": [{"max_auth_attempts": 4, "display_name": "Programming", "name": "test", "back_off_max_timeout": 5000, "default_namespace": "5248459978b83cb07aac9d63", "auth_address": "", "back_off_interval": 100, "secret_key": "1836f00eb0a449fe8c970ade2bbbe0f5", "_id": "5245e34678b83c9d6f7e91ef", "id": 1}, {"max_auth_attempts": 5, "display_name": "Football world", "name": "football", "back_off_max_timeout": 5000, "default_namespace": "", "auth_address": "", "back_off_interval": 100, "secret_key": "e6e1117c8f944f95bef2326e58cf4e09", "_id": "524ee94678b83c091bf60873", "id": 2}]}
     }
 }

@@ -43,6 +43,8 @@ class State(BaseState):
 
     NAME = "Redis"
 
+    OK_RESPONSE = "OK"
+
     def __init__(self, *args, **kwargs):
         super(State, self).__init__(*args, **kwargs)
         self.host = None
@@ -63,7 +65,7 @@ class State(BaseState):
         logger.info("Redis State initialized")
 
     def on_select(self, res):
-        if res != "OK":
+        if res != self.OK_RESPONSE:
             logger.error("state select database: {0}".format(res))
 
     def connect(self):

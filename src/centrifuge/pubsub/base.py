@@ -5,7 +5,6 @@
 
 import six
 from tornado.gen import coroutine, Return
-from tornado.escape import json_decode
 from tornado.escape import json_encode
 
 from centrifuge.response import Response

@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import tornado.web
-from tornado.escape import json_encode
 from tornado.gen import coroutine, Return
 from sockjs.tornado import SockJSConnection
 

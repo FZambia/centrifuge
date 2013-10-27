@@ -16,10 +16,13 @@ class Response(object):
         self.body = body
 
     def as_message(self):
-        return json_encode({
+        return json_encode(self.as_dict())
+
+    def as_dict(self):
+        return {
             'uid': self.uid,
             'method': self.method,
             'params': self.params,
             'error': self.error,
             'body': self.body
-        })
+        }

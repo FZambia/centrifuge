@@ -14,6 +14,7 @@ def init_storage(structure, settings, callback):
     Use settings as database
     """
     structure.set_db(settings)
+    structure.set_consistency(True)
     callback()
 
 
@@ -53,16 +54,16 @@ def namespaces_by_id(namespaces):
 def namespaces_by_name(namespaces):
     to_return = {}
     for namespace in namespaces:
-        if namespace['project'] not in to_return:
-            to_return[namespace['project']] = {}
-        to_return[namespace['project']][namespace['name']] = namespace
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = {}
+        to_return[namespace['project_id']][namespace['name']] = namespace
     return to_return
 
 
 def project_namespaces(namespaces):
     to_return = {}
     for namespace in namespaces:
-        if namespace['project'] not in to_return:
-            to_return[namespace['project']] = []
-        to_return[namespace['project']].append(namespace)
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = []
+        to_return[namespace['project_id']].append(namespace)
     return to_return

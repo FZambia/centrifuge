@@ -11,7 +11,6 @@ from functools import partial
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
-from tornado.escape import json_encode
 
 from centrifuge import utils
 from centrifuge.structure import Structure
@@ -72,6 +71,9 @@ class Application(tornado.web.Application):
 
         # application structure manager (projects, namespaces etc)
         self.structure = None
+
+        # application state manager
+        self.state = None
 
         # initialize dict to keep back-off information for projects
         self.back_off = {}
