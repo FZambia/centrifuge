@@ -11,7 +11,7 @@ Backwards incompatible! Cent 0.1.2 required.
 This release contains important fixes and improvements. Centrifuge client must
 be updated to repository version to work correctly.
 
-Now you can provide extra parameter when connecting to Centrifuge:
+Now you can provide extra parameter `info` when connecting to Centrifuge:
 
 ```javascript
 var centrifuge = new Centrifuge({
