@@ -8,7 +8,7 @@ import toredis
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine
 from tornado.iostream import StreamClosedError
-from tornado.escape import json_encode
+from tornado.escape import json_encode, json_decode
 
 from centrifuge.log import logger
 from centrifuge.pubsub.base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
@@ -115,10 +115,10 @@ class PubSub(BasePubSub):
             return
 
         channel = multipart_message[1]
-        message_data = multipart_message[2]
+        message_data = json_decode(multipart_message[2])
         if six.PY3:
             channel = channel.decode()
-            message_data = message_data.decode()
+        #    message_data = message_data.decode()
         if channel == CONTROL_CHANNEL:
             yield self.handle_control_message(message_data)
         elif channel == ADMIN_CHANNEL:

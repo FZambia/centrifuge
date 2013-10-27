@@ -82,16 +82,15 @@ class BasePubSub(object):
         channel = message.pop("_channel")
 
         if channel == CONTROL_CHANNEL:
-            message = json_encode(message)
             yield self.handle_control_message(message)
         elif channel == ADMIN_CHANNEL:
-            message = json_encode(message)
             yield self.handle_admin_message(message)
         else:
             yield self.handle_channel_message(channel, message)
 
     @coroutine
     def handle_admin_message(self, message):
+        message = json_encode(message)
         for uid, connection in six.iteritems(self.application.admin_connections):
             if uid in self.application.admin_connections:
                 connection.send(message)
@@ -111,8 +110,6 @@ class BasePubSub(object):
         """
         Handle control message.
         """
-        message = json_decode(message)
-
         app_id = message.get("app_id")
         method = message.get("method")
         params = message.get("params")
