@@ -43,7 +43,7 @@ def get_client_token(secret_key, project_id, user, info=None):
     sign = hmac.new(str(secret_key))
     sign.update(project_id)
     sign.update(user)
-    if info:
+    if info is not None:
         sign.update(info)
     token = sign.hexdigest()
     print token

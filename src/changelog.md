@@ -1,3 +1,47 @@
+v0.3.3
+======
+
+Backwards incompatible! Cent 0.1.2 required.
+
+* extra parameter `info` to provide information about user during connect to Centrifuge.
+* history messages now include all client's information
+* fix Python 3 TypeError when sending message as dictionary.
+* change sequence token generation steps to be more semantically correct.
+
+This release contains important fixes and improvements. Centrifuge client must
+be updated to repository version to work correctly.
+
+Now you can provide extra parameter when connecting to Centrifuge:
+
+```javascript
+var centrifuge = new Centrifuge({
+    url: 'http://centrifuge.example.com',
+    token: 'token',
+    project: '123',
+    user: '321',
+    info: '{"first_name": "Alexandr", "last_name": "emelin"}'
+});
+```
+
+To prevent client sending wrong `info` this JSON string must be used
+while generating token:
+
+```python
+def get_client_token(secret_key, project_id, user, user_info=None):
+    sign = hmac.new(six.b(str(secret_key)))
+    sign.update(six.b(project_id))
+    sign.update(six.b(user))
+    if user_info is not None:
+        sign.update(six.b(user_info))
+    token = sign.hexdigest()
+    return token
+```
+
+If you don't want to use `info` - you can omit this parameter. But if you omit
+it make sure that it does not affect token generation - in this case you need
+to generate token without `sign.update(six.b(user_info))`.
+
+
 v0.3.2
 ======
 * Base State - run single instance of Centrifuge with in-memory state storage
