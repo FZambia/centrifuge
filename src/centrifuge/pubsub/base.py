@@ -96,7 +96,6 @@ class BasePubSub(object):
 
     @coroutine
     def handle_channel_message(self, channel, message):
-
         if channel not in self.subscriptions:
             raise Return((True, None))
 

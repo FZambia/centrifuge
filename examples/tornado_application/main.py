@@ -28,10 +28,12 @@ define(
 # let it be your application's user ID
 USER_ID = '2694'
 
-INFO = json.dumps({
-    'first_name': 'Alexandr',
-    'last_name': 'Emelin'
-})
+#INFO = json.dumps({
+#    'first_name': 'Alexandr',
+#    'last_name': 'Emelin'
+#})
+
+INFO = None
 
 
 def get_client_token(secret_key, project_id, user, info=None):
