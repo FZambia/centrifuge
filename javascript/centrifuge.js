@@ -969,7 +969,7 @@
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
             //noinspection JSValidateTypes
-            var body = JSON.parse(message.body);
+            var body = message.body;
             if (body.message_type === 'join') {
                 this._joinResponse(body);
             } else if (body.message_type === 'leave') {
