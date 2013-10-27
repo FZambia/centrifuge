@@ -101,7 +101,6 @@ class BasePubSub(object):
 
         response = Response(method='message', body=message)
         prepared_response = response.as_message()
-
         for uid, client in six.iteritems(self.subscriptions[channel]):
             if channel in self.subscriptions and uid in self.subscriptions[channel]:
                 client.send(prepared_response)
