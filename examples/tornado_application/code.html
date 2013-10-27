@@ -38,7 +38,7 @@
                 } else {
                     client_id = null;
                 }
-                var msg = safe_tags_replace(message.data["input"]) + ' <span class="muted">from ' + client_id + '</span>';
+                var msg = safe_tags_replace(message.data["input"].toString()) + ' <span class="muted">from ' + client_id + '</span>';
                 draw_message(msg);
             });
 
