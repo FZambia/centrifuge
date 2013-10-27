@@ -13,8 +13,8 @@ import (
 
 func generate_token(secret_key, project_id, user_id string) string {
     token := hmac.New(md5.New, []byte(secret_key))
-    token.Write([]byte(user_id))
     token.Write([]byte(project_id))
+    token.Write([]byte(user_id))
     hex := fmt.Sprintf("%02x", token.Sum(nil))
     return hex
 }

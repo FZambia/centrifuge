@@ -41,8 +41,8 @@ def get_client_token(secret_key, project_id, user, info=None):
     Create token to validate information provided by new connection.
     """
     sign = hmac.new(str(secret_key))
-    sign.update(user)
     sign.update(project_id)
+    sign.update(user)
     if info:
         sign.update(info)
     token = sign.hexdigest()
