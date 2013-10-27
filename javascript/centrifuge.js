@@ -784,10 +784,10 @@
                 }
             };
             if (self._config.info !== null) {
-                self.debug("connect using additional info");
+                self._debug("connect using additional info");
                 centrifugeMessage['params']['info'] = self._config.info
             } else {
-                self.debug("connect without additional info");
+                self._debug("connect without additional info");
             }
             self._send([centrifugeMessage]);
         };
