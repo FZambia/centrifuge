@@ -810,11 +810,7 @@
 
         this._transport.onmessage = function (event) {
             var data;
-            if (self._sockjs === true) {
-                data = event.data;
-            } else {
-                data = JSON.parse(event.data);
-            }
+            data = JSON.parse(event.data);
             self._debug(data);
             self._receive(data);
         };

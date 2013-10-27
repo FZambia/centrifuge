@@ -17,7 +17,7 @@ except ImportError:
 
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from tornado.escape import json_decode
+from tornado.escape import json_decode, json_encode
 from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
@@ -109,6 +109,8 @@ class Client(object):
         raise Return((True, None))
 
     def send(self, response):
+        #import pdb
+        #pdb.set_trace()
         self.sock.send(response)
 
     @coroutine
@@ -167,7 +169,7 @@ class Client(object):
 
         response.body, response.error = yield func(params)
         print(response.as_message())
-        self.send(response.as_message())
+        self.send(json_encode(response.as_message()))
         raise Return((True, None))
 
     @coroutine
@@ -314,7 +316,7 @@ class Client(object):
                 self.send_presence_ping, self.application.state.presence_ping_interval
             )
             self.presence_ping.start()
-
+        print('success')
         raise Return((self.uid, None))
 
     @coroutine

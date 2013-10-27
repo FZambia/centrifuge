@@ -33,7 +33,7 @@ USER_ID = '2694'
 #    'last_name': 'Emelin'
 #})
 
-INFO = None
+INFO = json.dumps(None)
 
 
 def get_client_token(secret_key, project_id, user, info=None):
