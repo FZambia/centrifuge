@@ -811,7 +811,7 @@
         this._transport.onmessage = function (event) {
             var data;
             data = JSON.parse(event.data);
-            self._debug(data);
+            self._debug('Received', data);
             self._receive(data);
         };
     };
