@@ -80,7 +80,7 @@ class BasePubSub(object):
         application handler.
         """
         channel = message.pop("_channel")
-        message = json_encode(message)
+
         if channel == CONTROL_CHANNEL:
             yield self.handle_control_message(message)
         elif channel == ADMIN_CHANNEL:
@@ -90,19 +90,17 @@ class BasePubSub(object):
 
     @coroutine
     def handle_admin_message(self, message):
+        message = json_encode(message)
         for uid, connection in six.iteritems(self.application.admin_connections):
             if uid in self.application.admin_connections:
                 connection.send(message)
 
     @coroutine
     def handle_channel_message(self, channel, message):
-
         if channel not in self.subscriptions:
             raise Return((True, None))
-
         response = Response(method='message', body=message)
         prepared_response = response.as_message()
-
         for uid, client in six.iteritems(self.subscriptions[channel]):
             if channel in self.subscriptions and uid in self.subscriptions[channel]:
                 client.send(prepared_response)
@@ -112,8 +110,6 @@ class BasePubSub(object):
         """
         Handle control message.
         """
-        message = json_decode(message)
-
         app_id = message.get("app_id")
         method = message.get("method")
         params = message.get("params")

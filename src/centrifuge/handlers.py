@@ -30,7 +30,7 @@ class BaseHandler(tornado.web.RequestHandler):
         Finish asynchronous request and return JSON response.
         """
         self.set_header('Content-Type', 'application/json; charset=utf-8')
-        self.finish(tornado.escape.json_encode(to_return))
+        self.finish(to_return)
 
     @property
     def opts(self):

@@ -22,6 +22,7 @@
             token: '{{auth_data["token"]}}',
             project: '{{auth_data["project"]}}',
             user: '{{auth_data["user"]}}',
+            info: '{% raw auth_data["info"] %}',
             //protocols_whitelist: ["xhr-streaming"],
             debug: true
         });
@@ -31,7 +32,13 @@
             draw_message('connected');
 
             var subscription = centrifuge.subscribe('python:django', function(message) {
-                var msg = safe_tags_replace(message.data["input"]) + ' <span class="muted">from ' + message.client_id + '</span>';
+                var client_id;
+                if (message["client"] !== null){
+                    client_id = message["client"]["client_id"];
+                } else {
+                    client_id = null;
+                }
+                var msg = safe_tags_replace(message.data["input"]) + ' <span class="muted">from ' + client_id + '</span>';
                 draw_message(msg);
             });
 

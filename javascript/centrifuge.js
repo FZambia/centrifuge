@@ -608,6 +608,7 @@
         this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
         this._config = {
             retry: 3000,
+            info: null,
             debug: false,
             protocols_whitelist: [
                 'websocket',
@@ -782,6 +783,12 @@
                     'project': self._config.project
                 }
             };
+            if (self._config.info !== null) {
+                self._debug("connect using additional info");
+                centrifugeMessage['params']['info'] = self._config.info
+            } else {
+                self._debug("connect without additional info");
+            }
             self._send([centrifugeMessage]);
         };
 
@@ -803,11 +810,8 @@
 
         this._transport.onmessage = function (event) {
             var data;
-            if (self._sockjs === true) {
-                data = event.data;
-            } else {
-                data = JSON.parse(event.data);
-            }
+            data = JSON.parse(event.data);
+            self._debug('Received', data);
             self._receive(data);
         };
     };
@@ -965,7 +969,7 @@
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
             //noinspection JSValidateTypes
-            var body = JSON.parse(message.body);
+            var body = message.body;
             if (body.message_type === 'join') {
                 this._joinResponse(body);
             } else if (body.message_type === 'leave') {

@@ -151,8 +151,8 @@ class ReceiveClientProtocol(ClientProtocol):
 
 def generate_token(secret_key, project_id, user_id):
     sign = hmac.new(six.b(str(secret_key)))
-    sign.update(six.b(user_id))
     sign.update(six.b(str(project_id)))
+    sign.update(six.b(user_id))
     token = sign.hexdigest()
     return token
 

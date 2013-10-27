@@ -213,6 +213,9 @@ client_api_schema = {
             },
             "project": {
                 "type": "string"
+            },
+            "info": {
+                "type": "string"
             }
         },
         "required": ["token", "user", "project"]

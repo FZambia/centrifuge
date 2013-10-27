@@ -108,7 +108,7 @@ class State(BaseState):
         set_key = self.get_presence_set_key(project_id, namespace, channel)
         try:
             yield Task(self.client.zadd, set_key, {uid: expire_at})
-            yield Task(self.client.hset, hash_key, uid, user_info)
+            yield Task(self.client.hset, hash_key, uid, json_encode(user_info))
         except StreamClosedError as e:
             raise Return((None, e))
         else:

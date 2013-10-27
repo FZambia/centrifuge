@@ -3,6 +3,8 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
+from tornado.escape import json_encode
+
 
 class Response(object):
 
@@ -14,10 +16,10 @@ class Response(object):
         self.body = body
 
     def as_message(self):
-        return {
+        return json_encode({
             'uid': self.uid,
             'method': self.method,
             'params': self.params,
             'error': self.error,
             'body': self.body
-        }
+        })

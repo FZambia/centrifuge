@@ -84,7 +84,7 @@ class State(object):
 
         self.presence[hash_key][uid] = {
             'expire_at': expire_at,
-            'user_info': json_decode(user_info)
+            'user_info': user_info
         }
 
         raise Return((True, None))
