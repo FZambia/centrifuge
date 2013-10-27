@@ -166,6 +166,7 @@ class Client(object):
             raise Return((True, None))
 
         response.body, response.error = yield func(params)
+        print(response.as_message())
         self.send(response.as_message())
         raise Return((True, None))
 
@@ -454,7 +455,9 @@ class Client(object):
                 client=user_info
             )
         except Exception as err:
-            print err
+            logger.error(err)
+            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+
         raise Return((result, error))
 
     @coroutine

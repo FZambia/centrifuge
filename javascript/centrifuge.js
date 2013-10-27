@@ -815,6 +815,7 @@
             } else {
                 data = JSON.parse(event.data);
             }
+            self._debug(data);
             self._receive(data);
         };
     };
