@@ -17,7 +17,7 @@ except ImportError:
 
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from tornado.escape import json_encode, json_decode
+from tornado.escape import json_decode
 from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
@@ -50,8 +50,9 @@ class Client(object):
         self.info = info
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
-        self.user_info = {}
-        self.default_user_info = None
+        self.user = ''
+        self.channel_user_info = {}
+        self.default_user_info = {}
         self.project_id = None
         self.channels = None
         self.presence_ping = None
@@ -102,7 +103,8 @@ class Client(object):
                         self.send_leave_message(namespace_name, channel)
 
         self.channels = None
-        self.user_info = None
+        self.channel_user_info = None
+        self.default_user_info = None
         self.sock = None
         raise Return((True, None))
 
@@ -139,7 +141,7 @@ class Client(object):
         response.params = params
 
         if method != 'connect' and not self.is_authenticated:
-            response.error = 'unauthorized'
+            response.error = self.application.UNAUTHORIZED
             self.send(response.as_message())
             yield self.sock.close()
             raise Return((True, None))
@@ -182,12 +184,16 @@ class Client(object):
         default user info in case of error.
         """
         try:
-            user_info = self.user_info[namespace_name][channel]
+            channel_user_info = self.channel_user_info[namespace_name][channel]
         except KeyError:
-            user_info = self.default_user_info
-        return user_info
+            channel_user_info = None
+        default_info = self.default_user_info.copy()
+        default_info.update({
+            'channel_info': channel_user_info
+        })
+        return default_info
 
-    def update_user_info(self, body, namespace_name, channel):
+    def update_channel_user_info(self, body, namespace_name, channel):
         """
         Try to extract user info from response body and remember it
         for namespace and channel.
@@ -198,13 +204,8 @@ class Client(object):
             logger.error(str(e))
             info = {}
 
-        user_info = {
-            'user_id': self.user,
-            'client_id': self.uid,
-            'data': info
-        }
-        self.user_info.setdefault(namespace_name, {})
-        self.user_info[namespace_name][channel] = json_encode(user_info)
+        self.channel_user_info.setdefault(namespace_name, {})
+        self.channel_user_info[namespace_name][channel] = info
 
     @coroutine
     def authorize(self, auth_address, project, namespace_name, channel):
@@ -255,7 +256,7 @@ class Client(object):
 
                 if response.code == 200:
                     # auth successful
-                    self.update_user_info(response.body, namespace_name, channel)
+                    self.update_channel_user_info(response.body, namespace_name, channel)
                     raise Return((True, None))
 
                 elif response.code == 403:
@@ -278,6 +279,7 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
+        user_info = params.get("info", None)
 
         project, error = yield self.get_project(project_id)
         if error:
@@ -285,13 +287,26 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        if token != auth.get_client_token(secret_key, project_id, user):
+        print user_info
+        if token != auth.get_client_token(secret_key, project_id, user, user_info=user_info):
             raise Return((None, "invalid token"))
+
+        if user_info:
+            try:
+                user_info = json_decode(user_info)
+            except:
+                logger.debug("malformed JSON data in user_info")
+                user_info = None
 
         self.is_authenticated = True
         self.project_id = project_id
         self.user = user
-        self.default_user_info = json_encode({'user_id': self.user, 'client_id': self.uid})
+        self.default_user_info = {
+            'user_id': self.user,
+            'client_id': self.uid,
+            'default_info': user_info,
+            'channel_info': None
+        }
         self.channels = {}
 
         if not self.application.state.fake:
@@ -350,6 +365,7 @@ class Client(object):
         self.channels[namespace_name][channel] = True
 
         user_info = self.get_user_info(namespace_name, channel)
+
         yield self.application.state.add_presence(
             project_id, namespace_name, channel, self.uid, user_info
         )
@@ -535,7 +551,7 @@ class Client(object):
         message = {
             "namespace": namespace_name,
             "channel": channel,
-            "data": json_decode(user_info)
+            "data": user_info
         }
         self.application.pubsub.publish(
             subscription_key, message, method='join'
@@ -553,7 +569,7 @@ class Client(object):
         message = {
             "namespace": namespace_name,
             "channel": channel,
-            "data": json_decode(user_info)
+            "data": user_info
         }
         self.application.pubsub.publish(
             subscription_key, message, method='leave'

@@ -608,6 +608,7 @@
         this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
         this._config = {
             retry: 3000,
+            info: null,
             debug: false,
             protocols_whitelist: [
                 'websocket',
@@ -782,6 +783,12 @@
                     'project': self._config.project
                 }
             };
+            if (self._config.info !== null) {
+                self.debug("connect using additional info");
+                centrifugeMessage['params']['info'] = self._config.info
+            } else {
+                self.debug("connect without additional info");
+            }
             self._send([centrifugeMessage]);
         };
 

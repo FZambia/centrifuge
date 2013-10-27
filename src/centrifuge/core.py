@@ -38,6 +38,8 @@ class Application(tornado.web.Application):
     # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
 
+    UNAUTHORIZED = 'unauthorized'
+
     PERMISSION_DENIED = 'permission denied'
 
     INTERNAL_SERVER_ERROR = 'internal server error'
