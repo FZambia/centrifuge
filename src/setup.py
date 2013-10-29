@@ -96,7 +96,7 @@ install_requires = [
 
 
 if with_zmq:
-    install_requires.append('pyzmq==13.1.0')
+    install_requires.append('pyzmq==14.0.0')
 if with_redis:
     install_requires.append('toredis-fork==0.1.2')
 if with_mongodb:
