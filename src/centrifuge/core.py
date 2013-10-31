@@ -410,6 +410,7 @@ class Application(tornado.web.Application):
             'project_id': project['_id'],
             'namespace': namespace['name'],
             'uid': uuid.uuid4().hex,
+            'timestamp': int(time.time()),
             'client': client,
             'channel': params.get('channel'),
             'data': data
