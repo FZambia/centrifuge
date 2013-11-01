@@ -3,6 +3,8 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
+from tornado.escape import json_encode
+
 
 class Response(object):
 
@@ -14,6 +16,9 @@ class Response(object):
         self.body = body
 
     def as_message(self):
+        return json_encode(self.as_dict())
+
+    def as_dict(self):
         return {
             'uid': self.uid,
             'method': self.method,

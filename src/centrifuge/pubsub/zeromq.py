@@ -9,7 +9,7 @@ from zmq.eventloop.zmqstream import ZMQStream
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine
-from tornado.escape import utf8, json_encode
+from tornado.escape import utf8, json_encode, json_decode
 
 from centrifuge.log import logger
 from centrifuge.pubsub.base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
@@ -124,10 +124,11 @@ class PubSub(BasePubSub):
         application handler.
         """
         channel = multipart_message[0]
-        message_data = multipart_message[1]
         if six.PY3:
             channel = channel.decode()
-            message_data = message_data.decode()
+
+        message_data = json_decode(multipart_message[1])
+
         if channel == CONTROL_CHANNEL:
             yield self.handle_control_message(message_data)
         elif channel == ADMIN_CHANNEL:

@@ -11,7 +11,6 @@ from functools import partial
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
-from tornado.escape import json_encode
 
 from centrifuge import utils
 from centrifuge.structure import Structure
@@ -37,6 +36,8 @@ class Application(tornado.web.Application):
 
     # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
+
+    UNAUTHORIZED = 'unauthorized'
 
     PERMISSION_DENIED = 'permission denied'
 
@@ -70,6 +71,9 @@ class Application(tornado.web.Application):
 
         # application structure manager (projects, namespaces etc)
         self.structure = None
+
+        # application state manager
+        self.state = None
 
         # initialize dict to keep back-off information for projects
         self.back_off = {}
@@ -382,7 +386,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, allowed_namespaces, params, client_id):
+    def prepare_message(self, project, allowed_namespaces, params, client):
         """
         Prepare message before actual publishing.
         """
@@ -406,7 +410,8 @@ class Application(tornado.web.Application):
             'project_id': project['_id'],
             'namespace': namespace['name'],
             'uid': uuid.uuid4().hex,
-            'client_id': client_id,
+            'timestamp': int(time.time()),
+            'client': client,
             'channel': params.get('channel'),
             'data': data
         }
@@ -421,7 +426,7 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, allowed_namespaces=None, client_id=None):
+    def process_publish(self, project, params, allowed_namespaces=None, client=None):
         """
         Publish message into appropriate channel.
         """
@@ -433,7 +438,7 @@ class Application(tornado.web.Application):
             allowed_namespaces = dict((x['name'], x) for x in project_namespaces)
 
         message, error = yield self.prepare_message(
-            project, allowed_namespaces, params, client_id
+            project, allowed_namespaces, params, client
         )
         if error:
             raise Return((None, error))

@@ -8,7 +8,7 @@ import toredis
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine
 from tornado.iostream import StreamClosedError
-from tornado.escape import json_encode
+from tornado.escape import json_encode, json_decode
 
 from centrifuge.log import logger
 from centrifuge.pubsub.base import BasePubSub, ADMIN_CHANNEL, CONTROL_CHANNEL
@@ -19,6 +19,8 @@ class PubSub(BasePubSub):
     This class manages application PUB/SUB logic.
     """
     NAME = 'Redis'
+
+    OK_RESPONSE = "OK"
 
     def __init__(self, application):
         super(PubSub, self).__init__(application)
@@ -43,7 +45,7 @@ class PubSub(BasePubSub):
         """
         After selecting subscriber database subscribe on channels
         """
-        if res != "OK":
+        if res != self.OK_RESPONSE:
             # error returned
             logger.error("select database for subscriber: {0}".format(res))
             return
@@ -57,7 +59,7 @@ class PubSub(BasePubSub):
             self.subscriber.subscribe(subscription, callback=self.dispatch_published_message)
 
     def on_publisher_select(self, res):
-        if res != "OK":
+        if res != self.OK_RESPONSE:
             logger.error("select database for publisher: {0}".format(res))
             self._need_reconnect = True
 
@@ -75,8 +77,8 @@ class PubSub(BasePubSub):
                 self.subscriber.select(self.db, callback=self.on_subscriber_select)
                 self.publisher.select(self.db, callback=self.on_publisher_select)
             else:
-                self.on_subscriber_select("OK")
-                self.on_publisher_select("OK")
+                self.on_subscriber_select(self.OK_RESPONSE)
+                self.on_publisher_select(self.OK_RESPONSE)
 
         self.connection_check.stop()
         self.connection_check.start()
@@ -115,10 +117,11 @@ class PubSub(BasePubSub):
             return
 
         channel = multipart_message[1]
-        message_data = multipart_message[2]
         if six.PY3:
             channel = channel.decode()
-            message_data = message_data.decode()
+
+        message_data = json_decode(multipart_message[2])
+
         if channel == CONTROL_CHANNEL:
             yield self.handle_control_message(message_data)
         elif channel == ADMIN_CHANNEL:

@@ -20,12 +20,11 @@ class InconsistentStructureError(Exception):
 
 class Structure:
 
-    _CONSISTENT = False
-
     def __init__(self, application):
         self.application = application
         self.storage = None
         self.db = None
+        self._consistent = False
         self._uid = None
         self._data = {
             'projects': [],
@@ -45,14 +44,14 @@ class Structure:
 
     def on_error(self, error):
         logger.error(str(error))
-        self._CONSISTENT = False
+        self._consistent = False
         raise Return((None, error))
 
-    def on_update_success(self):
-        self._CONSISTENT = True
+    def set_consistency(self, value):
+        self._consistent = value
 
     def is_consistent(self):
-        return self._CONSISTENT
+        return self._consistent
 
     @coroutine
     def update(self):
@@ -88,7 +87,7 @@ class Structure:
                 'project_namespaces': project_namespaces
             }
 
-            self._CONSISTENT = True
+            self._consistent = True
 
             logger.debug('Structure updated')
 

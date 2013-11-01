@@ -138,8 +138,9 @@ Command-line options
 
 Centrifuge has some command line arguments.
 
+ZeroMQ is a default PUB/SUB mechanism in Centrifuge.
 
-Example. To create 2 connected instances of Centrifuge you can use something like this:
+To create 2 connected instances of Centrifuge with ZeroMQ PUB/SUB you can use can do:
 
 
 .. code-block:: bash
@@ -157,11 +158,11 @@ To run Centrifuge in debug Tornado's mode:
 
     centrifuge --debug
 
-Note, that because of PyZMQ bug Tornado's autoreloading feature will not work. Until new
-release of PyZMQ where this error was fixed.
+Note, that because of PyZMQ bug Tornado's autoreloading feature will not work when using
+ZeroMQ PUB/SUB. Until new release of PyZMQ where this error was fixed.
 
 
-To run Centrifuge with XPUB/XSUB proxy:
+To run Centrifuge with ZeroMQ XPUB/XSUB proxy:
 
 .. code-block:: bash
 
@@ -179,3 +180,18 @@ Using XPUB/XSUB proxy is nice because you don't need to restart all your Centrif
 when you add new one, but it's a single point of failure. Remember about it.
 
 There is also XPUB/XSUB proxy implemented in Go lang: `gist on Github <https://gist.github.com/FZambia/5955032>`_
+
+
+To run Centrifuge with Redis PUB/SUB:
+
+.. code-block:: bash
+
+    centrifuge --config=config.json --redis --redis_port=localhost --redis_port=6379
+
+
+If you know that single instance is enough for you - you can use Base PUB/SUB
+which does not require ZeroMQ or Redis:
+
+.. code-block:: bash
+
+    centrifuge --config=config.json --base

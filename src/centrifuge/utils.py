@@ -7,8 +7,6 @@ from __future__ import with_statement
 import sys
 import six
 import weakref
-from tornado.gen import coroutine, Return, Callback, WaitAll
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 from wtforms import Form as WTForm
 
 

@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import tornado.web
-from tornado.escape import json_encode
 from tornado.gen import coroutine, Return
 from sockjs.tornado import SockJSConnection
 
@@ -30,7 +29,7 @@ class BaseHandler(tornado.web.RequestHandler):
         Finish asynchronous request and return JSON response.
         """
         self.set_header('Content-Type', 'application/json; charset=utf-8')
-        self.finish(tornado.escape.json_encode(to_return))
+        self.finish(to_return)
 
     @property
     def opts(self):

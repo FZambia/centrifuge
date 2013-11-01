@@ -158,16 +158,16 @@ def create_application_handlers():
     ]
 
     # create SockJS route for admin connections
-    AdminConnectionRouter = SockJSRouter(
+    admin_sock_router = SockJSRouter(
         AdminSocketHandler, '/socket'
     )
-    handlers = AdminConnectionRouter.urls + handlers
+    handlers = admin_sock_router.urls + handlers
 
     # create SockJS route for client connections
-    SockjsConnectionRouter = SockJSRouter(
+    client_sock_router = SockJSRouter(
         SockjsConnection, '/connection'
     )
-    handlers = SockjsConnectionRouter.urls + handlers
+    handlers = client_sock_router.urls + handlers
 
     # match everything else to 404 handler
     handlers.append(

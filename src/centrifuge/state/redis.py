@@ -43,6 +43,8 @@ class State(BaseState):
 
     NAME = "Redis"
 
+    OK_RESPONSE = "OK"
+
     def __init__(self, *args, **kwargs):
         super(State, self).__init__(*args, **kwargs)
         self.host = None
@@ -63,7 +65,7 @@ class State(BaseState):
         logger.info("Redis State initialized")
 
     def on_select(self, res):
-        if res != "OK":
+        if res != self.OK_RESPONSE:
             logger.error("state select database: {0}".format(res))
 
     def connect(self):
@@ -108,7 +110,7 @@ class State(BaseState):
         set_key = self.get_presence_set_key(project_id, namespace, channel)
         try:
             yield Task(self.client.zadd, set_key, {uid: expire_at})
-            yield Task(self.client.hset, hash_key, uid, user_info)
+            yield Task(self.client.hset, hash_key, uid, json_encode(user_info))
         except StreamClosedError as e:
             raise Return((None, e))
         else:
