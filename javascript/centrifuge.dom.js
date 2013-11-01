@@ -9,6 +9,7 @@
                 tokenSelector: '#centrifuge-token',
                 projectSelector: '#centrifuge-project',
                 userSelector: '#centrifuge-user',
+                infoSelector: '#centrifuge-info',
                 valueAttrName: 'data-centrifuge-value',
                 namespaceAttr: 'data-centrifuge-namespace',
                 channelAttr: 'data-centrifuge-channel',
@@ -197,7 +198,8 @@
             function init() {
 
                 if (!Centrifuge) {
-                    throw "No Centrifuge javascript client found";
+                    console.log("No Centrifuge javascript client found");
+                    return;
                 }
 
                 if (handlers.length === 0) {
@@ -207,17 +209,20 @@
 
                 var token = $(options.tokenSelector).attr(options.valueAttrName);
                 if (!token) {
-                    throw "Centrifuge token not found";
+                    console.log("Centrifuge token not found");
+                    return;
                 }
 
                 var project = $(options.projectSelector).attr(options.valueAttrName);
                 if (!project) {
-                    throw "Centrifuge project not found";
+                    console.log("Centrifuge project not found");
+                    return;
                 }
 
                 var user = $(options.userSelector).attr(options.valueAttrName);
                 if (!user) {
-                    throw "Centrifuge user not found";
+                    console.log("Centrifuge user not found");
+                    return;
                 }
 
                 var url;
@@ -226,7 +231,14 @@
                 }
 
                 if (!url) {
-                    throw "Centrifuge connection url not found";
+                    console.log("Centrifuge connection url not found");
+                    return;
+                }
+
+                var info = $(options.infoSelector).attr(options.valueAttrName);
+                if (!info) {
+                    debug("Centrifuge info not used, token must be generated without info part.");
+                    info = null;
                 }
 
                 //noinspection JSUnresolvedFunction
@@ -234,7 +246,8 @@
                     url: url,
                     token: token,
                     project: project,
-                    user: user
+                    user: user,
+                    info: info
                 });
 
                 parse_dom(centrifuge);
