@@ -186,7 +186,7 @@ To run Centrifuge with Redis PUB/SUB:
 
 .. code-block:: bash
 
-    centrifuge --config=config.json --redis --redis_port=localhost --redis_port=6379
+    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379
 
 
 If you know that single instance is enough for you - you can use Base PUB/SUB
