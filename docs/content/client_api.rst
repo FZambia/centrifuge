@@ -247,7 +247,7 @@ All you need to do in this case is write how your page will react on new message
 
 .. code-block:: javascript
 
-    $(' #html-element').on('centrifuge.message', function(message) {
+    $(' #html-element').on('centrifuge.message', function(event, message) {
         console.log(message.data);
     });
 
@@ -300,7 +300,7 @@ STEP 5) On the same page add some javascript
 .. code-block:: javascript
 
     $(function() {
-        $("#comments-handler").on("centrifuge.message", function(message) {
+        $("#comments-handler").on("centrifuge.message", function(event, message) {
             $("body").append(message.data);
         });
     });
