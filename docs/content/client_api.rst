@@ -318,7 +318,7 @@ For example
 
 .. code-block:: javascript
 
-    $("#comments-handler").on("centrifuge.disconnect", function(err) {
+    $("#comments-handler").on("centrifuge.disconnect", function(event, err) {
         console.log("disconnected from Centrifuge");
     });
 
