@@ -1,3 +1,11 @@
+v0.3.4
+======
+
+* pyzmq 14.0.0
+* added timestamp to message
+* info connection parameter support for dom plugin
+* some important fixes in documentation
+
 v0.3.3
 ======
 
