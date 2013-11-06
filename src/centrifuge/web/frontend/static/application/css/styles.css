@@ -34,8 +34,8 @@ label {
     border-radius: 0;
 }
 #wrap {
-	margin: 20px auto;
-	width: 80%;
+    margin: 20px auto;
+    width: 80%;
     max-width: 1400px;
     padding-bottom: 30px;
 }
@@ -55,19 +55,19 @@ label {
     width: 50%;
 }
 .navbar {
-	margin-bottom: 0;
+    margin-bottom: 0;
 }
 .label-counter {
-	margin-left: 5px;
+    margin-left: 5px;
 }
 .right {
-	text-align: right !important;
+    text-align: right !important;
 }
 .center {
-	text-align: center !important;
+    text-align: center !important;
 }
 .hidden {
-	display: none;
+    display: none;
 }
 .row .col-lg-3, .row .col-lg-9 {
     padding-top:10px;
@@ -83,13 +83,12 @@ label {
     padding: 10px;
 }
 .event-key {
-	font-size: 20px;
-	font-family: Tahoma, Geneva, sans-serif;
-    text-transform: uppercase;
+    font-size: 20px;
+    font-family: Tahoma, Geneva, sans-serif;
 }
 .event-description {
-	padding: 0;
-	padding-left: 0;
+    padding: 0;
+    padding-left: 0;
 }
 
 .project {
