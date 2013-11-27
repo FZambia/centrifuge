@@ -96,7 +96,7 @@ install_requires = [
 
 
 if with_zmq:
-    install_requires.append('pyzmq==14.0.0')
+    install_requires.append('pyzmq==14.0.1')
 if with_redis:
     install_requires.append('toredis-fork==0.1.2')
 if with_mongodb:
@@ -115,7 +115,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.3.4',
+    version='0.3.5dev',
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
