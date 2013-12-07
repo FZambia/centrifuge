@@ -1,3 +1,9 @@
+v0.3.6
+======
+
+* handling exceptions when sending messages to client
+* fix bug in application connections - which resulted in incorrect unsubscribe command behaviour
+
 v0.3.5
 ======
 
