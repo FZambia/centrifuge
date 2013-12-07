@@ -76,33 +76,29 @@ class Client(object):
 
         project_id = self.project_id
 
-        if not project_id:
-            raise Return((True, None))
+        if project_id:
 
-        if not self.is_authenticated:
-            raise Return((True, None))
+            self.application.remove_connection(
+                project_id, self.user, self.uid
+            )
 
-        self.application.remove_connection(
-            project_id, self.user, self.uid
-        )
-
-        for namespace_name, channels in six.iteritems(self.channels):
-            for channel, status in six.iteritems(channels):
-                yield self.application.state.remove_presence(
-                    project_id, namespace_name, channel, self.uid
-                )
-
-                self.application.pubsub.remove_subscription(
-                    project_id, namespace_name, channel, self
-                )
-
-                project, error = yield self.get_project(self.project_id)
-                if not error and project:
-                    namespace, error = yield self.get_namespace(
-                        project, {"namespace": namespace_name}
+            for namespace_name, channels in six.iteritems(self.channels):
+                for channel, status in six.iteritems(channels):
+                    yield self.application.state.remove_presence(
+                        project_id, namespace_name, channel, self.uid
                     )
-                    if namespace and namespace.get("join_leave", False):
-                        self.send_leave_message(namespace_name, channel)
+
+                    self.application.pubsub.remove_subscription(
+                        project_id, namespace_name, channel, self
+                    )
+
+                    project, error = yield self.get_project(project_id)
+                    if not error and project:
+                        namespace, error = yield self.get_namespace(
+                            project, {"namespace": namespace_name}
+                        )
+                        if namespace and namespace.get("join_leave", False):
+                            self.send_leave_message(namespace_name, channel)
 
         self.channels = None
         self.channel_user_info = None
@@ -110,11 +106,30 @@ class Client(object):
         self.sock = None
         raise Return((True, None))
 
+    @coroutine
+    def close_sock(self):
+        try:
+            if self.sock:
+                self.sock.close()
+            else:
+                yield self.close()
+        except Exception as err:
+            logger.error(err)
+        raise Return((True, None))
+
+    @coroutine
     def send(self, response):
         """
         Send message directly to client.
         """
-        self.sock.send(response)
+        try:
+            self.sock.send(response)
+        except Exception as err:
+            logger.exception(err)
+            yield self.close_sock()
+            raise Return((False, None))
+
+        raise Return((True, None))
 
     @coroutine
     def message_received(self, message):
@@ -127,16 +142,16 @@ class Client(object):
             data = json_decode(message)
         except ValueError:
             response.error = 'malformed JSON data'
-            self.send(response.as_message())
-            yield self.sock.close()
+            yield self.send(response.as_message())
+            yield self.close_sock()
             raise Return((True, None))
 
         try:
             validate(data, req_schema)
         except ValidationError as e:
             response.error = str(e)
-            self.send(response.as_message())
-            yield self.sock.close()
+            yield self.send(response.as_message())
+            yield self.close_sock()
             raise Return((True, None))
 
         uid = data.get('uid', None)
@@ -149,16 +164,16 @@ class Client(object):
 
         if method != 'connect' and not self.is_authenticated:
             response.error = self.application.UNAUTHORIZED
-            self.send(response.as_message())
-            yield self.sock.close()
+            yield self.send(response.as_message())
+            yield self.close_sock()
             raise Return((True, None))
 
         func = getattr(self, 'handle_%s' % method, None)
 
         if not func:
             response.error = "unknown method %s" % method
-            self.send(response.as_message())
-            yield self.sock.close()
+            yield self.send(response.as_message())
+            yield self.close_sock()
             raise Return((True, None))
 
         if method not in client_api_schema:
@@ -168,12 +183,12 @@ class Client(object):
             validate(params, client_api_schema[method])
         except ValidationError as e:
             response = Response(uid=uid, method=method, error=str(e))
-            self.send(response.as_message())
-            yield self.sock.close()
+            yield self.send(response.as_message())
+            yield self.close_sock()
             raise Return((True, None))
 
         response.body, response.error = yield func(params)
-        self.send(response.as_message())
+        yield self.send(response.as_message())
         raise Return((True, None))
 
     @coroutine
@@ -287,7 +302,7 @@ class Client(object):
         variables in case of successful authentication.
         """
         if self.is_authenticated:
-            raise Return((True, None))
+            raise Return((self.uid, None))
 
         token = params["token"]
         user = params["user"]

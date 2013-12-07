@@ -219,7 +219,7 @@ class Application(tornado.web.Application):
         """
         if project_id not in self.connections:
             self.connections[project_id] = {}
-        if user and user not in self.connections:
+        if user and user not in self.connections[project_id]:
             self.connections[project_id][user] = {}
         if user:
             self.connections[project_id][user][uid] = client

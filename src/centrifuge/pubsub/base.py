@@ -102,7 +102,7 @@ class BasePubSub(object):
         prepared_response = response.as_message()
         for uid, client in six.iteritems(self.subscriptions[channel]):
             if channel in self.subscriptions and uid in self.subscriptions[channel]:
-                client.send(prepared_response)
+                yield client.send(prepared_response)
 
     @coroutine
     def handle_control_message(self, message):
