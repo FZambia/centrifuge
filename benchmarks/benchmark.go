@@ -181,7 +181,7 @@ func main() {
             }
         }
 
-        fmt.Printf("%d %f\n", i + 1, total_time/float64(repeats))
+        fmt.Printf("%d\t%d\n", i + 1, int(total_time/float64(repeats)))
 
     }
 
