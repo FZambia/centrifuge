@@ -115,7 +115,14 @@ func main() {
     url := os.Args[1]
     project_id := os.Args[2]
     project_secret := os.Args[3]
-    concurrency, _ := strconv.Atoi(os.Args[4])
+    max_clients, _ := strconv.Atoi(os.Args[4])
+    increment, _ := strconv.Atoi(os.Args[5])
+    repeats, _ := strconv.Atoi(os.Args[6])
+
+    fmt.Printf("max clients: %d\n", max_clients)
+    fmt.Printf("increment: %d\n", increment)
+    fmt.Printf("repeat: %d\n", repeats)
+
     messages_received := 0
 
     token := generate_token(project_secret, project_id, "test")
@@ -132,27 +139,31 @@ func main() {
 
     var start_time time.Time
 
-    repeats := 100
-
     total_time := 0.0
 
     go func() {
         publisher(ch_trigger, ch_time, url, origin, connect_message, subscribe_message, publish_message)
     }()
 
-    for i := 0; i < concurrency; i++ {
+    for i := 0; i < max_clients; i += increment {
 
         time.Sleep(500*time.Millisecond)
 
         total_time = 0
 
-        go func() {
-            subscriber(ch_sub, ch_msg, ch_start, url, origin, connect_message, subscribe_message, publish_message)
-        }()
+        for j := 0; j < increment; j++ {
 
-        <-ch_sub
+            time.Sleep(10*time.Millisecond)
 
-        //fmt.Println("one more client connected, total connected")
+            go func() {
+                subscriber(ch_sub, ch_msg, ch_start, url, origin, connect_message, subscribe_message, publish_message)
+            }()
+
+            <-ch_sub
+
+        }
+
+        current_clients := i + increment
 
         // repeat several times to get average time value
         for k := 0; k < repeats; k++ {
@@ -162,7 +173,6 @@ func main() {
             messages_received = 0
 
             // publish message
-            //fmt.Println("publishing message")
             ch_trigger <- 1
 
             start_time = <-ch_time
@@ -171,17 +181,15 @@ func main() {
                 <-ch_msg
                 messages_received += 1
                 //fmt.Println(messages_received)
-                if messages_received == i + 1 {
+                if messages_received == current_clients {
                     elapsed := time.Since(start_time)
-                    //fmt.Printf("time: %s\n", elapsed)
-                    //fmt.Println(float64(elapsed))
                     total_time += float64(elapsed)
                     break
                 }
             }
         }
 
-        fmt.Printf("%d\t%d\n", i + 1, int(total_time/float64(repeats)))
+        fmt.Printf("%d\t%d\n", current_clients, int(total_time/float64(repeats)))
 
     }
 
