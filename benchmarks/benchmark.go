@@ -141,6 +141,8 @@ func main() {
 
     total_time := 0.0
 
+    full_time := 0.0
+
     go func() {
         publisher(ch_trigger, ch_time, url, origin, connect_message, subscribe_message, publish_message)
     }()
@@ -170,6 +172,8 @@ func main() {
 
             time.Sleep(100*time.Millisecond)
 
+            full_time = 0.0;
+
             messages_received = 0
 
             // publish message
@@ -180,13 +184,16 @@ func main() {
             for {
                 <-ch_msg
                 messages_received += 1
-                //fmt.Println(messages_received)
+                elapsed := time.Since(start_time)
+                full_time += float64(elapsed)
+
                 if messages_received == current_clients {
-                    elapsed := time.Since(start_time)
-                    total_time += float64(elapsed)
                     break
                 }
             }
+
+            total_time += full_time/float64(current_clients)
+
         }
 
         fmt.Printf("%d\t%d\n", current_clients, int(total_time/float64(repeats)))
