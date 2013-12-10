@@ -80,15 +80,16 @@ namespaces when working with data of limited access.
 
 Also you can optionally provide extra parameter ``info`` when connecting to Centrifuge:
 
-```javascript
-var centrifuge = new Centrifuge({
-    url: 'http://centrifuge.example.com',
-    token: 'token',
-    project: 'id',
-    user: 'id',
-    info: '{"first_name": "Alexandr", "last_name": "Emelin"}'
-});
-```
+.. code-block:: javascript
+
+    var centrifuge = new Centrifuge({
+        url: 'http://centrifuge.example.com',
+        token: 'token',
+        project: 'id',
+        user: 'id',
+        info: '{"first_name": "Alexandr", "last_name": "Emelin"}'
+    });
+
 
 ``info`` is an additional information about user connecting to Centrifuge. It must
 be valid JSON string. But to prevent client sending wrong ``info`` this JSON string
