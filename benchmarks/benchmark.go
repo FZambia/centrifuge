@@ -25,8 +25,8 @@ func publisher(ch_trigger chan int, ch_time chan time.Time, url, origin, connect
     for {
         ws, err = websocket.Dial(url, "", origin)
         if err != nil {
-            fmt.Println("Connection fails, is being re-connection")
-            time.Sleep(1*time.Second)
+            //fmt.Println("Connection fails, is being re-connection")
+            time.Sleep(50*time.Millisecond)
             continue
         }
         break
@@ -35,16 +35,20 @@ func publisher(ch_trigger chan int, ch_time chan time.Time, url, origin, connect
     var msg = make([]byte, 512)
 
     if _, err := ws.Write([]byte(connect_message)); err != nil {
+        fmt.Println("publisher connect write error")
         log.Fatal(err)
     }
     if _, err = ws.Read(msg); err != nil {
+        fmt.Println("publisher connect read error")
         log.Fatal(err)
     }
 
     if _, err := ws.Write([]byte(subscribe_message)); err != nil {
+        fmt.Println("publisher subscribe write error")
         log.Fatal(err)
     }
     if _, err = ws.Read(msg); err != nil {
+        fmt.Println("publisher subscribe read error")
         log.Fatal(err)
     }
 
@@ -52,16 +56,19 @@ func publisher(ch_trigger chan int, ch_time chan time.Time, url, origin, connect
         <-ch_trigger
 
         if _, err := ws.Write([]byte(publish_message)); err != nil {
+            fmt.Println("publisher publish write error")
             log.Fatal(err)
         }
 
         ch_time <- time.Now()
 
         if _, err = ws.Read(msg); err != nil {
+            fmt.Println("publisher publish read error")
             log.Fatal(err)
         }
 
         if _, err = ws.Read(msg); err != nil {
+            fmt.Println("publisher message read error")
             log.Fatal(err)
         }
 
@@ -74,26 +81,30 @@ func subscriber(ch_sub, ch_msg, ch_start chan int, url, origin, connect_message,
     for {
         ws, err = websocket.Dial(url, "", origin)
         if err != nil {
-            fmt.Println("Connection fails, is being re-connection")
-            time.Sleep(1*time.Second)
+            //fmt.Println("Connection fails, is being re-connection")
+            time.Sleep(10*time.Millisecond)
             continue
         }
         break
     }
     if _, err := ws.Write([]byte(connect_message)); err != nil {
+        fmt.Println("subscriber connect write error")
         log.Fatal(err)
     }
     var msg = make([]byte, 512)
 
     if _, err = ws.Read(msg); err != nil {
+        fmt.Println("subscriber connect read error")
         log.Fatal(err)
     }
     //fmt.Printf("Received: %s.\n", msg[:n])
 
     if _, err := ws.Write([]byte(subscribe_message)); err != nil {
+        fmt.Println("subscriber subscribe write error")
         log.Fatal(err)
     }
     if _, err = ws.Read(msg); err != nil {
+        fmt.Println("subscriber subscribe read error")
         log.Fatal(err)
     }
 
@@ -101,6 +112,7 @@ func subscriber(ch_sub, ch_msg, ch_start chan int, url, origin, connect_message,
 
     for {
         if _, err = ws.Read(msg); err != nil {
+            fmt.Println("subscriber msg read error")
             log.Fatal(err)
         }
         //fmt.Println("message received")
@@ -149,13 +161,13 @@ func main() {
 
     for i := 0; i < max_clients; i += increment {
 
-        time.Sleep(500*time.Millisecond)
+        time.Sleep(50*time.Millisecond)
 
         total_time = 0
 
         for j := 0; j < increment; j++ {
 
-            time.Sleep(10*time.Millisecond)
+            time.Sleep(5*time.Millisecond)
 
             go func() {
                 subscriber(ch_sub, ch_msg, ch_start, url, origin, connect_message, subscribe_message, publish_message)
@@ -185,6 +197,7 @@ func main() {
                 <-ch_msg
                 messages_received += 1
                 elapsed := time.Since(start_time)
+                //fmt.Println(elapsed)
                 full_time += float64(elapsed)
 
                 if messages_received == current_clients {
