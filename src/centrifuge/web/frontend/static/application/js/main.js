@@ -231,14 +231,22 @@
                 }
             };
 
+            var pad = function (n) {
+                // http://stackoverflow.com/a/3313953/1288429
+                return ("0" + n).slice(-2);
+            };
+
             var render_event = function(container, project, namespace, event_id, channel, event_data) {
+
+                var d = new Date();
 
                 var html = event_template.render({
                     'event_id': event_id,
                     'channel': channel,
                     'data': prettify_json(event_data),
                     'namespace': namespace,
-                    'project': project
+                    'project': project,
+                    'time': pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
                 });
 
                 var prepared_html = prepare_html(html);

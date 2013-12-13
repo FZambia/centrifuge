@@ -90,7 +90,9 @@ label {
     padding: 0;
     padding-left: 0;
 }
-
+.event-time {
+    font-size: 10px;
+}
 .project {
     margin-left: 0 !important;
     margin-bottom: 60px;
