@@ -2,7 +2,6 @@
 import sys
 import os
 import json
-import base64
 from unittest import TestCase, main
 
 path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +22,7 @@ class AuthTest(TestCase):
         self.wrong_request = FakeRequest()
         self.wrong_request.headers = {}
         self.data = 'test'
-        self.encoded_data = base64.b64encode(json.dumps(self.data))
+        self.encoded_data = json.dumps(self.data)
         self.secret_key = "test"
         self.project_id = "test"
         self.user_id = "test"

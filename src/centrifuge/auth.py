@@ -4,7 +4,6 @@
 # All rights reserved.
 
 from tornado.escape import json_decode
-import base64
 import hmac
 import six
 
@@ -27,7 +26,7 @@ def decode_data(data):
     Decode request body received from API client.
     """
     try:
-        return json_decode(base64.b64decode(data))
+        return json_decode(data)
     except:
         return None
 
