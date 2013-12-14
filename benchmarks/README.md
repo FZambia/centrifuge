@@ -1,12 +1,14 @@
-Tools for benchmarking Centrifuge
-=================================
+Benchmarking Centrifuge
+=======================
 
 Scalability benchmark
 ---------------------
 
 ![scalability](https://raw.github.com/FZambia/centrifuge/master/benchmarks/scalability.png "scalability benchmark")
 
-Command used to run:
+[Google spreedsheet with this chart and data](https://docs.google.com/spreadsheet/ccc?key=0Ao60NPCQC6LgdDkxU1JNQjE3NUpORjM4Yk0wSFdOZ3c&usp=drive_web#gid=1)
+
+Command used to run benchmark:
 
 ```bash
 go run benchmark.go ws://localhost:8080/connection/websocket PROJECT_ID SECRET_KEY 4000 200 50
@@ -18,6 +20,8 @@ Description:
 
 This test was made to show how Centrifuge scales when new instances added. One message was sent to every connected
 client, then average time of message delivery calculated.
+
+There was no a goal of load testing Centifuge in this benchmark, I just wanted to show that when new instances of Centrifuge added message latency reduces.
 
 Conclusions:
 
