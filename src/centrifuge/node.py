@@ -117,7 +117,7 @@ def stop_running(msg):
     sys.exit(1)
 
 
-def create_application_handlers():
+def create_application_handlers(sockjs_settings):
 
     handlers = [
         tornado.web.url(
@@ -159,13 +159,13 @@ def create_application_handlers():
 
     # create SockJS route for admin connections
     admin_sock_router = SockJSRouter(
-        AdminSocketHandler, '/socket'
+        AdminSocketHandler, '/socket', user_settings=sockjs_settings
     )
     handlers = admin_sock_router.urls + handlers
 
     # create SockJS route for client connections
     client_sock_router = SockJSRouter(
-        SockjsConnection, '/connection'
+        SockjsConnection, '/connection', user_settings=sockjs_settings
     )
     handlers = client_sock_router.urls + handlers
 
@@ -211,7 +211,9 @@ def main():
         config=custom_settings
     )
 
-    handlers = create_application_handlers()
+    sockjs_settings = custom_settings.get("sockjs_settings", {})
+
+    handlers = create_application_handlers(sockjs_settings)
 
     try:
         app = Application(handlers=handlers, **settings)
