@@ -402,7 +402,7 @@ class Application(tornado.web.Application):
 
         namespace = allowed_namespaces.get(namespace_name, None)
         if not namespace:
-            raise Return(("namespace not found in allowed namespaces", None))
+            raise Return((None, "namespace not found in allowed namespaces"))
 
         data = params.get('data', None)
 
@@ -417,11 +417,13 @@ class Application(tornado.web.Application):
         }
 
         for callback in self.pre_publish_callbacks:
-            message, error = yield callback(message)
-            if error:
-                raise Return((message, error))
-            if message is None:
-                raise Return(('message discarded', None))
+            try:
+                message = yield callback(message)
+            except Exception as err:
+                logger.exception(err)
+            else:
+                if message is None:
+                    raise Return((None, None))
 
         raise Return((message, None))
 
@@ -443,21 +445,22 @@ class Application(tornado.web.Application):
         if error:
             raise Return((None, error))
 
-        if isinstance(message, dict):
-            # event prepared for publishing
-            result, error = yield self.publish_message(
-                message, allowed_namespaces
-            )
-            if error:
-                raise Return((None, error))
+        if not message:
+            # message was discarded
+            raise Return((True, None))
 
-            for callback in self.post_publish_callbacks:
-                result, error = yield callback(message)
-                if error:
-                    logger.error(str(error))
-        else:
-            # message is error description
-            raise Return((None, message))
+        # publish prepared message
+        result, error = yield self.publish_message(
+            message, allowed_namespaces
+        )
+        if error:
+            raise Return((None, error))
+
+        for callback in self.post_publish_callbacks:
+            try:
+                yield callback(message)
+            except Exception as err:
+                logger.exception(err)
 
         raise Return((True, None))
 
