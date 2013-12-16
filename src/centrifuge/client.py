@@ -82,27 +82,36 @@ class Client(object):
                 project_id, self.user, self.uid
             )
 
-            for namespace_name, channels in six.iteritems(self.channels):
-                for channel, status in six.iteritems(channels):
-                    yield self.application.state.remove_presence(
-                        project_id, namespace_name, channel, self.uid
-                    )
+            if self.channels is not None:
 
-                    self.application.pubsub.remove_subscription(
-                        project_id, namespace_name, channel, self
-                    )
+                channels = self.channels.copy()
 
-                    project, error = yield self.get_project(project_id)
-                    if not error and project:
-                        namespace, error = yield self.get_namespace(
-                            project, {"namespace": namespace_name}
+                for namespace_name, channel_names in six.iteritems(channels):
+
+                    if not channel_names:
+                        continue
+
+                    for channel_name, status in six.iteritems(channel_names):
+                        yield self.application.state.remove_presence(
+                            project_id, namespace_name, channel_name, self.uid
                         )
-                        if namespace and namespace.get("join_leave", False):
-                            self.send_leave_message(namespace_name, channel)
+
+                        self.application.pubsub.remove_subscription(
+                            project_id, namespace_name, channel_name, self
+                        )
+
+                        project, error = yield self.get_project(project_id)
+                        if not error and project:
+                            namespace, error = yield self.get_namespace(
+                                project, {"namespace": namespace_name}
+                            )
+                            if namespace and namespace.get("join_leave", False):
+                                self.send_leave_message(namespace_name, channel_name)
 
         self.channels = None
         self.channel_user_info = None
         self.default_user_info = None
+        self.project_id = None
         self.sock = None
         raise Return((True, None))
 
@@ -122,6 +131,8 @@ class Client(object):
         """
         Send message directly to client.
         """
+        if not self.sock:
+            raise Return((True, None))
         try:
             self.sock.send(response)
         except Exception as err:
