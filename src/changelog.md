@@ -1,3 +1,9 @@
+v0.3.7
+======
+
+* it's now possible to override sockjs-tornado settings from Centrifuge config file using `sockjs_settings` dictionary
+* attempt to fix some possible races
+
 v0.3.6
 ======
 
