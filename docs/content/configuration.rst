@@ -132,6 +132,29 @@ Description:
 
 - **state** - settings to enable history and presence data for channels.
 
+There is also a possibility to override default SockJS-Tornado settings using Centrifuge
+configuration file. Example:
+
+.. code-block::javascript
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "api_secret": "secret",
+        "structure": {
+            "storage": "centrifuge.structure.sqlite",
+            "settings": {
+                "path": "/tmp/centrifuge.db"
+            }
+        },
+        "state": null,
+        "sockjs_settings": {
+            "sockjs_url": "https://centrifuge.example.com/static/libs/sockjs/sockjs-0.3.4.min.js"
+        }
+    }
+
+Here I set custom ``sockjs_url`` option, list of all available options can be found in sockjs-tornado source code: `show on Github <https://github.com/mrjoes/sockjs-tornado/blob/master/sockjs/tornado/router.py#L14>`_
+
 
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
