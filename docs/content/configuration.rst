@@ -135,7 +135,7 @@ Description:
 There is also a possibility to override default SockJS-Tornado settings using Centrifuge
 configuration file. Example:
 
-.. code-block::javascript
+.. code-block:: javascript
 
     {
         "password": "admin",
@@ -152,6 +152,7 @@ configuration file. Example:
             "sockjs_url": "https://centrifuge.example.com/static/libs/sockjs/sockjs-0.3.4.min.js"
         }
     }
+
 
 Here I set custom ``sockjs_url`` option, list of all available options can be found in sockjs-tornado source code: `show on Github <https://github.com/mrjoes/sockjs-tornado/blob/master/sockjs/tornado/router.py#L14>`_
 
