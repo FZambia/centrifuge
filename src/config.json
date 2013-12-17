@@ -12,8 +12,7 @@
     "structure": {
         "storage": "centrifuge.structure.sqlite",
         "update_interval": 60,
-	"settings": {
-	    "path": "/tmp/centrifuge.db"
-	}
+	      "settings": {
+	      }
     }
 }

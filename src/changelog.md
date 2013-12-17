@@ -1,6 +1,9 @@
 v0.3.7
 ======
 
+Backwards incompatible! Cent 0.1.3 required.
+
+* no base64 decode for incoming API requests
 * it's now possible to override sockjs-tornado settings from Centrifuge config file using `sockjs_settings` dictionary
 * attempt to fix some possible races
 
