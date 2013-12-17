@@ -24,8 +24,8 @@ then an API address will be ``https://centrifuge.example.com/api/PROJECT_ID``.
 
 All you need to do to use HTTP API is to send correctly constructed POST request to this endpoint.
 
-This request must have two POST parameters: ``data`` and ``sign``. Data is a base64 encoded json string
-and sign is an hmac based on project secret key, project ID and encoded data.
+This request must have two POST parameters: ``data`` and ``sign``. Data is a json string
+and sign is an hmac based on project secret key, project ID and data json string.
 
 Data is originally a json object with two properties: ``method`` and ``params``.
 
