@@ -116,7 +116,15 @@ class Client(object):
         raise Return((True, None))
 
     @coroutine
-    def close_sock(self):
+    def close_sock(self, pause=True):
+        """
+        Force closing SockJS connection.
+        """
+
+        if pause:
+            # sleep for a while before closing connection to prevent mass invalid reconnects
+            yield sleep(1)
+
         try:
             if self.sock:
                 self.sock.close()
@@ -132,12 +140,13 @@ class Client(object):
         Send message directly to client.
         """
         if not self.sock:
-            raise Return((True, None))
+            raise Return((False, None))
+
         try:
             self.sock.send(response)
         except Exception as err:
             logger.exception(err)
-            yield self.close_sock()
+            yield self.close_sock(pause=False)
             raise Return((False, None))
 
         raise Return((True, None))
