@@ -18,11 +18,12 @@
             <td><span class="credential">{{project['secret_key']}}</span></td>
         </tr>
     </table>
-    <form method="post" action="" >
+    <form class="form-inline" method="post" action="" >
         {% raw xsrf_form_html() %}
         <button type="submit" name="submit" value="regenerate_secret" class="btn btn-danger">
             {{_("Regenerate secret key")}}
         </button>
+        <input type="text" class="form-control confirm-input" name="confirm" placeholder="{{_('Type project name to confirm')}}">
     </form>
 </div>
 

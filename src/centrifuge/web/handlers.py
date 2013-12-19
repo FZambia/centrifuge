@@ -150,10 +150,12 @@ class ProjectSettingsHandler(BaseHandler):
         if submit != 'regenerate_secret':
             raise tornado.web.HTTPError(400)
 
-        # regenerate project secret key
-        res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
+        confirm = self.get_argument('confirm', None)
+        if confirm == self.project['name']:
+            # regenerate project secret key
+            res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
+            if error:
+                raise tornado.web.HTTPError(500, log_message=str(error))
 
         self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
 

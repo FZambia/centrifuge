@@ -199,3 +199,6 @@ label {
 .bottom_buffer {
     margin-bottom: 40px;
 }
+.confirm-input {
+    width: 200px;
+}
