@@ -4,9 +4,7 @@
 # All rights reserved.
 
 import uuid
-import time
 import motor
-from bson import ObjectId
 from tornado.gen import Task, coroutine, Return
 
 from centrifuge.log import logger
@@ -16,9 +14,6 @@ NAME = "MongoDB"
 
 
 def on_error(error):
-    """
-    General error wrapper.
-    """
     logger.error(str(error))
     raise Return((None, error))
 
@@ -29,8 +24,7 @@ def ensure_indexes(db, drop=False):
         db.project.drop_indexes()
         db.namespace.drop_indexes()
 
-    db.project.ensure_index([('name', 1)], unique=True)
-    db.namespace.ensure_index([('name', 1), ('project', 1)], unique=True)
+    db.namespace.ensure_index([('name', 1), ('project_id', 1)], unique=True)
 
     logger.info('Database ready')
 
@@ -53,11 +47,7 @@ def init_storage(structure, settings, callback):
 
 
 def extract_obj_id(obj):
-    if isinstance(obj, dict):
-        obj_id = obj['_id']
-    else:
-        obj_id = obj
-    return obj_id
+    return obj['_id']
 
 
 @coroutine
@@ -65,8 +55,6 @@ def insert(collection, data):
     """
     Insert data into collection.
     """
-    if 'created_at' not in data:
-        data['created_at'] = int(time.time())
     (result, error), _ = yield Task(collection.insert, data)
     if error:
         on_error(error)
@@ -92,8 +80,6 @@ def update(collection, haystack, update_data):
     """
     Update entries matching haystack with update_data.
     """
-    if 'updated_at' not in update_data:
-        update_data['updated_at'] = int(time.time())
     (result, error), _ = yield Task(
         collection.update, haystack, {"$set": update_data}
     )
@@ -129,9 +115,7 @@ def remove(collection, haystack):
 
 @coroutine
 def project_list(db):
-    """
-    Get all projects
-    """
+
     projects, error = yield find(db.project, {})
     if error:
         on_error(error)
@@ -140,19 +124,12 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, **kwargs):
+def project_create(db, options):
 
-    project_id = str(ObjectId())
     to_insert = {
-        '_id': project_id,
-        'name': kwargs['name'],
-        'display_name': kwargs['display_name'],
-        'auth_address': kwargs['auth_address'],
-        'max_auth_attempts': kwargs['max_auth_attempts'],
-        'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout'],
+        '_id': uuid.uuid4().hex,
         'secret_key': uuid.uuid4().hex,
-        'default_namespace': None
+        'options': options
     }
     result, error = yield insert(db.project, to_insert)
     if error:
@@ -162,22 +139,14 @@ def project_create(db, **kwargs):
 
 
 @coroutine
-def project_edit(db, project, **kwargs):
-    """
-    Edit project
-    """
+def project_edit(db, project, options):
+
     to_update = {
-        'name': kwargs['name'],
-        'display_name': kwargs['display_name'],
-        'auth_address': kwargs['auth_address'],
-        'max_auth_attempts': kwargs['max_auth_attempts'],
-        'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout'],
-        'default_namespace': kwargs['default_namespace']
+        'options': options
     }
     _res, error = yield update(
         db.project,
-        {'_id': project['_id']},
+        {'_id': extract_obj_id(project)},
         to_update
     )
     if error:
@@ -187,19 +156,35 @@ def project_edit(db, project, **kwargs):
 
 
 @coroutine
+def regenerate_project_secret_key(db, project, secret_key):
+
+    haystack = {
+        '_id': extract_obj_id(project)
+    }
+    update_data = {
+        'secret_key': secret_key
+    }
+    result, error = yield update(db.project, haystack, update_data)
+    if error:
+        on_error(error)
+
+    raise Return((update_data, None))
+
+
+@coroutine
 def project_delete(db, project):
     """
     Delete project. Also delete all related namespaces.
     """
     haystack = {
-        '_id': project['_id']
+        '_id': extract_obj_id(project)
     }
     _res, error = yield remove(db.project, haystack)
     if error:
         on_error(error)
 
     haystack = {
-        'project': project['_id']
+        'project_id': extract_obj_id(project)
     }
     _res, error = yield remove(db.namespace, haystack)
     if error:
@@ -210,9 +195,7 @@ def project_delete(db, project):
 
 @coroutine
 def namespace_list(db):
-    """
-    Get all namespaces
-    """
+
     namespaces, error = yield find(db.namespace, {})
     if error:
         on_error(error)
@@ -221,20 +204,13 @@ def namespace_list(db):
 
 
 @coroutine
-def namespace_create(db, project, **kwargs):
+def namespace_create(db, project, name, options):
 
     haystack = {
-        '_id': str(ObjectId()),
-        'project': project['_id'],
-        'name': kwargs['name'],
-        'publish': kwargs['publish'],
-        'is_watching': kwargs['is_watching'],
-        'presence': kwargs['presence'],
-        'history': kwargs['history'],
-        'history_size': kwargs['history_size'],
-        'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address'],
-        'join_leave': kwargs['join_leave']
+        '_id': uuid.uuid4().hex,
+        'project_id': extract_obj_id(project),
+        'name': name,
+        'options': options
     }
     namespace, error = yield insert(db.namespace, haystack)
     if error:
@@ -244,22 +220,15 @@ def namespace_create(db, project, **kwargs):
 
 
 @coroutine
-def namespace_edit(db, namespace, **kwargs):
+def namespace_edit(db, namespace, name, options):
 
     to_update = {
-        'name': kwargs['name'],
-        'publish': kwargs['publish'],
-        'is_watching': kwargs['is_watching'],
-        'presence': kwargs['presence'],
-        'history': kwargs['history'],
-        'history_size': kwargs['history_size'],
-        'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address'],
-        'join_leave': kwargs['join_leave']
+        'name': name,
+        'options': options
     }
     _res, error = yield update(
         db.namespace,
-        {'_id': namespace['_id']},
+        {'_id': extract_obj_id(namespace)},
         to_update
     )
     if error:
@@ -269,74 +238,13 @@ def namespace_edit(db, namespace, **kwargs):
 
 
 @coroutine
-def namespace_delete(db, namespace_id):
-    """
-    Delete namespace from project. Also delete all related entries from
-    event collection.
-    """
+def namespace_delete(db, namespace):
+
     haystack = {
-        '_id': namespace_id
+        '_id': extract_obj_id(namespace)
     }
     _res, error = yield remove(db.namespace, haystack)
     if error:
         on_error(error)
 
     raise Return((True, None))
-
-
-@coroutine
-def regenerate_project_secret_key(db, project):
-    """
-    Create new secret key for specified project.
-    """
-    project_id = extract_obj_id(project)
-    haystack = {
-        '_id': project_id
-    }
-    update_data = {
-        'secret_key': uuid.uuid4().hex
-    }
-    result, error = yield update(db.project, haystack, update_data)
-    if error:
-        on_error(error)
-
-    raise Return((update_data, None))
-
-
-def projects_by_id(projects):
-    to_return = {}
-    for project in projects:
-        to_return[project['_id']] = project
-    return to_return
-
-
-def projects_by_name(projects):
-    to_return = {}
-    for project in projects:
-        to_return[project['name']] = project
-    return to_return
-
-
-def namespaces_by_id(namespaces):
-    to_return = {}
-    for namespace in namespaces:
-        to_return[namespace['_id']] = namespace
-    return to_return
-
-
-def namespaces_by_name(namespaces):
-    to_return = {}
-    for namespace in namespaces:
-        if namespace['project'] not in to_return:
-            to_return[namespace['project']] = {}
-        to_return[namespace['project']][namespace['name']] = namespace
-    return to_return
-
-
-def project_namespaces(namespaces):
-    to_return = {}
-    for namespace in namespaces:
-        if namespace['project'] not in to_return:
-            to_return[namespace['project']] = []
-        to_return[namespace['project']].append(namespace)
-    return to_return
