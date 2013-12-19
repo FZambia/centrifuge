@@ -22,9 +22,6 @@ def dict_factory(cursor, row):
 
 
 def on_error(error):
-    """
-    General error wrapper.
-    """
     logger.error(str(error))
     raise Return((None, error))
 
@@ -58,9 +55,7 @@ def extract_obj_id(obj):
 
 @coroutine
 def project_list(cursor):
-    """
-    Get all projects user can see.
-    """
+
     query = "SELECT * FROM projects"
     try:
         cursor.execute(query, {},)
@@ -93,9 +88,7 @@ def project_create(cursor, secret_key, options):
 
 @coroutine
 def project_edit(cursor, project, options):
-    """
-    Edit project
-    """
+
     to_return = {
         '_id': extract_obj_id(project),
         'options': options
@@ -116,9 +109,7 @@ def project_edit(cursor, project, options):
 
 @coroutine
 def regenerate_project_secret_key(cursor, project, secret_key):
-    """
-    Create new secret and public keys for user in specified project.
-    """
+
     project_id = extract_obj_id(project)
     haystack = (secret_key, project_id)
 
@@ -136,7 +127,7 @@ def regenerate_project_secret_key(cursor, project, secret_key):
 @coroutine
 def project_delete(cursor, project):
     """
-    Delete project. Also delete all related namespaces and events.
+    Delete project. Also delete all related namespaces.
     """
     haystack = (extract_obj_id(project), )
 
@@ -158,9 +149,7 @@ def project_delete(cursor, project):
 
 @coroutine
 def namespace_list(cursor):
-    """
-    Get all namespaces
-    """
+
     query = "SELECT * FROM namespaces"
     try:
         cursor.execute(query, ())
@@ -198,9 +187,7 @@ def namespace_create(cursor, project, name, options):
 
 @coroutine
 def namespace_edit(cursor, namespace, name, options):
-    """
-    Edit project
-    """
+
     to_return = {
         '_id': extract_obj_id(namespace),
         'name': name,
@@ -222,10 +209,6 @@ def namespace_edit(cursor, namespace, name, options):
 
 @coroutine
 def namespace_delete(cursor, namespace):
-    """
-    Delete namespace from project. Also delete all related entries from
-    event collection.
-    """
     haystack = (extract_obj_id(namespace),)
     query = "DELETE FROM namespaces WHERE _id=?"
     try:

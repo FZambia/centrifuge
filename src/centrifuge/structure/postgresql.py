@@ -7,9 +7,8 @@ from tornado.gen import coroutine, Return
 import momoko
 import psycopg2.extras
 import uuid
-from bson import ObjectId
 from functools import partial
-
+import json
 from centrifuge.log import logger
 
 
@@ -44,18 +43,12 @@ def on_connection_ready(structure, ready_callback):
 
     db = structure.db
 
-    project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(24) UNIQUE, ' \
-              'name varchar(100) NOT NULL UNIQUE, display_name ' \
-              'varchar(100) NOT NULL, auth_address varchar(255), ' \
-              'max_auth_attempts integer, back_off_interval integer, ' \
-              'back_off_max_timeout integer, secret_key varchar(32), ' \
-              'default_namespace varchar(32))'
+    project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(32) UNIQUE, ' \
+              'secret_key varchar(32), options text)'
 
     namespace = 'CREATE TABLE IF NOT EXISTS namespaces (id SERIAL, ' \
-                '_id varchar(24) UNIQUE, project_id varchar(24), ' \
-                'name varchar(100) NOT NULL, publish bool, ' \
-                'is_watching bool, presence bool, history bool, history_size integer, ' \
-                'is_private bool, auth_address varchar(255), join_leave bool, ' \
+                '_id varchar(32) UNIQUE, project_id varchar(32), ' \
+                'name varchar(100) NOT NULL, options text, ' \
                 'constraint namespaces_unique unique(project_id, name))'
 
     yield momoko.Op(db.execute, project, ())
@@ -65,18 +58,12 @@ def on_connection_ready(structure, ready_callback):
 
 
 def extract_obj_id(obj):
-    if isinstance(obj, dict):
-        obj_id = obj['_id']
-    else:
-        obj_id = obj
-    return obj_id
+    return obj['_id']
 
 
 @coroutine
 def project_list(db):
-    """
-    Get all projects user can see.
-    """
+
     query = "SELECT * FROM projects"
     try:
         cursor = yield momoko.Op(
@@ -91,26 +78,15 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, **kwargs):
+def project_create(db, options):
 
     to_insert = {
-        '_id': str(ObjectId()),
-        'name': kwargs['name'],
-        'display_name': kwargs['display_name'],
-        'auth_address': kwargs['auth_address'],
-        'max_auth_attempts': kwargs['max_auth_attempts'],
-        'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout'],
+        '_id': uuid.uuid4().hex,
         'secret_key': uuid.uuid4().hex,
-        'default_namespace': None
+        'options': json.dumps(options)
     }
 
-    query = "INSERT INTO projects (_id, name, display_name, " \
-            "auth_address, max_auth_attempts, back_off_interval, " \
-            "back_off_max_timeout, secret_key, default_namespace) " \
-            "VALUES (%(_id)s, %(name)s, %(display_name)s, " \
-            "%(auth_address)s, %(max_auth_attempts)s, %(back_off_interval)s, " \
-            "%(back_off_max_timeout)s, %(secret_key)s, %(default_namespace)s)"
+    query = "INSERT INTO projects (_id, secret_key, options) VALUES (%(_id)s, %(secret_key)s, %(options)s)"
 
     try:
         yield momoko.Op(
@@ -123,26 +99,14 @@ def project_create(db, **kwargs):
 
 
 @coroutine
-def project_edit(db, project, **kwargs):
-    """
-    Edit project
-    """
+def project_edit(db, project, options):
+
     to_update = {
         '_id': extract_obj_id(project),
-        'name': kwargs['name'],
-        'display_name': kwargs['display_name'],
-        'auth_address': kwargs['auth_address'],
-        'max_auth_attempts': kwargs['max_auth_attempts'],
-        'back_off_interval': kwargs['back_off_interval'],
-        'back_off_max_timeout': kwargs['back_off_max_timeout'],
-        'default_namespace': kwargs['default_namespace']
+        'options': json.dumps(options)
     }
 
-    query = "UPDATE projects SET name=%(name)s, display_name=%(display_name)s, " \
-            "auth_address=%(auth_address)s, " \
-            "max_auth_attempts=%(max_auth_attempts)s, back_off_interval=%(back_off_interval)s, " \
-            "back_off_max_timeout=%(back_off_max_timeout)s, default_namespace=%(default_namespace)s WHERE " \
-            "_id=%(_id)s"
+    query = "UPDATE projects SET options=%(options)s WHERE _id=%(_id)s"
 
     try:
         yield momoko.Op(
@@ -155,12 +119,33 @@ def project_edit(db, project, **kwargs):
 
 
 @coroutine
+def regenerate_project_secret_key(db, project, secret_key):
+
+    haystack = {
+        '_id': extract_obj_id(project),
+        'secret_key': secret_key
+    }
+
+    query = "UPDATE projects SET secret_key=%(secret_key)s WHERE _id=%(_id)s"
+
+    try:
+        yield momoko.Op(
+            db.execute, query, haystack,
+            cursor_factory=psycopg2.extras.RealDictCursor
+        )
+    except Exception as e:
+        on_error(e)
+    else:
+        raise Return((secret_key, None))
+
+
+@coroutine
 def project_delete(db, project):
     """
-    Delete project. Also delete all related namespaces and events.
+    Delete project. Also delete all related namespaces.
     """
     haystack = {
-        'project_id': project['_id']
+        'project_id': extract_obj_id(project)
     }
 
     query = "DELETE FROM projects WHERE _id=%(project_id)s"
@@ -184,9 +169,7 @@ def project_delete(db, project):
 
 @coroutine
 def namespace_list(db):
-    """
-    Get all namespaces
-    """
+
     query = "SELECT * FROM namespaces"
     try:
         cursor = yield momoko.Op(
@@ -201,28 +184,17 @@ def namespace_list(db):
 
 
 @coroutine
-def namespace_create(db, project, **kwargs):
+def namespace_create(db, project, name, options):
 
     to_insert = {
-        '_id': str(ObjectId()),
-        'project_id': project['_id'],
-        'name': kwargs['name'],
-        'publish': kwargs['publish'],
-        'is_watching': kwargs['is_watching'],
-        'presence': kwargs['presence'],
-        'history': kwargs['history'],
-        'history_size': kwargs['history_size'],
-        'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address'],
-        'join_leave': kwargs['join_leave']
+        '_id': uuid.uuid4().hex,
+        'project_id': extract_obj_id(project),
+        'name': name,
+        'options': json.dumps(options)
     }
 
-    query = "INSERT INTO namespaces (_id, project_id, name, publish, " \
-            "is_watching, presence, history, history_size, is_private, " \
-            "auth_address, join_leave) VALUES (%(_id)s, %(project_id)s, %(name)s, " \
-            "%(publish)s, %(is_watching)s, %(presence)s, " \
-            "%(history)s, %(history_size)s, %(is_private)s, %(auth_address)s, " \
-            "%(join_leave)s)"
+    query = "INSERT INTO namespaces (_id, project_id, name, options) " \
+            "VALUES (%(_id)s, %(project_id)s, %(name)s, %(options)s)"
 
     try:
         yield momoko.Op(
@@ -235,28 +207,15 @@ def namespace_create(db, project, **kwargs):
 
 
 @coroutine
-def namespace_edit(db, namespace, **kwargs):
-    """
-    Edit project
-    """
+def namespace_edit(db, namespace, name, options):
+
     to_update = {
         '_id': namespace['_id'],
-        'name': kwargs['name'],
-        'publish': kwargs['publish'],
-        'is_watching': kwargs['is_watching'],
-        'presence': kwargs['presence'],
-        'history': kwargs['history'],
-        'history_size': kwargs['history_size'],
-        'is_private': kwargs['is_private'],
-        'auth_address': kwargs['auth_address'],
-        'join_leave': kwargs['join_leave']
+        'name': name,
+        'options': json.dumps(options)
     }
 
-    query = "UPDATE namespaces SET name=%(name)s, publish=%(publish)s, " \
-            "is_watching=%(is_watching)s, presence=%(presence)s, " \
-            "history=%(history)s, history_size=%(history_size)s, " \
-            "is_private=%(is_private)s, auth_address=%(auth_address)s, " \
-            "join_leave=%(join_leave)s WHERE _id=%(_id)s"
+    query = "UPDATE namespaces SET name=%(name)s, options=%(options)s WHERE _id=%(_id)s"
 
     try:
         yield momoko.Op(
@@ -269,13 +228,9 @@ def namespace_edit(db, namespace, **kwargs):
 
 
 @coroutine
-def namespace_delete(db, namespace_id):
-    """
-    Delete namespace from project. Also delete all related entries from
-    event collection.
-    """
+def namespace_delete(db, namespace):
     haystack = {
-        '_id': namespace_id
+        '_id': extract_obj_id(namespace)
     }
 
     query = "DELETE FROM namespaces WHERE _id=%(_id)s"
@@ -288,68 +243,3 @@ def namespace_delete(db, namespace_id):
         on_error(e)
     else:
         raise Return((True, None))
-
-
-@coroutine
-def regenerate_project_secret_key(db, project):
-    """
-    Create new secret and public keys for user in specified project.
-    """
-    project_id = extract_obj_id(project)
-    secret_key = uuid.uuid4().hex
-    haystack = {
-        'project_id': project_id,
-        'secret_key': secret_key
-    }
-
-    query = "UPDATE projects SET secret_key=%(secret_key)s " \
-            "WHERE _id=%(project_id)s"
-
-    try:
-        yield momoko.Op(
-            db.execute, query, haystack,
-            cursor_factory=psycopg2.extras.RealDictCursor
-        )
-    except Exception as e:
-        on_error(e)
-    else:
-        raise Return((secret_key, None))
-
-
-def projects_by_id(projects):
-    to_return = {}
-    for project in projects:
-        to_return[project['_id']] = project
-    return to_return
-
-
-def projects_by_name(projects):
-    to_return = {}
-    for project in projects:
-        to_return[project['name']] = project
-    return to_return
-
-
-def namespaces_by_id(namespaces):
-    to_return = {}
-    for namespace in namespaces:
-        to_return[namespace['_id']] = namespace
-    return to_return
-
-
-def namespaces_by_name(namespaces):
-    to_return = {}
-    for namespace in namespaces:
-        if namespace['project_id'] not in to_return:
-            to_return[namespace['project_id']] = {}
-        to_return[namespace['project_id']][namespace['name']] = namespace
-    return to_return
-
-
-def project_namespaces(namespaces):
-    to_return = {}
-    for namespace in namespaces:
-        if namespace['project_id'] not in to_return:
-            to_return[namespace['project_id']] = []
-        to_return[namespace['project_id']].append(namespace)
-    return to_return
