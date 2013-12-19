@@ -817,7 +817,7 @@ class Application(tornado.web.Application):
         if not existing_namespace:
             raise Return((None, self.NAMESPACE_NOT_FOUND))
 
-        result, error = yield self.structure.namespace_delete(namespace_id)
+        result, error = yield self.structure.namespace_delete(existing_namespace)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         raise Return((True, None))

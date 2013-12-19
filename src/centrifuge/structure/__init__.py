@@ -11,6 +11,58 @@ from centrifuge.log import logger
 
 lock = Lock()
 
+import json
+import six
+import uuid
+
+
+def flatten(dictionary):
+    options = dictionary['options']
+    if isinstance(options, six.string_types):
+        options = json.loads(options)
+    del dictionary['options']
+    dictionary.update(options)
+    return dictionary
+
+
+def get_projects_by_id(projects):
+    to_return = {}
+    for project in projects:
+        to_return[project['_id']] = project
+    return to_return
+
+
+def get_projects_by_name(projects):
+    to_return = {}
+    for project in projects:
+        to_return[project['name']] = project
+    return to_return
+
+
+def get_namespaces_by_id(namespaces):
+    to_return = {}
+    for namespace in namespaces:
+        to_return[namespace['_id']] = namespace
+    return to_return
+
+
+def get_namespaces_by_name(namespaces):
+    to_return = {}
+    for namespace in namespaces:
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = {}
+        to_return[namespace['project_id']][namespace['name']] = namespace
+    return to_return
+
+
+def get_project_namespaces(namespaces):
+    to_return = {}
+    for namespace in namespaces:
+        if namespace['project_id'] not in to_return:
+            to_return[namespace['project_id']] = []
+        to_return[namespace['project_id']].append(namespace)
+    return to_return
+
 
 class InconsistentStructureError(Exception):
 
@@ -62,20 +114,21 @@ class Structure:
             raise Return((True, None))
 
         with (yield lock.acquire()):
-
-            projects, error = yield self.storage.project_list(self.db)
+            raw_projects, error = yield self.storage.project_list(self.db)
             if error:
                 self.on_error(error)
+            projects = [flatten(x) for x in raw_projects]
 
-            namespaces, error = yield self.storage.namespace_list(self.db)
+            raw_namespaces, error = yield self.storage.namespace_list(self.db)
             if error:
                 self.on_error(error)
+            namespaces = [flatten(x) for x in raw_namespaces]
 
-            projects_by_id = self.storage.projects_by_id(projects)
-            projects_by_name = self.storage.projects_by_name(projects)
-            namespaces_by_id = self.storage.namespaces_by_id(namespaces)
-            namespaces_by_name = self.storage.namespaces_by_name(namespaces)
-            project_namespaces = self.storage.project_namespaces(namespaces)
+            projects_by_id = get_projects_by_id(projects)
+            projects_by_name = get_projects_by_name(projects)
+            namespaces_by_id = get_namespaces_by_id(namespaces)
+            namespaces_by_name = get_namespaces_by_name(namespaces)
+            project_namespaces = get_project_namespaces(namespaces)
 
             self._data = {
                 'projects': projects,
@@ -211,50 +264,96 @@ class Structure:
         raise Return((result, error))
 
     @coroutine
-    def project_create(self, *args, **kwargs):
+    def project_create(self, **kwargs):
+
+        options = {
+            "name": kwargs['name'],
+            "display_name": kwargs['display_name'],
+            "auth_address": kwargs['auth_address'],
+            "max_auth_attempts": kwargs['max_auth_attempts'],
+            "back_off_interval": kwargs['back_off_interval'],
+            "back_off_max_timeout": kwargs['back_off_max_timeout'],
+            "default_namespace": None
+        }
         result, error = yield self.call_and_update_structure(
-            'project_create', *args, **kwargs
+            'project_create', uuid.uuid4().hex, options
         )
         raise Return((result, error))
 
     @coroutine
-    def project_edit(self, *args, **kwargs):
+    def project_edit(self, project, **kwargs):
+
+        options = {
+            'name': kwargs['name'],
+            'display_name': kwargs['display_name'],
+            'auth_address': kwargs['auth_address'],
+            'max_auth_attempts': kwargs['max_auth_attempts'],
+            'back_off_interval': kwargs['back_off_interval'],
+            'back_off_max_timeout': kwargs['back_off_max_timeout'],
+            'default_namespace': kwargs['default_namespace']
+        }
+
         result, error = yield self.call_and_update_structure(
-            'project_edit', *args, **kwargs
+            'project_edit', project, options
         )
         raise Return((result, error))
 
     @coroutine
-    def project_delete(self, *args, **kwargs):
+    def regenerate_project_secret_key(self, project):
+        secret_key = uuid.uuid4().hex
         result, error = yield self.call_and_update_structure(
-            'project_delete', *args, **kwargs
+            'regenerate_project_secret_key', project, secret_key
         )
         raise Return((result, error))
 
     @coroutine
-    def namespace_create(self, *args, **kwargs):
+    def project_delete(self, project):
         result, error = yield self.call_and_update_structure(
-            'namespace_create', *args, **kwargs
+            'project_delete', project
         )
         raise Return((result, error))
 
     @coroutine
-    def namespace_edit(self, *args, **kwargs):
+    def namespace_create(self, project, **kwargs):
+
+        options = {
+            'publish': kwargs['publish'],
+            'is_watching': kwargs['is_watching'],
+            'presence': kwargs['presence'],
+            'history': kwargs['history'],
+            'history_size': kwargs['history_size'],
+            'is_private': kwargs['is_private'],
+            'auth_address': kwargs['auth_address'],
+            'join_leave': kwargs['join_leave']
+        }
+
         result, error = yield self.call_and_update_structure(
-            'namespace_edit', *args, **kwargs
+            'namespace_create', project, kwargs['name'], options
         )
         raise Return((result, error))
 
     @coroutine
-    def namespace_delete(self, *args, **kwargs):
+    def namespace_edit(self, namespace, **kwargs):
+
+        options = {
+            'publish': kwargs['publish'],
+            'is_watching': kwargs['is_watching'],
+            'presence': kwargs['presence'],
+            'history': kwargs['history'],
+            'history_size': kwargs['history_size'],
+            'is_private': kwargs['is_private'],
+            'auth_address': kwargs['auth_address'],
+            'join_leave': kwargs['join_leave']
+        }
+
         result, error = yield self.call_and_update_structure(
-            'namespace_delete', *args, **kwargs
+            'namespace_edit', namespace, kwargs["name"], options
         )
         raise Return((result, error))
 
     @coroutine
-    def regenerate_project_secret_key(self, *args, **kwargs):
+    def namespace_delete(self, namespace):
         result, error = yield self.call_and_update_structure(
-            'regenerate_project_secret_key', *args, **kwargs
+            'namespace_delete', namespace
         )
         raise Return((result, error))
