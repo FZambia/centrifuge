@@ -62,11 +62,10 @@ class Application(tornado.web.Application):
         # initialize dict to keep administrator's connections
         self.admin_connections = {}
 
-        # initialize dict to keep client's connections
+        # dictionary to keep client's connections
         self.connections = {}
 
-        # dict to keep ping from nodes
-        # key - node address, value - timestamp of last ping
+        # dictionary to keep ping from nodes
         self.nodes = {}
 
         # application structure manager (projects, namespaces etc)
@@ -113,6 +112,11 @@ class Application(tornado.web.Application):
         self.structure = structure
 
         def run_periodic_structure_update():
+            # update structure periodically from database. This is necessary to be sure
+            # that application has actual and correct structure information. Structure
+            # updates also triggered in real-time by message passing through control channel,
+            # but in rare cases those update messages can be lost because of some kind of
+            # network errors
             structure.update()
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
                 structure.update, structure_settings.get('update_interval', 30)*1000
@@ -137,7 +141,7 @@ class Application(tornado.web.Application):
         config = self.settings['config']
         state_config = config.get("state", {})
         if not state_config:
-            # use base fake state
+            # use fake state
             logger.info("No State configured")
             self.state = State(self, fake=True)
         else:
@@ -157,8 +161,8 @@ class Application(tornado.web.Application):
         Fill custom callbacks with callable objects provided in config.
         """
         config = self.settings['config']
-        pre_publish_callbacks = config.get('pre_publish_callbacks', [])
 
+        pre_publish_callbacks = config.get('pre_publish_callbacks', [])
         for callable_path in pre_publish_callbacks:
             callback = utils.namedAny(callable_path)
             self.pre_publish_callbacks.append(callback)
