@@ -101,9 +101,6 @@ if with_redis:
     install_requires.append('toredis-fork==0.1.2')
 if with_mongodb:
     install_requires.append('motor==0.1.1')
-else:
-    # for bson module
-    install_requires.append('pymongo >= 2.6')
 if with_postgresql:
     install_requires.append('Momoko==1.0.0')
 
