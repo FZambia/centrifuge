@@ -307,7 +307,7 @@ class Client(object):
                     self.update_channel_user_info(response.body, namespace_name, channel)
                     raise Return((True, None))
 
-                elif response.code == 403:
+                else:
                     # access denied for this client
                     raise Return((False, None))
             attempts += 1
