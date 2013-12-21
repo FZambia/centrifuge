@@ -8,8 +8,6 @@ from tornado.gen import coroutine, Return
 import uuid
 import json
 
-from centrifuge.log import logger
-
 
 NAME = "SQLite"
 
@@ -22,7 +20,6 @@ def dict_factory(cursor, row):
 
 
 def on_error(error):
-    logger.error(str(error))
     raise Return((None, error))
 
 
@@ -46,7 +43,6 @@ def init_storage(structure, settings, ready_callback):
 
     structure.set_db(cursor)
     ready_callback()
-    logger.info("Database ready")
 
 
 def extract_obj_id(obj):

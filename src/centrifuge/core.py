@@ -113,6 +113,7 @@ class Application(tornado.web.Application):
         self.structure = structure
 
         def run_periodic_structure_update():
+            logger.debug("Database ready")
             structure.update()
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
                 structure.update, structure_settings.get('update_interval', 30)*1000

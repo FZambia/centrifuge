@@ -9,7 +9,6 @@ import psycopg2.extras
 import uuid
 from functools import partial
 import json
-from centrifuge.log import logger
 
 
 NAME = "PostgreSQL"
@@ -19,7 +18,6 @@ def on_error(error):
     """
     General error wrapper.
     """
-    logger.error(str(error))
     raise Return((None, error))
 
 
@@ -54,7 +52,6 @@ def on_connection_ready(structure, ready_callback):
     yield momoko.Op(db.execute, project, ())
     yield momoko.Op(db.execute, namespace, ())
     ready_callback()
-    logger.info("Database ready")
 
 
 def extract_obj_id(obj):
@@ -78,11 +75,11 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, options):
+def project_create(db, secret_key, options):
 
     to_insert = {
         '_id': uuid.uuid4().hex,
-        'secret_key': uuid.uuid4().hex,
+        'secret_key': secret_key,
         'options': json.dumps(options)
     }
 

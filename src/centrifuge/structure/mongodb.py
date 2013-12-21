@@ -7,8 +7,6 @@ import uuid
 import motor
 from tornado.gen import Task, coroutine, Return
 
-from centrifuge.log import logger
-
 
 NAME = "MongoDB"
 
@@ -20,13 +18,10 @@ def on_error(error):
 
 def ensure_indexes(db, drop=False):
     if drop:
-        logger.info('dropping indexes...')
         db.project.drop_indexes()
         db.namespace.drop_indexes()
 
     db.namespace.ensure_index([('name', 1), ('project_id', 1)], unique=True)
-
-    logger.info('Database ready')
 
 
 def init_storage(structure, settings, callback):
@@ -124,11 +119,11 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, options):
+def project_create(db, secret_key, options):
 
     to_insert = {
         '_id': uuid.uuid4().hex,
-        'secret_key': uuid.uuid4().hex,
+        'secret_key': secret_key,
         'options': options
     }
     result, error = yield insert(db.project, to_insert)

@@ -17,11 +17,12 @@ import uuid
 
 
 def flatten(dictionary):
-    options = dictionary['options']
-    if isinstance(options, six.string_types):
-        options = json.loads(options)
-    del dictionary['options']
-    dictionary.update(options)
+    options = dictionary.get('options')
+    if options:
+        if isinstance(options, six.string_types):
+            options = json.loads(options)
+        del dictionary['options']
+        dictionary.update(options)
     return dictionary
 
 
@@ -117,6 +118,7 @@ class Structure:
             raw_projects, error = yield self.storage.project_list(self.db)
             if error:
                 self.on_error(error)
+
             projects = [flatten(x) for x in raw_projects]
 
             raw_namespaces, error = yield self.storage.namespace_list(self.db)
@@ -278,7 +280,7 @@ class Structure:
         result, error = yield self.call_and_update_structure(
             'project_create', uuid.uuid4().hex, options
         )
-        raise Return((result, error))
+        raise Return((flatten(result), error))
 
     @coroutine
     def project_edit(self, project, **kwargs):
@@ -296,7 +298,7 @@ class Structure:
         result, error = yield self.call_and_update_structure(
             'project_edit', project, options
         )
-        raise Return((result, error))
+        raise Return((flatten(result), error))
 
     @coroutine
     def regenerate_project_secret_key(self, project):
@@ -330,7 +332,7 @@ class Structure:
         result, error = yield self.call_and_update_structure(
             'namespace_create', project, kwargs['name'], options
         )
-        raise Return((result, error))
+        raise Return((flatten(result), error))
 
     @coroutine
     def namespace_edit(self, namespace, **kwargs):
@@ -349,7 +351,7 @@ class Structure:
         result, error = yield self.call_and_update_structure(
             'namespace_edit', namespace, kwargs["name"], options
         )
-        raise Return((result, error))
+        raise Return((flatten(result), error))
 
     @coroutine
     def namespace_delete(self, namespace):
