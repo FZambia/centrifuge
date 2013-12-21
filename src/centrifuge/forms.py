@@ -24,17 +24,6 @@ DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 DEFAULT_HISTORY_SIZE = 20
 
 
-class DictToObject(object):
-    """
-    WTForm works with object attributes to extract field values.
-    Sometimes it is useful to construct objects from dictionaries,
-    this class does exactly this.
-    http://stackoverflow.com/questions/1305532/convert-python-dict-to-object
-    """
-    def __init__(self, entries):
-        self.__dict__.update(entries)
-
-
 class ProjectForm(Form):
 
     BOOLEAN_FIELDS = []

@@ -626,11 +626,9 @@ class Application(tornado.web.Application):
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
 
-        boolean_patch = {}
+        boolean_patch_data = {}
         if patch:
-            for field in ProjectForm.BOOLEAN_FIELDS:
-                if field in params and not bool(params[field]):
-                    boolean_patch[field] = False
+            boolean_patch_data = utils.get_boolean_patch_data(ProjectForm.BOOLEAN_FIELDS, params)
 
         namespace_choices = [(x['_id'], x['name']) for x in namespaces]
         namespace_choices.insert(0, ("", ""))
@@ -660,7 +658,7 @@ class Application(tornado.web.Application):
 
             updated_project.update(data)
             if patch:
-                updated_project.update(boolean_patch)
+                updated_project.update(boolean_patch_data)
             project, error = yield self.structure.project_edit(
                 project, **updated_project
             )
@@ -789,11 +787,9 @@ class Application(tornado.web.Application):
         if "name" not in params:
             params["name"] = namespace["name"]
 
-        boolean_patch = {}
+        boolean_patch_data = {}
         if patch:
-            for field in NamespaceForm.BOOLEAN_FIELDS:
-                if field in params and not bool(params[field]):
-                    boolean_patch[field] = False
+            boolean_patch_data = utils.get_boolean_patch_data(NamespaceForm.BOOLEAN_FIELDS, params)
 
         form = NamespaceForm(params)
 
@@ -819,7 +815,7 @@ class Application(tornado.web.Application):
                 data = form.data.copy()
             updated_namespace.update(data)
             if patch:
-                updated_namespace.update(boolean_patch)
+                updated_namespace.update(boolean_patch_data)
             namespace, error = yield self.structure.namespace_edit(
                 namespace, **updated_namespace
             )
