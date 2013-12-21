@@ -198,7 +198,9 @@ class ProjectSettingsHandler(BaseHandler):
         else:
             # edit project
             params = params_from_request(self.request)
-            result, error = yield self.application.process_project_edit(self.project, params, error_form=True)
+            result, error = yield self.application.process_project_edit(
+                self.project, params, error_form=True, patch=False
+            )
             if error and isinstance(error, six.string_types):
                 # server error
                 raise tornado.web.HTTPError(500)
@@ -359,7 +361,7 @@ class NamespaceFormHandler(BaseHandler):
                 template_name = 'namespace/edit.html'
                 params['_id'] = namespace_id
                 result, error = yield self.application.process_namespace_edit(
-                    self.project, params, error_form=True
+                    self.project, params, error_form=True, patch=False
                 )
             else:
                 template_name = 'namespace/create.html'

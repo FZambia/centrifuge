@@ -612,7 +612,7 @@ class Application(tornado.web.Application):
             raise Return((None, form.errors))
 
     @coroutine
-    def process_project_edit(self, project, params, error_form=False):
+    def process_project_edit(self, project, params, error_form=False, patch=True):
         """
         Edit project namespace.
         """
@@ -627,7 +627,7 @@ class Application(tornado.web.Application):
             raise Return((None, self.INTERNAL_SERVER_ERROR))
 
         namespace_choices = [(x['_id'], x['name']) for x in namespaces]
-        namespace_choices.insert(0, ('', ''))
+        namespace_choices.insert(0, ("", ""))
         form = ProjectForm(params, namespace_choices=namespace_choices)
 
         if form.validate():
@@ -646,7 +646,13 @@ class Application(tornado.web.Application):
                     raise Return((None, form.errors))
 
             updated_project = project.copy()
-            updated_project.update(form.data)
+
+            if patch:
+                data = utils.make_patch_data(form.data.copy(), params)
+            else:
+                data = form.data.copy()
+
+            updated_project.update(data)
             project, error = yield self.structure.project_edit(
                 project, **updated_project
             )
@@ -750,7 +756,7 @@ class Application(tornado.web.Application):
             raise Return((None, form.errors))
 
     @coroutine
-    def process_namespace_edit(self, project, params, error_form=False):
+    def process_namespace_edit(self, project, params, error_form=False, patch=True):
         """
         Edit project namespace.
         """
@@ -775,8 +781,9 @@ class Application(tornado.web.Application):
         if "name" not in params:
             params["name"] = namespace["name"]
 
+        print params
         form = NamespaceForm(params)
-
+        print form.data
         if form.validate():
 
             if "name" in params and params["name"] != namespace["name"]:
@@ -793,7 +800,11 @@ class Application(tornado.web.Application):
                     raise Return((None, form.errors))
 
             updated_namespace = namespace.copy()
-            updated_namespace.update(form.data)
+            if patch:
+                data = utils.make_patch_data(form, params)
+            else:
+                data = form.data.copy()
+            updated_namespace.update(data)
             namespace, error = yield self.structure.namespace_edit(
                 namespace, **updated_namespace
             )

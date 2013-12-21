@@ -246,3 +246,11 @@ except ImportError:
             name = _resolve_name(name[level:], package, level)
         __import__(name)
         return sys.modules[name]
+
+
+def make_patch_data(form, params):
+    data = form.data.copy()
+    keys_to_delete = list(set(data.keys()) - set(params.keys()))
+    for key in keys_to_delete:
+        del data[key]
+    return data
