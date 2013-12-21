@@ -626,6 +626,12 @@ class Application(tornado.web.Application):
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
 
+        boolean_patch = {}
+        if patch:
+            for field in ProjectForm.BOOLEAN_FIELDS:
+                if field in params and not bool(params[field]):
+                    boolean_patch[field] = False
+
         namespace_choices = [(x['_id'], x['name']) for x in namespaces]
         namespace_choices.insert(0, ("", ""))
         form = ProjectForm(params, namespace_choices=namespace_choices)
@@ -648,11 +654,13 @@ class Application(tornado.web.Application):
             updated_project = project.copy()
 
             if patch:
-                data = utils.make_patch_data(form.data.copy(), params)
+                data = utils.make_patch_data(form, params)
             else:
                 data = form.data.copy()
 
             updated_project.update(data)
+            if patch:
+                updated_project.update(boolean_patch)
             project, error = yield self.structure.project_edit(
                 project, **updated_project
             )
@@ -781,9 +789,14 @@ class Application(tornado.web.Application):
         if "name" not in params:
             params["name"] = namespace["name"]
 
-        print params
+        boolean_patch = {}
+        if patch:
+            for field in NamespaceForm.BOOLEAN_FIELDS:
+                if field in params and not bool(params[field]):
+                    boolean_patch[field] = False
+
         form = NamespaceForm(params)
-        print form.data
+
         if form.validate():
 
             if "name" in params and params["name"] != namespace["name"]:
@@ -805,6 +818,8 @@ class Application(tornado.web.Application):
             else:
                 data = form.data.copy()
             updated_namespace.update(data)
+            if patch:
+                updated_namespace.update(boolean_patch)
             namespace, error = yield self.structure.namespace_edit(
                 namespace, **updated_namespace
             )

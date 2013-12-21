@@ -37,6 +37,8 @@ class DictToObject(object):
 
 class ProjectForm(Form):
 
+    BOOLEAN_FIELDS = []
+
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
         namespace_choices = kwargs.get('namespace_choices')
@@ -50,7 +52,7 @@ class ProjectForm(Form):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique project name, must contain ascii symbols only"
+        description="project name, must contain ascii symbols only"
     )
 
     display_name = TextField(
@@ -107,6 +109,11 @@ class ProjectForm(Form):
 
 
 class NamespaceForm(Form):
+
+    BOOLEAN_FIELDS = [
+        'is_watching', 'is_private', 'publish',
+        'presence', 'history', 'join_leave'
+    ]
 
     name = TextField(
         label='namespace name',
