@@ -5,6 +5,7 @@
 
 from tornado.gen import coroutine, Return
 from toro import Lock
+from tornado.ioloop import PeriodicCallback
 
 from centrifuge.log import logger
 
@@ -65,12 +66,6 @@ def get_project_namespaces(namespaces):
     return to_return
 
 
-class InconsistentStructureError(Exception):
-
-    def __str__(self):
-        return 'inconsistent structure error'
-
-
 class Structure:
 
     def __init__(self, application):
@@ -79,6 +74,11 @@ class Structure:
         self.db = None
         self._consistent = False
         self._uid = None
+        self.recover_interval = 1000
+        self.structure_recover = PeriodicCallback(
+            self.update_structure_because_of_inconsistency,
+            self.recover_interval
+        )
         self._data = {
             'projects': [],
             'namespaces': [],
@@ -95,9 +95,19 @@ class Structure:
     def set_db(self, db):
         self.db = db
 
+    @coroutine
+    def update_structure_because_of_inconsistency(self):
+        # try to update structure at least after a second
+        logger.error("structure inconsistent, will try to update after {0} milliseconds".format(
+            self.recover_interval
+        ))
+        self.structure_recover.stop()
+        yield self.update()
+
     def on_error(self, error):
-        logger.error(str(error))
+        logger.error(error)
         self._consistent = False
+        self.structure_recover.start()
         raise Return((None, error))
 
     def set_consistency(self, value):
@@ -143,6 +153,7 @@ class Structure:
             }
 
             self._consistent = True
+            self.structure_recover.stop()
 
             logger.debug('Structure updated')
 
@@ -158,29 +169,21 @@ class Structure:
     @coroutine
     def project_list(self):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((self._data['projects'], None))
 
     @coroutine
     def namespace_list(self):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((self._data['namespaces'], None))
 
     @coroutine
     def get_namespaces_for_projects(self):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((self._data['project_namespaces'], None))
 
     @coroutine
     def get_project_namespaces(self, project):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((
                 self._data['project_namespaces'].get(project['_id'], []),
                 None
@@ -189,8 +192,6 @@ class Structure:
     @coroutine
     def get_project_by_id(self, project_id):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((
                 self._data['projects_by_id'].get(project_id),
                 None
@@ -199,8 +200,6 @@ class Structure:
     @coroutine
     def get_project_by_name(self, project_name):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((
                 self._data['projects_by_name'].get(project_name),
                 None
@@ -209,8 +208,6 @@ class Structure:
     @coroutine
     def get_namespace_by_id(self, namespace_id):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((
                 self._data['namespaces_by_id'].get(namespace_id),
                 None
@@ -219,8 +216,6 @@ class Structure:
     @coroutine
     def get_namespaces_by_name(self):
         with (yield lock.acquire()):
-            if not self.is_consistent():
-                raise Return((None, InconsistentStructureError()))
             raise Return((
                 self._data['namespaces_by_name'],
                 None
@@ -238,9 +233,6 @@ class Structure:
 
         else:
             with (yield lock.acquire()):
-                if not self.is_consistent():
-                    raise Return((None, InconsistentStructureError()))
-
                 raise Return((
                     self._data['namespaces_by_name'].get(
                         project['_id'], {}
