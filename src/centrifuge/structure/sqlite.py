@@ -45,6 +45,20 @@ def init_storage(structure, settings, ready_callback):
     ready_callback()
 
 
+@coroutine
+def clear_structure(cursor):
+    project = "DELETE FROM projects"
+    namespace = "DELETE FROM namespaces"
+    try:
+        cursor.execute(project, ())
+        cursor.connection.commit()
+        cursor.execute(namespace, ())
+        cursor.connection.commit()
+    except Exception as err:
+        raise Return((None, err))
+    raise Return((True, None))
+
+
 def extract_obj_id(obj):
     return obj['_id']
 
@@ -63,13 +77,19 @@ def project_list(cursor):
 
 
 @coroutine
-def project_create(cursor, secret_key, options):
+def project_create(cursor, secret_key, options, project_id=None):
 
     to_insert = (
-        uuid.uuid4().hex,
+        project_id or uuid.uuid4().hex,
         secret_key,
         json.dumps(options)
     )
+
+    to_return = {
+        '_id': to_insert[0],
+        'secret_key': to_insert[1],
+        'options': to_insert[2]
+    }
 
     query = "INSERT INTO projects (_id, secret_key, options) VALUES (?, ?, ?)"
 
@@ -79,7 +99,7 @@ def project_create(cursor, secret_key, options):
         on_error(e)
     else:
         cursor.connection.commit()
-        raise Return((to_insert, None))
+        raise Return((to_return, None))
 
 
 @coroutine
@@ -157,10 +177,10 @@ def namespace_list(cursor):
 
 
 @coroutine
-def namespace_create(cursor, project, name, options):
+def namespace_create(cursor, project, name, options, namespace_id=None):
 
     to_return = {
-        '_id': uuid.uuid4().hex,
+        '_id': namespace_id or uuid.uuid4().hex,
         'project_id': extract_obj_id(project),
         'name': name,
         'options': options

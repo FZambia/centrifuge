@@ -436,3 +436,31 @@ class StructureDumpHandler(BaseHandler):
         }
         self.set_header("Content-Type", "application/json")
         self.finish(json_encode(data))
+
+
+class StructureLoadHandler(BaseHandler):
+
+    def get(self):
+        self.render("loads.html")
+
+    @coroutine
+    def post(self):
+        json_data = self.get_argument("data")
+        data = json_decode(json_data)
+        res, err = yield self.application.structure.clear_structure()
+        if err:
+            raise tornado.web.HTTPError(500, log_message=str(err))
+
+        for project in data.get("projects", []):
+            res, err = yield self.application.structure.project_create(**project)
+            if err:
+                raise tornado.web.HTTPError(500, log_message=str(err))
+            for namespace in data.get("namespaces", []):
+                if namespace["project_id"] != project["_id"]:
+                    continue
+                res, err = yield self.application.structure.namespace_create(project, **namespace)
+                print res
+                if err:
+                    raise tornado.web.HTTPError(500, log_message=str(err))
+
+        self.redirect(self.reverse_url("main"))

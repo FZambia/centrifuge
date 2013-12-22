@@ -37,6 +37,18 @@ def init_storage(structure, settings, ready_callback):
 
 
 @coroutine
+def clear_structure(db):
+    project = "DELETE FROM projects"
+    namespace = "DELETE FROM namespaces"
+    try:
+        yield momoko.Op(db.execute, project, ())
+        yield momoko.Op(db.execute, namespace, ())
+    except Exception as err:
+        raise Return((None, err))
+    raise Return((True, None))
+
+
+@coroutine
 def on_connection_ready(structure, ready_callback):
 
     db = structure.db
@@ -75,10 +87,10 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, secret_key, options):
+def project_create(db, secret_key, options, project_id=None):
 
     to_insert = {
-        '_id': uuid.uuid4().hex,
+        '_id': project_id or uuid.uuid4().hex,
         'secret_key': secret_key,
         'options': json.dumps(options)
     }
@@ -181,10 +193,10 @@ def namespace_list(db):
 
 
 @coroutine
-def namespace_create(db, project, name, options):
+def namespace_create(db, project, name, options, namespace_id=None):
 
     to_insert = {
-        '_id': uuid.uuid4().hex,
+        '_id': namespace_id or uuid.uuid4().hex,
         'project_id': extract_obj_id(project),
         'name': name,
         'options': json.dumps(options)

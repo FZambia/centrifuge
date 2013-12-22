@@ -149,6 +149,13 @@ class Structure:
             raise Return((True, None))
 
     @coroutine
+    def clear_structure(self):
+        result, error = yield self.call_and_update_structure(
+            'clear_structure'
+        )
+        raise Return((result, error))
+
+    @coroutine
     def project_list(self):
         with (yield lock.acquire()):
             if not self.is_consistent():
@@ -268,6 +275,10 @@ class Structure:
     @coroutine
     def project_create(self, **kwargs):
 
+        default_namespace = None
+        if "default_namespace" in kwargs:
+            default_namespace = kwargs["default_namespace"]
+
         options = {
             "name": kwargs['name'],
             "display_name": kwargs['display_name'],
@@ -275,10 +286,15 @@ class Structure:
             "max_auth_attempts": kwargs['max_auth_attempts'],
             "back_off_interval": kwargs['back_off_interval'],
             "back_off_max_timeout": kwargs['back_off_max_timeout'],
-            "default_namespace": None
+            "default_namespace": default_namespace
         }
+
+        secret_key = uuid.uuid4().hex
+        if "secret_key" in kwargs:
+            secret_key = kwargs["secret_key"]
+
         result, error = yield self.call_and_update_structure(
-            'project_create', uuid.uuid4().hex, options
+            'project_create', secret_key, options, project_id=kwargs.get('_id')
         )
         raise Return((flatten(result), error))
 
@@ -330,7 +346,7 @@ class Structure:
         }
 
         result, error = yield self.call_and_update_structure(
-            'namespace_create', project, kwargs['name'], options
+            'namespace_create', project, kwargs['name'], options, namespace_id=kwargs.get('_id')
         )
         raise Return((flatten(result), error))
 

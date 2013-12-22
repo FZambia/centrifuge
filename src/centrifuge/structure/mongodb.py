@@ -12,7 +12,6 @@ NAME = "MongoDB"
 
 
 def on_error(error):
-    logger.error(str(error))
     raise Return((None, error))
 
 
@@ -35,10 +34,18 @@ def init_storage(structure, settings, callback):
     ).open_sync()[settings.get("name", "centrifuge")]
 
     structure.set_db(db)
-
     ensure_indexes(db)
-
     callback()
+
+
+@coroutine
+def clear_structure(db):
+    try:
+        yield Task(db.drop_collection, "project")
+        yield Task(db.drop_collection, "namespace")
+    except Exception as err:
+        raise Return((None, err))
+    raise Return((True, None))
 
 
 def extract_obj_id(obj):
@@ -119,10 +126,10 @@ def project_list(db):
 
 
 @coroutine
-def project_create(db, secret_key, options):
+def project_create(db, secret_key, options, project_id=None):
 
     to_insert = {
-        '_id': uuid.uuid4().hex,
+        '_id': project_id or uuid.uuid4().hex,
         'secret_key': secret_key,
         'options': options
     }
@@ -199,10 +206,10 @@ def namespace_list(db):
 
 
 @coroutine
-def namespace_create(db, project, name, options):
+def namespace_create(db, project, name, options, namespace_id=None):
 
     haystack = {
-        '_id': uuid.uuid4().hex,
+        '_id': namespace_id or uuid.uuid4().hex,
         'project_id': extract_obj_id(project),
         'name': name,
         'options': options
