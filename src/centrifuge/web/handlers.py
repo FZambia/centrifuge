@@ -420,6 +420,7 @@ class Http404Handler(BaseHandler):
 
 class StructureDumpHandler(BaseHandler):
 
+    @tornado.web.authenticated
     @coroutine
     def get(self):
         projects, error = yield self.application.structure.project_list()

@@ -1,3 +1,8 @@
+v0.3.8
+======
+
+* auth now required for structure dump handler
+
 v0.3.7
 ======
 
