@@ -26,12 +26,12 @@ def on_error(error):
     raise Return((None, error))
 
 
-class SQLiteStorage(BaseStorage):
+class Storage(BaseStorage):
 
     NAME = "SQLite"
 
     def __init__(self, *args, **kwargs):
-        super(SQLiteStorage, self).__init__(*args, **kwargs)
+        super(Storage, self).__init__(*args, **kwargs)
         self._cursor = None
 
     def create_connection_cursor(self):

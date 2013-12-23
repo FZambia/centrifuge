@@ -84,12 +84,12 @@ def remove(collection, haystack):
     raise Return((res, None))
 
 
-class MongoDBStorage(BaseStorage):
+class Storage(BaseStorage):
 
     NAME = "MongoDB"
 
     def __init__(self, *args, **kwargs):
-        super(MongoDBStorage, self).__init__(*args, **kwargs)
+        super(Storage, self).__init__(*args, **kwargs)
         self._conn = None
 
     def open_connection(self):

@@ -18,12 +18,12 @@ def extract_obj_id(obj):
     return obj['_id']
 
 
-class PostgreSQLStorage(BaseStorage):
+class Storage(BaseStorage):
 
     NAME = "PostgreSQL"
 
     def __init__(self, *args, **kwargs):
-        super(PostgreSQLStorage, self).__init__(*args, **kwargs)
+        super(Storage, self).__init__(*args, **kwargs)
         self._conn = None
 
     def handle_error(self, error):

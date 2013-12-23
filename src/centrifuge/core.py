@@ -104,7 +104,7 @@ class Application(tornado.web.Application):
 
         # detect and apply database storage module
         storage_backend = structure_settings.get(
-            'storage', 'centrifuge.structure.sqlite.SQLiteStorage'
+            'storage', 'centrifuge.structure.sqlite.Storage'
         )
         storage_backend_class = utils.namedAny(storage_backend)
         logger.info("Storage module: {0}".format(storage_backend))

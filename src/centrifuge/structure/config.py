@@ -7,12 +7,12 @@ from tornado.gen import coroutine, Return
 from centrifuge.structure import BaseStorage
 
 
-class ConfigStorage(BaseStorage):
+class Storage(BaseStorage):
 
     NAME = "Config"
 
     def __init__(self, *args, **kwargs):
-        super(ConfigStorage, self).__init__(*args, **kwargs)
+        super(Storage, self).__init__(*args, **kwargs)
         self._cursor = None
 
     def connect(self, callback=None):
