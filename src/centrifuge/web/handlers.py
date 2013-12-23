@@ -31,7 +31,11 @@ class AuthHandler(BaseHandler):
 
     def authorize(self):
         self.set_secure_cookie("user", "authorized")
-        self.redirect(self.reverse_url("main"))
+        next_url = self.get_argument("next", None)
+        if next_url:
+            self.redirect(next_url)
+        else:
+            self.redirect(self.reverse_url("main"))
 
     def get(self):
         if not self.opts.get("password"):
@@ -422,6 +426,7 @@ class Http404Handler(BaseHandler):
 
 class StructureDumpHandler(BaseHandler):
 
+    @tornado.web.authenticated
     @coroutine
     def get(self):
         projects, error = yield self.application.structure.project_list()
@@ -440,9 +445,11 @@ class StructureDumpHandler(BaseHandler):
 
 class StructureLoadHandler(BaseHandler):
 
+    @tornado.web.authenticated
     def get(self):
         self.render("loads.html")
 
+    @tornado.web.authenticated
     @coroutine
     def post(self):
         json_data = self.get_argument("data")
