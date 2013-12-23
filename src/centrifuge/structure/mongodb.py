@@ -7,45 +7,14 @@ import uuid
 import motor
 from tornado.gen import Task, coroutine, Return
 
+from centrifuge.structure import BaseStorage
+
 
 NAME = "MongoDB"
 
 
 def on_error(error):
     raise Return((None, error))
-
-
-def ensure_indexes(db, drop=False):
-    if drop:
-        db.project.drop_indexes()
-        db.namespace.drop_indexes()
-
-    db.namespace.ensure_index([('name', 1), ('project_id', 1)], unique=True)
-
-
-def init_storage(structure, settings, callback):
-    """
-    Create MongoDB connection, ensure indexes
-    """
-    db = motor.MotorClient(
-        host=settings.get("host", "localhost"),
-        port=settings.get("port", 27017),
-        max_pool_size=settings.get("pool_size", 10)
-    ).open_sync()[settings.get("name", "centrifuge")]
-
-    structure.set_db(db)
-    ensure_indexes(db)
-    callback()
-
-
-@coroutine
-def clear_structure(db):
-    try:
-        yield Task(db.drop_collection, "project")
-        yield Task(db.drop_collection, "namespace")
-    except Exception as err:
-        raise Return((None, err))
-    raise Return((True, None))
 
 
 def extract_obj_id(obj):
@@ -115,138 +84,164 @@ def remove(collection, haystack):
     raise Return((res, None))
 
 
-@coroutine
-def project_list(db):
+class MongoDBStorage(BaseStorage):
 
-    projects, error = yield find(db.project, {})
-    if error:
-        on_error(error)
+    NAME = "MongoDB"
 
-    raise Return((projects, None))
+    def __init__(self, *args, **kwargs):
+        super(MongoDBStorage, self).__init__(*args, **kwargs)
+        self._conn = None
 
+    def open_connection(self):
+        self._conn = motor.MotorClient(
+            host=self.settings.get("host", "localhost"),
+            port=self.settings.get("port", 27017)
+        ).open_sync()[self.settings.get("name", "centrifuge")]
 
-@coroutine
-def project_create(db, secret_key, options, project_id=None):
+    def ensure_indexes(self, drop=False):
+        if drop:
+            self._conn.project.drop_indexes()
+            self._conn.namespace.drop_indexes()
+        self._conn.namespace.ensure_index([('name', 1), ('project_id', 1)], unique=True)
 
-    to_insert = {
-        '_id': project_id or uuid.uuid4().hex,
-        'secret_key': secret_key,
-        'options': options
-    }
-    result, error = yield insert(db.project, to_insert)
-    if error:
-        on_error(error)
-        return
-    raise Return((to_insert, None))
+    def connect(self, callback=None):
+        self.open_connection()
+        self.ensure_indexes()
+        callback()
 
+    @coroutine
+    def clear_structure(self):
+        try:
+            yield Task(self._conn.drop_collection, "project")
+            yield Task(self._conn.drop_collection, "namespace")
+        except Exception as err:
+            raise Return((None, err))
+        raise Return((True, None))
 
-@coroutine
-def project_edit(db, project, options):
+    @coroutine
+    def project_list(self):
 
-    to_update = {
-        'options': options
-    }
-    _res, error = yield update(
-        db.project,
-        {'_id': extract_obj_id(project)},
-        to_update
-    )
-    if error:
-        on_error(error)
+        projects, error = yield find(self._conn.project, {})
+        if error:
+            on_error(error)
 
-    raise Return((True, None))
+        raise Return((projects, None))
 
+    @coroutine
+    def project_create(self, secret_key, options, project_id=None):
 
-@coroutine
-def regenerate_project_secret_key(db, project, secret_key):
+        to_insert = {
+            '_id': project_id or uuid.uuid4().hex,
+            'secret_key': secret_key,
+            'options': options
+        }
+        result, error = yield insert(self._conn.project, to_insert)
+        if error:
+            on_error(error)
+            return
+        raise Return((to_insert, None))
 
-    haystack = {
-        '_id': extract_obj_id(project)
-    }
-    update_data = {
-        'secret_key': secret_key
-    }
-    result, error = yield update(db.project, haystack, update_data)
-    if error:
-        on_error(error)
+    @coroutine
+    def project_edit(self, project, options):
 
-    raise Return((update_data, None))
+        to_update = {
+            'options': options
+        }
+        _res, error = yield update(
+            self._conn.project,
+            {'_id': extract_obj_id(project)},
+            to_update
+        )
+        if error:
+            on_error(error)
 
+        raise Return((True, None))
 
-@coroutine
-def project_delete(db, project):
-    """
-    Delete project. Also delete all related namespaces.
-    """
-    haystack = {
-        '_id': extract_obj_id(project)
-    }
-    _res, error = yield remove(db.project, haystack)
-    if error:
-        on_error(error)
+    @coroutine
+    def regenerate_project_secret_key(self, project, secret_key):
 
-    haystack = {
-        'project_id': extract_obj_id(project)
-    }
-    _res, error = yield remove(db.namespace, haystack)
-    if error:
-        on_error(error)
+        haystack = {
+            '_id': extract_obj_id(project)
+        }
+        update_data = {
+            'secret_key': secret_key
+        }
+        result, error = yield update(self._conn.project, haystack, update_data)
+        if error:
+            on_error(error)
 
-    raise Return((True, None))
+        raise Return((update_data, None))
 
+    @coroutine
+    def project_delete(self, project):
+        """
+        Delete project. Also delete all related namespaces.
+        """
+        haystack = {
+            '_id': extract_obj_id(project)
+        }
+        _res, error = yield remove(self._conn.project, haystack)
+        if error:
+            on_error(error)
 
-@coroutine
-def namespace_list(db):
+        haystack = {
+            'project_id': extract_obj_id(project)
+        }
+        _res, error = yield remove(self._conn.namespace, haystack)
+        if error:
+            on_error(error)
 
-    namespaces, error = yield find(db.namespace, {})
-    if error:
-        on_error(error)
+        raise Return((True, None))
 
-    raise Return((namespaces, None))
+    @coroutine
+    def namespace_list(self):
 
+        namespaces, error = yield find(self._conn.namespace, {})
+        if error:
+            on_error(error)
 
-@coroutine
-def namespace_create(db, project, name, options, namespace_id=None):
+        raise Return((namespaces, None))
 
-    haystack = {
-        '_id': namespace_id or uuid.uuid4().hex,
-        'project_id': extract_obj_id(project),
-        'name': name,
-        'options': options
-    }
-    namespace, error = yield insert(db.namespace, haystack)
-    if error:
-        on_error(error)
+    @coroutine
+    def namespace_create(self, project, name, options, namespace_id=None):
 
-    raise Return((namespace, None))
+        haystack = {
+            '_id': namespace_id or uuid.uuid4().hex,
+            'project_id': extract_obj_id(project),
+            'name': name,
+            'options': options
+        }
+        namespace, error = yield insert(self._conn.namespace, haystack)
+        if error:
+            on_error(error)
 
+        raise Return((haystack, None))
 
-@coroutine
-def namespace_edit(db, namespace, name, options):
+    @coroutine
+    def namespace_edit(self, namespace, name, options):
 
-    to_update = {
-        'name': name,
-        'options': options
-    }
-    _res, error = yield update(
-        db.namespace,
-        {'_id': extract_obj_id(namespace)},
-        to_update
-    )
-    if error:
-        on_error(error)
+        to_update = {
+            'name': name,
+            'options': options
+        }
+        _res, error = yield update(
+            self._conn.namespace,
+            {'_id': extract_obj_id(namespace)},
+            to_update
+        )
+        if error:
+            on_error(error)
 
-    raise Return((namespace, None))
+        raise Return((namespace, None))
 
+    @coroutine
+    def namespace_delete(self, namespace):
 
-@coroutine
-def namespace_delete(db, namespace):
+        haystack = {
+            '_id': extract_obj_id(namespace)
+        }
+        _res, error = yield remove(self._conn.namespace, haystack)
+        if error:
+            on_error(error)
 
-    haystack = {
-        '_id': extract_obj_id(namespace)
-    }
-    _res, error = yield remove(db.namespace, haystack)
-    if error:
-        on_error(error)
-
-    raise Return((True, None))
+        raise Return((True, None))

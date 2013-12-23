@@ -373,7 +373,7 @@ class BaseStorage(object):
         self.structure = structure
         self.settings = storage_settings
 
-    def create_connection(self, callback=None):
+    def connect(self, callback=None):
         raise NotImplementedError()
 
     def clear_structure(self):

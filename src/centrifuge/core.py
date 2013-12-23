@@ -114,7 +114,7 @@ class Application(tornado.web.Application):
         self.structure.set_storage(storage)
 
         def run_periodic_structure_update():
-            logger.debug("Structure storage ready")
+            logger.info("Structure storage connected")
             self.structure.update()
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
                 self.structure.update, structure_settings.get('update_interval', 30)*1000
@@ -123,7 +123,7 @@ class Application(tornado.web.Application):
 
         tornado.ioloop.IOLoop.instance().add_callback(
             partial(
-                storage.create_connection,
+                storage.connect,
                 run_periodic_structure_update
             )
         )

@@ -5,9 +5,9 @@
 
 from tornado.gen import coroutine, Return
 import momoko
+import psycopg2
 import psycopg2.extras
 import uuid
-from functools import partial
 import json
 
 from centrifuge.structure import BaseStorage
@@ -18,19 +18,20 @@ def extract_obj_id(obj):
     return obj['_id']
 
 
-def on_error(error):
-    raise Return((None, error))
-
-
 class PostgreSQLStorage(BaseStorage):
 
     NAME = "PostgreSQL"
 
     def __init__(self, *args, **kwargs):
         super(PostgreSQLStorage, self).__init__(*args, **kwargs)
-        self._pool = None
+        self._conn = None
 
-    def create_connection_pool(self, callback=None):
+    def handle_error(self, error):
+        if isinstance(error, (psycopg2.DatabaseError, psycopg2.InterfaceError)):
+            self.open_connection()
+        raise Return((None, error))
+
+    def open_connection(self, callback=None):
         dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
             self.settings.get('name', 'centrifuge'),
             self.settings.get('user', 'postgres'),
@@ -39,16 +40,19 @@ class PostgreSQLStorage(BaseStorage):
             self.settings.get('port', 5432)
         )
 
-        self._pool = momoko.Pool(
-            dsn=dsn, size=self.settings.get('pool_size', 10), callback=callback
+        self._conn = momoko.Connection(
+            dsn=dsn, callback=callback
         )
 
-    def create_connection(self, callback=None):
-        self.create_connection_pool(callback=partial(self.on_connection_ready, callback))
+    def connect(self, callback=None):
+
+        def on_connection_opened(conn, _):
+            callback()
+
+        self.open_connection(callback=on_connection_opened)
 
     @coroutine
     def on_connection_ready(self, ready_callback):
-
         project = 'CREATE TABLE IF NOT EXISTS projects (id SERIAL, _id varchar(32) UNIQUE, ' \
                   'secret_key varchar(32), options text)'
 
@@ -58,8 +62,8 @@ class PostgreSQLStorage(BaseStorage):
                     'constraint namespaces_unique unique(project_id, name))'
 
         try:
-            yield momoko.Op(self._pool.execute, project, ())
-            yield momoko.Op(self._pool.execute, namespace, ())
+            yield momoko.Op(self._conn.execute, project, ())
+            yield momoko.Op(self._conn.execute, namespace, ())
         except Exception as err:
             logger.exception(err)
         ready_callback()
@@ -69,8 +73,8 @@ class PostgreSQLStorage(BaseStorage):
         project = "DELETE FROM projects"
         namespace = "DELETE FROM namespaces"
         try:
-            yield momoko.Op(self._pool.execute, project, ())
-            yield momoko.Op(self._pool.execute, namespace, ())
+            yield momoko.Op(self._conn.execute, project, ())
+            yield momoko.Op(self._conn.execute, namespace, ())
         except Exception as err:
             raise Return((None, err))
         raise Return((True, None))
@@ -81,11 +85,11 @@ class PostgreSQLStorage(BaseStorage):
         query = "SELECT * FROM projects"
         try:
             cursor = yield momoko.Op(
-                self._pool.execute, query, {},
+                self._conn.execute, query, {},
                 cursor_factory=psycopg2.extras.RealDictCursor
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             projects = cursor.fetchall()
             raise Return((projects, None))
@@ -103,10 +107,10 @@ class PostgreSQLStorage(BaseStorage):
 
         try:
             yield momoko.Op(
-                self._pool.execute, query, to_insert
+                self._conn.execute, query, to_insert
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             raise Return((to_insert, None))
 
@@ -122,10 +126,10 @@ class PostgreSQLStorage(BaseStorage):
 
         try:
             yield momoko.Op(
-                self._pool.execute, query, to_update
+                self._conn.execute, query, to_update
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             raise Return((to_update, None))
 
@@ -141,11 +145,11 @@ class PostgreSQLStorage(BaseStorage):
 
         try:
             yield momoko.Op(
-                self._pool.execute, query, haystack,
+                self._conn.execute, query, haystack,
                 cursor_factory=psycopg2.extras.RealDictCursor
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             raise Return((secret_key, None))
 
@@ -161,18 +165,18 @@ class PostgreSQLStorage(BaseStorage):
         query = "DELETE FROM projects WHERE _id=%(project_id)s"
         try:
             yield momoko.Op(
-                self._pool.execute, query, haystack
+                self._conn.execute, query, haystack
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
 
         query = "DELETE FROM namespaces WHERE project_id=%(project_id)s"
         try:
             yield momoko.Op(
-                self._pool.execute, query, haystack
+                self._conn.execute, query, haystack
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
 
         raise Return((True, None))
 
@@ -182,11 +186,11 @@ class PostgreSQLStorage(BaseStorage):
         query = "SELECT * FROM namespaces"
         try:
             cursor = yield momoko.Op(
-                self._pool.execute, query, {},
+                self._conn.execute, query, {},
                 cursor_factory=psycopg2.extras.RealDictCursor
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             namespaces = cursor.fetchall()
             raise Return((namespaces, None))
@@ -206,10 +210,10 @@ class PostgreSQLStorage(BaseStorage):
 
         try:
             yield momoko.Op(
-                self._pool.execute, query, to_insert
+                self._conn.execute, query, to_insert
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             raise Return((to_insert, None))
 
@@ -226,10 +230,10 @@ class PostgreSQLStorage(BaseStorage):
 
         try:
             yield momoko.Op(
-                self._pool.execute, query, to_update
+                self._conn.execute, query, to_update
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             raise Return((to_update, None))
 
@@ -243,9 +247,9 @@ class PostgreSQLStorage(BaseStorage):
 
         try:
             yield momoko.Op(
-                self._pool.execute, query, haystack
+                self._conn.execute, query, haystack
             )
         except Exception as e:
-            on_error(e)
+            self.handle_error(e)
         else:
             raise Return((True, None))

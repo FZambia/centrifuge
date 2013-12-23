@@ -40,7 +40,7 @@ class SQLiteStorage(BaseStorage):
         cursor = conn.cursor()
         self._cursor = cursor
 
-    def create_connection(self, callback=None):
+    def connect(self, callback=None):
 
         self.create_connection_cursor()
 
