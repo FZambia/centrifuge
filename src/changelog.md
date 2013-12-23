@@ -1,7 +1,7 @@
 v0.3.8
 ======
 
-Security fix! Please, upgrade to this version or disable access to '/dumps' location.
+Security fix! Please, upgrade to this version or disable access to `/dumps` location.
 
 * auth now required for structure dump handler
 
