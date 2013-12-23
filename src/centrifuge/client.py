@@ -294,10 +294,10 @@ class Client(object):
 
             try:
                 response = yield http_client.fetch(request)
-            except Exception as e:
+            except Exception as err:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
-                logger.debug(e)
+                logger.debug(err)
             else:
                 # reset back-off attempts
                 self.application.back_off[project_id] = 0
@@ -307,7 +307,7 @@ class Client(object):
                     self.update_channel_user_info(response.body, namespace_name, channel)
                     raise Return((True, None))
 
-                elif response.code == 403:
+                else:
                     # access denied for this client
                     raise Return((False, None))
             attempts += 1
@@ -494,7 +494,7 @@ class Client(object):
 
         self.check_channel_permission(namespace_name, channel)
 
-        if not namespace['publish']:
+        if not namespace.get('publish', False):
             raise Return((None, 'publishing into this namespace not available'))
 
         user_info = self.get_user_info(namespace_name, channel)
@@ -524,7 +524,7 @@ class Client(object):
 
         self.check_channel_permission(namespace_name, channel)
 
-        if not namespace['presence']:
+        if not namespace.get('presence', False):
             raise Return((None, 'presence for this namespace not available'))
 
         result, error = yield self.application.process_presence(
@@ -551,7 +551,7 @@ class Client(object):
 
         self.check_channel_permission(namespace_name, channel)
 
-        if not namespace['history']:
+        if not namespace.get('history', False):
             raise Return((None, 'history for this namespace not available'))
 
         result, error = yield self.application.process_history(
@@ -592,11 +592,7 @@ class Client(object):
             raise Return((None, self.application.NAMESPACE_NOT_FOUND))
         raise Return((namespace, None))
 
-    def send_join_message(self, namespace_name, channel):
-        """
-        Send join message to all channel subscribers when client
-        subscribed on channel.
-        """
+    def send_join_leave_message(self, namespace_name, channel, message_method):
         subscription_key = self.application.pubsub.get_subscription_key(
             self.project_id, namespace_name, channel
         )
@@ -607,23 +603,19 @@ class Client(object):
             "data": user_info
         }
         self.application.pubsub.publish(
-            subscription_key, message, method='join'
+            subscription_key, message, method=message_method
         )
+
+    def send_join_message(self, namespace_name, channel):
+        """
+        Send join message to all channel subscribers when client
+        subscribed on channel.
+        """
+        self.send_join_leave_message(namespace_name, channel, 'join')
 
     def send_leave_message(self, namespace_name, channel):
         """
         Send leave message to all channel subscribers when client
         unsubscribed from channel.
         """
-        subscription_key = self.application.pubsub.get_subscription_key(
-            self.project_id, namespace_name, channel
-        )
-        user_info = self.get_user_info(namespace_name, channel)
-        message = {
-            "namespace": namespace_name,
-            "channel": channel,
-            "data": user_info
-        }
-        self.application.pubsub.publish(
-            subscription_key, message, method='leave'
-        )
+        self.send_join_leave_message(namespace_name, channel, 'leave')
