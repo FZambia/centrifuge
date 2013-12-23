@@ -103,33 +103,30 @@ class Application(tornado.web.Application):
         structure_settings = custom_settings.get('structure', {})
 
         # detect and apply database storage module
-        storage_module = structure_settings.get(
-            'storage', 'centrifuge.structure.sqlite'
+        storage_backend = structure_settings.get(
+            'storage', 'centrifuge.structure.sqlite.SQLiteStorage'
         )
-        storage = utils.import_module(storage_module)
+        storage_backend_class = utils.namedAny(storage_backend)
+        logger.info("Storage module: {0}".format(storage_backend))
 
-        structure = Structure(self)
-        structure.set_storage(storage)
-        self.structure = structure
+        self.structure = Structure(self)
+        storage = storage_backend_class(self.structure, structure_settings.get('settings', {}))
+        self.structure.set_storage(storage)
 
         def run_periodic_structure_update():
-            logger.debug("Database ready")
-            structure.update()
+            logger.debug("Structure storage ready")
+            self.structure.update()
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
-                structure.update, structure_settings.get('update_interval', 30)*1000
+                self.structure.update, structure_settings.get('update_interval', 30)*1000
             )
             periodic_structure_update.start()
 
         tornado.ioloop.IOLoop.instance().add_callback(
             partial(
-                storage.init_storage,
-                structure,
-                structure_settings.get('settings', {}),
+                storage.create_connection,
                 run_periodic_structure_update
             )
         )
-
-        logger.info("Storage module: {0}".format(storage_module))
 
     def init_state(self):
         """

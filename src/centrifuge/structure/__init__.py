@@ -71,7 +71,6 @@ class Structure:
     def __init__(self, application):
         self.application = application
         self.storage = None
-        self.db = None
         self._consistent = False
         self._uid = None
         self.recover_interval = 1000
@@ -91,9 +90,6 @@ class Structure:
 
     def set_storage(self, storage):
         self.storage = storage
-
-    def set_db(self, db):
-        self.db = db
 
     @coroutine
     def update_structure_because_of_inconsistency(self):
@@ -121,17 +117,17 @@ class Structure:
         """
         Call this method periodically to keep structure consistency
         """
-        if not self.storage or not self.db:
+        if not self.storage:
             raise Return((True, None))
 
         with (yield lock.acquire()):
-            raw_projects, error = yield self.storage.project_list(self.db)
+            raw_projects, error = yield self.storage.project_list()
             if error:
                 self.on_error(error)
 
             projects = [flatten(x) for x in raw_projects]
 
-            raw_namespaces, error = yield self.storage.namespace_list(self.db)
+            raw_namespaces, error = yield self.storage.namespace_list()
             if error:
                 self.on_error(error)
             namespaces = [flatten(x) for x in raw_namespaces]
@@ -246,7 +242,7 @@ class Structure:
         # call storage function
         func = getattr(self.storage, func_name, None)
         assert func, 'function {0} not found in storage' % func_name
-        result, error = yield func(self.db, *args, **kwargs)
+        result, error = yield func(*args, **kwargs)
         if error:
             self.on_error(error)
 
@@ -367,3 +363,47 @@ class Structure:
             'namespace_delete', namespace
         )
         raise Return((result, error))
+
+
+class BaseStorage(object):
+
+    NAME = "Abstract base storage"
+
+    def __init__(self, structure, storage_settings):
+        self.structure = structure
+        self.settings = storage_settings
+
+    def create_connection(self, callback=None):
+        raise NotImplementedError()
+
+    def clear_structure(self):
+        raise NotImplementedError()
+
+    def project_list(self):
+        raise NotImplementedError()
+
+    def namespace_list(self):
+        raise NotImplementedError()
+
+    def project_create(self, secret_key, options, project_id=None):
+        raise NotImplementedError()
+
+    def project_edit(self, project, options):
+        raise NotImplementedError()
+
+    def project_delete(self, project):
+        raise NotImplementedError()
+
+    def regenerate_project_secret_key(self, project, secret_key):
+        raise NotImplementedError()
+
+    def namespace_create(self, project, name, options, namespace_id=None):
+        raise NotImplementedError()
+
+    def namespace_edit(self, namespace, name, options):
+        raise NotImplementedError()
+
+    def namespace_delete(self, namespace):
+        raise NotImplementedError()
+
+
