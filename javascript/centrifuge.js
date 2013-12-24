@@ -1,5 +1,4 @@
-//noinspection ThisExpressionReferencesGlobalObjectJS
-(function () {
+;(function () {
     'use strict';
 
     /**
