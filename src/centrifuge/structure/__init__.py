@@ -18,6 +18,12 @@ import uuid
 
 
 def flatten(dictionary):
+    """
+    Transform dictionary with `options` key to plain dictionary with
+    simple key-value structure.
+    """
+    if not isinstance(dictionary, dict):
+        return dictionary
     options = dictionary.get('options')
     if options:
         if isinstance(options, six.string_types):
