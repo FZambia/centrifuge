@@ -1,4 +1,4 @@
-(function (jQuery) {
+;(function (jQuery) {
     jQuery.extend({
         centrifuge_dom: function (custom_options) {
 
