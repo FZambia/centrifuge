@@ -225,7 +225,7 @@ above.
 Java
 ~~~~
 
-There is an implementation of Centrifuge API client written by `https://github.com/mcoetzee <https://github.com/mcoetzee>`_.
+There is an implementation of Centrifuge API client written by `Markus Coetzee <https://github.com/mcoetzee>`_.
 The source code is available `here <https://github.com/mcoetzee/centrifuge-publisher>`_
 
 
