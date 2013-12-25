@@ -6,6 +6,7 @@
 import six
 import uuid
 import time
+import socket
 from functools import partial
 
 import tornado.web
@@ -18,6 +19,15 @@ from centrifuge.state.base import State
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.pubsub.base import BasePubSub
+
+
+def get_host():
+    try:
+        host = socket.gethostbyname(socket.gethostname())
+    except Exception as err:
+        logger.warning(err)
+        host = "?"
+    return host
 
 
 class Application(tornado.web.Application):
@@ -85,6 +95,16 @@ class Application(tornado.web.Application):
 
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
+
+    def get_node_info(self):
+        return {
+            'uid': self.uid,
+            'host': get_host(),
+            'port': str(self.settings['options'].port),
+            'channels': len(self.pubsub.subscriptions),
+            'clients': sum(len(v) for v in six.itervalues(self.pubsub.subscriptions)),
+            'unique_clients': sum(len(v) for v in six.itervalues(self.connections))
+        }
 
     def initialize(self):
         self.init_callbacks()
@@ -181,7 +201,8 @@ class Application(tornado.web.Application):
         """
         now = time.time()
         outdated = []
-        for node, updated_at in self.nodes.items():
+        for node, params in self.nodes.items():
+            updated_at = params["updated_at"]
             if now - updated_at > self.PING_MAX_DELAY:
                 outdated.append(node)
         for node in outdated:
@@ -190,6 +211,11 @@ class Application(tornado.web.Application):
             except KeyError:
                 pass
 
+        nodes = self.nodes.copy()
+        # extend other nodes with current node info
+        nodes[self.uid] = self.get_node_info()
+        self.send_admin_message('nodes', nodes)
+
     def init_ping(self):
         """
         Start periodic tasks for sending ping and reviewing ping.
@@ -197,7 +223,7 @@ class Application(tornado.web.Application):
         message = {
             'app_id': self.uid,
             'method': 'ping',
-            'params': {'uid': self.uid}
+            'params': self.get_node_info()
         }
         send_ping = partial(self.pubsub.publish_control_message, message)
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
@@ -216,6 +242,18 @@ class Application(tornado.web.Application):
         share commands between running instances.
         """
         self.pubsub.publish_control_message(message)
+
+    def send_admin_message(self, message_type, message_data):
+        """
+        Send message to ADMIN channel. We use this channel to
+        send events to administrative interface.
+        """
+        message = {
+            'admin': True,
+            'type': message_type,
+            'data': message_data
+        }
+        self.pubsub.publish_admin_message(message)
 
     def add_connection(self, project_id, user, uid, client):
         """
@@ -272,7 +310,8 @@ class Application(tornado.web.Application):
         """
         Ping message received.
         """
-        self.nodes[params.get('uid')] = time.time()
+        params['updated_at'] = time.time()
+        self.nodes[params.get('uid')] = params
 
     @coroutine
     def handle_unsubscribe(self, params):
