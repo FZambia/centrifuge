@@ -221,3 +221,11 @@ Python
 If your backend Python powered and you don't want to install Cent, you can just copy
 ``Client`` class from Cent source code (``cent.core.Client``) and use it as was shown
 above.
+
+Java
+~~~~
+
+There is an implementation of Centrifuge API client written by `https://github.com/mcoetzee <https://github.com/mcoetzee>`_.
+The source code is available `here <https://github.com/mcoetzee/centrifuge-publisher>`_
+
+
