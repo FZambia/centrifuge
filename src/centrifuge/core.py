@@ -211,11 +211,6 @@ class Application(tornado.web.Application):
             except KeyError:
                 pass
 
-        nodes = self.nodes.copy()
-        # extend other nodes with current node info
-        nodes[self.uid] = self.get_node_info()
-        self.send_admin_message('nodes', nodes)
-
     def init_ping(self):
         """
         Start periodic tasks for sending ping and reviewing ping.
@@ -243,16 +238,11 @@ class Application(tornado.web.Application):
         """
         self.pubsub.publish_control_message(message)
 
-    def send_admin_message(self, message_type, message_data):
+    def send_admin_message(self, message):
         """
         Send message to ADMIN channel. We use this channel to
         send events to administrative interface.
         """
-        message = {
-            'admin': True,
-            'type': message_type,
-            'data': message_data
-        }
         self.pubsub.publish_admin_message(message)
 
     def add_connection(self, project_id, user, uid, client):
