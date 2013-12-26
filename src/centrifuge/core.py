@@ -211,6 +211,13 @@ class Application(tornado.web.Application):
             except KeyError:
                 pass
 
+        # periodically publish information about current node into admin channel
+        self.send_admin_message({
+            "admin": True,
+            "type": "node",
+            "data": self.get_node_info()
+        })
+
     def init_ping(self):
         """
         Start periodic tasks for sending ping and reviewing ping.

@@ -154,28 +154,38 @@
                 counter.removeClass('hidden');
             };
 
-            var handle_event_message = function(data) {
-                var namespace = data['namespace'];
-                var event_id = data['uid'];
-                var channel = data['channel'];
-                var event_data = data['data'];
-                var project_id = data['project_id'];
-                project = get_project_by_id(project_id);
-                var active_tab_id = get_active_tab_id();
-                var tab = get_tab_for_project(project);
+            var handle_admin_message = function(message) {
+                var type = message['type'];
+                var data = message['data'];
+                console.log(JSON.stringify(data));
+            };
 
-                if (tab.length > 0) {
-                    // tab already opened and meta already loaded
-                    var container = get_content_for_project(project).find('.log');
-                    render_event(container, project, namespace, event_id, channel, event_data);
+            var handle_event_message = function(data) {
+                if (typeof data["admin"] != 'undefined') {
+                    handle_admin_message(data);
                 } else {
-                    if (active_tab_id !== options.project_tab) {
-                        highlight_tab(global_projects[options.project_tab], true);
+                    var namespace = data['namespace'];
+                    var event_id = data['uid'];
+                    var channel = data['channel'];
+                    var event_data = data['data'];
+                    var project_id = data['project_id'];
+                    project = get_project_by_id(project_id);
+                    var active_tab_id = get_active_tab_id();
+                    var tab = get_tab_for_project(project);
+
+                    if (tab.length > 0) {
+                        // tab already opened and meta already loaded
+                        var container = get_content_for_project(project).find('.log');
+                        render_event(container, project, namespace, event_id, channel, event_data);
+                    } else {
+                        if (active_tab_id !== options.project_tab) {
+                            highlight_tab(global_projects[options.project_tab], true);
+                        }
                     }
-                }
-                if (active_tab_id !== project_id) {
-                    incr_project_event_counter(project);
-                    highlight_tab(project, true);
+                    if (active_tab_id !== project_id) {
+                        incr_project_event_counter(project);
+                        highlight_tab(project, true);
+                    }
                 }
             };
 
