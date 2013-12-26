@@ -202,3 +202,46 @@ label {
 .confirm-input {
     width: 200px;
 }
+
+.table th {
+    font-weight: normal;
+    text-transform: uppercase;
+    background: #428bca;
+    color: #fff;
+}
+.table-bordered {
+    border: 1px solid #DDDDDD;
+}
+.table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #DDDDDD;
+}
+.table-bordered > thead > tr > th, .table-bordered > thead > tr > td {
+    border-bottom-width: 2px;
+}
+
+@media only screen and (max-width: 800px) {
+    .table .cf:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
+    .table * html .cf { zoom: 1; }
+    .table *:first-child+html .cf { zoom: 1; }
+    .table { width: 100%; border-collapse: collapse; border-spacing: 0; border: none !important; }
+
+    .table th,
+    .table td { margin: 0; vertical-align: top; }
+    .table th { text-align: left; }
+    .table { display: block; position: relative; width: 100%; }
+    .table thead { display: block; float: left; }
+    .table tbody { display: block; width: auto; position: relative; overflow-x: auto; white-space: nowrap; }
+    .table thead tr { display: block; }
+    .table th { display: block; text-align: right; }
+    .table tbody tr { display: inline-block; vertical-align: top; }
+    .table tbody tr { border-left: none !important;}
+    .table tbody tr td { border-left: none !important;}
+    .table td { display: block; min-height: 1.25em; text-align: left; }
+
+
+    /* sort out borders */
+
+    .table th { border-bottom: 0; border-left: 0; }
+    .table td { border-left: 0; border-right: 0; border-bottom: 0; }
+    .table tbody tr { border-left: 1px solid #babcbf; }
+}

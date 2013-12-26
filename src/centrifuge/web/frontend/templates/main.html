@@ -47,6 +47,17 @@
     </li>
 </script>
 
+<script type="text/x-jsrender" id="node_info_row_template">
+    <tr id="node-info-row-{{!>uid}}">
+        <td>{{!>address}}</td>
+        <td>{{!>port}}</td>
+        <td>{{!>channels}}</td>
+        <td>{{!>clients}}</td>
+        <td>{{!>unique_clients}}</td>
+        <td>{{!>messages_per_second}}</td>
+    </tr>
+</script>
+
 <div id="main-content">
     <div class="row">
         <div class="col-lg-3">
@@ -83,7 +94,67 @@
                     <div class="stat-row">
                         <span class="text-muted stat-key">{{ _("Nodes running") }}:</span>
                         &nbsp;
-                        <span class="stat-value">{{ node_count }}</span>
+                        <span class="stat-value" id="node-count">{{ node_count }}</span>
+                    </div>
+                    <div class="node_info">
+                        <table class="table table-bordered">
+                            <thead class="cf">
+                            <tr>
+                                <th>Address</th>
+                                <th>Port</th>
+                                <th>Channels</th>
+                                <th>Clients</th>
+                                <th>Unique</th>
+                                <th>Msg/sec</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>127.0.0.1</td>
+                                <td>8000</td>
+                                <td>230</td>
+                                <td>1045</td>
+                                <td>500</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>127.0.0.1</td>
+                                <td>8000</td>
+                                <td>230</td>
+                                <td>1045</td>
+                                <td>500</td>
+                                <td>2</td>
+                            </tr>                            <tr>
+                                <td>127.0.0.1</td>
+                                <td>8000</td>
+                                <td>230</td>
+                                <td>1045</td>
+                                <td>500</td>
+                                <td>2</td>
+                            </tr>                            <tr>
+                                <td>127.0.0.1</td>
+                                <td>8000</td>
+                                <td>230</td>
+                                <td>1045</td>
+                                <td>500</td>
+                                <td>2</td>
+                            </tr>                            <tr>
+                                <td>127.0.0.1</td>
+                                <td>8000</td>
+                                <td>230</td>
+                                <td>1045</td>
+                                <td>500</td>
+                                <td>2</td>
+                            </tr>                            <tr>
+                                <td>127.0.0.1</td>
+                                <td>8000</td>
+                                <td>230</td>
+                                <td>1045</td>
+                                <td>500</td>
+                                <td>2</td>
+                            </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
