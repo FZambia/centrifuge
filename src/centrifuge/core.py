@@ -99,11 +99,19 @@ class Application(tornado.web.Application):
         # periodic task for sending current node information into admin channel
         self.periodic_node_info = None
 
+        # time of last node info revision
+        self.node_info_revision_time = time.time()
+
+        # count of messages published since last node info revision
+        self.messages_published = 0
+
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
     def get_node_info(self):
-        return {
+        current_time = time.time()
+        msg_per_sec = float(self.messages_published)/(current_time - self.node_info_revision_time)
+        info = {
             'uid': self.uid,
             'address': get_host(),
             'port': str(self.settings['options'].port),
@@ -111,8 +119,11 @@ class Application(tornado.web.Application):
             'channels': len(self.pubsub.subscriptions),
             'clients': sum(len(v) for v in six.itervalues(self.pubsub.subscriptions)),
             'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
-            'messages_per_second': 0
+            'messages_per_second': "%0.2f" % msg_per_sec
         }
+        self.messages_published = 0
+        self.node_info_revision_time = current_time
+        return info
 
     def initialize(self):
         self.init_callbacks()
@@ -444,6 +455,8 @@ class Application(tornado.web.Application):
             project_id, namespace_name, channel, message,
             history_size=allowed_namespaces[namespace_name]['history_size']
         )
+
+        self.messages_published += 1
 
         raise Return((True, None))
 
