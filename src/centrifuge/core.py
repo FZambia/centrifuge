@@ -44,6 +44,9 @@ class Application(tornado.web.Application):
     # in seconds
     PING_MAX_DELAY = 10
 
+    # in milliseconds, how often node will send its info into admin channel
+    NODE_INFO_PUBLISH_INTERVAL = 10000
+
     # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
 
@@ -93,6 +96,9 @@ class Application(tornado.web.Application):
         # list of coroutines that must be done after message publishing
         self.post_publish_callbacks = []
 
+        # periodic task for sending current node information into admin channel
+        self.periodic_node_info = None
+
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
@@ -101,6 +107,7 @@ class Application(tornado.web.Application):
             'uid': self.uid,
             'host': get_host(),
             'port': str(self.settings['options'].port),
+            'nodes': len(self.nodes) + 1,
             'channels': len(self.pubsub.subscriptions),
             'clients': sum(len(v) for v in six.itervalues(self.pubsub.subscriptions)),
             'unique_clients': sum(len(v) for v in six.itervalues(self.connections))
@@ -112,6 +119,7 @@ class Application(tornado.web.Application):
         self.init_pubsub()
         self.init_state()
         self.init_ping()
+        self.init_periodic_tasks()
 
     def init_structure(self):
         """
@@ -192,6 +200,16 @@ class Application(tornado.web.Application):
             callback = utils.namedAny(callable_path)
             self.post_publish_callbacks.append(callback)
 
+    def init_periodic_tasks(self):
+        """
+        Start different periodic tasks here
+        """
+        self.periodic_node_info = tornado.ioloop.PeriodicCallback(
+            self.publish_node_info,
+            self.NODE_INFO_PUBLISH_INTERVAL
+        )
+        self.periodic_node_info.start()
+
     def send_ping(self, ping_message):
         self.pubsub.publish_control_message(ping_message)
 
@@ -210,13 +228,6 @@ class Application(tornado.web.Application):
                 del self.nodes[node]
             except KeyError:
                 pass
-
-        # periodically publish information about current node into admin channel
-        self.send_admin_message({
-            "admin": True,
-            "type": "node",
-            "data": self.get_node_info()
-        })
 
     def init_ping(self):
         """
@@ -237,6 +248,16 @@ class Application(tornado.web.Application):
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, review_ping.start
         )
+
+    def publish_node_info(self):
+        """
+        Publish information about current node into admin channel
+        """
+        self.send_admin_message({
+            "admin": True,
+            "type": "node",
+            "data": self.get_node_info()
+        })
 
     def send_control_message(self, message):
         """
