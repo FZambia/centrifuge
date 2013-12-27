@@ -105,12 +105,13 @@ class Application(tornado.web.Application):
     def get_node_info(self):
         return {
             'uid': self.uid,
-            'host': get_host(),
+            'address': get_host(),
             'port': str(self.settings['options'].port),
             'nodes': len(self.nodes) + 1,
             'channels': len(self.pubsub.subscriptions),
             'clients': sum(len(v) for v in six.itervalues(self.pubsub.subscriptions)),
-            'unique_clients': sum(len(v) for v in six.itervalues(self.connections))
+            'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
+            'messages_per_second': 0
         }
 
     def initialize(self):

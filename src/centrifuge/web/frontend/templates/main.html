@@ -49,12 +49,12 @@
 
 <script type="text/x-jsrender" id="node_info_row_template">
     <tr id="node-info-row-{{!>uid}}">
-        <td>{{!>address}}</td>
-        <td>{{!>port}}</td>
-        <td>{{!>channels}}</td>
-        <td>{{!>clients}}</td>
-        <td>{{!>unique_clients}}</td>
-        <td>{{!>messages_per_second}}</td>
+        <td class="node-info-address">{{!>address}}</td>
+        <td class="node-info-port">{{!>port}}</td>
+        <td class="node-info-channels">{{!>channels}}</td>
+        <td class="node-info-clients">{{!>clients}}</td>
+        <td class="node-info-unique-clients">{{!>unique_clients}}</td>
+        <td class="node-info-messages-per-second">{{!>messages_per_second}}</td>
     </tr>
 </script>
 
@@ -108,51 +108,8 @@
                                 <th>Msg/sec</th>
                             </tr>
                             </thead>
-                            <tbody>
-                            <tr>
-                                <td>127.0.0.1</td>
-                                <td>8000</td>
-                                <td>230</td>
-                                <td>1045</td>
-                                <td>500</td>
-                                <td>2</td>
-                            </tr>
-                            <tr>
-                                <td>127.0.0.1</td>
-                                <td>8000</td>
-                                <td>230</td>
-                                <td>1045</td>
-                                <td>500</td>
-                                <td>2</td>
-                            </tr>                            <tr>
-                                <td>127.0.0.1</td>
-                                <td>8000</td>
-                                <td>230</td>
-                                <td>1045</td>
-                                <td>500</td>
-                                <td>2</td>
-                            </tr>                            <tr>
-                                <td>127.0.0.1</td>
-                                <td>8000</td>
-                                <td>230</td>
-                                <td>1045</td>
-                                <td>500</td>
-                                <td>2</td>
-                            </tr>                            <tr>
-                                <td>127.0.0.1</td>
-                                <td>8000</td>
-                                <td>230</td>
-                                <td>1045</td>
-                                <td>500</td>
-                                <td>2</td>
-                            </tr>                            <tr>
-                                <td>127.0.0.1</td>
-                                <td>8000</td>
-                                <td>230</td>
-                                <td>1045</td>
-                                <td>500</td>
-                                <td>2</td>
-                            </tr>
+                            <tbody id="node-info">
+
                             </tbody>
                         </table>
                     </div>
