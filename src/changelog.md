@@ -1,3 +1,19 @@
+v0.4.0
+======
+
+Backwards incompatible! But there is a possibility to migrate without losing your current
+structure. Before updating Centrifuge go to `/dumps` location in admin interface and copy and save
+output. Then update Centrifuge. Create your database from scratch. Then go to '/loads' location
+and paste saved output into textarea. After clicking on submit button your previous structure
+must be loaded.
+
+Also now structure backends are classes, so you should change your configuration file according
+to [current documentation](http://centrifuge.readthedocs.org/en/latest/content/configuration.html#configuration-file).
+
+* Structure storage refactoring
+* Fix API bugs when editing project ot namespace
+* Node information and statistics in web interface
+
 v0.3.8
 ======
 
