@@ -31,7 +31,11 @@ class AuthHandler(BaseHandler):
 
     def authorize(self):
         self.set_secure_cookie("user", "authorized")
-        self.redirect(self.reverse_url("main"))
+        next_url = self.get_argument("next", None)
+        if next_url:
+            self.redirect(next_url)
+        else:
+            self.redirect(self.reverse_url("main"))
 
     def get(self):
         if not self.opts.get("password"):
@@ -198,7 +202,9 @@ class ProjectSettingsHandler(BaseHandler):
         else:
             # edit project
             params = params_from_request(self.request)
-            result, error = yield self.application.process_project_edit(self.project, params, error_form=True)
+            result, error = yield self.application.process_project_edit(
+                self.project, params, error_form=True, patch=False
+            )
             if error and isinstance(error, six.string_types):
                 # server error
                 raise tornado.web.HTTPError(500)
@@ -341,7 +347,7 @@ class NamespaceFormHandler(BaseHandler):
         if submit == 'namespace_delete':
             if self.get_argument('confirm', None) == self.namespace["name"]:
                 res, error = yield self.application.structure.namespace_delete(
-                    namespace_id
+                    self.namespace
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
@@ -359,7 +365,7 @@ class NamespaceFormHandler(BaseHandler):
                 template_name = 'namespace/edit.html'
                 params['_id'] = namespace_id
                 result, error = yield self.application.process_namespace_edit(
-                    self.project, params, error_form=True
+                    self.project, params, error_form=True, patch=False
                 )
             else:
                 template_name = 'namespace/create.html'
@@ -435,3 +441,33 @@ class StructureDumpHandler(BaseHandler):
         }
         self.set_header("Content-Type", "application/json")
         self.finish(json_encode(data))
+
+
+class StructureLoadHandler(BaseHandler):
+
+    @tornado.web.authenticated
+    def get(self):
+        self.render("loads.html")
+
+    @tornado.web.authenticated
+    @coroutine
+    def post(self):
+        json_data = self.get_argument("data")
+        data = json_decode(json_data)
+        res, err = yield self.application.structure.clear_structure()
+        if err:
+            raise tornado.web.HTTPError(500, log_message=str(err))
+
+        for project in data.get("projects", []):
+            res, err = yield self.application.structure.project_create(**project)
+            if err:
+                raise tornado.web.HTTPError(500, log_message=str(err))
+            for namespace in data.get("namespaces", []):
+                if namespace["project_id"] != project["_id"]:
+                    continue
+                res, err = yield self.application.structure.namespace_create(project, **namespace)
+                print res
+                if err:
+                    raise tornado.web.HTTPError(500, log_message=str(err))
+
+        self.redirect(self.reverse_url("main"))

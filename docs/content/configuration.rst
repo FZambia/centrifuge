@@ -18,7 +18,7 @@ Here is minimal configuration file required:
         "cookie_secret": "secret",
         "api_secret": "secret",
         "structure": {
-            "storage": "centrifuge.structure.sqlite",
+            "storage": "centrifuge.structure.sqlite.Storage",
             "settings": {
                 "path": "centrifuge.db"
             }
@@ -36,7 +36,7 @@ With MongoDB as structure storage:
         "cookie_secret": "secret",
         "api_secret": "secret",
         "structure": {
-            "storage": "centrifuge.structure.mongodb",
+            "storage": "centrifuge.structure.mongodb.Storage",
             "settings": {
                 "host": "localhost",
                 "port": 27017,
@@ -57,7 +57,7 @@ With PostgreSQL this file look like:
         "cookie_secret": "secret",
         "api_secret": "secret",
         "structure": {
-            "storage": "centrifuge.structure.postgresql",
+            "storage": "centrifuge.structure.postgresql.Storage",
             "settings": {
                 "host": "localhost",
                 "port": 27017,
@@ -81,7 +81,7 @@ Here is a configuration with in-process-memory state enabled:
         "cookie_secret": "secret",
         "api_secret": "secret",
         "structure": {
-            "storage": "centrifuge.structure.sqlite",
+            "storage": "centrifuge.structure.sqlite.Storage",
             "settings": {
                 "path": "centrifuge.db"
             }
@@ -105,7 +105,7 @@ Lets configure Centrifuge to use Redis as state storage:
         "cookie_secret": "secret",
         "api_secret": "secret",
         "structure": {
-            "module": "centrifuge.structure.sqlite",
+            "module": "centrifuge.structure.sqlite.Storage",
             "settings": {
                 "path": "centrifuge.db"
             }
@@ -142,7 +142,7 @@ configuration file. Example:
         "cookie_secret": "secret",
         "api_secret": "secret",
         "structure": {
-            "storage": "centrifuge.structure.sqlite",
+            "storage": "centrifuge.structure.sqlite.Storage",
             "settings": {
                 "path": "/tmp/centrifuge.db"
             }

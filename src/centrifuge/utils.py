@@ -246,3 +246,28 @@ except ImportError:
             name = _resolve_name(name[level:], package, level)
         __import__(name)
         return sys.modules[name]
+
+
+def make_patch_data(form, params):
+    """
+    Return a dictionary with keys which present in request params and in form data
+    """
+    data = form.data.copy()
+    keys_to_delete = list(set(data.keys()) - set(params.keys()))
+    for key in keys_to_delete:
+        del data[key]
+    return data
+
+
+def get_boolean_patch_data(boolean_fields, params):
+    """
+    Used as work around HTML form behaviour for checkbox (boolean) fields - when
+    boolean field must be set as False then it must not be in request params.
+    Here we construct dictionary with keys which present in request params and must
+    be interpreted as False. This is necessary as Centrifuge uses partial updates in API.
+    """
+    boolean_patch_data = {}
+    for field in boolean_fields:
+        if field in params and not bool(params[field]):
+            boolean_patch_data[field] = False
+    return boolean_patch_data

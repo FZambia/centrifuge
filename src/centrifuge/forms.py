@@ -24,18 +24,9 @@ DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 DEFAULT_HISTORY_SIZE = 20
 
 
-class DictToObject(object):
-    """
-    WTForm works with object attributes to extract field values.
-    Sometimes it is useful to construct objects from dictionaries,
-    this class does exactly this.
-    http://stackoverflow.com/questions/1305532/convert-python-dict-to-object
-    """
-    def __init__(self, entries):
-        self.__dict__.update(entries)
-
-
 class ProjectForm(Form):
+
+    BOOLEAN_FIELDS = []
 
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -50,7 +41,7 @@ class ProjectForm(Form):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique project name, must contain ascii symbols only"
+        description="project name, must contain ascii symbols only"
     )
 
     display_name = TextField(
@@ -107,6 +98,11 @@ class ProjectForm(Form):
 
 
 class NamespaceForm(Form):
+
+    BOOLEAN_FIELDS = [
+        'is_watching', 'is_private', 'publish',
+        'presence', 'history', 'join_leave'
+    ]
 
     name = TextField(
         label='namespace name',

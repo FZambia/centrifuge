@@ -107,6 +107,7 @@ from centrifuge.web.handlers import ProjectCreateHandler
 from centrifuge.web.handlers import NamespaceFormHandler
 from centrifuge.web.handlers import ProjectSettingsHandler
 from centrifuge.web.handlers import StructureDumpHandler
+from centrifuge.web.handlers import StructureLoadHandler
 
 
 def stop_running(msg):
@@ -154,6 +155,9 @@ def create_application_handlers(sockjs_settings):
         ),
         tornado.web.url(
             r'/dumps$', StructureDumpHandler, name="dump_structure"
+        ),
+        tornado.web.url(
+            r'/loads$', StructureLoadHandler, name="load_structure"
         )
     ]
 

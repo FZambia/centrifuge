@@ -10,7 +10,7 @@
         }
     },
     "structure": {
-        "storage": "centrifuge.structure.sqlite",
+        "storage": "centrifuge.structure.postgresql.Storage",
         "update_interval": 60,
 	      "settings": {
 	      }
