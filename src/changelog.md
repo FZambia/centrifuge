@@ -3,8 +3,8 @@ v0.4.0
 
 Backwards incompatible! But there is a possibility to migrate without losing your current
 structure. Before updating Centrifuge go to `/dumps` location in admin interface and copy and save
-output. Then update Centrifuge. Create your database from scratch. Then go to '/loads' location
-and paste saved output into textarea. After clicking on submit button your previous structure
+output. Then update Centrifuge. Create your database from scratch. Then run Centrifuge, go to `/loads`
+location and paste saved output into textarea. After clicking on submit button your previous structure
 must be loaded.
 
 Also now structure backends are classes, so you should change your configuration file according
