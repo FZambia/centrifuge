@@ -12,6 +12,7 @@
                 socket_url: '/socket',
                 global_content_element: '#main-content',
                 global_tabs_element: '#tabs',
+                node_info_timeout: 15000,
                 transports: [
                     'websocket',
                     'xdr-streaming',
@@ -66,6 +67,11 @@
             var event_template = $('#event_template');
             var tab_template = $('#tab_template');
             var tab_pane_template = $('#tab_pane_template');
+            var node_info_row_template = $('#node_info_row_template');
+
+            var node_count = $('#node-count');
+            var node_info = $('#node-info');
+            var node_timeouts = {};
 
             var project_settings_button = $('#project-settings');
 
@@ -154,28 +160,60 @@
                 counter.removeClass('hidden');
             };
 
-            var handle_event_message = function(data) {
-                var namespace = data['namespace'];
-                var event_id = data['uid'];
-                var channel = data['channel'];
-                var event_data = data['data'];
-                var project_id = data['project_id'];
-                project = get_project_by_id(project_id);
-                var active_tab_id = get_active_tab_id();
-                var tab = get_tab_for_project(project);
-
-                if (tab.length > 0) {
-                    // tab already opened and meta already loaded
-                    var container = get_content_for_project(project).find('.log');
-                    render_event(container, project, namespace, event_id, channel, event_data);
+            var handle_node_info = function(data) {
+                node_count.text(data['nodes']);
+                var uid = data['uid'];
+                var existing_row = node_info.find('#node-info-row-' + uid);
+                var html = node_info_row_template.render(data);
+                if (existing_row.length > 0) {
+                    existing_row.replaceWith(html);
                 } else {
-                    if (active_tab_id !== options.project_tab) {
-                        highlight_tab(global_projects[options.project_tab], true);
-                    }
+                    node_info.append(html);
                 }
-                if (active_tab_id !== project_id) {
-                    incr_project_event_counter(project);
-                    highlight_tab(project, true);
+                window.clearTimeout(node_timeouts[uid]);
+                node_timeouts[uid] = window.setTimeout(function(){
+                    var node_info_row = node_info.find('#node-info-row-' + uid);
+                    if (node_info_row.length > 0) {
+                        node_info_row.remove();
+                        delete node_timeouts[uid];
+                    }
+                }, options.node_info_timeout);
+            };
+
+            var handle_admin_message = function(message) {
+                var type = message['type'];
+                var data = message['data'];
+                if (type === 'node') {
+                    handle_node_info(data);
+                }
+            };
+
+            var handle_event_message = function(data) {
+                if (typeof data["admin"] != 'undefined') {
+                    handle_admin_message(data);
+                } else {
+                    var namespace = data['namespace'];
+                    var event_id = data['uid'];
+                    var channel = data['channel'];
+                    var event_data = data['data'];
+                    var project_id = data['project_id'];
+                    project = get_project_by_id(project_id);
+                    var active_tab_id = get_active_tab_id();
+                    var tab = get_tab_for_project(project);
+
+                    if (tab.length > 0) {
+                        // tab already opened and meta already loaded
+                        var container = get_content_for_project(project).find('.log');
+                        render_event(container, project, namespace, event_id, channel, event_data);
+                    } else {
+                        if (active_tab_id !== options.project_tab) {
+                            highlight_tab(global_projects[options.project_tab], true);
+                        }
+                    }
+                    if (active_tab_id !== project_id) {
+                        incr_project_event_counter(project);
+                        highlight_tab(project, true);
+                    }
                 }
             };
 
