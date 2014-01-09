@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
+
+import hmac
+import json
+import logging
+
+import six
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
-import logging
-import hmac
-import json
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -41,13 +44,12 @@ def get_client_token(secret_key, project_id, user, info=None):
     """
     Create token to validate information provided by new connection.
     """
-    sign = hmac.new(str(secret_key))
-    sign.update(project_id)
-    sign.update(user)
+    sign = hmac.new(six.b(str(secret_key)))
+    sign.update(six.b(project_id))
+    sign.update(six.b(user))
     if info is not None:
         sign.update(info)
     token = sign.hexdigest()
-    print token
     return token
 
 
