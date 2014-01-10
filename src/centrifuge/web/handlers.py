@@ -466,7 +466,6 @@ class StructureLoadHandler(BaseHandler):
                 if namespace["project_id"] != project["_id"]:
                     continue
                 res, err = yield self.application.structure.namespace_create(project, **namespace)
-                print res
                 if err:
                     raise tornado.web.HTTPError(500, log_message=str(err))
 
