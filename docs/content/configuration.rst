@@ -69,6 +69,38 @@ With PostgreSQL this file look like:
         },
         "state": null
     }
+
+You can also specify PostgreSQL connection params as database url or specify
+an OS environment variable that holds value of the PostgreSQL connection url:
+
+.. code-block:: javascript
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "api_secret": "secret",
+        "structure": {
+            "storage": "centrifuge.structure.postgresql.Storage",
+            "settings": {
+                "url": "postgres://user:pass@host:port/dbname"
+            }
+        },
+        "state": null
+    }
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "api_secret": "secret",
+        "structure": {
+            "storage": "centrifuge.structure.postgresql.Storage",
+            "settings": {
+                "url": "$DATABASE_URL"
+            }
+        },
+        "state": null
+    }
+
 **In case of using single instance of Centrifuge** you can enable presence and history
 support without any dependencies. All data will be stored in memory of process. In
 this case when you restart process - you lose all information about presence and history.
