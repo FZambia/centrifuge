@@ -48,7 +48,7 @@ def get_client_token(secret_key, project_id, user, info=None):
     sign.update(six.b(project_id))
     sign.update(six.b(user))
     if info is not None:
-        sign.update(info)
+        sign.update(six.b(info))
     token = sign.hexdigest()
     return token
 
