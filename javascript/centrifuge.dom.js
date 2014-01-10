@@ -1,3 +1,7 @@
+/**
+ * Centrifuge javascript DOM jQuery plugin
+ * v0.4.1
+ */
 ;(function (jQuery) {
     jQuery.extend({
         centrifuge_dom: function (custom_options) {
