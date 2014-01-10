@@ -81,8 +81,8 @@ class Storage(BaseStorage):
 
     def connect(self, callback=None):
 
-        def on_connection_opened(conn, _):
-            callback()
+        def on_connection_opened(conn, err):
+            self.on_connection_ready(callback)
 
         self.open_connection(callback=on_connection_opened)
 
@@ -101,7 +101,8 @@ class Storage(BaseStorage):
             yield momoko.Op(self._conn.execute, namespace, ())
         except Exception as err:
             logger.exception(err)
-        ready_callback()
+        if ready_callback:
+            ready_callback()
 
     @coroutine
     def clear_structure(self):
