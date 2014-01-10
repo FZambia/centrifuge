@@ -114,7 +114,8 @@ Lets configure Centrifuge to use Redis as state storage:
             "storage": "centrifuge.state.redis.State",
             "settings": {
                 "host": "localhost",
-                "port": 6379
+                "port": 6379,
+                "password": ""
             }
         }
     }
@@ -210,7 +211,7 @@ To run Centrifuge with Redis PUB/SUB:
 
 .. code-block:: bash
 
-    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379
+    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379 --redis_password=
 
 
 If you know that single instance is enough for you - you can use Base PUB/SUB
