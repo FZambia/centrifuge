@@ -1,3 +1,8 @@
+v0.4.1
+======
+
+* python 3 fixes (thanks to [Filip Wasilewski](https://github.com/nigma))
+
 v0.4.0
 ======
 
