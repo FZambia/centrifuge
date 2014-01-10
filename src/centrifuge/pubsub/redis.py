@@ -20,7 +20,7 @@ class PubSub(BasePubSub):
     """
     NAME = 'Redis'
 
-    OK_RESPONSE = "OK"
+    OK_RESPONSE = b"OK"
 
     def __init__(self, application):
         super(PubSub, self).__init__(application)
