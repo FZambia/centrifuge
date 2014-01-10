@@ -74,6 +74,10 @@ define(
 )
 
 define(
+    "redis_password", default="", help="Redis auth password", type=str
+)
+
+define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
