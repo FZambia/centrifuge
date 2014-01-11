@@ -3,19 +3,43 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
+import json
+import os
+import uuid
+
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
+
 from tornado.gen import coroutine, Return
 import momoko
 import psycopg2
 import psycopg2.extras
-import uuid
-import json
 
 from centrifuge.structure import BaseStorage
 from centrifuge.log import logger
 
+# Register database schemes in URLs.
+urlparse.uses_netloc.append('postgres')
+urlparse.uses_netloc.append('postgresql')
+
 
 def extract_obj_id(obj):
     return obj['_id']
+
+
+def parse_database_url(url):
+    url = urlparse.urlparse(url)
+    path = url.path[1:]
+    path = path.split('?', 2)[0]
+    return {
+        "name": path,
+        "user": url.username or "",
+        "password": url.password or "",
+        "host": url.hostname or "",
+        "port": url.port or 5432
+    }
 
 
 class Storage(BaseStorage):
@@ -31,23 +55,34 @@ class Storage(BaseStorage):
             self.open_connection()
         raise Return((None, error))
 
-    def open_connection(self, callback=None):
-        dsn = 'dbname=%s user=%s password=%s host=%s port=%s' % (
-            self.settings.get('name', 'centrifuge'),
-            self.settings.get('user', 'postgres'),
-            self.settings.get('password', ''),
-            self.settings.get('host', 'localhost'),
-            self.settings.get('port', 5432)
-        )
+    def get_dsn(self):
+        if "url" in self.settings:
+            database_url = self.settings["url"]
+            if database_url.startswith("$"):
+                # Retrieve $VARIABLE_NAME from OS Environment
+                database_url = os.environ[database_url[1:]]
+            config = parse_database_url(database_url)
+        else:
+            config = {
+                "name": self.settings.get("name", "centrifuge"),
+                "user": self.settings.get("user", "postgres"),
+                "password": self.settings.get("password", ""),
+                "host": self.settings.get("host", "localhost"),
+                "port": self.settings.get("port", 5432)
+            }
+        dsn = "dbname={name} user={user} password={password} host={host} port={port}".format(**config)
+        return dsn
 
+    def open_connection(self, callback=None):
+        dsn = self.get_dsn()
         self._conn = momoko.Connection(
             dsn=dsn, callback=callback
         )
 
     def connect(self, callback=None):
 
-        def on_connection_opened(conn, _):
-            callback()
+        def on_connection_opened(conn, err):
+            self.on_connection_ready(callback)
 
         self.open_connection(callback=on_connection_opened)
 
@@ -66,7 +101,8 @@ class Storage(BaseStorage):
             yield momoko.Op(self._conn.execute, namespace, ())
         except Exception as err:
             logger.exception(err)
-        ready_callback()
+        if ready_callback:
+            ready_callback()
 
     @coroutine
     def clear_structure(self):
