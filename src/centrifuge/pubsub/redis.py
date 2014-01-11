@@ -20,7 +20,7 @@ class PubSub(BasePubSub):
     """
     NAME = 'Redis'
 
-    OK_RESPONSE = "OK"
+    OK_RESPONSE = b"OK"
 
     def __init__(self, application):
         super(PubSub, self).__init__(application)
@@ -29,6 +29,7 @@ class PubSub(BasePubSub):
         self._need_reconnect = False
         self.host = None
         self.port = None
+        self.password = None
         self.db = None
         self.connection_check = None
 
@@ -37,9 +38,18 @@ class PubSub(BasePubSub):
         self.host = options.redis_host
         self.port = options.redis_port
         self.db = options.redis_db
+        self.password = options.redis_password
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self.connect()
         logger.info("Redis PUB/SUB at {0}:{1} (db {2})".format(self.host, self.port, self.db))
+
+    def on_subscriber_auth(self, res):
+        if res != self.OK_RESPONSE:
+            logger.error("auth for subscriber: {0}".format(res))
+
+    def on_publisher_auth(self, res):
+        if res != self.OK_RESPONSE:
+            logger.error("auth for publisher: {0}".format(res))
 
     def on_subscriber_select(self, res):
         """
@@ -73,6 +83,9 @@ class PubSub(BasePubSub):
         except Exception as e:
             logger.error("error connecting to Redis server: %s" % (str(e)))
         else:
+            if self.password:
+                self.subscriber.auth(self.password, callback=self.on_subscriber_auth)
+                self.publisher.auth(self.password, callback=self.on_publisher_auth)
             if self.db:
                 self.subscriber.select(self.db, callback=self.on_subscriber_select)
                 self.publisher.select(self.db, callback=self.on_publisher_select)

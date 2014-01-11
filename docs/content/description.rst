@@ -33,7 +33,7 @@ not secure and must be used only during development.
 
 Configuration file must contain valid JSON. It contains cookie secret, administrative password,
 structure database settings and Redis settings. But for now let's omit configuration file.
-By default Centrifuge will use unsecure cookie secret, no administrative password, local SQLite
+By default Centrifuge will use insecure cookie secret, no administrative password, local SQLite
 storage as structure database and no Redis (no presence and message history data will be available).
 
 In production you always need to provide proper configuration file with secure settings!
@@ -131,7 +131,7 @@ should run Centrifuge in this way:
 
 .. code-block:: bash
 
-    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379
+    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379 --redis_password=
 
 
 Sometimes you need only one instance of Centrifuge running. In this case there is
@@ -150,7 +150,7 @@ For this tasks Centrifuge uses Redis. All instances of Centrifuge must have acce
 information about presence and message history. Redis settings must be set up in
 configuration file. As Redis settings set up correctly - every message published will
 be added to history and every connected client sends presence information into Redis.
-So if Redis available - information about presence and mesage history will be available
+So if Redis available - information about presence and message history will be available
 for clients (there are options for namespaces which allow to disable presence and
 history for channels belonging to them).
 

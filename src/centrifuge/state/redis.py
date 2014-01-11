@@ -3,22 +3,19 @@
 # Copyright (c) Alexandr Emelin. BSD license.
 # All rights reserved.
 
-import toredis
 import time
+
+import six
+import toredis
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
 from tornado.escape import json_decode, json_encode
 from tornado.iostream import StreamClosedError
-from six import PY3
 
 from centrifuge.log import logger
 from centrifuge.state.base import State as BaseState
 
-
-if PY3:
-    range_func = range
-else:
-    range_func = xrange
+range_func = six.moves.xrange
 
 
 def prepare_key_value(pair):
@@ -43,7 +40,7 @@ class State(BaseState):
 
     NAME = "Redis"
 
-    OK_RESPONSE = "OK"
+    OK_RESPONSE = b"OK"
 
     def __init__(self, *args, **kwargs):
         super(State, self).__init__(*args, **kwargs)
@@ -57,12 +54,17 @@ class State(BaseState):
         settings = self.config.get('settings', {})
         self.host = settings.get("host", "localhost")
         self.port = settings.get("port", 6379)
+        self.password = settings.get("password", "")
         self.db = settings.get("db", 0)
         self.client = toredis.Client(io_loop=self.io_loop)
         self.client.state = self
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self.connect()
         logger.info("Redis State initialized")
+
+    def on_auth(self, res):
+        if res != self.OK_RESPONSE:
+            logger.error("state auth: {0}".format(res))
 
     def on_select(self, res):
         if res != self.OK_RESPONSE:
@@ -81,6 +83,8 @@ class State(BaseState):
         except Exception as e:
             logger.error("error connecting to Redis server: %s" % (str(e)))
         else:
+            if self.password:
+                self.client.auth(self.password, callback=self.on_auth)
             if self.db and isinstance(self.db, int):
                 self.client.select(self.db, callback=self.on_select)
 
