@@ -46,9 +46,11 @@ class State(BaseState):
         super(State, self).__init__(*args, **kwargs)
         self.host = None
         self.port = None
+        self.password = None
         self.db = None
         self.client = None
         self.connection_check = None
+        self._need_reconnect = False
 
     def initialize(self):
         settings = self.config.get('settings', {})
@@ -60,7 +62,9 @@ class State(BaseState):
         self.client.state = self
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self.connect()
-        logger.info("Redis State initialized")
+        logger.info(
+            "Redis State initialized at {0}:{1} (db {2})".format(self.host, self.port, self.db)
+        )
 
     def on_auth(self, res):
         if res != self.OK_RESPONSE:
@@ -69,6 +73,7 @@ class State(BaseState):
     def on_select(self, res):
         if res != self.OK_RESPONSE:
             logger.error("state select database: {0}".format(res))
+            self._need_reconnect = True
 
     def connect(self):
         """
@@ -85,15 +90,15 @@ class State(BaseState):
         else:
             if self.password:
                 self.client.auth(self.password, callback=self.on_auth)
-            if self.db and isinstance(self.db, int):
-                self.client.select(self.db, callback=self.on_select)
+            self.client.select(self.db, callback=self.on_select)
 
         self.connection_check.stop()
         self.connection_check.start()
 
     def check_connection(self):
-        if not self.client.is_connected():
+        if not self.client.is_connected() or self._need_reconnect:
             logger.info('reconnecting to Redis')
+            self._need_reconnect = False
             self.connect()
 
     @staticmethod

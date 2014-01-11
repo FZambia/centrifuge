@@ -30,7 +30,7 @@ class PubSub(BasePubSub):
         self.host = None
         self.port = None
         self.password = None
-        self.db = None
+        self.db = 0
         self.connection_check = None
 
     def initialize(self):
@@ -45,11 +45,11 @@ class PubSub(BasePubSub):
 
     def on_subscriber_auth(self, res):
         if res != self.OK_RESPONSE:
-            logger.error("auth for subscriber: {0}".format(res))
+            logger.error("pubsub auth for subscriber: {0}".format(res))
 
     def on_publisher_auth(self, res):
         if res != self.OK_RESPONSE:
-            logger.error("auth for publisher: {0}".format(res))
+            logger.error("pubsub auth for publisher: {0}".format(res))
 
     def on_subscriber_select(self, res):
         """
@@ -57,7 +57,7 @@ class PubSub(BasePubSub):
         """
         if res != self.OK_RESPONSE:
             # error returned
-            logger.error("select database for subscriber: {0}".format(res))
+            logger.error("pubsub select database for subscriber: {0}".format(res))
             return
 
         self.subscriber.subscribe(CONTROL_CHANNEL, callback=self.dispatch_published_message)
@@ -70,7 +70,7 @@ class PubSub(BasePubSub):
 
     def on_publisher_select(self, res):
         if res != self.OK_RESPONSE:
-            logger.error("select database for publisher: {0}".format(res))
+            logger.error("pubsub select database for publisher: {0}".format(res))
             self._need_reconnect = True
 
     def connect(self):
@@ -86,12 +86,9 @@ class PubSub(BasePubSub):
             if self.password:
                 self.subscriber.auth(self.password, callback=self.on_subscriber_auth)
                 self.publisher.auth(self.password, callback=self.on_publisher_auth)
-            if self.db:
-                self.subscriber.select(self.db, callback=self.on_subscriber_select)
-                self.publisher.select(self.db, callback=self.on_publisher_select)
-            else:
-                self.on_subscriber_select(self.OK_RESPONSE)
-                self.on_publisher_select(self.OK_RESPONSE)
+
+            self.subscriber.select(self.db, callback=self.on_subscriber_select)
+            self.publisher.select(self.db, callback=self.on_publisher_select)
 
         self.connection_check.stop()
         self.connection_check.start()
