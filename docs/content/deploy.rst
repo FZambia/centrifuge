@@ -149,3 +149,12 @@ In `deploy` folder of repository you can find everything to build rpm for Centos
 
 If you are not a Centos 6 user you can find a lot of useful things there, which were
 successfully tested in production environment.
+
+Heroku
+~~~~~~
+
+Centrifuge can be deployed on Heroku
+
+The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/nigma/heroku-centrifuge
+
+The final result is available here: [centrifuge.herokuapp.com](https://centrifuge.herokuapp.com/) (password=``password``)

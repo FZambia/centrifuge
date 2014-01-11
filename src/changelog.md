@@ -1,3 +1,14 @@
+v0.4.2
+======
+
+* it's now possible to specify Redis auth password for state and pubsub backends [pull request by Filip Wasilewski](https://github.com/FZambia/centrifuge/pull/23)
+* it's now possible to specify PostgreSQL connection params as database url [pull request by Filip Wasilewski](https://github.com/FZambia/centrifuge/pull/24)
+* now Centrifuge can be deployed on Heroku backed with Redis and PostgreSQL
+
+The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/nigma/heroku-centrifuge
+
+The final result is available here: [centrifuge.herokuapp.com](https://centrifuge.herokuapp.com/)
+
 v0.4.1
 ======
 
