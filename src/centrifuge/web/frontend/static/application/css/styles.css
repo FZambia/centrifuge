@@ -181,10 +181,10 @@ label {
     margin-bottom: 20px;
 }
 .stat-key {
-    font-size: 24px;
+    font-size: 18px;
 }
 .stat-value {
-    font-size: 24px;
+    font-size: 18px;
 }
 #data-editor {
     max-width: 500px;

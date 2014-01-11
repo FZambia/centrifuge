@@ -71,6 +71,7 @@
 
             var node_count = $('#node-count');
             var node_info = $('#node-info');
+            var node_info_loader = $('#node-info-loader');
             var node_timeouts = {};
 
             var project_settings_button = $('#project-settings');
@@ -161,6 +162,7 @@
             };
 
             var handle_node_info = function(data) {
+                node_info_loader.remove();
                 node_count.text(data['nodes']);
                 var uid = data['uid'];
                 var existing_row = node_info.find('#node-info-row-' + uid);
@@ -332,6 +334,22 @@
                 }
             });
 
+            var render_endpoints = function() {
+                var protocol = window.location.protocol;
+                var is_secure = false;
+                if (protocol === "https:") {
+                    is_secure = true;
+                }
+                var sockjs_endpoint_container = $("#sockjs-endpoint");
+                var websocket_endpoint_container = $('#websocket-endpoint');
+
+                var sockjs_protocol = is_secure? "https://": "http://";
+                var websocket_protocol = is_secure? "wss://": "ws://";
+
+                sockjs_endpoint_container.text(sockjs_protocol + window.location.host + '/connection');
+                websocket_endpoint_container.text(websocket_protocol + window.location.host + '/connection/websocket');
+            };
+
 			var route = function(tab) {
 				var project_id = tab.attr('data-id');
                 var project = get_project_by_id(project_id);
@@ -347,6 +365,8 @@
             var initialize = function() {
 
                 create_socket_connection();
+
+                render_endpoints();
 
                 if (options.projects) {
                     for (var index in options.projects) {

@@ -77,6 +77,16 @@
             <div class="tab-content" id="tab-content">
                 <div class="tab-pane" id="_info">
                     <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("SockJS endpoint") }}:</span>
+                        &nbsp;
+                        <span class="stat-value" id="sockjs-endpoint"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("WebSocket endpoint") }}:</span>
+                        &nbsp;
+                        <span class="stat-value" id="websocket-endpoint"></span>
+                    </div>
+                    <div class="stat-row">
                         <span class="text-muted stat-key">{{ _("Structure storage") }}:</span>
                         &nbsp;
                         <span class="stat-value">{{ structure }}</span>
@@ -109,7 +119,9 @@
                             </tr>
                             </thead>
                             <tbody id="node-info">
-
+                                <tr id="node-info-loader">
+                                    <td colspan="6">{{ _("Waiting for information...") }}</td>
+                                <tr>
                             </tbody>
                         </table>
                     </div>
