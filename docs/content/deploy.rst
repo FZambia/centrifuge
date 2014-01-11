@@ -157,4 +157,4 @@ Centrifuge can be deployed on Heroku
 
 The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/nigma/heroku-centrifuge
 
-The final result is available here: [centrifuge.herokuapp.com](https://centrifuge.herokuapp.com/) (password=``password``)
+The final result is available here: [centrifuge.herokuapp.com](https://centrifuge.herokuapp.com/) (password = ``password``)
