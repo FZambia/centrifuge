@@ -7,8 +7,7 @@ Client API
 Simple javascript browser client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Javascript client is designed to be very simple. I think the most difficult part of it is
-configuration. But lets go through its API step by step.
+Javascript client is very simple. Lets go through client API step by step.
 
 When you have Centrifuge instance running - it is time to communicate with it from browser.
 
@@ -40,8 +39,15 @@ installation. To tell it that information you must use method ``configure``
     })
 
 **url** is a Centrifuge endpoint - SockJS or Websocket. Note that in case of using SockJS
-it must be imported on your page before Centrifuge's javascript client.  In case of using
-SockJS additional configuration parameter can be used - ``protocols_whitelist``. It defines
+it must be imported on your page before Centrifuge's javascript client:
+
+.. code-block:: html
+
+    <script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js" type="text/javascript"></script>
+    <script src="https://raw.github.com/FZambia/centrifuge/master/javascript/centrifuge.js" type="text/javascript"></script>
+
+
+In case of using SockJS additional configuration parameter can be used - ``protocols_whitelist``. It defines
 allowed transports and by default equals ['websocket', 'xdr-streaming', 'xhr-streaming',
 'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling',
 'jsonp-polling'].
@@ -248,7 +254,7 @@ All you need to do in this case is write how your page will react on new message
 
 .. code-block:: javascript
 
-    $(' #html-element').on('centrifuge.message', function(event, message) {
+    $('#html-element').on('centrifuge.message', function(event, message) {
         console.log(message.data);
     });
 
@@ -264,7 +270,7 @@ clients.
 Let's make it work in five steps.
 
 STEP 1) Add all necessary scripts into your web application's main template.
-These are ``jQuery``, ``SockJS`` (optional), ``centrifuge.js``, ``centrifuge.dom.js``
+These are ``jQuery``, ``SockJS`` (optional, use can use pure WebSockets), ``centrifuge.js``, ``centrifuge.dom.js``
 
 STEP 2) In main template initialize plugin:
 

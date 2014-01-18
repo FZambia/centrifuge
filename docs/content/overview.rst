@@ -8,8 +8,9 @@ What is it
 
 Centrifuge is a simple server for real-time messaging in web applications.
 
-This is something like `Pusher <http://pusher.com/>`_ or `Pubnub <http://pubnub.com/>`_ services - not so powerful yet, but open-source,
-self hosted and easy to setup. The closest analogue is `Faye <https://github.com/faye/faye>`_.
+This is something like `Pusher <http://pusher.com/>`_ or `Pubnub <http://pubnub.com/>`_ services -
+not so powerful yet, but open-source, self hosted and easy to setup. The closest analogue is
+`Faye <https://github.com/faye/faye>`_.
 
 It is built on top of `Tornado <http://www.tornadoweb.org/en/stable/>`_ -
 extremely fast and mature Python's async web server.

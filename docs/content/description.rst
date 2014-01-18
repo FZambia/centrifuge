@@ -134,8 +134,12 @@ should run Centrifuge in this way:
     centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379 --redis_password=
 
 
-Sometimes you need only one instance of Centrifuge running. In this case there is
-an option to run Centrifuge without Redis and ZeroMQ:
+Redis is the most simple way to run distributed instances of Centrifuge. All your instances must
+be started with the same command line options.
+
+If your web application is small then you can run Centrifuge without extra dependencies on
+Redis or ZeroMQ. In this case you are restricted in using only one instance of Centrifuge.
+To run Centrifuge without Redis and ZeroMQ for PUB/SUB use ``--base`` option:
 
 .. code-block:: bash
 
@@ -152,7 +156,8 @@ configuration file. As Redis settings set up correctly - every message published
 be added to history and every connected client sends presence information into Redis.
 So if Redis available - information about presence and message history will be available
 for clients (there are options for namespaces which allow to disable presence and
-history for channels belonging to them).
+history for channels belonging to them). Note, that in case of single node of Centrifuge
+it's possible to keep state and history in process memory - no Redis required then.
 
 Finally let's talk about structure database. In Centrifuge you can create projects
 and namespaces in projects. This information must be stored somewhere and shared between
@@ -161,5 +166,6 @@ If all your instances running on the same machine any of them can be used. But i
 you deploy Centrifuge on several machines it is impossible to use SQLite database.
 To avoid making query to database on every request all structure information loaded
 into memory and then updated when something in structure changed and periodically to
-avoid inconsistency.
+avoid inconsistency. There is also an option to set all structure in configuration file
+and go without any database.
 

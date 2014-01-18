@@ -24,7 +24,7 @@ You can log into Centrifuge using **password** from configuration file.
 
 If you did not set password in configuration file - you will be log in as
 administrator automatically. But remember that this is normal only for
-development stage. In production you should use strong password.
+development stage. In production you must use strong password.
 
 
 Creating new project
@@ -92,3 +92,15 @@ Also from this tab project can be deleted.
 
 Manage your channels from web interface. You can request presence or history info
 from here, publish new message into channel or unsubscribe user from channel by user ID.
+
+
+Namespace management
+~~~~~~~~~~~~~~~~~~~~
+
+.. _namespace_settings:
+
+Centrifuge allows to configure channel's settings using namespaces.
+
+You can create new namespace, configure its settings and after that every
+channel which belongs to this namespace will have those settings. It's flexible and
+provides a great control over channel behaviour.

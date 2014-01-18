@@ -86,7 +86,7 @@ installed:
     easy_install pip
 
 
-From version ``0.2.8`` there is experimental Redis PUB/SUB support in Centrifuge. This means that you
+From version ``0.2.8`` there is Redis PUB/SUB support in Centrifuge. This means that you
 can run Centrifuge using Redis instead of ZeroMQ. In this case you can even build Centrifuge without
 extra dependency on ZeroMQ libraries.
 

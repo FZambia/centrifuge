@@ -50,7 +50,7 @@ class ProjectForm(Form):
             validators.Length(min=3, max=50),
             validators.Optional()
         ],
-        description="human readable project name"
+        description="human readable project name, will be used in web interface"
     )
 
     auth_address = TextField(
@@ -59,7 +59,7 @@ class ProjectForm(Form):
             validators.URL(require_tld=False),
             validators.Optional()
         ],
-        description="your application's url address to authorize clients"
+        description="your application's url address to authorize subscriptions on private channels"
     )
 
     max_auth_attempts = IntegerField(
@@ -68,7 +68,8 @@ class ProjectForm(Form):
             validators.NumberRange(min=1, max=100)
         ],
         default=DEFAULT_MAX_AUTH_ATTEMPTS,
-        description="maximum amount of requests from Centrifuge to application during client's authorization"
+        description="maximum amount of POST requests from Centrifuge to your application "
+                    "during client's authorization"
     )
 
     back_off_interval = IntegerField(
@@ -77,7 +78,7 @@ class ProjectForm(Form):
             validators.NumberRange(min=50, max=10000)
         ],
         default=DEFAULT_BACK_OFF_INTERVAL,
-        description="internal, keep it default until you know what you want"
+        description="please, keep it default until you know what you do"
     )
 
     back_off_max_timeout = IntegerField(
@@ -86,14 +87,15 @@ class ProjectForm(Form):
             validators.NumberRange(min=50, max=120000)
         ],
         default=DEFAULT_BACK_OFF_MAX_TIMEOUT,
-        description="internal, keep it default until you know what you want"
+        description="please, keep it default until you know what you do"
     )
 
     default_namespace = SelectField(
         label='default namespace',
         validators=[],
         default='',
-        description="namespace which will be used when no namespace provided in request params"
+        description="namespace which will be used by default when no namespace "
+                    "provided in request params"
     )
 
 
@@ -116,14 +118,16 @@ class NamespaceForm(Form):
         label='is watching',
         validators=[],
         default=False,
-        description="publish all namespace channel's messages to administrator's web interface"
+        description="publish all namespace messages into admin channel "
+                    "(messages will be visible in web interface)"
     )
 
     is_private = BooleanField(
         label='is private',
         validators=[],
         default=False,
-        description="authorize every subscription request using auth address"
+        description="authorize every subscription on channel in this namespace using "
+                    "POST request to auth address"
     )
 
     publish = BooleanField(
@@ -138,7 +142,7 @@ class NamespaceForm(Form):
         validators=[],
         default=True,
         description="check if you want to use presence info for channels in "
-                    "this namespace (Redis required)"
+                    "this namespace (state must be configured)"
     )
 
     history = BooleanField(
@@ -146,7 +150,7 @@ class NamespaceForm(Form):
         validators=[],
         default=True,
         description="check if you want to get history info for channels in "
-                    "this namespace (Redis required)"
+                    "this namespace (state must be configured)"
     )
 
     history_size = IntegerField(

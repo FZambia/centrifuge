@@ -153,8 +153,10 @@ successfully tested in production environment.
 Heroku
 ~~~~~~
 
-Centrifuge can be deployed on Heroku
+Centrifuge can be deployed on Heroku. Note that Heroku disables inactive WebSocket connections
+after 55 sec, so you need to implement some sort of ping on client side. There is an example
+in Centrifuge repo - simple chat on JSFiddle using Centrifuge hosted on Heroku.
 
 The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/nigma/heroku-centrifuge
 
-The final result is available here: [centrifuge.herokuapp.com](https://centrifuge.herokuapp.com/) (password = ``password``)
+The final result is available here: `centrifuge.herokuapp.com <https://centrifuge.herokuapp.com/>`_ (password = ``password``)
