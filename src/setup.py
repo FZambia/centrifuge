@@ -89,7 +89,7 @@ install_requires = [
     'six==1.3.0',
     'tornado==3.2',
     'sockjs-tornado==1.0.0',
-    'jsonschema==1.2.0',
+    'jsonschema==2.3.0',
     'toro==0.5',
     'WTForms==1.0.4'
 ]
@@ -112,7 +112,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.4.2',
+    version='0.4.3dev',
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',

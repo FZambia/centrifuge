@@ -99,5 +99,31 @@ class SchemaTest(TestCase):
             None
         )
 
+        schema = {
+            "token": "test",
+            "user": "test",
+            "project": "test",
+            "info": 1
+        }
+        try:
+            validate(schema, client_api_schema["connect"])
+        except ValidationError:
+            pass
+        else:
+            raise AssertionError("Exception must be raised here")
+
+        schema = {
+            "token": "test",
+            "user": "test",
+            "project": "test",
+            "info": "{}"
+        }
+
+        self.assertEqual(
+            validate(schema, client_api_schema["connect"]),
+            None
+        )
+
+
 if __name__ == '__main__':
     main()
