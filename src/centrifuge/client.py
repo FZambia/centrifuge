@@ -23,7 +23,7 @@ from tornado.gen import coroutine, Return, Task
 from jsonschema import validate, ValidationError
 
 from centrifuge import auth
-from centrifuge.response import Response
+from centrifuge.response import Response, MultiResponse
 from centrifuge.log import logger
 from centrifuge.schema import req_schema, client_api_schema
 
@@ -152,31 +152,19 @@ class Client(object):
         raise Return((True, None))
 
     @coroutine
-    def message_received(self, message):
-        """
-        Called when message from client received.
-        """
+    def process_obj(self, obj):
+
         response = Response()
 
         try:
-            data = json_decode(message)
-        except ValueError:
-            response.error = 'malformed JSON data'
-            yield self.send(response.as_message())
-            yield self.close_sock()
-            raise Return((True, None))
-
-        try:
-            validate(data, req_schema)
+            validate(obj, req_schema)
         except ValidationError as e:
             response.error = str(e)
-            yield self.send(response.as_message())
-            yield self.close_sock()
-            raise Return((True, None))
+            raise Return((response, response.error))
 
-        uid = data.get('uid', None)
-        method = data.get('method')
-        params = data.get('params')
+        uid = obj.get('uid', None)
+        method = obj.get('method')
+        params = obj.get('params')
 
         response.uid = uid
         response.method = method
@@ -184,31 +172,68 @@ class Client(object):
 
         if method != 'connect' and not self.is_authenticated:
             response.error = self.application.UNAUTHORIZED
-            yield self.send(response.as_message())
-            yield self.close_sock()
-            raise Return((True, None))
+            raise Return((response, response.error))
 
         func = getattr(self, 'handle_%s' % method, None)
 
-        if not func:
+        if not func or not method in client_api_schema:
             response.error = "unknown method %s" % method
-            yield self.send(response.as_message())
-            yield self.close_sock()
-            raise Return((True, None))
-
-        if method not in client_api_schema:
-            raise Return((None, 'unknown method %s' % method))
+            raise Return((response, response.error))
 
         try:
             validate(params, client_api_schema[method])
         except ValidationError as e:
-            response = Response(uid=uid, method=method, error=str(e))
-            yield self.send(response.as_message())
+            response.error = str(e)
+            raise Return((response, response.error))
+
+        response.body, response.error = yield func(params)
+
+        raise Return((response, None))
+
+    @coroutine
+    def message_received(self, message):
+        """
+        Called when message from client received.
+        """
+        multi_response = MultiResponse()
+
+        try:
+            data = json_decode(message)
+        except ValueError:
+            logger.error('malformed JSON data')
             yield self.close_sock()
             raise Return((True, None))
 
-        response.body, response.error = yield func(params)
-        yield self.send(response.as_message())
+        if isinstance(data, dict):
+            # single object request
+            response, err = yield self.process_obj(data)
+            multi_response.add(response)
+            if err:
+                # error occurred, connection must be closed
+                logger.error(err)
+                yield self.sock.send(multi_response.as_message())
+                yield self.close_sock()
+                raise Return((True, None))
+
+        elif isinstance(data, list):
+            # multiple object request
+            for obj in data:
+                response, err = yield self.process_obj(obj)
+                multi_response.add(response)
+                if err:
+                    # close connection in case of any error
+                    logger.error(err)
+                    yield self.sock.send(multi_response.as_message())
+                    yield self.close_sock()
+                    raise Return((True, None))
+
+        else:
+            logger.error('data not list and not dictionary')
+            yield self.close_sock()
+            raise Return((True, None))
+
+        yield self.send(multi_response.as_message())
+
         raise Return((True, None))
 
     @coroutine

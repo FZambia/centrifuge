@@ -163,8 +163,10 @@ class ApiHandler(BaseHandler):
             response = yield self.process_object(data, project, is_owner_request)
             multi_response.add(response)
         elif isinstance(data, list):
-            responses = yield [self.process_object(obj, project, is_owner_request) for obj in data]
-            multi_response.set(responses)
+            # multiple object request
+            for obj in data:
+                response = yield self.process_object(obj, project, is_owner_request)
+                multi_response.add(response)
         else:
             raise tornado.web.HTTPError(400, log_message="data not a list or dictionary")
 
