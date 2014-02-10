@@ -246,13 +246,13 @@ def main():
 
     app.initialize()
 
-    magic_project_id = custom_settings.get('magic_project_id')
-    if magic_project_id:
-        app.MAGIC_PROJECT_ID = magic_project_id
+    owner_api_project_id = custom_settings.get('owner_api_project_id')
+    if owner_api_project_id:
+        app.OWNER_API_PROJECT_ID = owner_api_project_id
 
-    magic_project_param = custom_settings.get('magic_project_param')
-    if magic_project_param:
-        app.MAGIC_PROJECT_PARAM = magic_project_param
+    owner_api_project_param = custom_settings.get('owner_api_project_param')
+    if owner_api_project_param:
+        app.OWNER_API_PROJECT_PARAM = owner_api_project_param
 
     logger.info("Tornado port: {0}".format(options.port))
 

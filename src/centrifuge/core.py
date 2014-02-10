@@ -33,10 +33,10 @@ def get_host():
 class Application(tornado.web.Application):
 
     # magic fake project ID for owner API purposes.
-    MAGIC_PROJECT_ID = '_'
+    OWNER_API_PROJECT_ID = '_'
 
     # magic project param name to allow owner make API operations within project
-    MAGIC_PROJECT_PARAM = '_project'
+    OWNER_API_PROJECT_PARAM = '_project'
 
     # in milliseconds, how often this application will send ping message
     PING_INTERVAL = 5000

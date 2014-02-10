@@ -26,3 +26,21 @@ class Response(object):
             'error': self.error,
             'body': self.body
         }
+
+
+class MultiResponse(object):
+
+    def __init__(self):
+        self.responses = []
+
+    def add(self, response):
+        self.responses.append(response)
+
+    def set(self, responses):
+        self.responses = responses
+
+    def as_message(self):
+        return json_encode(self.as_list_of_dicts())
+
+    def as_list_of_dicts(self):
+        return [x.as_dict() for x in self.responses]

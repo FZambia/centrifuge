@@ -1,3 +1,14 @@
+v0.5.0
+======
+
+* Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
+
+Migration notes:
+
+* `magic_project_param` configuration setting renamed to `owner_api_project_param`
+* `magic_project_id` configuration setting renamed to `owner_api_project_id`
+
+
 v0.4.2
 ======
 

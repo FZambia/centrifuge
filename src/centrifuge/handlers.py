@@ -11,7 +11,7 @@ from jsonschema import validate, ValidationError
 
 from centrifuge import auth
 from centrifuge.log import logger
-from centrifuge.response import Response
+from centrifuge.response import Response, MultiResponse
 from centrifuge.client import Client
 from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
 
@@ -48,6 +48,64 @@ class ApiHandler(BaseHandler):
         pass
 
     @coroutine
+    def process_object(self, obj, project, is_owner_request):
+
+        response = Response()
+
+        try:
+            validate(obj, req_schema)
+        except ValidationError as e:
+            response.error = str(e)
+            raise Return(response)
+
+        req_id = obj.get("uid", None)
+        method = obj.get("method")
+        params = obj.get("params")
+
+        response.uid = req_id
+        response.method = method
+
+        schema = server_api_schema
+
+        if is_owner_request and self.application.OWNER_API_PROJECT_PARAM in params:
+
+            project_id = params[self.application.OWNER_API_PROJECT_PARAM]
+
+            project, error = yield self.application.structure.get_project_by_id(
+                project_id
+            )
+            if error:
+                logger.error(error)
+                response.error = self.application.INTERNAL_SERVER_ERROR
+            if not project:
+                response.error = self.application.PROJECT_NOT_FOUND
+
+        try:
+            params.pop(self.application.OWNER_API_PROJECT_PARAM)
+        except KeyError:
+            pass
+
+        if not is_owner_request and method in owner_api_methods:
+            response.error = self.application.PERMISSION_DENIED
+
+        if not response.error:
+            if method not in schema:
+                response.error = self.application.METHOD_NOT_FOUND
+            else:
+                try:
+                    validate(params, schema[method])
+                except ValidationError as e:
+                    response.error = str(e)
+                else:
+                    result, error = yield self.application.process_call(
+                        project, method, params
+                    )
+                    response.body = result
+                    response.error = error
+
+        raise Return(response)
+
+    @coroutine
     def post(self, project_id):
         """
         Handle API HTTP requests.
@@ -66,7 +124,7 @@ class ApiHandler(BaseHandler):
 
         is_owner_request = False
 
-        if project_id == self.application.MAGIC_PROJECT_ID:
+        if project_id == self.application.OWNER_API_PROJECT_ID:
             # API request aims to be from superuser
             is_owner_request = True
 
@@ -98,59 +156,19 @@ class ApiHandler(BaseHandler):
         if not data:
             raise tornado.web.HTTPError(400, log_message="malformed data")
 
-        response = Response()
+        multi_response = MultiResponse()
 
-        try:
-            validate(data, req_schema)
-        except ValidationError as e:
-            response.error = str(e)
+        if isinstance(data, dict):
+            # single object request
+            response = yield self.process_object(data, project, is_owner_request)
+            multi_response.add(response)
+        elif isinstance(data, list):
+            responses = yield [self.process_object(obj, project, is_owner_request) for obj in data]
+            multi_response.set(responses)
         else:
-            req_id = data.get("uid", None)
-            method = data.get("method")
-            params = data.get("params")
+            raise tornado.web.HTTPError(400, log_message="data not a list or dictionary")
 
-            response.uid = req_id
-            response.method = method
-
-            schema = server_api_schema
-
-            if is_owner_request and self.application.MAGIC_PROJECT_PARAM in params:
-
-                project_id = params[self.application.MAGIC_PROJECT_PARAM]
-
-                project, error = yield self.application.structure.get_project_by_id(
-                    project_id
-                )
-                if error:
-                    logger.error(error)
-                    response.error = self.application.INTERNAL_SERVER_ERROR
-                if not project:
-                    response.error = self.application.PROJECT_NOT_FOUND
-
-            try:
-                params.pop(self.application.MAGIC_PROJECT_PARAM)
-            except KeyError:
-                pass
-
-            if not is_owner_request and method in owner_api_methods:
-                response.error = self.application.PERMISSION_DENIED
-
-            if not response.error:
-                if method not in schema:
-                    response.error = self.application.METHOD_NOT_FOUND
-                else:
-                    try:
-                        validate(params, schema[method])
-                    except ValidationError as e:
-                        response.error = str(e)
-                    else:
-                        result, error = yield self.application.process_call(
-                            project, method, params
-                        )
-                        response.body = result
-                        response.error = error
-
-        self.json_response(response.as_message())
+        self.json_response(multi_response.as_message())
 
 
 class SockjsConnection(SockJSConnection):
