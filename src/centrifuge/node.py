@@ -23,6 +23,10 @@ define(
 )
 
 define(
+    "zmq", default=False, help="use ZeroMQ PUB/SUB", type=bool
+)
+
+define(
     "zmq_pub_listen", default="127.0.0.1", help="zmq pub listen", type=str
 )
 
@@ -54,10 +58,6 @@ define(
 )
 
 define(
-    "base", default=False, help="use Base PUB/SUB (single node compatible only)", type=bool
-)
-
-define(
     "redis", default=False, help="use Redis for PUB/SUB", type=bool
 )
 
@@ -85,7 +85,7 @@ define(
 tornado.options.parse_command_line()
 
 
-if not options.redis and not options.base:
+if options.zmq:
 
     from zmq.eventloop import ioloop
 
@@ -235,12 +235,12 @@ def main():
     Client.application = app
 
     # choose PUB/SUB mechanism
-    if options.base:
-        from centrifuge.pubsub.base import BasePubSub as PubSub
+    if options.zmq:
+        from centrifuge.pubsub.zeromq import PubSub
     elif options.redis:
         from centrifuge.pubsub.redis import PubSub
     else:
-        from centrifuge.pubsub.zeromq import PubSub
+        from centrifuge.pubsub.base import BasePubSub as PubSub
 
     app.pubsub = PubSub(app)
 
