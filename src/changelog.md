@@ -1,12 +1,18 @@
 v0.5.0
 ======
 
+* Base PUB/SUB is now default, to use ZeroMQ `--zmq` command-line option must be used.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
+* Centrifuge admin api can now work with list of messages instead of single one.
+* Javascript client now supports message batching.
+* new client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
 
 Migration notes:
 
+*  please update javascript client while migrating to Centrifuge 0.5.0
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
-* `magic_project_id` configuration setting renamed to `owner_api_project_id`
+* `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
+* if you use ZeroMQ as PUB/SUB broker then add ``--zmq`` option when starting Centrifuge.
 
 
 v0.4.2
