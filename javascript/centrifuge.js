@@ -1,6 +1,6 @@
 /**
  * Centrifuge javascript client
- * v0.4.1
+ * v0.5.0
  */
 ;(function () {
     'use strict';
@@ -1035,15 +1035,15 @@
     };
 
     centrifuge_proto._receive = function (data) {
-        if (Object.prototype.toString.call(data) === Object.prototype.toString.call({})) {
-            this._dispatchMsg(data);
-        } else if (Object.prototype.toString.call(data) === Object.prototype.toString.call([])) {
+        if (Object.prototype.toString.call(data) === Object.prototype.toString.call([])) {
             for (var i in data) {
                 if (data.hasOwnProperty(i)) {
                     var msg = data[i];
                     this._dispatchMsg(msg);
                 }
             }
+        } else if (Object.prototype.toString.call(data) === Object.prototype.toString.call({})) {
+            this._dispatchMsg(data);
         }
     };
 
