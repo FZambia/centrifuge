@@ -1035,9 +1035,9 @@
     };
 
     centrifuge_proto._receive = function (data) {
-        if (data != null && typeof data === 'object') {
+        if (Object.prototype.toString.call(data) === Object.prototype.toString.call({})) {
             this._dispatchMsg(data);
-        } else if (data instanceof Array) {
+        } else if (Object.prototype.toString.call(data) === Object.prototype.toString.call([])) {
             for (var i in data) {
                 if (data.hasOwnProperty(i)) {
                     var msg = data[i];
