@@ -178,6 +178,9 @@ client_api_schema = {
     "publish": server_api_schema["publish"],
     "presence": server_api_schema["presence"],
     "history": server_api_schema["history"],
+    "ping": {
+        "type": "object"
+    },
     "subscribe": {
         "type": "object",
         "properties": {

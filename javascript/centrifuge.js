@@ -1026,6 +1026,8 @@
             case 'leave':
                 this._leaveResponse(message);
                 break;
+            case 'ping':
+                break;
             case 'message':
                 this._messageResponse(message);
                 break;
@@ -1053,6 +1055,14 @@
         this._send(messages);
     };
 
+    centrifuge_proto._ping = function () {
+        var centrifugeMessage = {
+            "method": "ping",
+            "params": {}
+        };
+        this._centrifuge.send(centrifugeMessage);
+    };
+
     /* PUBLIC API */
 
     centrifuge_proto.getClientId = function () {
@@ -1078,6 +1088,8 @@
     centrifuge_proto.getSubscription = centrifuge_proto._getSubscription;
 
     centrifuge_proto.findSubscription = centrifuge_proto._findSubscription;
+
+    centrifuge_proto.ping = centrifuge_proto._ping;
 
     centrifuge_proto.send = function (message) {
         if (this._isBatching === true) {

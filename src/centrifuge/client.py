@@ -341,6 +341,17 @@ class Client(object):
         raise Return((False, None))
 
     @coroutine
+    def handle_ping(self, params):
+        """
+        Do nothing here.
+        Some hosting platforms (for example Heroku) disconnect websocket
+        connection after a while if no payload transfer over network. To
+        prevent such disconnects clients can periodically send ping messages
+        to Centrifuge
+        """
+        raise Return(('pong', None))
+
+    @coroutine
     def handle_connect(self, params):
         """
         Authenticate client's connection, initialize required
