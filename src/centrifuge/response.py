@@ -4,13 +4,11 @@
 # All rights reserved.
 
 from tornado.escape import json_encode
-import uuid
 
 
 class Response(object):
 
     def __init__(self, uid=None, method=None, params=None, error=None, body=None):
-        self.unique_id = uuid.uuid4().hex
         self.uid = uid
         self.method = method
         self.params = params
@@ -34,10 +32,8 @@ class MultiResponse(object):
 
     def __init__(self):
         self.responses = []
-        self.matches = {}
 
     def add(self, response):
-        self.matches[response.unique_id] = response
         self.responses.append(response)
 
     def add_many(self, responses):

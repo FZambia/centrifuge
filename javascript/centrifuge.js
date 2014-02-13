@@ -609,6 +609,8 @@
         this._sep = ':';
         this._fullRegex = /^([^_]+[A-z0-9_@\-]{2,}):([A-z0-9_@\-\.]+)$/;
         this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
+        this._messages = [];
+        this._isBatching = false;
         this._config = {
             retry: 3000,
             info: null,
@@ -792,7 +794,7 @@
             } else {
                 self._debug("connect without additional info");
             }
-            self._send([centrifugeMessage]);
+            self.send(centrifugeMessage);
         };
 
         this._transport.onerror = function (error) {
@@ -989,8 +991,7 @@
         }
     };
 
-    centrifuge_proto._receive = function (message) {
-
+    centrifuge_proto._dispatchMsg = function(message) {
         if (message === undefined || message === null) {
             return;
         }
@@ -1033,6 +1034,25 @@
         }
     };
 
+    centrifuge_proto._receive = function (data) {
+        if (data != null && typeof data === 'object') {
+            this._dispatchMsg(data);
+        } else if (data instanceof Array) {
+            for (var i in data) {
+                if (data.hasOwnProperty(i)) {
+                    var msg = data[i];
+                    this._dispatchMsg(msg);
+                }
+            }
+        }
+    };
+
+    centrifuge_proto._flush = function() {
+        var messages = this._messages.slice(0);
+        this._messages = [];
+        this._send(messages);
+    };
+
     /* PUBLIC API */
 
     centrifuge_proto.getClientId = function () {
@@ -1060,7 +1080,30 @@
     centrifuge_proto.findSubscription = centrifuge_proto._findSubscription;
 
     centrifuge_proto.send = function (message) {
-        this._send([message]);
+        if (this._isBatching === true) {
+            this._messages.push(message);
+        } else {
+            this._send([message]);
+        }
+    };
+
+    centrifuge_proto.startBatching = function () {
+        // start collecting messages without sending them to Centrifuge until flush
+        // method called
+        this._isBatching = true;
+    };
+
+    centrifuge_proto.stopBatching = function(flush) {
+        // stop collecting messages
+        flush = flush || false;
+        this._isBatching = false;
+        if (flush === true) {
+            this.flush();
+        }
+    };
+
+    centrifuge_proto.flush = function() {
+        this._flush();
     };
 
     centrifuge_proto.subscribe = function (path, callback) {
