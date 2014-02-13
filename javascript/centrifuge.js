@@ -1060,7 +1060,7 @@
             "method": "ping",
             "params": {}
         };
-        this._centrifuge.send(centrifugeMessage);
+        this.send(centrifugeMessage);
     };
 
     /* PUBLIC API */
