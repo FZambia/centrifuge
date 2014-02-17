@@ -14,5 +14,7 @@
         "update_interval": 60,
 	      "settings": {
 	      }
-    }
+    },
+    "admin_api_message_limit": 100,
+    "client_api_message_limit": 100
 }
