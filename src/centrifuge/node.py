@@ -246,6 +246,14 @@ def main():
 
     app.initialize()
 
+    admin_api_message_limit = custom_settings.get('admin_api_message_limit')
+    if admin_api_message_limit:
+        app.ADMIN_API_MESSAGE_LIMIT = admin_api_message_limit
+
+    client_api_message_limit = custom_settings.get('client_api_message_limit')
+    if client_api_message_limit:
+        app.CLIENT_API_MESSAGE_LIMIT = client_api_message_limit
+
     owner_api_project_id = custom_settings.get('owner_api_project_id')
     if owner_api_project_id:
         app.OWNER_API_PROJECT_ID = owner_api_project_id

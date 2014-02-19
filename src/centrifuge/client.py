@@ -217,6 +217,11 @@ class Client(object):
 
         elif isinstance(data, list):
             # multiple object request
+            if len(data) > self.application.CLIENT_API_MESSAGE_LIMIT:
+                logger.debug("client API message limit exceeded")
+                yield self.close_sock()
+                raise Return((True, None))
+
             for obj in data:
                 response, err = yield self.process_obj(obj)
                 multi_response.add(response)

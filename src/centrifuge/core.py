@@ -50,6 +50,14 @@ class Application(tornado.web.Application):
     # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
 
+    # maximum number of messages in single admin API request
+    ADMIN_API_MESSAGE_LIMIT = 100
+
+    # maximum number of messages in single client API request
+    CLIENT_API_MESSAGE_LIMIT = 100
+
+    LIMIT_EXCEEDED = 'limit exceeded'
+
     UNAUTHORIZED = 'unauthorized'
 
     PERMISSION_DENIED = 'permission denied'
