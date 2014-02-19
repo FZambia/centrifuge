@@ -23,16 +23,13 @@ This is an architecture diagram of Centrifuge:
 
 
 When you start Centrifuge instance you start Tornado instance on a certain port number.
-That port number can be configured using command-line option ``--port`` .
-Default value is 8000 and if this port number is free in your system you can omit ``--port``
-option.
+That port number can be configured using command-line option ``--port`` . By default it is 8000.
 
 In general you should provide path to JSON configuration file when starting Centrifuge instance
 using ``--config`` option. You can start Centrifuge without configuration file but this is
 not secure and must be used only during development.
 
-Configuration file must contain valid JSON. It contains cookie secret, administrative password,
-structure database settings and Redis settings. But for now let's omit configuration file.
+Configuration file must contain valid JSON. But for now let's omit configuration file.
 By default Centrifuge will use insecure cookie secret, no administrative password, local SQLite
 storage as structure database and no Redis (no presence and message history data will be available).
 
@@ -44,42 +41,77 @@ So the final command to start one instance of Centrifuge will be
 
     centrifuge --config=config.json
 
+You can run more instances to scale but in this case you should use one of available
+PUB/SUB backends - Redis or ZeroMQ based.
 
-There could be a problem if port 7000 is not free in your system. This is a default port for
-ZeroMQ socket. If you have problems with running single instance you will find a way to change
-that port number below.
-
-As you started one instance of Centrifuge - clients from web browsers can start connecting to it.
+Well, you started one instance of Centrifuge - clients from web browsers can start connecting to it.
 
 There are two endpoints for browser connections - ``/connection`` for SockJS and
 ``/connection/websocket`` for pure Websocket connections. On browser side you now know the
 url to connect - for our simple case it is ``http://localhost:port/connection`` in case of
-using SockJS and ``ws://localhost:port/connection/websocket`` in case of using pure Websockets.
+using SockJS library and ``ws://localhost:port/connection/websocket`` in case of using
+pure Websockets.
 
 To communicate with Centrifuge from browser you should use javascript client which comes
-with Centrifuge and provides methods for connecting, subscribing, listening for messages etc.
+with Centrifuge (find it in repository) and provides simple API. Please, read a chapter about
+client API to get more information.
 
-Ok, now you have one working instance. But sometimes it isn't enough and you need to run
-more instances of Centrifuge and load balance clients between them. In case of several
-instances you must do some additional work.
+Ok, now you have one working instance. But sometimes it is not enough and you need to run
+more instances of Centrifuge and load balance clients between them.
 
-First, you must choose another port number (of course it is not necessary if you use
-another machine for other instance).
+As was mentioned above it's time to use one of available PUB/SUB backends.
 
-Second, you must configure your load balancer. I suggest to use Nginx - you can find
-its configuration example in this documentation. You should use Nginx in production in
-case of single Centrifuge instance too. But in case of several instances it is an
-almost critical requirement (you can do load balancing from client side but this is a
-bad practice). Nginx is very fast and does some additional help, for example with
-malformed request headers.
+Lets see on Redis backend first and then on ZeroMQ.
 
-Third, new client can connect to any of running instances - if client publishes message
-we must send that message to other clients including those who connected to another instance
-at this moment. For this purpose Centrifuge uses ZeroMQ sockets. Every instance is binded
-to publish socket. Every instance must be subscribed on all publish sockets of all
-instances. In this way instances can communicate with each other using PUB/SUB mechanism.
-Only in this case message will be delivered to all recipients. So to create an instance
-in a proper way we must configure those sockets correctly. There are two ways of doing this.
+Redis is very simple and recommended way to scale Centrifuge. I suppose that you have it installed
+and running with default settings.
+
+Start first Centrifuge instance:
+
+.. code-block:: bash
+
+    centrifuge --config=config.json --redis
+
+
+See th difference? Yep, we added ``--redis`` option. This tells Centrifuge to connect to Redis
+and use its PUB/SUB capabilities.
+
+But our goal is to run several instances of Centrifuge. So lets run another one:
+
+.. code-block:: bash
+
+    centrifuge --config=config.json --redis --port==8001
+
+
+Note, that in this case we used ``--port`` option. This is necessary because every Centrifuge
+instance must be run on its own port number.
+
+So two instances running and connected via Redis. Cool!
+
+But what is an url to connect from browser - ``http://localhost:8000/connection`` or
+``http://localhost:8001/connection``? None of them, because Centrifuge must be kept
+behind proper load balancer such as Nginx. Nginx must be configured in a way to balance
+client connections from browser between our two instances. You can find Nginx configuration
+example in repo.
+
+New client can connect to any of running instances. If client sends message we must
+send that message to other clients including those who connected to another instance
+at this moment. This is why we need PUB/SUB here. All instances listen to special Redis
+channels and get messages from those channels.
+
+My final note will be that you have other Redis related command-line options:
+
+.. code-block:: bash
+
+    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379 --redis_password=
+
+As you can see those options are Redis address, port and password.
+
+
+Now lets talk about using ZeroMQ backend for PUB/SUB. It's a bit harder than going with Redis
+so I suppose you are experienced enough and understand why you need ZeroMQ instead of Redis.
+
+There are two ways of configuring ZeroMQ with Centrifuge.
 
 First way - manually set instance's publish socket and all publish sockets current
 instance must subscribe to. You should use these options for it. The drawback is that you
@@ -126,46 +158,20 @@ And to start proxy:
 Now instances connected through XPUB/XSUB proxy. Success!
 
 
-If you want to use Redis for PUB/SUB communication instead of ZeroMQ you
-should run Centrifuge in this way:
-
-.. code-block:: bash
-
-    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379 --redis_password=
-
-
-Redis is the most simple way to run distributed instances of Centrifuge. All your instances must
-be started with the same command line options.
-
-If your web application is small then you can run Centrifuge without extra dependencies on
-Redis or ZeroMQ. In this case you are restricted in using only one instance of Centrifuge.
-To run Centrifuge without Redis and ZeroMQ for PUB/SUB use ``--base`` option:
-
-.. code-block:: bash
-
-    centrifuge --config=config.json --base
-
-
-One more time - in this case you are restricted to use only single node!
-
-
 Our next step will be talking about how presence and history data for channels work.
-For this tasks Centrifuge uses Redis. All instances of Centrifuge must have access to
-information about presence and message history. Redis settings must be set up in
-configuration file. As Redis settings set up correctly - every message published will
-be added to history and every connected client sends presence information into Redis.
-So if Redis available - information about presence and message history will be available
-for clients (there are options for namespaces which allow to disable presence and
-history for channels belonging to them). Note, that in case of single node of Centrifuge
-it's possible to keep state and history in process memory - no Redis required then.
 
-Finally let's talk about structure database. In Centrifuge you can create projects
-and namespaces in projects. This information must be stored somewhere and shared between
-all running instances. To achieve this SQLite or MongoDB or PostgreSQL can be used.
-If all your instances running on the same machine any of them can be used. But if
-you deploy Centrifuge on several machines it is impossible to use SQLite database.
-To avoid making query to database on every request all structure information loaded
-into memory and then updated when something in structure changed and periodically to
-avoid inconsistency. There is also an option to set all structure in configuration file
-and go without any database.
+Centrifuge can use process memory (single node only) or Redis (one or more nodes) for this.
+State settings must be set up in configuration file.
+
+
+Finally let's talk about structure database.
+
+In Centrifuge you can create projects and namespaces in projects. This information
+must be stored somewhere and shared between all running instances. To achieve this
+SQLite or MongoDB or PostgreSQL can be used. If all your instances running on the
+same machine any of them can be used. But if you deploy Centrifuge on several machines
+it is impossible to use SQLite database. To avoid making query to database on every
+request all structure information loaded into memory and then updated when something
+in structure changed and periodically to avoid inconsistency. There is also an option
+to set all structure in configuration file and go without any database.
 

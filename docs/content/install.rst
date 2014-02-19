@@ -4,26 +4,19 @@ Installation
 .. _install:
 
 
-Centrifuge works on Linux and Mac OS X only
+Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have machine with those operating systems installed then you are ready to go.
+Centrifuge was developed and tested on Linux and Mac OS X operating systems. The work on
+other platforms is not guaranteed.
 
+It is written on Python. Python 2.6, Python 2.7 or Python 3.3 are supported versions.
 
-Centrifuge also requires python
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Python 2.6, Python 2.7 or Python 3.3 required.
-
-You can find nice guide about how to install Python on Mac OS X and Linux 
+You can find nice guide about how to install Python on Mac OS X or Linux
 `here <https://python-guide.readthedocs.org/en/latest/starting/install/osx/>`_ and
 `here <https://python-guide.readthedocs.org/en/latest/starting/install/linux/>`_ respectively
 
-
-Use Python's virtualenv
-~~~~~~~~~~~~~~~~~~~~~~~
-
-To isolate Centrifuge's environment it is recommended to use virtualenv.
+To isolate Centrifuge environment it is recommended to use virtualenv.
 If you are not familiar with it yet - please, make time and read about it
 `here <https://python-guide.readthedocs.org/en/latest/dev/virtualenvs/>`_
 
@@ -36,8 +29,8 @@ If you are not familiar with it yet - please, make time and read about it
 Of course, you can name folders as you like. This is just an example.
 
 
-Install Centrifuge
-~~~~~~~~~~~~~~~~~~
+Installation
+~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -86,9 +79,7 @@ installed:
     easy_install pip
 
 
-From version ``0.2.8`` there is Redis PUB/SUB support in Centrifuge. This means that you
-can run Centrifuge using Redis instead of ZeroMQ. In this case you can even build Centrifuge without
-extra dependency on ZeroMQ libraries.
+You can build Centrifuge without extra dependency on ZeroMQ libraries.
 
 .. code-block:: bash
 
@@ -129,7 +120,7 @@ Configuration file
 ~~~~~~~~~~~~~~~~~~
 
 Configuration is a JSON file. You can find example of those file in Centrifuge's
-repository. With SQLite (installed with default settings) configuration file
+repository. With SQLite as structure backend configuration file
 can be omitted during development. But in production environment it must be used
 because it contains important security settings like cookie_secret and administrative
 password.
