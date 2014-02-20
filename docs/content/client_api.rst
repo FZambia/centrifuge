@@ -240,6 +240,9 @@ When you want to actually send all collected messages to Centrifuge call ``flush
 
     centrifuge.flush();
 
+Maximum amount of messages in one batching request is 100 (this is by default and can be changed 
+in Centrifuge configuration file using ``client_api_message_limit`` option).
+
 
 Finally if you don't want batching anymore call ``stopBatching()`` method:
 
