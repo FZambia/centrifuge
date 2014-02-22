@@ -165,7 +165,12 @@ class ApiHandler(BaseHandler):
         elif isinstance(data, list):
             # multiple object request
             if len(data) > self.application.ADMIN_API_MESSAGE_LIMIT:
-                raise tornado.web.HTTPError(400, log_message="admin API message limit exceeded")
+                raise tornado.web.HTTPError(
+                    400,
+                    log_message="admin API message limit exceeded (received {0} messages)".format(
+                        len(data)
+                    )
+                )
 
             for obj in data:
                 response = yield self.process_object(obj, project, is_owner_request)
