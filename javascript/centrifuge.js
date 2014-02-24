@@ -983,8 +983,8 @@
 
     centrifuge_proto._extendResponse = function(message) {
         this._debug("extend received", message);
-        self._config.extended_token = message.body['extended_token'];
-        self._config.extended_timestamp = message.body['extended_timestamp'];
+        this._config.extended_token = message.body['extended_token'];
+        this._config.extended_timestamp = message.body['extended_timestamp'];
     };
 
     centrifuge_proto._messageResponse = function (message) {
