@@ -981,10 +981,10 @@
         subscription.trigger('leave', [body]);
     };
 
-    centrifuge_proto._extendResponse = function(body) {
-        this._debug("extend received", body);
-        self._config.extended_token = body['extended_token'];
-        self._config.extended_timestamp = body['extended_timestamp'];
+    centrifuge_proto._extendResponse = function(message) {
+        this._debug("extend received", message);
+        self._config.extended_token = message.body['extended_token'];
+        self._config.extended_timestamp = message.body['extended_timestamp'];
     };
 
     centrifuge_proto._messageResponse = function (message) {
