@@ -57,6 +57,7 @@ class Client(object):
         self.project_id = None
         self.channels = None
         self.presence_ping = None
+        self.extend = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -75,6 +76,9 @@ class Client(object):
         """
         if self.presence_ping:
             self.presence_ping.stop()
+
+        if self.extend:
+            self.extend.stop()
 
         project_id = self.project_id
 
@@ -114,6 +118,7 @@ class Client(object):
         self.channel_user_info = None
         self.default_user_info = None
         self.project_id = None
+        self.is_authenticated = False
         self.sock = None
         self.token = None
         raise Return((True, None))
@@ -367,13 +372,15 @@ class Client(object):
         if self.is_authenticated:
             raise Return((self.uid, None))
 
+        print params
+
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
         timestamp = params["timestamp"]
         user_info = params.get("info", None)
-        prolongation_token = params.get("prolongation_token")
-        prolongation_timestamp = params.get("prolongation_timestamp")
+        extend_token = params.get("extend_token")
+        extend_timestamp = params.get("extend_timestamp")
 
         project, error = yield self.get_project(project_id)
         if error:
@@ -392,20 +399,25 @@ class Client(object):
 
         now = time.time()
         if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
-            # it seems that token expired, the only chance for client is to have actual prolongation
-            # credentials in this request
-            if prolongation_token and prolongation_timestamp:
-                expected_token = self.get_prolongation_token(project, token, prolongation_timestamp)
-                if expected_token != prolongation_token:
-                    raise Return((None, "invalid prolongation token"))
+            print "extend required"
+            # it seems that token expired, the only chance for client is to have
+            # actual extend credentials in this request
+            if extend_token and extend_timestamp:
+                expected_token = self.get_extend_token(project, token, extend_timestamp)
+                if expected_token != extend_token:
+                    raise Return((None, "invalid extend token"))
                 try:
-                    prolongation_timestamp = int(prolongation_timestamp)
+                    extend_timestamp = int(extend_timestamp)
                 except ValueError:
-                    raise Return((None, "invalid prolongation timestamp"))
-                if prolongation_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
-                    raise Return((None, "token expired"))
+                    raise Return((None, "invalid extended timestamp"))
+                if extend_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+                    raise Return((None, "connection expired"))
             else:
-                raise Return((None, "token expired"))
+                raise Return((None, "connection expired"))
+
+        last_timestamp = max(timestamp, extend_timestamp) if extend_timestamp else timestamp
+        time_to_extend = self.application.TOKEN_EXTEND_INTERVAL - (now - last_timestamp)
+        IOLoop.instance().add_timeout(time.time() + time_to_extend, self.send_extend_message)
 
         if user_info is not None:
             try:
@@ -694,50 +706,58 @@ class Client(object):
         self.send_join_leave_message(namespace_name, channel, 'leave')
 
     @staticmethod
-    def get_prolongation_token(project, original_token, timestamp):
+    def get_extend_token(project, original_token, timestamp):
         """
-        Create and return prolongation token based on project secret key, original
+        Create and return extend token based on project secret key, original
         token received on first connect and timestamp.
         """
-        token = hmac.new(project['secret_key'])
-        token.update(original_token)
-        token.update(timestamp)
+        token = hmac.new(six.b(str(project['secret_key'])))
+        token.update(six.b(original_token))
+        token.update(six.b(timestamp))
         return token.hexdigest()
 
     @coroutine
-    def generate_prolongation_credentials(self):
+    def generate_extend_credentials(self):
         """
-        Generate prolongation token and timestamp.
+        Generate extend token and timestamp.
         """
         project, error = yield self.get_project(self.project_id)
         if error:
             raise Return((None, error))
 
         now = str(int(time.time()))
-        token = self.get_prolongation_token(project, self.token, now)
+        token = self.get_extend_token(project, self.token, now)
         raise Return(((token, now), None))
 
     @coroutine
-    def send_prolong_message(self):
+    def send_extend_message(self):
         """
-        Send message to current client with prolongation credentials:
+        Send message to current client with extend credentials:
         current timestamp and prolonged token based on project secret key,
         initial connect token and current timestamp. After receiving this
         message client must connect to Centrifuge with these credentials in
         addition to first connect parameters.
         """
+        print "start send extend"
         if not self.is_authenticated:
+            print "ooooops"
             raise Return(False)
 
-        credentials, error = yield self.generate_prolongation_credentials()
+        credentials, error = yield self.generate_extend_credentials()
         if error:
             raise Return(False)
-
         message_body = {
-            "prolongation_token": credentials[0],
-            "prolongation_timestamp": credentials[1]
+            "extended_token": credentials[0],
+            "extended_timestamp": credentials[1]
         }
-
-        response = Response(method="prolongation", body=message_body)
+        response = Response(method="extend", body=message_body)
         yield self.send(response.as_message())
+
+        if not self.extend:
+            print "start periodic extend"
+            self.extend = PeriodicCallback(
+                self.send_extend_message, self.application.TOKEN_EXTEND_INTERVAL*1000
+            )
+            self.extend.start()
+
         raise Return(True)

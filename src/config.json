@@ -19,5 +19,5 @@
     "client_api_message_limit": 100,
     "token_expire": true,
     "token_expire_interval": 10,
-    "token_prolong_interval": 5
+    "token_extend_interval": 5
 }

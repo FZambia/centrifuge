@@ -223,13 +223,13 @@ client_api_schema = {
             "info": {
                 "type": "string"
             },
-            "prolongation_token": {
+            "extended_token": {
                 "type": "string"
             },
-            "prolongation_timestamp": {
+            "extended_timestamp": {
                 "type": "string"
             }
         },
-        "required": ["token", "user", "project"]
+        "required": ["token", "user", "project", "timestamp"]
     }
 }

@@ -614,8 +614,8 @@
         this._config = {
             retry: 3000,
             info: null,
-            prolongation_token: null,
-            prolongation_timestamp: null,
+            extended_token: null,
+            extended_timestamp: null,
             debug: false,
             protocols_whitelist: [
                 'websocket',
@@ -798,10 +798,10 @@
                 self._debug("connect without additional info");
             }
 
-            if (self._config.prolongation_token !== null && self._config.prolongation_timestamp !== null) {
-                self._debug("connect using prolongation credentials");
-                centrifugeMessage['params']['prolongation_token'] = self._config.prolongation_token;
-                centrifugeMessage['params']['prolongation_timestamp'] = self._config.prolongation_timestamp;
+            if (self._config.extended_token !== null && self._config.extended_timestamp !== null) {
+                self._debug("connect using extend credentials");
+                centrifugeMessage['params']['extended_token'] = self._config.extended_token;
+                centrifugeMessage['params']['extended_timestamp'] = self._config.extended_timestamp;
             }
 
             self.send(centrifugeMessage);
@@ -981,9 +981,10 @@
         subscription.trigger('leave', [body]);
     };
 
-    centrifuge_proto._prolongationResponse = function(body) {
-        console.log("prolongation received");
-        console.log(body);
+    centrifuge_proto._extendResponse = function(body) {
+        this._debug("extend received", body);
+        self._config.extended_token = body['extended_token'];
+        self._config.extended_timestamp = body['extended_timestamp'];
     };
 
     centrifuge_proto._messageResponse = function (message) {
@@ -1043,8 +1044,8 @@
                 break;
             case 'ping':
                 break;
-            case 'prolongation':
-                this._prolongationResponse(message);
+            case 'extend':
+                this._extendResponse(message);
                 break;
             case 'message':
                 this._messageResponse(message);
