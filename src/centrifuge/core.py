@@ -63,7 +63,7 @@ class Application(tornado.web.Application):
     TOKEN_EXPIRE_INTERVAL = 3600
 
     # how often to prolong token in seconds
-    TOKEN_PROLONG_INTERVAL = 1800
+    TOKEN_PROLONG_INTERVAL = 1000
 
     LIMIT_EXCEEDED = 'limit exceeded'
 

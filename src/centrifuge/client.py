@@ -395,7 +395,17 @@ class Client(object):
             # it seems that token expired, the only chance for client is to have actual prolongation
             # credentials in this request
             if prolongation_token and prolongation_timestamp:
-                pass
+                expected_token = self.get_prolongation_token(project, token, prolongation_timestamp)
+                if expected_token != prolongation_token:
+                    raise Return((None, "invalid prolongation token"))
+                try:
+                    prolongation_timestamp = int(prolongation_timestamp)
+                except ValueError:
+                    raise Return((None, "invalid prolongation timestamp"))
+                if prolongation_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+                    raise Return((None, "token expired"))
+            else:
+                raise Return((None, "token expired"))
 
         if user_info is not None:
             try:
@@ -683,6 +693,17 @@ class Client(object):
         """
         self.send_join_leave_message(namespace_name, channel, 'leave')
 
+    @staticmethod
+    def get_prolongation_token(project, original_token, timestamp):
+        """
+        Create and return prolongation token based on project secret key, original
+        token received on first connect and timestamp.
+        """
+        token = hmac.new(project['secret_key'])
+        token.update(original_token)
+        token.update(timestamp)
+        return token.hexdigest()
+
     @coroutine
     def generate_prolongation_credentials(self):
         """
@@ -692,11 +713,9 @@ class Client(object):
         if error:
             raise Return((None, error))
 
-        token = hmac.new(project['secret_key'])
-        token.update(self.token)
         now = str(int(time.time()))
-        token.update(now)
-        raise Return(((token.hexdigest(), now), None))
+        token = self.get_prolongation_token(project, self.token, now)
+        raise Return(((token, now), None))
 
     @coroutine
     def send_prolong_message(self):
