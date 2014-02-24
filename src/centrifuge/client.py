@@ -4,6 +4,7 @@
 # All rights reserved.
 
 import six
+import hmac
 import uuid
 import time
 import random
@@ -50,6 +51,7 @@ class Client(object):
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
         self.user = ''
+        self.token = None
         self.channel_user_info = {}
         self.default_user_info = {}
         self.project_id = None
@@ -113,6 +115,7 @@ class Client(object):
         self.default_user_info = None
         self.project_id = None
         self.sock = None
+        self.token = None
         raise Return((True, None))
 
     @coroutine
@@ -348,11 +351,10 @@ class Client(object):
     @coroutine
     def handle_ping(self, params):
         """
-        Do nothing here.
         Some hosting platforms (for example Heroku) disconnect websocket
         connection after a while if no payload transfer over network. To
         prevent such disconnects clients can periodically send ping messages
-        to Centrifuge
+        to Centrifuge.
         """
         raise Return(('pong', None))
 
@@ -406,6 +408,7 @@ class Client(object):
         self.is_authenticated = True
         self.project_id = project_id
         self.user = user
+        self.token = token
         self.default_user_info = {
             'user_id': self.user,
             'client_id': self.uid,
@@ -650,6 +653,9 @@ class Client(object):
         raise Return((namespace, None))
 
     def send_join_leave_message(self, namespace_name, channel, message_method):
+        """
+        Generate and send message about join or leave event.
+        """
         subscription_key = self.application.pubsub.get_subscription_key(
             self.project_id, namespace_name, channel
         )
@@ -676,3 +682,43 @@ class Client(object):
         unsubscribed from channel.
         """
         self.send_join_leave_message(namespace_name, channel, 'leave')
+
+    @coroutine
+    def generate_prolongation_credentials(self):
+        """
+        Generate prolongation token and timestamp.
+        """
+        project, error = yield self.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        token = hmac.new(project['secret_key'])
+        token.update(self.token)
+        now = str(int(time.time()))
+        token.update(now)
+        raise Return(((token.hexdigest(), now), None))
+
+    @coroutine
+    def send_prolong_message(self):
+        """
+        Send message to current client with prolongation credentials:
+        current timestamp and prolonged token based on project secret key,
+        initial connect token and current timestamp. After receiving this
+        message client must connect to Centrifuge with these credentials in
+        addition to first connect parameters.
+        """
+        if not self.is_authenticated:
+            raise Return(False)
+
+        credentials, error = yield self.generate_prolongation_credentials()
+        if error:
+            raise Return(False)
+
+        message_body = {
+            "prolongation_token": credentials[0],
+            "prolongation_timestamp": credentials[1]
+        }
+
+        response = Response(method="prolongation", body=message_body)
+        yield self.send(response.as_message())
+        raise Return(True)

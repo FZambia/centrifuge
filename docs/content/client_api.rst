@@ -223,6 +223,39 @@ After calling this client will not try to reestablish connection periodically. Y
 ``connect`` method manually.
 
 
+Starting from Centrifuge 0.5.0 there is an experimental message batching support. It allows to send several 
+messages to Centrifuge in one request - this can be especially usefull when connection established via 
+one of non-streaming HTTP polyfills.
+
+You can start collecting messages to send calling ``startBatching()`` method:
+
+.. code-block:: javascript
+
+    centrifuge.startBatching();
+
+
+When you want to actually send all collected messages to Centrifuge call ``flush()`` method:
+
+.. code-block:: javascript
+
+    centrifuge.flush();
+
+Maximum amount of messages in one batching request is 100 (this is by default and can be changed 
+in Centrifuge configuration file using ``client_api_message_limit`` option).
+
+
+Finally if you don't want batching anymore call ``stopBatching()`` method:
+
+
+.. code-block:: javascript
+
+    centrifuge.stopBatching();
+
+
+call ``stopBatching(true)`` to flush all messages and stop batching.
+
+
+
 Make it even more simple
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -328,4 +361,5 @@ For example
     $("#comments-handler").on("centrifuge.disconnect", function(event, err) {
         console.log("disconnected from Centrifuge");
     });
+
 

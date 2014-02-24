@@ -58,7 +58,7 @@ Here is an example Nginx configuration to deploy Centrifuge.
             listen 8081;
             server_name localhost;
 
-            location ^~ /static/ {
+            location /static/ {
                 root /var/www/different/python/centrifuge/src/src/centrifuge/frontend;
                 if ($query_string) {
                     expires max;

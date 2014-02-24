@@ -262,6 +262,17 @@ def main():
     if owner_api_project_param:
         app.OWNER_API_PROJECT_PARAM = owner_api_project_param
 
+    token_expire = custom_settings.get('token_expire', True)
+    app.TOKEN_EXPIRE = token_expire
+
+    token_expire_interval = custom_settings.get('token_expire_interval')
+    if token_expire_interval:
+        app.TOKEN_EXPIRE_INTERVAL = token_expire_interval
+
+    token_prolong_interval = custom_settings.get('token_prolong_interval')
+    if token_prolong_interval:
+        app.TOKEN_PROLONG_INTERVAL = token_prolong_interval
+
     logger.info("Tornado port: {0}".format(options.port))
 
     # finally, let's go

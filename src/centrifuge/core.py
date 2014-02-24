@@ -56,6 +56,15 @@ class Application(tornado.web.Application):
     # maximum number of messages in single client API request
     CLIENT_API_MESSAGE_LIMIT = 100
 
+    # does application check expiring tokens when client connects?
+    TOKEN_EXPIRE = True
+
+    # token expiration time in seconds
+    TOKEN_EXPIRE_INTERVAL = 3600
+
+    # how often to prolong token in seconds
+    TOKEN_PROLONG_INTERVAL = 1800
+
     LIMIT_EXCEEDED = 'limit exceeded'
 
     UNAUTHORIZED = 'unauthorized'
