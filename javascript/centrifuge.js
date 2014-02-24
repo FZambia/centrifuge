@@ -799,7 +799,7 @@
             }
 
             if (self._config.extended_token !== null && self._config.extended_timestamp !== null) {
-                self._debug("connect using extend credentials");
+                self._debug("connect using extended credentials");
                 centrifugeMessage['params']['extended_token'] = self._config.extended_token;
                 centrifugeMessage['params']['extended_timestamp'] = self._config.extended_timestamp;
             }

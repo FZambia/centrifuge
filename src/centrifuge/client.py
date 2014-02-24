@@ -372,15 +372,13 @@ class Client(object):
         if self.is_authenticated:
             raise Return((self.uid, None))
 
-        print params
-
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
         timestamp = params["timestamp"]
         user_info = params.get("info", None)
-        extend_token = params.get("extend_token")
-        extend_timestamp = params.get("extend_timestamp")
+        extended_token = params.get("extended_token")
+        extended_timestamp = params.get("extended_timestamp")
 
         project, error = yield self.get_project(project_id)
         if error:
@@ -391,33 +389,7 @@ class Client(object):
         if token != auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info):
             raise Return((None, "invalid token"))
 
-        # check that timestamp is valid and is not too old
-        try:
-            timestamp = int(timestamp)
-        except ValueError:
-            raise Return((None, "invalid timestamp"))
-
-        now = time.time()
-        if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
-            print "extend required"
-            # it seems that token expired, the only chance for client is to have
-            # actual extend credentials in this request
-            if extend_token and extend_timestamp:
-                expected_token = self.get_extend_token(project, token, extend_timestamp)
-                if expected_token != extend_token:
-                    raise Return((None, "invalid extend token"))
-                try:
-                    extend_timestamp = int(extend_timestamp)
-                except ValueError:
-                    raise Return((None, "invalid extended timestamp"))
-                if extend_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
-                    raise Return((None, "connection expired"))
-            else:
-                raise Return((None, "connection expired"))
-
-        last_timestamp = max(timestamp, extend_timestamp) if extend_timestamp else timestamp
-        time_to_extend = self.application.TOKEN_EXTEND_INTERVAL - (now - last_timestamp)
-        IOLoop.instance().add_timeout(time.time() + time_to_extend, self.send_extend_message)
+        self.check_token_expire(project, token, timestamp, extended_token, extended_timestamp)
 
         if user_info is not None:
             try:
@@ -446,6 +418,40 @@ class Client(object):
             self.presence_ping.start()
 
         raise Return((self.uid, None))
+
+    def check_token_expire(self, project, token, timestamp, extended_token, extended_timestamp):
+        """
+        Check that timestamp is valid and is not too old.
+        If timestamp is expired then check extended credentials if present.
+        """
+        if not self.application.TOKEN_EXPIRE:
+            return
+
+        try:
+            timestamp = int(timestamp)
+        except ValueError:
+            raise Return((None, "invalid timestamp"))
+
+        now = time.time()
+        if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+            # it seems that token expired, the only chance for client is to have
+            # actual extended credentials in this request
+            if extended_token and extended_timestamp:
+                expected_token = self.get_extend_token(project, token, extended_timestamp)
+                if expected_token != extended_token:
+                    raise Return((None, "invalid extend token"))
+                try:
+                    extended_timestamp = int(extended_timestamp)
+                except ValueError:
+                    raise Return((None, "invalid extended timestamp"))
+                if extended_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+                    raise Return((None, "connection expired"))
+            else:
+                raise Return((None, "connection expired"))
+
+        last_timestamp = max(timestamp, extended_timestamp) if extended_timestamp else timestamp
+        time_to_extend = self.application.TOKEN_EXTEND_INTERVAL - (now - last_timestamp)
+        IOLoop.instance().add_timeout(time.time() + time_to_extend, self.send_extend_message)
 
     @coroutine
     def handle_subscribe(self, params):
@@ -738,9 +744,7 @@ class Client(object):
         message client must connect to Centrifuge with these credentials in
         addition to first connect parameters.
         """
-        print "start send extend"
         if not self.is_authenticated:
-            print "ooooops"
             raise Return(False)
 
         credentials, error = yield self.generate_extend_credentials()
@@ -754,7 +758,6 @@ class Client(object):
         yield self.send(response.as_message())
 
         if not self.extend:
-            print "start periodic extend"
             self.extend = PeriodicCallback(
                 self.send_extend_message, self.application.TOKEN_EXTEND_INTERVAL*1000
             )
