@@ -368,7 +368,10 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
+        timestamp = params["timestamp"]
         user_info = params.get("info", None)
+        prolongation_token = params.get("prolongation_token")
+        prolongation_timestamp = params.get("prolongation_timestamp")
 
         project, error = yield self.get_project(project_id)
         if error:
@@ -376,8 +379,21 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        if token != auth.get_client_token(secret_key, project_id, user, user_info=user_info):
+        if token != auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info):
             raise Return((None, "invalid token"))
+
+        # check that timestamp is valid and is not too old
+        try:
+            timestamp = int(timestamp)
+        except ValueError:
+            raise Return((None, "invalid timestamp"))
+
+        now = time.time()
+        if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+            # it seems that token expired, the only chance for client is to have actual prolongation
+            # credentials in this request
+            if prolongation_token and prolongation_timestamp:
+                pass
 
         if user_info is not None:
             try:

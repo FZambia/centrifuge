@@ -217,7 +217,16 @@ client_api_schema = {
             "project": {
                 "type": "string"
             },
+            "timestamp": {
+                "type": "string"
+            },
             "info": {
+                "type": "string"
+            },
+            "prolongation_token": {
+                "type": "string"
+            },
+            "prolongation_timestamp": {
                 "type": "string"
             }
         },
