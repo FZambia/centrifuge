@@ -194,7 +194,6 @@
                 if (typeof data["admin"] != 'undefined') {
                     handle_admin_message(data);
                 } else {
-                    var namespace = data['namespace'];
                     var event_id = data['uid'];
                     var channel = data['channel'];
                     var event_data = data['data'];
@@ -206,7 +205,7 @@
                     if (tab.length > 0) {
                         // tab already opened and meta already loaded
                         var container = get_content_for_project(project).find('.log');
-                        render_event(container, project, namespace, event_id, channel, event_data);
+                        render_event(container, project, event_id, channel, event_data);
                     } else {
                         if (active_tab_id !== options.project_tab) {
                             highlight_tab(global_projects[options.project_tab], true);
@@ -276,7 +275,7 @@
                 return ("0" + n).slice(-2);
             };
 
-            var render_event = function(container, project, namespace, event_id, channel, event_data) {
+            var render_event = function(container, project, event_id, channel, event_data) {
 
                 var d = new Date();
 
@@ -284,7 +283,6 @@
                     'event_id': event_id,
                     'channel': channel,
                     'data': prettify_json(event_data),
-                    'namespace': namespace,
                     'project': project,
                     'time': pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds())
                 });

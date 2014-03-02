@@ -165,22 +165,11 @@ class ProjectSettingsHandler(BaseHandler):
         self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
 
     @coroutine
-    def get_namespace_choices(self):
-        namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
-
-        namespace_choices = [(x['_id'], x['name']) for x in namespaces]
-        namespace_choices.insert(0, ('', '--------'))
-        raise Return((namespace_choices, None))
-
-    @coroutine
     def get_edit(self):
-        namespace_choices, error = yield self.get_namespace_choices()
         data = {
             'user': self.current_user,
             'project': self.project,
-            'form': ProjectForm(self, namespace_choices=namespace_choices, **self.project),
+            'form': ProjectForm(self, **self.project),
             'render_control': render_control,
             'render_label': render_label
         }

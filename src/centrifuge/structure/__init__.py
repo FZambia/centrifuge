@@ -225,22 +225,12 @@ class Structure:
 
     @coroutine
     def get_namespace_by_name(self, project, namespace_name):
-        if namespace_name is None:
-            default_namespace = project.get('default_namespace')
-            if not default_namespace:
-                raise Return((None, None))
-            else:
-                namespace, error = yield self.get_namespace_by_id(default_namespace)
-                raise Return((namespace, error))
+        with (yield lock.acquire()):
+            namespace = self._data['namespaces_by_name'].get(
+                project['_id'], {}
+            ).get(namespace_name, None)
 
-        else:
-            with (yield lock.acquire()):
-                raise Return((
-                    self._data['namespaces_by_name'].get(
-                        project['_id'], {}
-                    ).get(namespace_name),
-                    None
-                ))
+            raise Return((namespace, None))
 
     @coroutine
     def call_and_update_structure(self, func_name, *args, **kwargs):

@@ -376,6 +376,9 @@ class Application(tornado.web.Application):
         else:
             namespace_name = None
 
+        if not namespace_name:
+            raise Return((project, None))
+
         namespace, error = yield self.structure.get_namespace_by_name(
             project, namespace_name
         )
