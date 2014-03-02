@@ -59,7 +59,7 @@ class BasePubSub(object):
         self.publish(ADMIN_CHANNEL, message)
 
     @staticmethod
-    def get_subscription_key(project_id, namespace, channel):
+    def get_subscription_key(project_id, channel):
         """
         Create subscription name to catch messages from specific
         project, namespace and channel.
@@ -67,7 +67,6 @@ class BasePubSub(object):
         return str(CHANNEL_NAME_SEPARATOR.join([
             'centrifuge',
             project_id,
-            namespace,
             channel,
             CHANNEL_SUFFIX
         ]))
@@ -128,12 +127,12 @@ class BasePubSub(object):
         result, error = yield func(params)
         raise Return((result, error))
 
-    def add_subscription(self, project_id, namespace_name, channel, client):
+    def add_subscription(self, project_id, channel, client):
         """
         Subscribe application on channel if necessary and register client
         to receive messages from that channel.
         """
-        subscription_key = self.get_subscription_key(project_id, namespace_name, channel)
+        subscription_key = self.get_subscription_key(project_id, channel)
 
         self.subscribe_key(subscription_key)
 
@@ -144,12 +143,12 @@ class BasePubSub(object):
 
         return subscription_key
 
-    def remove_subscription(self, project_id, namespace_name, channel, client):
+    def remove_subscription(self, project_id, channel, client):
         """
         Unsubscribe application from channel if necessary and unregister client
         from receiving messages from that channel.
         """
-        subscription_key = self.get_subscription_key(project_id, namespace_name, channel)
+        subscription_key = self.get_subscription_key(project_id, channel)
 
         try:
             del self.subscriptions[subscription_key][client.uid]

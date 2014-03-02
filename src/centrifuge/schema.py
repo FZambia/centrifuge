@@ -28,9 +28,6 @@ server_api_schema = {
     "publish": {
         "type": "object",
         "properties": {
-            "namespace": {
-                "type": "string"
-            },
             "channel": {
                 "type": "string"
             }
@@ -40,9 +37,6 @@ server_api_schema = {
     "presence": {
         "type": "object",
         "properties": {
-            "namespace": {
-                "type": "string"
-            },
             "channel": {
                 "type": "string"
             }
@@ -52,9 +46,6 @@ server_api_schema = {
     "history": {
         "type": "object",
         "properties": {
-            "namespace": {
-                "type": "string"
-            },
             "channel": {
                 "type": "string"
             }
@@ -65,9 +56,6 @@ server_api_schema = {
         "type": "object",
         "properties": {
             "user": {
-                "type": "string"
-            },
-            "namespace": {
                 "type": "string"
             },
             "channel": {
@@ -184,9 +172,6 @@ client_api_schema = {
     "subscribe": {
         "type": "object",
         "properties": {
-            "namespace": {
-                "type": "string"
-            },
             "channel": {
                 "type": "string"
             }
@@ -196,9 +181,6 @@ client_api_schema = {
     "unsubscribe": {
         "type": "object",
         "properties": {
-            "namespace": {
-                "type": "string"
-            },
             "channel": {
                 "type": "string"
             }

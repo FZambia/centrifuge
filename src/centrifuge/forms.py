@@ -4,7 +4,7 @@
 # All rights reserved.
 
 import re
-from wtforms import TextField, IntegerField, BooleanField, validators, SelectField
+from wtforms import TextField, IntegerField, BooleanField, validators
 from centrifuge.utils import Form
 
 
@@ -24,17 +24,9 @@ DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 DEFAULT_HISTORY_SIZE = 20
 
 
-class ProjectForm(Form):
+class ProjectMixin(object):
 
     BOOLEAN_FIELDS = []
-
-    def __init__(self, *args, **kwargs):
-        super(ProjectForm, self).__init__(*args, **kwargs)
-        namespace_choices = kwargs.get('namespace_choices')
-        if namespace_choices:
-            self.default_namespace.choices = namespace_choices
-        else:
-            del self.default_namespace
 
     name = TextField(
         label='project name',
@@ -51,15 +43,6 @@ class ProjectForm(Form):
             validators.Optional()
         ],
         description="human readable project name, will be used in web interface"
-    )
-
-    auth_address = TextField(
-        label='auth url address',
-        validators=[
-            validators.URL(require_tld=False),
-            validators.Optional()
-        ],
-        description="your application's url address to authorize subscriptions on private channels"
     )
 
     max_auth_attempts = IntegerField(
@@ -90,35 +73,19 @@ class ProjectForm(Form):
         description="please, keep it default until you know what you do"
     )
 
-    default_namespace = SelectField(
-        label='default namespace',
-        validators=[],
-        default='',
-        description="namespace which will be used by default when no namespace "
-                    "provided in request params"
-    )
 
-
-class NamespaceForm(Form):
+class NamespaceMixin(object):
 
     BOOLEAN_FIELDS = [
         'is_watching', 'is_private', 'publish',
         'presence', 'history', 'join_leave'
     ]
 
-    name = TextField(
-        label='namespace name',
-        validators=[
-            validators.Regexp(regex=NAME_RE, message="invalid name")
-        ],
-        description="unique namespace name, ascii symbols only"
-    )
-
     is_watching = BooleanField(
         label='is watching',
         validators=[],
         default=False,
-        description="publish all namespace messages into admin channel "
+        description="publish messages into admin channel "
                     "(messages will be visible in web interface)"
     )
 
@@ -126,31 +93,41 @@ class NamespaceForm(Form):
         label='is private',
         validators=[],
         default=False,
-        description="authorize every subscription on channel in this namespace using "
+        description="authorize every subscription on channel using "
                     "POST request to auth address"
+    )
+
+    auth_address = TextField(
+        label='auth url address',
+        validators=[
+            validators.URL(require_tld=False),
+            validators.Optional()
+        ],
+        description="url address to authorize clients sending POST request to it"
     )
 
     publish = BooleanField(
         label='publish',
         validators=[],
         default=False,
-        description="allow clients to publish messages in channels"
+        description="allow clients to publish messages in channels "
+                    "(your web application never receive those messages)"
     )
 
     presence = BooleanField(
         label='presence',
         validators=[],
         default=True,
-        description="check if you want to use presence info for channels in "
-                    "this namespace (state must be configured)"
+        description="enable presence information for channels "
+                    "(state must be configured)"
     )
 
     history = BooleanField(
         label='history',
         validators=[],
         default=True,
-        description="check if you want to get history info for channels in "
-                    "this namespace (state must be configured)"
+        description="enable history information for channels "
+                    "(state must be configured)"
     )
 
     history_size = IntegerField(
@@ -159,7 +136,7 @@ class NamespaceForm(Form):
             validators.NumberRange(min=1)
         ],
         default=DEFAULT_HISTORY_SIZE,
-        description="maximum amount of messages in history for channels in this namespace"
+        description="maximum amount of messages in history for channels"
     )
 
     join_leave = BooleanField(
@@ -170,12 +147,23 @@ class NamespaceForm(Form):
                     "(unsubscribes from channel)"
     )
 
-    auth_address = TextField(
-        label='namespace specific auth url address',
+
+class ProjectForm(ProjectMixin, NamespaceMixin, Form):
+
+    BOOLEAN_FIELDS = ProjectMixin.BOOLEAN_FIELDS + NamespaceMixin.BOOLEAN_FIELDS
+
+
+class NamespaceNameMixin(object):
+
+    name = TextField(
+        label='namespace name',
         validators=[
-            validators.URL(require_tld=False),
-            validators.Optional()
+            validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="url address to authorize clients specific for namespace "
-                    "(leave it blank to use auth address from project)"
+        description="unique namespace name, ascii symbols only"
     )
+
+
+class NamespaceForm(NamespaceNameMixin, NamespaceMixin, Form):
+
+    field_order = ('name', '*')

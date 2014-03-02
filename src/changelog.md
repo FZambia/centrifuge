@@ -8,6 +8,7 @@ v0.5.0
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
 * new client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
+* no more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings itself.
 
 Migration notes:
 
@@ -15,6 +16,23 @@ Migration notes:
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
 * if you use ZeroMQ as PUB/SUB broker then add ``--zmq`` option when starting Centrifuge.
+
+What does it mean that there are no namespaces in protocol anymore?
+
+In the earliest versions of Centrifuge to publish message you should send something like this
+via admin API:
+
+```javascript
+{"namespace": "private", "channel": "secrets", "data": {"message": "42"}}
+```
+
+Now you must do the same in this way:
+
+```javascript
+{"channel": "private:secrets", "data": {"message": "42"}}
+```
+
+I.e. like from browser.
 
 
 v0.4.2

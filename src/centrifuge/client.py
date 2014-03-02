@@ -56,8 +56,8 @@ class Client(object):
         self.default_user_info = {}
         self.project_id = None
         self.channels = None
-        self.presence_ping = None
-        self.extend = None
+        self.presence_ping_task = None
+        self.extend_task = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -74,11 +74,11 @@ class Client(object):
         Must be called when client connection closes. Here we are
         making different clean ups.
         """
-        if self.presence_ping:
-            self.presence_ping.stop()
+        if self.presence_ping_task:
+            self.presence_ping_task.stop()
 
-        if self.extend:
-            self.extend.stop()
+        if self.extend_task:
+            self.extend_task.stop()
 
         project_id = self.project_id
 
@@ -92,28 +92,24 @@ class Client(object):
 
                 channels = self.channels.copy()
 
-                for namespace_name, channel_names in six.iteritems(channels):
+                for channel_name, channel_info in six.iteritems(channels):
 
-                    if not channel_names:
-                        continue
-
-                    for channel_name, status in six.iteritems(channel_names):
-                        if self.application.state:
-                            yield self.application.state.remove_presence(
-                                project_id, namespace_name, channel_name, self.uid
-                            )
-
-                        self.application.pubsub.remove_subscription(
-                            project_id, namespace_name, channel_name, self
+                    if self.application.state:
+                        yield self.application.state.remove_presence(
+                            project_id, channel_name, self.uid
                         )
 
-                        project, error = yield self.get_project(project_id)
-                        if not error and project:
-                            namespace, error = yield self.get_namespace(
-                                project, {"namespace": namespace_name}
-                            )
-                            if namespace and namespace.get("join_leave", False):
-                                self.send_leave_message(namespace_name, channel_name)
+                    self.application.pubsub.remove_subscription(
+                        project_id, channel_name, self
+                    )
+
+                    project, error = yield self.application.get_project(project_id)
+                    if not error and project:
+                        namespace, error = yield self.application.get_namespace(
+                            project, channel_name
+                        )
+                        if namespace and namespace.get("join_leave", False):
+                            self.send_leave_message(channel_name)
 
         self.channels = None
         self.channel_user_info = None
@@ -258,20 +254,19 @@ class Client(object):
         """
         if not self.application.state:
             raise Return((True, None))
-        for namespace, channels in six.iteritems(self.channels):
-            for channel, status in six.iteritems(channels):
-                user_info = self.get_user_info(namespace, channel)
-                yield self.application.state.add_presence(
-                    self.project_id, namespace, channel, self.uid, user_info
-                )
+        for channel, channel_info in six.iteritems(self.channels):
+            user_info = self.get_user_info(channel)
+            yield self.application.state.add_presence(
+                self.project_id, channel, self.uid, user_info
+            )
         raise Return((True, None))
 
-    def get_user_info(self, namespace_name, channel):
+    def get_user_info(self, channel):
         """
         Return channel specific user info.
         """
         try:
-            channel_user_info = self.channel_user_info[namespace_name][channel]
+            channel_user_info = self.channel_user_info[channel]
         except KeyError:
             channel_user_info = None
         default_info = self.default_user_info.copy()
@@ -280,7 +275,7 @@ class Client(object):
         })
         return default_info
 
-    def update_channel_user_info(self, body, namespace_name, channel):
+    def update_channel_user_info(self, body, channel):
         """
         Try to extract channel specific user info from response body
         and keep it for channel.
@@ -291,11 +286,10 @@ class Client(object):
             logger.error(str(e))
             info = {}
 
-        self.channel_user_info.setdefault(namespace_name, {})
-        self.channel_user_info[namespace_name][channel] = info
+        self.channel_user_info[channel] = info
 
     @coroutine
-    def authorize(self, auth_address, project, namespace_name, channel):
+    def authorize(self, auth_address, project, channel):
         """
         Send POST request to web application to ask it if current client
         has a permission to subscribe on channel.
@@ -308,7 +302,6 @@ class Client(object):
             method="POST",
             body=urlencode({
                 'user': self.user,
-                'namespace': namespace_name,
                 'channel': channel
             }),
             request_timeout=1
@@ -346,7 +339,7 @@ class Client(object):
 
                 if response.code == 200:
                     # auth successful
-                    self.update_channel_user_info(response.body, namespace_name, channel)
+                    self.update_channel_user_info(response.body, channel)
                     raise Return((True, None))
 
                 else:
@@ -384,7 +377,7 @@ class Client(object):
         extended_token = params.get("extended_token")
         extended_timestamp = params.get("extended_timestamp")
 
-        project, error = yield self.get_project(project_id)
+        project, error = yield self.application.get_project(project_id)
         if error:
             raise Return((None, error))
 
@@ -416,10 +409,10 @@ class Client(object):
         self.channels = {}
 
         if self.application.state:
-            self.presence_ping = PeriodicCallback(
+            self.presence_ping_task = PeriodicCallback(
                 self.send_presence_ping, self.application.state.presence_ping_interval
             )
-            self.presence_ping.start()
+            self.presence_ping_task.start()
 
         raise Return((self.uid, None))
 
@@ -462,18 +455,17 @@ class Client(object):
         """
         Subscribe client on channel.
         """
-        project, error = yield self.get_project(self.project_id)
+        project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
-
-        namespace, error = yield self.get_namespace(project, params)
-        if error:
-            raise Return((None, error))
-        namespace_name = namespace['name']
 
         channel = params.get('channel')
         if not channel:
             raise Return((None, 'channel required'))
+
+        namespace, error = yield self.application.get_namespace(project, channel)
+        if error:
+            raise Return((None, error))
 
         project_id = self.project_id
 
@@ -488,7 +480,7 @@ class Client(object):
             if not auth_address:
                 raise Return((None, 'no auth address found'))
             is_authorized, error = yield self.authorize(
-                auth_address, project, namespace_name, channel
+                auth_address, project, channel
             )
             if error:
                 raise Return((None, self.application.INTERNAL_SERVER_ERROR))
@@ -496,23 +488,20 @@ class Client(object):
                 raise Return((None, self.application.PERMISSION_DENIED))
 
         self.application.pubsub.add_subscription(
-            project_id, namespace_name, channel, self
+            project_id, channel, self
         )
 
-        if namespace_name not in self.channels:
-            self.channels[namespace_name] = {}
+        self.channels[channel] = True
 
-        self.channels[namespace_name][channel] = True
-
-        user_info = self.get_user_info(namespace_name, channel)
+        user_info = self.get_user_info(channel)
 
         if self.application.state:
             yield self.application.state.add_presence(
-                project_id, namespace_name, channel, self.uid, user_info
+                project_id, channel, self.uid, user_info
             )
 
         if namespace.get('join_leave', False):
-            self.send_join_message(namespace_name, channel)
+            self.send_join_message(channel)
 
         raise Return((True, None))
 
@@ -521,52 +510,45 @@ class Client(object):
         """
         Unsubscribe client from channel.
         """
-        project, error = yield self.get_project(self.project_id)
+        project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
-
-        namespace, error = yield self.get_namespace(project, params)
-        if error:
-            raise Return((None, error))
-        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
         if not channel:
             raise Return((True, None))
 
+        namespace, error = yield self.application.get_namespace(project, channel)
+        if error:
+            raise Return((None, error))
+
         project_id = self.project_id
 
         self.application.pubsub.remove_subscription(
-            project_id, namespace_name, channel, self
+            project_id, channel, self
         )
 
         try:
-            del self.channels[namespace_name][channel]
+            del self.channels[channel]
         except KeyError:
             pass
 
-        if namespace_name in self.channels and not self.channels[namespace_name]:
-            try:
-                del self.channels[namespace_name]
-            except KeyError:
-                pass
-
         if self.application.state:
             yield self.application.state.remove_presence(
-                project_id, namespace_name, channel, self.uid
+                project_id, channel, self.uid
             )
 
         if namespace.get('join_leave', False):
-            self.send_leave_message(namespace_name, channel)
+            self.send_leave_message(channel)
 
         raise Return((True, None))
 
-    def check_channel_permission(self, namespace, channel):
+    def check_channel_permission(self, channel):
         """
         Check that user subscribed on channel.
         """
-        if namespace in self.channels and channel in self.channels[namespace]:
+        if channel in self.channels:
             return
         raise Return((None, self.application.PERMISSION_DENIED))
 
@@ -575,23 +557,22 @@ class Client(object):
         """
         Publish message into channel.
         """
-        project, error = yield self.get_project(self.project_id)
+        project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
-
-        namespace, error = yield self.get_namespace(project, params)
-        if error:
-            raise Return((None, error))
-        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
-        self.check_channel_permission(namespace_name, channel)
+        self.check_channel_permission(channel)
+
+        namespace, error = yield self.application.get_namespace(project, channel)
+        if error:
+            raise Return((None, error))
 
         if not namespace.get('publish', False):
             raise Return((None, 'publishing into this namespace not available'))
 
-        user_info = self.get_user_info(namespace_name, channel)
+        user_info = self.get_user_info(channel)
 
         result, error = yield self.application.process_publish(
             project,
@@ -605,18 +586,17 @@ class Client(object):
         """
         Get presence information for channel.
         """
-        project, error = yield self.get_project(self.project_id)
+        project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
-
-        namespace, error = yield self.get_namespace(project, params)
-        if error:
-            raise Return((None, error))
-        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
-        self.check_channel_permission(namespace_name, channel)
+        self.check_channel_permission(channel)
+
+        namespace, error = yield self.application.get_namespace(project, channel)
+        if error:
+            raise Return((None, error))
 
         if not namespace.get('presence', False):
             raise Return((None, 'presence for this namespace not available'))
@@ -632,18 +612,17 @@ class Client(object):
         """
         Get message history for channel.
         """
-        project, error = yield self.get_project(self.project_id)
+        project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
-
-        namespace, error = yield self.get_namespace(project, params)
-        if error:
-            raise Return((None, error))
-        namespace_name = namespace['name']
 
         channel = params.get('channel')
 
-        self.check_channel_permission(namespace_name, channel)
+        self.check_channel_permission(channel)
+
+        namespace, error = yield self.application.get_namespace(project, channel)
+        if error:
+            raise Return((None, error))
 
         if not namespace.get('history', False):
             raise Return((None, 'history for this namespace not available'))
@@ -654,48 +633,15 @@ class Client(object):
         )
         raise Return((result, error))
 
-    @coroutine
-    def get_project(self, project_id):
-        """
-        Project settings can change during client's connection.
-        Every time we need project - we must extract actual
-        project data from structure.
-        """
-        project, error = yield self.application.structure.get_project_by_id(project_id)
-        if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not project:
-            raise Return((None, self.application.PROJECT_NOT_FOUND))
-        raise Return((project, None))
-
-    @coroutine
-    def get_namespace(self, project, params):
-        """
-        Return actual namespace data for project.
-        Note that namespace name can be None here - in this
-        case we search for default project namespace and return
-        it if exists.
-        """
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.application.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.application.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
-
-    def send_join_leave_message(self, namespace_name, channel, message_method):
+    def send_join_leave_message(self, channel, message_method):
         """
         Generate and send message about join or leave event.
         """
         subscription_key = self.application.pubsub.get_subscription_key(
-            self.project_id, namespace_name, channel
+            self.project_id, channel
         )
-        user_info = self.get_user_info(namespace_name, channel)
+        user_info = self.get_user_info(channel)
         message = {
-            "namespace": namespace_name,
             "channel": channel,
             "data": user_info
         }
@@ -703,19 +649,19 @@ class Client(object):
             subscription_key, message, method=message_method
         )
 
-    def send_join_message(self, namespace_name, channel):
+    def send_join_message(self, channel):
         """
         Send join message to all channel subscribers when client
         subscribed on channel.
         """
-        self.send_join_leave_message(namespace_name, channel, 'join')
+        self.send_join_leave_message(channel, 'join')
 
-    def send_leave_message(self, namespace_name, channel):
+    def send_leave_message(self, channel):
         """
         Send leave message to all channel subscribers when client
         unsubscribed from channel.
         """
-        self.send_join_leave_message(namespace_name, channel, 'leave')
+        self.send_join_leave_message(channel, 'leave')
 
     @staticmethod
     def get_extend_token(project, original_token, timestamp):
@@ -733,7 +679,7 @@ class Client(object):
         """
         Generate extend token and timestamp.
         """
-        project, error = yield self.get_project(self.project_id)
+        project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
 
@@ -763,10 +709,10 @@ class Client(object):
         response = Response(method="extend", body=message_body)
         yield self.send(response.as_message())
 
-        if not self.extend:
-            self.extend = PeriodicCallback(
+        if not self.extend_task:
+            self.extend_task = PeriodicCallback(
                 self.send_extend_message, self.application.TOKEN_EXTEND_INTERVAL*1000
             )
-            self.extend.start()
+            self.extend_task.start()
 
         raise Return(True)

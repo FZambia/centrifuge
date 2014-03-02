@@ -31,6 +31,8 @@ def get_host():
 
 class Application(tornado.web.Application):
 
+    NAMESPACE_SEPARATOR = ":"
+
     # magic fake project ID for owner API purposes.
     OWNER_API_PROJECT_ID = '_'
 
@@ -353,6 +355,37 @@ class Application(tornado.web.Application):
             pass
 
     @coroutine
+    def get_project(self, project_id):
+        """
+        Project settings can change during client's connection.
+        Every time we need project - we must extract actual
+        project data from structure.
+        """
+        project, error = yield self.structure.get_project_by_id(project_id)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not project:
+            raise Return((None, self.PROJECT_NOT_FOUND))
+        raise Return((project, None))
+
+    @coroutine
+    def get_namespace(self, project, channel):
+
+        if self.NAMESPACE_SEPARATOR in channel:
+            namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
+        else:
+            namespace_name = None
+
+        namespace, error = yield self.structure.get_namespace_by_name(
+            project, namespace_name
+        )
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
+        if not namespace:
+            raise Return((None, self.NAMESPACE_NOT_FOUND))
+        raise Return((namespace, None))
+
+    @coroutine
     def handle_ping(self, params):
         """
         Ping message received.
@@ -367,7 +400,6 @@ class Application(tornado.web.Application):
         """
         project = params.get("project")
         user = params.get("user")
-        namespace_name = params.get("namespace", None)
         channel = params.get("channel", None)
 
         project_id = project['_id']
@@ -377,44 +409,17 @@ class Application(tornado.web.Application):
         if not user_connections:
             raise Return((True, None))
 
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, error))
-        if channel and not namespace:
-            # namespace does not exist
-            raise Return((True, None))
-
-        namespace_name = namespace['name']
-
         for uid, connection in six.iteritems(user_connections):
 
-            if not namespace_name and not channel:
+            if not channel:
                 # unsubscribe from all channels
-                for ns, channels in six.iteritems(connection.channels):
-                    for chan in channels:
-                        yield connection.handle_unsubscribe({
-                            "namespace": ns,
-                            "channel": chan
-                        })
-
-            elif namespace_name and not channel:
-                # unsubscribe from all channels in namespace
-                for cat, channels in six.iteritems(connection.channels):
-                    if namespace_name != cat:
-                        continue
-                    for chan in channels:
-                        yield connection.handle_unsubscribe({
-                            "namespace": namespace_name,
-                            "channel": chan
-                        })
-                raise Return((True, None))
-
+                for chan, channel_info in six.iteritems(connection.channels):
+                    yield connection.handle_unsubscribe({
+                        "channel": chan
+                    })
             else:
                 # unsubscribe from certain channel
                 yield connection.handle_unsubscribe({
-                    "namespace": namespace_name,
                     "channel": channel
                 })
 
@@ -467,28 +472,31 @@ class Application(tornado.web.Application):
             raise Return((None, self.METHOD_NOT_FOUND))
 
     @coroutine
-    def publish_message(self, message, allowed_namespaces):
+    def publish_message(self, project, message):
         """
         Publish event into PUB socket stream
         """
         project_id = message['project_id']
-        namespace_name = message['namespace']
         channel = message['channel']
 
-        if allowed_namespaces[namespace_name]['is_watching']:
+        namespace, error = yield self.get_namespace(project, channel)
+        if error:
+            raise Return((False, error))
+
+        if namespace.get('is_watching', False):
             # send to admin channel
             self.pubsub.publish_admin_message(message)
 
         # send to event channel
         subscription_key = self.pubsub.get_subscription_key(
-            project_id, namespace_name, channel
+            project_id, channel
         )
 
         self.pubsub.publish(subscription_key, message)
 
         yield self.state.add_history_message(
-            project_id, namespace_name, channel, message,
-            history_size=allowed_namespaces[namespace_name]['history_size']
+            project_id, channel, message,
+            history_size=namespace.get('history_size')
         )
 
         self.messages_published += 1
@@ -496,29 +504,14 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, allowed_namespaces, params, client):
+    def prepare_message(self, project, params, client):
         """
         Prepare message before actual publishing.
         """
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, error))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        namespace_name = namespace['name']
-
-        namespace = allowed_namespaces.get(namespace_name, None)
-        if not namespace:
-            raise Return((None, "namespace not found in allowed namespaces"))
-
         data = params.get('data', None)
 
         message = {
             'project_id': project['_id'],
-            'namespace': namespace['name'],
             'uid': uuid.uuid4().hex,
             'timestamp': int(time.time()),
             'client': client,
@@ -538,19 +531,12 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, allowed_namespaces=None, client=None):
+    def process_publish(self, project, params, client=None):
         """
         Publish message into appropriate channel.
         """
-        if allowed_namespaces is None:
-            project_namespaces, error = yield self.structure.get_project_namespaces(project)
-            if error:
-                raise Return((None, error))
-
-            allowed_namespaces = dict((x['name'], x) for x in project_namespaces)
-
         message, error = yield self.prepare_message(
-            project, allowed_namespaces, params, client
+            project, params, client
         )
         if error:
             raise Return((None, error))
@@ -561,7 +547,7 @@ class Application(tornado.web.Application):
 
         # publish prepared message
         result, error = yield self.publish_message(
-            message, allowed_namespaces
+            project, message
         )
         if error:
             raise Return((None, error))
@@ -584,23 +570,14 @@ class Application(tornado.web.Application):
 
         project_id = project['_id']
 
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, error))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        namespace_name = namespace['name']
-
         channel = params.get("channel")
         message = {
-            "namespace": namespace_name,
             "channel": channel,
             "data": []
         }
-        data, error = yield self.state.get_history(project_id, namespace_name, channel)
+        data, error = yield self.state.get_history(project_id, channel)
+        if error:
+            raise Return((None, self.INTERNAL_SERVER_ERROR))
         if data:
             message['data'] = data
         raise Return((message, error))
@@ -615,23 +592,12 @@ class Application(tornado.web.Application):
 
         project_id = project['_id']
 
-        namespace_name = params.get('namespace')
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, error))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        namespace_name = namespace['name']
-
         channel = params.get("channel")
         message = {
-            "namespace": namespace_name,
             "channel": channel,
             "data": {}
         }
-        data, error = yield self.state.get_presence(project_id, namespace_name, channel)
+        data, error = yield self.state.get_presence(project_id, channel)
         if data:
             message['data'] = data
         raise Return((message, error))

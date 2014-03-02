@@ -99,19 +99,19 @@ class State(BaseState):
             self.connect()
 
     @staticmethod
-    def get_presence_set_key(project_id, namespace, channel):
-        return "centrifuge:presence:set:%s:%s:%s" % (project_id, namespace, channel)
+    def get_presence_set_key(project_id, channel):
+        return "centrifuge:presence:set:%s:%s" % (project_id, channel)
 
     @coroutine
-    def add_presence(self, project_id, namespace, channel, uid, user_info, presence_timeout=None):
+    def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
         """
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
         """
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
-        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
-        set_key = self.get_presence_set_key(project_id, namespace, channel)
+        hash_key = self.get_presence_hash_key(project_id, channel)
+        set_key = self.get_presence_set_key(project_id, channel)
         try:
             yield Task(self.client.zadd, set_key, {uid: expire_at})
             yield Task(self.client.hset, hash_key, uid, json_encode(user_info))
@@ -121,13 +121,13 @@ class State(BaseState):
             raise Return((True, None))
 
     @coroutine
-    def remove_presence(self, project_id, namespace, channel, uid):
+    def remove_presence(self, project_id, channel, uid):
         """
         Remove user's presence from Redis.
         Must be called on disconnects of any kind.
         """
-        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
-        set_key = self.get_presence_set_key(project_id, namespace, channel)
+        hash_key = self.get_presence_hash_key(project_id, channel)
+        set_key = self.get_presence_set_key(project_id, channel)
         try:
             yield Task(self.client.hdel, hash_key, uid)
             yield Task(self.client.zrem, set_key, uid)
@@ -137,32 +137,32 @@ class State(BaseState):
             raise Return((True, None))
 
     @coroutine
-    def get_presence(self, project_id, namespace, channel):
+    def get_presence(self, project_id, channel):
         """
         Get presence for channel.
         """
         now = int(time.time())
-        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
-        set_key = self.get_presence_set_key(project_id, namespace, channel)
+        hash_key = self.get_presence_hash_key(project_id, channel)
+        set_key = self.get_presence_set_key(project_id, channel)
         try:
             expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
             if expired_keys:
                 yield Task(self.client.zremrangebyscore, set_key, 0, now)
                 yield Task(self.client.hdel, hash_key, [x.decode() for x in expired_keys])
             data = yield Task(self.client.hgetall, hash_key)
-        except StreamClosedError:
-            raise Return((None, 'presence unavailable'))
+        except StreamClosedError as e:
+            raise Return((None, e))
         else:
             raise Return((dict_from_list(data), None))
 
     @coroutine
-    def add_history_message(self, project_id, namespace, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size=None):
         """
         Add message to channel's history.
         Must be called when new message has been published.
         """
         history_size = history_size or self.history_size
-        list_key = self.get_history_list_key(project_id, namespace, channel)
+        list_key = self.get_history_list_key(project_id, channel)
         try:
             yield Task(self.client.lpush, list_key, json_encode(message))
             yield Task(self.client.ltrim, list_key, 0, history_size - 1)
@@ -172,14 +172,14 @@ class State(BaseState):
             raise Return((True, None))
 
     @coroutine
-    def get_history(self, project_id, namespace, channel):
+    def get_history(self, project_id, channel):
         """
         Get a list of last messages for channel.
         """
-        history_list_key = self.get_history_list_key(project_id, namespace, channel)
+        history_list_key = self.get_history_list_key(project_id, channel)
         try:
             data = yield Task(self.client.lrange, history_list_key, 0, -1)
-        except StreamClosedError:
-            raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+        except StreamClosedError as e:
+            raise Return((None, e))
         else:
             raise Return(([json_decode(x.decode()) for x in data], None))

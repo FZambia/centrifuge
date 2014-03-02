@@ -269,18 +269,20 @@ class Structure:
     @coroutine
     def project_create(self, **kwargs):
 
-        default_namespace = None
-        if "default_namespace" in kwargs:
-            default_namespace = kwargs["default_namespace"]
-
         options = {
             "name": kwargs['name'],
             "display_name": kwargs['display_name'],
-            "auth_address": kwargs['auth_address'],
             "max_auth_attempts": kwargs['max_auth_attempts'],
             "back_off_interval": kwargs['back_off_interval'],
             "back_off_max_timeout": kwargs['back_off_max_timeout'],
-            "default_namespace": default_namespace
+            'publish': kwargs['publish'],
+            'is_watching': kwargs['is_watching'],
+            'presence': kwargs['presence'],
+            'history': kwargs['history'],
+            'history_size': kwargs['history_size'],
+            'is_private': kwargs['is_private'],
+            'auth_address': kwargs['auth_address'],
+            'join_leave': kwargs['join_leave']
         }
 
         secret_key = uuid.uuid4().hex
@@ -298,11 +300,17 @@ class Structure:
         options = {
             'name': kwargs['name'],
             'display_name': kwargs['display_name'],
-            'auth_address': kwargs['auth_address'],
             'max_auth_attempts': kwargs['max_auth_attempts'],
             'back_off_interval': kwargs['back_off_interval'],
             'back_off_max_timeout': kwargs['back_off_max_timeout'],
-            'default_namespace': kwargs['default_namespace']
+            'publish': kwargs['publish'],
+            'is_watching': kwargs['is_watching'],
+            'presence': kwargs['presence'],
+            'history': kwargs['history'],
+            'history_size': kwargs['history_size'],
+            'is_private': kwargs['is_private'],
+            'auth_address': kwargs['auth_address'],
+            'join_leave': kwargs['join_leave']
         }
 
         result, error = yield self.call_and_update_structure(

@@ -20,6 +20,18 @@ class Form(WTForm):
             MultiDictWrapper(formdata), obj=obj, prefix=prefix, **kwargs
         )
 
+    def __iter__(self):
+        field_order = getattr(self, 'field_order', None)
+        if field_order:
+            temp_fields = []
+            for name in field_order:
+                if name == '*':
+                    temp_fields.extend([f for f in self._unbound_fields if f[0] not in field_order])
+                else:
+                    temp_fields.append([f for f in self._unbound_fields if f[0] == name][0])
+            self._unbound_fields = temp_fields
+        return super(Form, self).__iter__()
+
 
 class MultiDictWrapper(object):
     """

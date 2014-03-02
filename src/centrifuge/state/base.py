@@ -56,15 +56,15 @@ class State(object):
         logger.info("Base State initialized")
 
     @staticmethod
-    def get_presence_hash_key(project_id, namespace, channel):
-        return "centrifuge:presence:hash:%s:%s:%s" % (project_id, namespace, channel)
+    def get_presence_hash_key(project_id, channel):
+        return "centrifuge:presence:hash:%s:%s" % (project_id, channel)
 
     @staticmethod
-    def get_history_list_key(project_id, namespace, channel):
-        return "centrifuge:history:%s:%s:%s" % (project_id, namespace, channel)
+    def get_history_list_key(project_id, channel):
+        return "centrifuge:history:%s:%s" % (project_id, channel)
 
     @coroutine
-    def add_presence(self, project_id, namespace, channel, uid, user_info, presence_timeout=None):
+    def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
         """
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
@@ -72,7 +72,7 @@ class State(object):
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
 
-        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
+        hash_key = self.get_presence_hash_key(project_id, channel)
 
         if hash_key not in self.presence:
             self.presence[hash_key] = {}
@@ -85,12 +85,12 @@ class State(object):
         raise Return((True, None))
 
     @coroutine
-    def remove_presence(self, project_id, namespace, channel, uid):
+    def remove_presence(self, project_id, channel, uid):
         """
         Remove user's presence.
         Must be called on disconnects of any kind.
         """
-        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
+        hash_key = self.get_presence_hash_key(project_id, channel)
         try:
             del self.presence[hash_key][uid]
         except KeyError:
@@ -99,13 +99,13 @@ class State(object):
         raise Return((True, None))
 
     @coroutine
-    def get_presence(self, project_id, namespace, channel):
+    def get_presence(self, project_id, channel):
         """
         Get presence for channel.
         """
         now = int(time.time())
 
-        hash_key = self.get_presence_hash_key(project_id, namespace, channel)
+        hash_key = self.get_presence_hash_key(project_id, channel)
 
         to_return = {}
         if hash_key in self.presence:
@@ -132,12 +132,12 @@ class State(object):
         raise Return((to_return, None))
 
     @coroutine
-    def add_history_message(self, project_id, namespace, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size=None):
         """
         Add message to channel's history.
         Must be called when new message has been published.
         """
-        history_list_key = self.get_history_list_key(project_id, namespace, channel)
+        history_list_key = self.get_history_list_key(project_id, channel)
 
         if history_list_key not in self.history:
             self.history[history_list_key] = []
@@ -150,11 +150,11 @@ class State(object):
         raise Return((True, None))
 
     @coroutine
-    def get_history(self, project_id, namespace, channel):
+    def get_history(self, project_id, channel):
         """
         Get a list of last messages for channel.
         """
-        history_list_key = self.get_history_list_key(project_id, namespace, channel)
+        history_list_key = self.get_history_list_key(project_id, channel)
 
         try:
             data = self.history[history_list_key]
