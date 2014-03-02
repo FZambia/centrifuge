@@ -80,9 +80,6 @@ class State(BaseState):
         Connect to Redis.
         Do not even try to connect if State is faked.
         """
-        if self.fake:
-            return
-
         try:
             self.client.connect(host=self.host, port=self.port)
         except Exception as e:
@@ -111,8 +108,6 @@ class State(BaseState):
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
         """
-        if self.fake:
-            raise Return((True, None))
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
@@ -131,8 +126,6 @@ class State(BaseState):
         Remove user's presence from Redis.
         Must be called on disconnects of any kind.
         """
-        if self.fake:
-            raise Return((True, None))
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
         set_key = self.get_presence_set_key(project_id, namespace, channel)
         try:
@@ -148,8 +141,6 @@ class State(BaseState):
         """
         Get presence for channel.
         """
-        if self.fake:
-            raise Return((None, None))
         now = int(time.time())
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
         set_key = self.get_presence_set_key(project_id, namespace, channel)
@@ -170,8 +161,6 @@ class State(BaseState):
         Add message to channel's history.
         Must be called when new message has been published.
         """
-        if self.fake:
-            raise Return((True, None))
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, namespace, channel)
         try:
@@ -187,8 +176,6 @@ class State(BaseState):
         """
         Get a list of last messages for channel.
         """
-        if self.fake:
-            raise Return((None, None))
         history_list_key = self.get_history_list_key(project_id, namespace, channel)
         try:
             data = yield Task(self.client.lrange, history_list_key, 0, -1)

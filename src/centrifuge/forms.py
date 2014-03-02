@@ -171,7 +171,7 @@ class NamespaceForm(Form):
     )
 
     auth_address = TextField(
-        label='auth url address',
+        label='namespace specific auth url address',
         validators=[
             validators.URL(require_tld=False),
             validators.Optional()

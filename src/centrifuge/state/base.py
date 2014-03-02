@@ -5,7 +5,6 @@
 
 import time
 from tornado.gen import coroutine, Return
-from tornado.escape import json_decode
 from six import iteritems
 
 from centrifuge.log import logger
@@ -31,10 +30,9 @@ class State(object):
 
     NAME = "Base - single node only"
 
-    def __init__(self, application, io_loop=None, fake=False):
+    def __init__(self, application, io_loop=None):
         self.application = application
         self.io_loop = io_loop
-        self.fake = fake
 
         self.config = self.application.settings["config"].get("state", {}) or {}
 
@@ -71,9 +69,6 @@ class State(object):
         Add user's presence with appropriate expiration time.
         Must be called when user subscribes on channel.
         """
-        if self.fake:
-            raise Return((True, None))
-
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
 
@@ -95,8 +90,6 @@ class State(object):
         Remove user's presence.
         Must be called on disconnects of any kind.
         """
-        if self.fake:
-            raise Return((True, None))
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
         try:
             del self.presence[hash_key][uid]
@@ -110,9 +103,6 @@ class State(object):
         """
         Get presence for channel.
         """
-        if self.fake:
-            raise Return((None, None))
-
         now = int(time.time())
 
         hash_key = self.get_presence_hash_key(project_id, namespace, channel)
@@ -147,9 +137,6 @@ class State(object):
         Add message to channel's history.
         Must be called when new message has been published.
         """
-        if self.fake:
-            raise Return((True, None))
-
         history_list_key = self.get_history_list_key(project_id, namespace, channel)
 
         if history_list_key not in self.history:
@@ -167,9 +154,6 @@ class State(object):
         """
         Get a list of last messages for channel.
         """
-        if self.fake:
-            raise Return((None, None))
-
         history_list_key = self.get_history_list_key(project_id, namespace, channel)
 
         try:

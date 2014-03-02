@@ -98,9 +98,10 @@ class Client(object):
                         continue
 
                     for channel_name, status in six.iteritems(channel_names):
-                        yield self.application.state.remove_presence(
-                            project_id, namespace_name, channel_name, self.uid
-                        )
+                        if self.application.state:
+                            yield self.application.state.remove_presence(
+                                project_id, namespace_name, channel_name, self.uid
+                            )
 
                         self.application.pubsub.remove_subscription(
                             project_id, namespace_name, channel_name, self
@@ -255,12 +256,15 @@ class Client(object):
         Update presence information for all channels this client
         subscribed to.
         """
+        if not self.application.state:
+            raise Return((True, None))
         for namespace, channels in six.iteritems(self.channels):
             for channel, status in six.iteritems(channels):
                 user_info = self.get_user_info(namespace, channel)
                 yield self.application.state.add_presence(
                     self.project_id, namespace, channel, self.uid, user_info
                 )
+        raise Return((True, None))
 
     def get_user_info(self, namespace_name, channel):
         """
@@ -411,7 +415,7 @@ class Client(object):
         }
         self.channels = {}
 
-        if not self.application.state.fake:
+        if self.application.state:
             self.presence_ping = PeriodicCallback(
                 self.send_presence_ping, self.application.state.presence_ping_interval
             )
@@ -502,9 +506,10 @@ class Client(object):
 
         user_info = self.get_user_info(namespace_name, channel)
 
-        yield self.application.state.add_presence(
-            project_id, namespace_name, channel, self.uid, user_info
-        )
+        if self.application.state:
+            yield self.application.state.add_presence(
+                project_id, namespace_name, channel, self.uid, user_info
+            )
 
         if namespace.get('join_leave', False):
             self.send_join_message(namespace_name, channel)
@@ -547,9 +552,10 @@ class Client(object):
             except KeyError:
                 pass
 
-        yield self.application.state.remove_presence(
-            project_id, namespace_name, channel, self.uid
-        )
+        if self.application.state:
+            yield self.application.state.remove_presence(
+                project_id, namespace_name, channel, self.uid
+            )
 
         if namespace.get('join_leave', False):
             self.send_leave_message(namespace_name, channel)

@@ -15,7 +15,6 @@ from tornado.gen import coroutine, Return
 
 from centrifuge import utils
 from centrifuge.structure import Structure
-from centrifuge.state.base import State
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.pubsub.base import BasePubSub
@@ -191,18 +190,21 @@ class Application(tornado.web.Application):
 
     def init_state(self):
         """
-        Initialize state manager (for presence/history data).
+        Initialize state manager.
         """
         config = self.settings['config']
         state_config = config.get("state", {})
         if not state_config:
-            # use fake state
-            logger.info("No State configured")
-            self.state = State(self, fake=True)
+            logger.info(
+                "No state configured - some important features of Centrifuge "
+                "like channel history and presence will not work. Moreover "
+                "killed clients can reconnect to Centrifuge while their credentials"
+                "not expired."
+            )
         else:
-            state_storage = state_config.get('storage', 'centrifuge.state.base.State')
-            state_storage_class = utils.namedAny(state_storage)
-            self.state = state_storage_class(self)
+            state_class_path = state_config.get('storage', 'centrifuge.state.base.State')
+            state_class = utils.namedAny(state_class_path)
+            self.state = state_class(self)
             tornado.ioloop.IOLoop.instance().add_callback(self.state.initialize)
 
     def init_pubsub(self):
@@ -368,14 +370,10 @@ class Application(tornado.web.Application):
         namespace_name = params.get("namespace", None)
         channel = params.get("channel", None)
 
-        if not user:
-            # we don't need to block anonymous users
-            raise Return((True, None))
-
         project_id = project['_id']
 
         # try to find user's connection
-        user_connections = self.connections.get(project_id, {}).get(user, None)
+        user_connections = self.connections.get(project_id, {}).get(user, {})
         if not user_connections:
             raise Return((True, None))
 
@@ -419,6 +417,28 @@ class Application(tornado.web.Application):
                     "namespace": namespace_name,
                     "channel": channel
                 })
+
+        raise Return((True, None))
+
+    @coroutine
+    def handle_kill(self, params):
+        """
+        Handle kill message - when user deactivated in web application
+        and its connections must be closed by Centrifuge without reconnect
+        possibility.
+        """
+        project = params.get("project")
+        user = params.get("user")
+
+        project_id = project['_id']
+
+        # try to find user's connection
+        user_connections = self.connections.get(project_id, {}).get(user, {})
+        if not user_connections:
+            raise Return((True, None))
+
+        for uid, connection in six.iteritems(user_connections):
+            yield connection.handle_kill()
 
         raise Return((True, None))
 
@@ -559,6 +579,9 @@ class Application(tornado.web.Application):
         """
         Return a list of last messages sent into channel.
         """
+        if not self.state:
+            raise Return((None, None))
+
         project_id = project['_id']
 
         namespace_name = params.get('namespace')
@@ -587,6 +610,9 @@ class Application(tornado.web.Application):
         """
         Return current presence information for channel.
         """
+        if not self.state:
+            raise Return((None, None))
+
         project_id = project['_id']
 
         namespace_name = params.get('namespace')
