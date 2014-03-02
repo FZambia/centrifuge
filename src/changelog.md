@@ -1,6 +1,7 @@
 v0.5.0
 ======
 
+* MIT license instead of BSD
 * Connection token now expire. Now `timestamp` parameter required when connecting to Centrifuge. As usual timestamp must be used when creating token. Cent function to generate token was updated.
 * Base PUB/SUB is now default, to use ZeroMQ `--zmq` command-line option must be used.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module

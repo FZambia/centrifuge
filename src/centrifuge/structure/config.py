@@ -23,7 +23,6 @@ class Storage(BaseStorage):
         projects = self.settings.get('projects', [])
         raise Return((projects, None))
 
-
     @coroutine
     def namespace_list(self):
         namespaces = self.settings.get('namespaces', [])
