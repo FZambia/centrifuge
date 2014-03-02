@@ -857,13 +857,11 @@ class Application(tornado.web.Application):
             raise Return((None, self.NAMESPACE_NOT_FOUND))
 
         if not project:
-            project, error = yield self.structure.get_project_by_id(
+            project, error = yield self.get_project(
                 namespace['project_id']
             )
             if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            if not project:
-                raise Return((None, self.PROJECT_NOT_FOUND))
+                raise Return((None, error))
 
         if "name" not in params:
             params["name"] = namespace["name"]
