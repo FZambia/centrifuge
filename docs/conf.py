@@ -35,7 +35,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'centrifuge'
-copyright = u'2013, <a href="https://www.facebook.com/emelin.alexander">Alexandr Emelin</a>, BSD license'
+copyright = u'2013, <a href="https://www.facebook.com/emelin.alexander">Alexandr Emelin</a>, MIT license'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

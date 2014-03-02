@@ -4,7 +4,7 @@ Contribute and license
 .. _contribute_license:
 
 
-Centrifuge has BSD license. This is open-source and pull requests are welcome!
+Centrifuge has MIT license. This is open-source and pull requests are welcome!
 
 But, please, follow next principles:
 
