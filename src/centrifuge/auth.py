@@ -45,3 +45,4 @@ def get_client_token(secret_key, project_id, user, timestamp, user_info=None):
         sign.update(six.b(user_info))
     token = sign.hexdigest()
     return token
+

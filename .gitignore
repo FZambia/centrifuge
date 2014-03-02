@@ -6,3 +6,4 @@ src/centrifuge.egg-info/*
 src/dist/*
 *.rdb
 docs/_build/*
+
