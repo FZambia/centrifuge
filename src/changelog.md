@@ -1,18 +1,26 @@
 v0.5.0
 ======
 
+As usual I've broken backwards compatibility again! I'm so sorry for this, but this is all for the great good.
+
+Here is a list of changes:
+
 * MIT license instead of BSD
-* Connection token now expire. Now `timestamp` parameter required when connecting to Centrifuge. As usual timestamp must be used when creating token. Cent function to generate token was updated.
+* Connection tokens now expire. `timestamp` parameter (with current UNIX seconds as its value) now required when connecting to Centrifuge. As usual timestamp must be used when creating token. Cent function to generate token was updated.
 * Base PUB/SUB is now default, to use ZeroMQ `--zmq` command-line option must be used.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
 * new client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
-* no more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings itself.
+* no more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings.
+
+As you can see there are lots of important changes, so I hope you forgive me for migration inconveniences.
 
 Migration notes:
 
-*  please update javascript client while migrating to Centrifuge 0.5.0
+* update Cent client to the latest version
+* use current `timestamp` (UNIX seconds as string) to generate connection token
+* please update javascript client while migrating to Centrifuge 0.5.0
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
 * if you use ZeroMQ as PUB/SUB broker then add ``--zmq`` option when starting Centrifuge.
