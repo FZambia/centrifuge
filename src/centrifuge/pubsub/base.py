@@ -145,7 +145,7 @@ class BasePubSub(object):
 
     def remove_subscription(self, project_id, channel, client):
         """
-        Unsubscribe application from channel if necessary and unregister client
+        Unsubscribe application from channel if necessary and prevent client
         from receiving messages from that channel.
         """
         subscription_key = self.get_subscription_key(project_id, channel)

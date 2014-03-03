@@ -10,9 +10,6 @@ from tornado.gen import Task, coroutine, Return
 from centrifuge.structure import BaseStorage
 
 
-NAME = "MongoDB"
-
-
 def on_error(error):
     raise Return((None, error))
 

@@ -429,14 +429,14 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def handle_kill(self, params):
+    def handle_disconnect(self, params):
         """
-        Handle kill message - when user deactivated in web application
-        and its connections must be closed by Centrifuge without reconnect
-        possibility.
+        Handle disconnect message - when user deactivated in web application
+        and its connections must be closed by Centrifuge by force
         """
         project = params.get("project")
         user = params.get("user")
+        reason = params.get("reason", None)
 
         project_id = project['_id']
 
@@ -446,7 +446,7 @@ class Application(tornado.web.Application):
             raise Return((True, None))
 
         for uid, connection in six.iteritems(user_connections):
-            yield connection.handle_kill()
+            yield connection.handle_disconnect(reason=reason)
 
         raise Return((True, None))
 

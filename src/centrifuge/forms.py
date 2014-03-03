@@ -9,7 +9,9 @@ from centrifuge.utils import Form
 
 
 # regex pattern to match project and namespace names
-NAME_RE = re.compile('^[^_]+[A-z0-9@\-_\.]{2,}$')
+NAME_PATTERN = '^[^_]+[A-z0-9@\-_\.]{2,}$'
+NAME_PATTERN_DESCRIPTION = 'ascii symbols, digits, "-", "_" and "." only'
+NAME_RE = re.compile(NAME_PATTERN)
 
 # how many times we are trying to authorize subscription by default
 DEFAULT_MAX_AUTH_ATTEMPTS = 5
@@ -33,7 +35,7 @@ class ProjectMixin(object):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="project name, must contain ascii symbols only"
+        description="project name, regex pattern: {0}".format(NAME_PATTERN_DESCRIPTION)
     )
 
     display_name = TextField(
@@ -56,21 +58,23 @@ class ProjectMixin(object):
     )
 
     back_off_interval = IntegerField(
-        label='back-off interval in milliseconds',
+        label='back-off interval',
         validators=[
             validators.NumberRange(min=50, max=10000)
         ],
         default=DEFAULT_BACK_OFF_INTERVAL,
-        description="please, keep it default until you know what you do"
+        description="interval increment in milliseconds in authorization back-off mechanism. "
+                    "Please, keep it default until you know what you do"
     )
 
     back_off_max_timeout = IntegerField(
-        label='back-off max timeout in milliseconds',
+        label='back-off max timeout',
         validators=[
             validators.NumberRange(min=50, max=120000)
         ],
         default=DEFAULT_BACK_OFF_MAX_TIMEOUT,
-        description="please, keep it default until you know what you do"
+        description="maximum interval in milliseconds between authorization requests. "
+                    "Please, keep it default until you know what you do"
     )
 
 
@@ -84,9 +88,10 @@ class NamespaceMixin(object):
     is_watching = BooleanField(
         label='is watching',
         validators=[],
-        default=False,
+        default=True,
         description="publish messages into admin channel "
-                    "(messages will be visible in web interface)"
+                    "(messages will be visible in web interface). Turn it off"
+                    "if you expect high load in channels."
     )
 
     is_private = BooleanField(
@@ -94,7 +99,7 @@ class NamespaceMixin(object):
         validators=[],
         default=False,
         description="authorize every subscription on channel using "
-                    "POST request to auth address"
+                    "POST request to provided auth address (see below)"
     )
 
     auth_address = TextField(
@@ -136,7 +141,7 @@ class NamespaceMixin(object):
             validators.NumberRange(min=1)
         ],
         default=DEFAULT_HISTORY_SIZE,
-        description="maximum amount of messages in history for channels"
+        description="maximum amount of messages in history for single channel"
     )
 
     join_leave = BooleanField(
@@ -160,7 +165,7 @@ class NamespaceNameMixin(object):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique namespace name, ascii symbols only"
+        description="unique namespace name, regex pattern: {0}".format(NAME_PATTERN_DESCRIPTION)
     )
 
 

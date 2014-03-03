@@ -64,6 +64,18 @@ server_api_schema = {
         },
         "required": ["user"]
     },
+    "disconnect": {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "string"
+            },
+            "reason": {
+                "type": "string"
+            }
+        },
+        "required": ["user"]
+    },
     "namespace_list": {
         "type": "object",
         "properties": {}

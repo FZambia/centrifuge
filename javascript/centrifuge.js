@@ -856,8 +856,7 @@
 
     centrifuge_proto._disconnectResponse = function (message) {
         if (message.error === null) {
-            this._clientId = null;
-            this._setStatus('disconnected');
+            this.disconnect();
             this.trigger('disconnect', [message]);
             this.trigger('disconnect:success', [message]);
         } else {

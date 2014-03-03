@@ -361,6 +361,15 @@ class Client(object):
         raise Return(('pong', None))
 
     @coroutine
+    def handle_disconnect(self, reason=None):
+        """
+        Close this connection
+        """
+        yield self.send_disconnect_message(reason=reason)
+        yield self.close_sock(pause=False)
+        raise Return((True, None))
+
+    @coroutine
     def handle_connect(self, params):
         """
         Authenticate client's connection, initialize required
@@ -715,4 +724,17 @@ class Client(object):
             )
             self.extend_task.start()
 
+        raise Return(True)
+
+    @coroutine
+    def send_disconnect_message(self, reason=None):
+
+        reason = 'go away' or reason
+
+        message_body = {
+            "reason": reason
+        }
+
+        response = Response(method="disconnect", body=message_body)
+        yield self.send(response.as_message())
         raise Return(True)
