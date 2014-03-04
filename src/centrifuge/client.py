@@ -52,6 +52,7 @@ class Client(object):
         self.is_authenticated = False
         self.user = ''
         self.token = None
+        self.expire_at = None
         self.channel_user_info = {}
         self.default_user_info = {}
         self.project_id = None
@@ -118,6 +119,7 @@ class Client(object):
         self.is_authenticated = False
         self.sock = None
         self.token = None
+        self.expire_at = None
         raise Return((True, None))
 
     @coroutine
@@ -361,11 +363,10 @@ class Client(object):
         raise Return(('pong', None))
 
     @coroutine
-    def handle_disconnect(self, reason=None):
+    def handle_disconnect(self, params):
         """
         Close this connection
         """
-        yield self.send_disconnect_message(reason=reason)
         yield self.close_sock(pause=False)
         raise Return((True, None))
 
@@ -382,7 +383,7 @@ class Client(object):
         user = params["user"]
         project_id = params["project"]
         timestamp = params["timestamp"]
-        user_info = params.get("info", None)
+        user_info = params.get("info")
         extended_token = params.get("extended_token")
         extended_timestamp = params.get("extended_timestamp")
 
@@ -427,7 +428,7 @@ class Client(object):
 
     def check_token_expire(self, project, token, timestamp, extended_token, extended_timestamp):
         """
-        Check that timestamp is valid and is not too old.
+        Check that connection timestamp is valid and is not too old.
         If timestamp is expired then check extended credentials if present.
         """
         if not self.application.TOKEN_EXPIRE:
@@ -440,12 +441,12 @@ class Client(object):
 
         now = time.time()
         if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
-            # it seems that token expired, the only chance for client is to have
-            # actual extended credentials in this request
+            # it seems that connection expired, the only chance for client to stay connected
+            # is to have actual extended credentials in this request
             if extended_token and extended_timestamp:
-                expected_token = self.get_extend_token(project, token, extended_timestamp)
+                expected_token = self.get_extended_token(project, token, extended_timestamp)
                 if expected_token != extended_token:
-                    raise Return((None, "invalid extend token"))
+                    raise Return((None, "invalid extended token"))
                 try:
                     extended_timestamp = int(extended_timestamp)
                 except ValueError:
@@ -456,6 +457,7 @@ class Client(object):
                 raise Return((None, "connection expired"))
 
         last_timestamp = max(timestamp, extended_timestamp) if extended_timestamp else timestamp
+        self.expire_at = last_timestamp + self.application.TOKEN_EXPIRE_INTERVAL
         time_to_extend = self.application.TOKEN_EXTEND_INTERVAL - (now - last_timestamp)
         IOLoop.instance().add_timeout(time.time() + time_to_extend, self.send_extend_message)
 
@@ -673,7 +675,7 @@ class Client(object):
         self.send_join_leave_message(channel, 'leave')
 
     @staticmethod
-    def get_extend_token(project, original_token, timestamp):
+    def get_extended_token(project, original_token, timestamp):
         """
         Create and return extend token based on project secret key, original
         token received on first connect and timestamp.
@@ -686,14 +688,14 @@ class Client(object):
     @coroutine
     def generate_extend_credentials(self):
         """
-        Generate extend token and timestamp.
+        Generate extended token and extended timestamp.
         """
         project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
 
         now = str(int(time.time()))
-        token = self.get_extend_token(project, self.token, now)
+        token = self.get_extended_token(project, self.token, now)
         raise Return(((token, now), None))
 
     @coroutine
@@ -728,13 +730,14 @@ class Client(object):
 
     @coroutine
     def send_disconnect_message(self, reason=None):
-
-        reason = 'go away' or reason
-
+        """
+        Send disconnect message - after receiving it proper client
+        must close connection and do not reconnect.
+        """
+        reason = 'go away!' or reason
         message_body = {
             "reason": reason
         }
-
         response = Response(method="disconnect", body=message_body)
         yield self.send(response.as_message())
         raise Return(True)

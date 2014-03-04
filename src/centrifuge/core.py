@@ -446,7 +446,8 @@ class Application(tornado.web.Application):
             raise Return((True, None))
 
         for uid, connection in six.iteritems(user_connections):
-            yield connection.handle_disconnect(reason=reason)
+            yield connection.send_disconnect_message(reason=reason)
+            yield connection.close_sock(pause=False)
 
         raise Return((True, None))
 
@@ -706,16 +707,10 @@ class Application(tornado.web.Application):
         if "name" not in params:
             params["name"] = project["name"]
 
-        namespaces, error = yield self.structure.get_project_namespaces(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
         boolean_patch_data = {}
         if patch:
             boolean_patch_data = utils.get_boolean_patch_data(ProjectForm.BOOLEAN_FIELDS, params)
 
-        namespace_choices = [(x['_id'], x['name']) for x in namespaces]
-        namespace_choices.insert(0, ("", ""))
         form = ProjectForm(params, namespace_choices=namespace_choices)
 
         if form.validate():
