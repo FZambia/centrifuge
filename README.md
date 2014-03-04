@@ -11,27 +11,26 @@ Centrifuge's backend is built on top of [Tornado](http://www.tornadoweb.org/en/s
 extremely fast and mature Python's async web server.
 
 Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
-Full-featured instance of Centrifuge can run without extra dependency
+Single full-featured instance of Centrifuge run by default without extra dependency
 on Redis.
 
 Centrifuge comes with administrative web interface to manage project/namespace
-structure and monitor important messages.
+structure and monitor important messages in real-time.
 
 Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
-But when running Centrifuge instance processes on different machines you should use [MongoDB](http://www.mongodb.org/)
-or [PostgreSQL](http://www.postgresql.org/) backends instead of SQLite.
+When running Centrifuge instance processes on different machines [MongoDB](http://www.mongodb.org/)
+or [PostgreSQL](http://www.postgresql.org/) backends can be used instead of SQLite.
 
 
 Main features
 -------------
 
 * Asynchronous backend on top of Tornado
-* Different backends for PUB/SUB operations
 * SockJS and pure Websockets endpoints
 * Simple javascript client
-* Presence and history data for channels
+* Presence data, history data, join/leave events for channels
 * Web interface for managing your projects
-* Flexible channel settings through namespaces
+* Flexible channel settings using namespaces
 
 To get more information please,
 
