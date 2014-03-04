@@ -928,7 +928,11 @@
         }
     };
 
-    centrifuge_proto._joinResponse = function(body) {
+    centrifuge_proto._joinResponse = function(message) {
+        var body = message.body;
+        if (!body) {
+            return;
+        }
         var subscription = this._getSubscription(body.channel);
         if (!subscription) {
             return;
@@ -936,7 +940,11 @@
         subscription.trigger('join', [body]);
     };
 
-    centrifuge_proto._leaveResponse = function(body) {
+    centrifuge_proto._leaveResponse = function(message) {
+        var body = message.body;
+        if (!body) {
+            return;
+        }
         var subscription = this._getSubscription(body.channel);
         if (!subscription) {
             return;
@@ -952,29 +960,15 @@
 
     centrifuge_proto._messageResponse = function (message) {
         if (message.body) {
-            //noinspection JSValidateTypes
             var body = message.body;
-            var message_type = body.message_type;
-            switch (message_type) {
-                case 'join':
-                    this._joinResponse(body);
-                    break;
-                case 'leave':
-                    this._leaveResponse(body);
-                    break;
-                case 'message':
-                    var subscription = this.getSubscription(body.channel);
-                    if (subscription === null) {
-                        return;
-                    }
-                    if (subscription.subscribed === false) {
-                        return;
-                    }
-                    subscription.trigger('message', [body]);
-                    break;
-                default:
-                    break;
+            var subscription = this.getSubscription(body.channel);
+            if (subscription === null) {
+                return;
             }
+            if (subscription.subscribed === false) {
+                return;
+            }
+            subscription.trigger('message', [body]);
         } else {
             this._debug('Unknown message', message);
         }

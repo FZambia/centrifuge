@@ -43,14 +43,12 @@ class BasePubSub(object):
     def initialize(self):
         logger.info("Base PUB/SUB")
 
-    def publish(self, channel, message, method=None):
+    def publish(self, channel, body, method=None):
         """
         Publish message into channel of stream.
         """
         method = method or self.DEFAULT_PUBLISH_METHOD
-        message["message_type"] = method
-        message["_channel"] = channel
-        self.dispatch_published_message(message)
+        self.dispatch_published_message(channel, method, body)
 
     def publish_control_message(self, message):
         self.publish(CONTROL_CHANNEL, message)
@@ -72,19 +70,17 @@ class BasePubSub(object):
         ]))
 
     @coroutine
-    def dispatch_published_message(self, message):
+    def dispatch_published_message(self, channel, method, body):
         """
         Got message, decide what is it and dispatch into right
         application handler.
         """
-        channel = message.pop("_channel")
-
         if channel == CONTROL_CHANNEL:
-            yield self.handle_control_message(message)
+            yield self.handle_control_message(body)
         elif channel == ADMIN_CHANNEL:
-            yield self.handle_admin_message(message)
+            yield self.handle_admin_message(body)
         else:
-            yield self.handle_channel_message(channel, message)
+            yield self.handle_channel_message(channel, method, body)
 
     @coroutine
     def handle_admin_message(self, message):
@@ -94,10 +90,10 @@ class BasePubSub(object):
                 connection.send(message)
 
     @coroutine
-    def handle_channel_message(self, channel, message):
+    def handle_channel_message(self, channel, method, body):
         if channel not in self.subscriptions:
             raise Return((True, None))
-        response = Response(method='message', body=message)
+        response = Response(method=method, body=body)
         prepared_response = response.as_message()
         for uid, client in six.iteritems(self.subscriptions[channel]):
             if channel in self.subscriptions and uid in self.subscriptions[channel]:
