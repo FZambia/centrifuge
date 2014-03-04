@@ -974,7 +974,7 @@
         }
     };
 
-    centrifuge_proto._dispatchMsg = function(message) {
+    centrifuge_proto._dispatchMessage = function(message) {
         if (message === undefined || message === null) {
             return;
         }
@@ -1027,11 +1027,11 @@
             for (var i in data) {
                 if (data.hasOwnProperty(i)) {
                     var msg = data[i];
-                    this._dispatchMsg(msg);
+                    this._dispatchMessage(msg);
                 }
             }
         } else if (Object.prototype.toString.call(data) === Object.prototype.toString.call({})) {
-            this._dispatchMsg(data);
+            this._dispatchMessage(data);
         }
     };
 
