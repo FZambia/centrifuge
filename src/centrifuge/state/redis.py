@@ -102,6 +102,10 @@ class State(BaseState):
     def get_presence_set_key(project_id, channel):
         return "centrifuge:presence:set:%s:%s" % (project_id, channel)
 
+    @staticmethod
+    def get_deactivated_key(project_id, user_id):
+        return "centrifuge:deactivated:set:%s:%s" % (project_id, user_id)
+
     @coroutine
     def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
         """
@@ -183,3 +187,27 @@ class State(BaseState):
             raise Return((None, e))
         else:
             raise Return(([json_decode(x.decode()) for x in data], None))
+
+    @coroutine
+    def set_deactivated(self, project_id, user_id, expire):
+        key = self.get_deactivated_key(project_id, user_id)
+        try:
+            yield Task(self.client.set, key, 1)
+            yield Task(self.client.expire, key, expire)
+        except StreamClosedError as e:
+            raise Return((None, e))
+        else:
+            raise Return((True, None))
+
+    @coroutine
+    def is_deactivated(self, project_id, user_id):
+        key = self.get_deactivated_key(project_id, user_id)
+        try:
+            data = yield Task(self.client.get, key)
+        except StreamClosedError as e:
+            raise Return((None, e))
+        else:
+            result = False
+            if data:
+                result = True
+            raise Return((result, None))
