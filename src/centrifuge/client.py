@@ -175,7 +175,6 @@ class Client(object):
 
         response.uid = uid
         response.method = method
-        response.params = params
 
         if method != 'connect' and not self.is_authenticated:
             response.error = self.application.UNAUTHORIZED
@@ -514,7 +513,7 @@ class Client(object):
         if namespace.get('join_leave', False):
             self.send_join_message(channel)
 
-        raise Return((True, None))
+        raise Return(({"channel": channel}, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
@@ -553,7 +552,7 @@ class Client(object):
         if namespace.get('join_leave', False):
             self.send_leave_message(channel)
 
-        raise Return((True, None))
+        raise Return(({"channel": channel}, None))
 
     def check_channel_permission(self, channel):
         """
@@ -590,7 +589,7 @@ class Client(object):
             params,
             client=user_info
         )
-        raise Return((result, error))
+        raise Return(({"channel": channel, "status": result}, error))
 
     @coroutine
     def handle_presence(self, params):

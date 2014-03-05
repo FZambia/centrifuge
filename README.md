@@ -5,10 +5,10 @@ Simple real-time messaging in web applications.
 
 To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be
-used.
+used. So it works in both modern and old browsers (IE 7 supported).
 
 Centrifuge's backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) -
-extremely fast and mature Python's async web server.
+extremely fast and mature Python's asynchronous web server.
 
 Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
@@ -51,9 +51,10 @@ Basic usage from browser
 ```javascript
 var centrifuge = new Centrifuge({
     url: 'http://localhost:8000/connection',  // Centrifuge SockJS connection endpoint
-    token: 'TOKEN', // token based on project's secret key, project ID and user ID
+    token: 'TOKEN', // token based on project's secret key, project ID, user ID and timestamp
     project: 'PROJECT_ID', // project ID from Centrifuge admin interface
-    user: 'USER_ID' // your application user ID (can be empty for anonymous access)
+    user: 'USER_ID', // your application user ID (can be empty for anonymous access)
+    timestamp: '121212167' // current UNIX timestamp as string
 });
 
 centrifuge.on('connect', function() {

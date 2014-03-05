@@ -857,83 +857,91 @@
             this.trigger('disconnect:success', [message]);
         } else {
             this.trigger('error', [message]);
-            this.trigger('disconnect:error', [message]);
+            this.trigger('disconnect:error', [message.error]);
         }
     };
 
     centrifuge_proto._subscribeResponse = function (message) {
-        var channel = message.params["channel"];
-        var subscription = this._getSubscription(channel);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.subscribed = true;
-            subscription.trigger('subscribe:success', [message]);
-            subscription.trigger('ready', [message]);
+            subscription.trigger('subscribe:success', [body]);
+            subscription.trigger('ready', [body]);
         } else {
-            subscription.trigger('subscribe:error', [message]);
+            subscription.trigger('subscribe:error', [message.error]);
             subscription.trigger('error', [message]);
             this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._unsubscribeResponse = function (message) {
-        if (message.error !== null) {
-            this.trigger('error', [message]);
-        }
-    };
-
-    centrifuge_proto._publishResponse = function (message) {
-        var channel = message.params["channel"];
-        var subscription = this._getSubscription(channel);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.trigger('publish:success', [message]);
+            subscription.trigger('unsubscribe', [body]);
+            this._centrifuge._removeSubscription(channel);
+        }
+    };
+
+    centrifuge_proto._publishResponse = function (message) {
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
+        if (!subscription) {
+            return;
+        }
+        if (message.error === null) {
+            subscription.trigger('publish:success', [body]);
         } else {
-            subscription.trigger('publish:error', [message]);
+            subscription.trigger('publish:error', [message.error]);
             this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._presenceResponse = function (message) {
-        var channel = message.body["channel"];
-        var subscription = this._getSubscription(channel);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.trigger('presence', [message.body]);
-            subscription.trigger('presence:success', [message]);
+            subscription.trigger('presence', [body]);
+            subscription.trigger('presence:success', [body]);
         } else {
-            subscription.trigger('presence:error', [message]);
+            subscription.trigger('presence:error', [message.error]);
             this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._historyResponse = function (message) {
-        var channel = message.body["channel"];
-        var subscription = this._getSubscription(channel);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.trigger('history', [message.body]);
-            subscription.trigger('history:success', [message]);
+            subscription.trigger('history', [body]);
+            subscription.trigger('history:success', [body]);
         } else {
-            subscription.trigger('history:error', [message]);
+            subscription.trigger('history:error', [message.error]);
             this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._joinResponse = function(message) {
         var body = message.body;
-        if (!body) {
-            return;
-        }
-        var subscription = this._getSubscription(body.channel);
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
@@ -942,10 +950,8 @@
 
     centrifuge_proto._leaveResponse = function(message) {
         var body = message.body;
-        if (!body) {
-            return;
-        }
-        var subscription = this._getSubscription(body.channel);
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
@@ -959,19 +965,13 @@
     };
 
     centrifuge_proto._messageResponse = function (message) {
-        if (message.body) {
-            var body = message.body;
-            var subscription = this.getSubscription(body.channel);
-            if (subscription === null) {
-                return;
-            }
-            if (subscription.subscribed === false) {
-                return;
-            }
-            subscription.trigger('message', [body]);
-        } else {
-            this._debug('Unknown message', message);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
+        if (subscription === null) {
+            return;
         }
+        subscription.trigger('message', [body]);
     };
 
     centrifuge_proto._dispatchMessage = function(message) {
@@ -980,6 +980,10 @@
         }
 
         var method = message.method;
+
+        if (!method) {
+            return;
+        }
 
         switch (method) {
             case 'connect':
@@ -1180,7 +1184,6 @@
         this._centrifuge = centrifuge;
         this._centrifuge.checkChannelName(channel);
         this.channel = channel;
-        this.subscribed = false;
     }
 
     extend(Subscription, EventEmitter);
@@ -1209,7 +1212,6 @@
     };
 
     sub_proto.unsubscribe = function () {
-        this.subscribed = false;
         this._centrifuge._removeSubscription(this.channel);
         var centrifugeMessage = {
             "method": "unsubscribe",
