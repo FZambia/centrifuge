@@ -117,8 +117,10 @@ class State(BaseState):
         hash_key = self.get_presence_hash_key(project_id, channel)
         set_key = self.get_presence_set_key(project_id, channel)
         try:
-            yield Task(self.client.zadd, set_key, {uid: expire_at})
-            yield Task(self.client.hset, hash_key, uid, json_encode(user_info))
+            pipeline = self.client.pipeline()
+            pipeline.zadd(set_key, {uid: expire_at})
+            pipeline.hset(hash_key, uid, json_encode(user_info))
+            yield Task(pipeline.send)
         except StreamClosedError as e:
             raise Return((None, e))
         else:
@@ -133,8 +135,10 @@ class State(BaseState):
         hash_key = self.get_presence_hash_key(project_id, channel)
         set_key = self.get_presence_set_key(project_id, channel)
         try:
-            yield Task(self.client.hdel, hash_key, uid)
-            yield Task(self.client.zrem, set_key, uid)
+            pipeline = self.client.pipeline()
+            pipeline.hdel(hash_key, uid)
+            pipeline.zrem(set_key, uid)
+            yield Task(pipeline.send)
         except StreamClosedError as e:
             raise Return((None, e))
         else:
@@ -151,8 +155,10 @@ class State(BaseState):
         try:
             expired_keys = yield Task(self.client.zrangebyscore, set_key, 0, now)
             if expired_keys:
-                yield Task(self.client.zremrangebyscore, set_key, 0, now)
-                yield Task(self.client.hdel, hash_key, [x.decode() for x in expired_keys])
+                pipeline = self.client.pipeline()
+                pipeline.zremrangebyscore(set_key, 0, now)
+                pipeline.hdel(hash_key, [x.decode() for x in expired_keys])
+                yield Task(pipeline.send)
             data = yield Task(self.client.hgetall, hash_key)
         except StreamClosedError as e:
             raise Return((None, e))
@@ -168,8 +174,10 @@ class State(BaseState):
         history_size = history_size or self.history_size
         list_key = self.get_history_list_key(project_id, channel)
         try:
-            yield Task(self.client.lpush, list_key, json_encode(message))
-            yield Task(self.client.ltrim, list_key, 0, history_size - 1)
+            pipeline = self.client.pipeline()
+            pipeline.lpush(list_key, json_encode(message))
+            pipeline.ltrim(list_key, 0, history_size - 1)
+            yield Task(pipeline.send)
         except StreamClosedError as e:
             raise Return((None, e))
         else:
@@ -192,8 +200,10 @@ class State(BaseState):
     def set_deactivated(self, project_id, user_id, expire):
         key = self.get_deactivated_key(project_id, user_id)
         try:
-            yield Task(self.client.set, key, 1)
-            yield Task(self.client.expire, key, expire)
+            pipeline = self.client.pipeline()
+            pipeline.set(key, 1)
+            pipeline.expire(key, expire)
+            yield Task(pipeline.send)
         except StreamClosedError as e:
             raise Return((None, e))
         else:
