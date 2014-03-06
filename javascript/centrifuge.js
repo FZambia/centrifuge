@@ -791,7 +791,7 @@
         };
 
         this._transport.onerror = function (error) {
-            this._debug(error);
+            self._debug(error);
         };
 
         this._transport.onclose = function () {
