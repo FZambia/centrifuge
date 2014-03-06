@@ -800,7 +800,7 @@
             if (self._reconnect === true) {
                 window.setTimeout(function () {
                     if (self._reconnect === true) {
-                        self._connect.call(self)
+                        self._connect.call(self);
                     }
                 }, self._config.retry);
             }
