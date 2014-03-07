@@ -7,6 +7,8 @@ from tornado.escape import json_decode
 import hmac
 import six
 
+from centrifuge.log import logger
+
 
 def check_sign(secret_key, project_id, encoded_data, auth_sign):
     """
@@ -27,7 +29,8 @@ def decode_data(data):
     """
     try:
         return json_decode(data)
-    except:
+    except Exception as err:
+        logger.debug(err)
         return None
 
 
@@ -45,4 +48,3 @@ def get_client_token(secret_key, project_id, user, timestamp, user_info=None):
         sign.update(six.b(user_info))
     token = sign.hexdigest()
     return token
-

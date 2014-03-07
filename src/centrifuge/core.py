@@ -711,7 +711,7 @@ class Application(tornado.web.Application):
         if patch:
             boolean_patch_data = utils.get_boolean_patch_data(ProjectForm.BOOLEAN_FIELDS, params)
 
-        form = ProjectForm(params, namespace_choices=namespace_choices)
+        form = ProjectForm(params)
 
         if form.validate():
 

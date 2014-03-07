@@ -11,17 +11,17 @@ from centrifuge.response import Response
 from centrifuge.log import logger
 from centrifuge.engine import BaseEngine
 
+from functools import partial
+
 
 class MemoryEngine(BaseEngine):
-    """
-    This class manages application PUB/SUB logic.
-    """
 
-    NAME = 'Memory - single node only'
+    NAME = 'In memory - single node only'
 
     def __init__(self, *args, **kwargs):
         super(MemoryEngine, self).__init__(*args, **kwargs)
         self.subscriptions = {}
+        self.deactivated = {}
         self.history = {}
         self.presence = {}
 
@@ -130,12 +130,6 @@ class MemoryEngine(BaseEngine):
     def get_presence_key(self, project_id, channel):
         return "%s:presence:%s:%s" % (self.prefix, project_id, channel)
 
-    def get_history_key(self, project_id, channel):
-        return "%s:history:%s:%s" % (self.prefix, project_id, channel)
-
-    def get_deactivated_key(self, project_id, user_id):
-        return "%s:deactivated:%s:%s" % (self.prefix, project_id, user_id)
-
     @coroutine
     def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
         now = int(time.time())
@@ -191,40 +185,65 @@ class MemoryEngine(BaseEngine):
 
         raise Return((to_return, None))
 
+    def get_history_key(self, project_id, channel):
+        return "%s:history:%s:%s" % (self.prefix, project_id, channel)
+
     @coroutine
     def add_history_message(self, project_id, channel, message, history_size=None):
 
-        history_list_key = self.get_history_key(project_id, channel)
-        if history_list_key not in self.history:
-            self.history[history_list_key] = []
+        history_key = self.get_history_key(project_id, channel)
+        if history_key not in self.history:
+            self.history[history_key] = []
 
         history_size = history_size or self.history_size
 
-        self.history[history_list_key].insert(0, message)
-        self.history[history_list_key] = self.history[history_list_key][:history_size]
+        self.history[history_key].insert(0, message)
+        self.history[history_key] = self.history[history_key][:history_size]
 
         raise Return((True, None))
 
     @coroutine
     def get_history(self, project_id, channel):
 
-        history_list_key = self.get_history_key(project_id, channel)
+        history_key = self.get_history_key(project_id, channel)
 
         try:
-            data = self.history[history_list_key]
+            data = self.history[history_key]
         except KeyError:
             data = []
 
         raise Return((data, None))
 
+    def get_deactivated_key(self, project_id, user_id):
+        return "%s:deactivated:%s:%s" % (self.prefix, project_id, user_id)
+
     @coroutine
     def add_deactivated_user(self, project_id, user_id, expire):
+        key = self.get_deactivated_key(project_id, user_id)
+        self.deactivated[key] = time.time() + expire
+        callback = partial(self._delete_expired_deactivated_key, key)
+        self.io_loop.add_timeout(expire, callback)
         raise Return((True, None))
 
     @coroutine
     def remove_deactivated_user(self, project_id, user_id):
+        key = self.get_deactivated_key(project_id, user_id)
+        try:
+            del self.deactivated[key]
+        except KeyError:
+            pass
         raise Return((True, None))
 
     @coroutine
     def is_user_deactivated(self, project_id, user_id):
+        key = self.get_deactivated_key(project_id, user_id)
+        value = self.deactivated.get(key)
+        if value and value > time.time():
+            raise Return((True, None))
         raise Return((False, None))
+
+    def _delete_expired_deactivated_key(self, key):
+        try:
+            del self.deactivated[key]
+        except KeyError:
+            pass
