@@ -3,7 +3,7 @@
 # Copyright (c) Alexandr Emelin. MIT license.
 # All rights reserved.
 
-
+from tornado.ioloop import IOLoop
 from tornado.gen import coroutine, Return
 
 
@@ -37,7 +37,7 @@ class BaseEngine(object):
 
     def __init__(self, application, io_loop=None):
         self.application = application
-        self.io_loop = io_loop
+        self.io_loop = io_loop or IOLoop.instance()
         self.config = self.application.settings["config"].get("engine", {})
 
         self.prefix = self.config.get(

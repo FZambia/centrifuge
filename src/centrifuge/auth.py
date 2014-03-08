@@ -34,7 +34,7 @@ def decode_data(data):
         return None
 
 
-def get_client_token(secret_key, project_id, user, timestamp, user_info=None):
+def get_client_token(secret_key, project_id, user, user_info=None):
     """
     When client from browser connects to Centrifuge he must send his
     user ID, ID of project and optionally user_info JSON string.
@@ -43,7 +43,6 @@ def get_client_token(secret_key, project_id, user, timestamp, user_info=None):
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(project_id))
     sign.update(six.b(user))
-    sign.update(six.b(timestamp))
     if user_info is not None:
         sign.update(six.b(user_info))
     token = sign.hexdigest()

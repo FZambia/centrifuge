@@ -4,7 +4,6 @@
 # All rights reserved.
 
 import six
-import hmac
 import uuid
 import time
 import random
@@ -375,7 +374,6 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
-        timestamp = params["timestamp"]
         user_info = params.get("info")
 
         project, error = yield self.application.get_project(project_id)
@@ -384,7 +382,7 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        if token != auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info):
+        if token != auth.get_client_token(secret_key, project_id, user, user_info=user_info):
             raise Return((None, "invalid token"))
 
         if user_info is not None:

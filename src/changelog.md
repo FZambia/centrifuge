@@ -6,8 +6,8 @@ As usual I've broken backwards compatibility again! I'm so sorry for this, but t
 Here is a list of changes:
 
 * MIT license instead of BSD
-* Connection tokens now expire. `timestamp` parameter (with current UNIX seconds as its value) now required when connecting to Centrifuge. As usual timestamp must be used when creating token. Cent function to generate token was updated.
-* Base PUB/SUB is now default, to use ZeroMQ `--zmq` command-line option must be used.
+* ZeroMQ is not supported anymore.
+* Engine backends which now combine state and PUB/SUB - there are two of them Memory engine and Redis engine.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
@@ -19,11 +19,9 @@ As you can see there are lots of important changes, so I hope you forgive me for
 Migration notes:
 
 * update Cent client to the latest version
-* use current `timestamp` (UNIX seconds as string) to generate connection token
 * please update javascript client while migrating to Centrifuge 0.5.0
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
-* if you use ZeroMQ as PUB/SUB broker then add ``--zmq`` option when starting Centrifuge.
 
 What does it mean that there are no namespaces in protocol anymore?
 
@@ -42,6 +40,13 @@ Now you must do the same in this way:
 
 I.e. like from browser.
 
+Why the hell you dropped ZeroMQ support?
+
+Because of several reasons:
+
+* ZeroMQ is relatively hard to configure, it has nice features like brokerless etc but I think that it is not a big win in case of using with Centrifuge.
+* It's slow. I don't really know why but Redis is much much faster for real-time staff.
+* To have history and presence support you will anyway need Redis.
 
 v0.4.2
 ======

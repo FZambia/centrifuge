@@ -27,10 +27,6 @@ define(
 )
 
 define(
-    "asyncio", default=False, help="use asyncio io loop", type=bool
-)
-
-define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
@@ -45,10 +41,6 @@ if options.zmq:
     # Install ZMQ ioloop instead of a tornado ioloop
     # http://zeromq.github.com/pyzmq/eventloop.html
     ioloop.install()
-
-if options.asyncio:
-    # TODO: test this case
-    tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOLoop')
 
 
 from centrifuge.log import logger

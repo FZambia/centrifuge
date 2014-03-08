@@ -38,14 +38,14 @@ def dict_from_list(key_value_list):
     )
 
 
-class RedisEngine(BaseEngine):
+class Engine(BaseEngine):
 
     NAME = 'Redis'
 
     OK_RESPONSE = b'OK'
 
     def __init__(self, *args, **kwargs):
-        super(RedisEngine, self).__init__(*args, **kwargs)
+        super(Engine, self).__init__(*args, **kwargs)
 
         self.host = self.config.get("host", "localhost")
         self.port = self.config.get("port", 6379)
@@ -226,11 +226,11 @@ class RedisEngine(BaseEngine):
 
     def subscribe_key(self, subscription_key):
         self.subscriber.subscribe(
-            six.u(subscription_key), callback=self.on_redis_message
+            subscription_key, callback=self.on_redis_message
         )
 
     def unsubscribe_key(self, subscription_key):
-        self.subscriber.unsubscribe(six.u(subscription_key))
+        self.subscriber.unsubscribe(subscription_key)
 
     @coroutine
     def add_subscription(self, project_id, channel, client):
@@ -275,7 +275,7 @@ class RedisEngine(BaseEngine):
         return "%s:presence:hash:%s:%s" % (self.prefix, project_id, channel)
 
     def get_presence_set_key(self, project_id, channel):
-        return "%s:presence:set:%s:%s" % (self, project_id, channel)
+        return "%s:presence:set:%s:%s" % (self.prefix, project_id, channel)
 
     def get_history_list_key(self, project_id, channel):
         return "%s:history:list:%s:%s" % (self.prefix, project_id, channel)

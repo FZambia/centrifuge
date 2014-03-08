@@ -23,7 +23,7 @@ Here is minimal configuration file required:
                 "path": "centrifuge.db"
             }
         },
-        "state": null
+        "engine": null
     }
 
 
@@ -44,7 +44,7 @@ With MongoDB as structure storage:
                 "pool_size": 10
             }
         },
-        state: null
+        "engine": null
     }
 
 
@@ -67,7 +67,7 @@ With PostgreSQL this file look like:
                 "pool_size": 10
             }
         },
-        "state": null
+        "engine": null
     }
 
 You can also specify PostgreSQL connection params as database url or specify
@@ -85,7 +85,7 @@ an OS environment variable that holds value of the PostgreSQL connection url:
                 "url": "postgres://user:pass@host:port/dbname"
             }
         },
-        "state": null
+        "engine": null
     }
 
     {
@@ -118,7 +118,7 @@ Here is a configuration with in-process-memory state enabled:
                 "path": "centrifuge.db"
             }
         },
-        "state": {
+        "engine": {
             "storage": "centrifuge.state.base.State",
             "settings": {}
         }
@@ -142,8 +142,8 @@ Lets configure Centrifuge to use Redis as state storage:
                 "path": "centrifuge.db"
             }
         },
-        "state": {
-            "storage": "centrifuge.state.redis.State",
+        "engine": {
+            "class": "centrifuge.engine.redis.Engine",
             "settings": {
                 "host": "localhost",
                 "port": 6379,

@@ -3,7 +3,7 @@
     "cookie_secret": "secret",
     "api_secret": "secret",
     "engine": {
-        "class": "centrifuge.engine.memory.MemoryEngine",
+        "class": "centrifuge.engine.redis.Engine",
         "settings": {
             "host": "localhost",
             "port": 6379
@@ -16,8 +16,5 @@
 	      }
     },
     "admin_api_message_limit": 100,
-    "client_api_message_limit": 100,
-    "token_expire": true,
-    "token_expire_interval": 10,
-    "token_extend_interval": 4
+    "client_api_message_limit": 100
 }

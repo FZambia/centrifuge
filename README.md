@@ -53,8 +53,7 @@ var centrifuge = new Centrifuge({
     url: 'http://localhost:8000/connection',  // Centrifuge SockJS connection endpoint
     token: 'TOKEN', // token based on project's secret key, project ID, user ID and timestamp
     project: 'PROJECT_ID', // project ID from Centrifuge admin interface
-    user: 'USER_ID', // your application user ID (can be empty for anonymous access)
-    timestamp: '121212167' // current UNIX timestamp as string
+    user: 'USER_ID' // your application user ID (can be empty for anonymous access)
 });
 
 centrifuge.on('connect', function() {

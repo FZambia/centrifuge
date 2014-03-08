@@ -193,10 +193,10 @@ class Application(tornado.web.Application):
         engine_config = config.get("engine", {})
         if not engine_config:
             logger.info(
-                "No engine configured - Centrifuge will run with default Memory Engine. "
+                "No engine configured - Centrifuge will run with default Memory engine. "
                 "You can use only single node with it."
             )
-        engine_class_path = engine_config.get('class', 'centrifuge.engine.memory.MemoryEngine')
+        engine_class_path = engine_config.get('class', 'centrifuge.engine.memory.Engine')
         logger.info("Engine class: {0}".format(engine_class_path))
         engine_class = utils.namedAny(engine_class_path)
         self.engine = engine_class(self)
@@ -482,6 +482,8 @@ class Application(tornado.web.Application):
         subscription_key = self.engine.get_subscription_key(
             project_id, channel
         )
+
+        del message['project_id']
 
         self.engine.publish_message(subscription_key, message)
 

@@ -12,12 +12,12 @@ from centrifuge.log import logger
 from centrifuge.engine import BaseEngine
 
 
-class MemoryEngine(BaseEngine):
+class Engine(BaseEngine):
 
     NAME = 'In memory - single node only'
 
     def __init__(self, *args, **kwargs):
-        super(MemoryEngine, self).__init__(*args, **kwargs)
+        super(Engine, self).__init__(*args, **kwargs)
         self.subscriptions = {}
         self.history = {}
         self.presence = {}
