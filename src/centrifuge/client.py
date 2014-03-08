@@ -95,12 +95,11 @@ class Client(object):
 
                 for channel_name, channel_info in six.iteritems(channels):
 
-                    if self.application.state:
-                        yield self.application.state.remove_presence(
-                            project_id, channel_name, self.uid
-                        )
+                    yield self.application.engine.remove_presence(
+                        project_id, channel_name, self.uid
+                    )
 
-                    self.application.pubsub.remove_subscription(
+                    self.application.engine.remove_subscription(
                         project_id, channel_name, self
                     )
 
@@ -235,6 +234,7 @@ class Client(object):
                     # close connection in case of any error
                     logger.error(err)
                     yield self.sock.send(multi_response.as_message())
+                    yield self.send_disconnect_message()
                     yield self.close_sock()
                     raise Return((True, None))
 
@@ -253,11 +253,9 @@ class Client(object):
         Update presence information for all channels this client
         subscribed to.
         """
-        if not self.application.state:
-            raise Return((True, None))
         for channel, channel_info in six.iteritems(self.channels):
             user_info = self.get_user_info(channel)
-            yield self.application.state.add_presence(
+            yield self.application.engine.add_presence(
                 self.project_id, channel, self.uid, user_info
             )
         raise Return((True, None))
@@ -395,7 +393,14 @@ class Client(object):
         if token != auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info):
             raise Return((None, "invalid token"))
 
-        self.check_token_expire(project, token, timestamp, extended_token, extended_timestamp)
+        disconnect_reason = self.check_token_expire(
+            project, token, timestamp, extended_token, extended_timestamp
+        )
+        if disconnect_reason:
+            print disconnect_reason
+            yield self.send_disconnect_message(reason=disconnect_reason)
+            yield self.close_sock()
+            raise Return((False, disconnect_reason))
 
         if user_info is not None:
             try:
@@ -417,11 +422,10 @@ class Client(object):
         }
         self.channels = {}
 
-        if self.application.state:
-            self.presence_ping_task = PeriodicCallback(
-                self.send_presence_ping, self.application.state.presence_ping_interval
-            )
-            self.presence_ping_task.start()
+        self.presence_ping_task = PeriodicCallback(
+            self.send_presence_ping, self.application.engine.presence_ping_interval
+        )
+        self.presence_ping_task.start()
 
         raise Return((self.uid, None))
 
@@ -436,7 +440,7 @@ class Client(object):
         try:
             timestamp = int(timestamp)
         except ValueError:
-            raise Return((None, "invalid timestamp"))
+            return "invalid timestamp"
 
         now = time.time()
         if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
@@ -445,15 +449,15 @@ class Client(object):
             if extended_token and extended_timestamp:
                 expected_token = self.get_extended_token(project, token, extended_timestamp)
                 if expected_token != extended_token:
-                    raise Return((None, "invalid extended token"))
+                    return "invalid extended token"
                 try:
                     extended_timestamp = int(extended_timestamp)
                 except ValueError:
-                    raise Return((None, "invalid extended timestamp"))
+                    return "invalid extended timestamp"
                 if extended_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
-                    raise Return((None, "connection expired"))
+                    return "connection expired"
             else:
-                raise Return((None, "connection expired"))
+                return "connection expired"
 
         last_timestamp = max(timestamp, extended_timestamp) if extended_timestamp else timestamp
         self.expire_at = last_timestamp + self.application.TOKEN_EXPIRE_INTERVAL
@@ -497,7 +501,7 @@ class Client(object):
             if not is_authorized:
                 raise Return((None, self.application.PERMISSION_DENIED))
 
-        self.application.pubsub.add_subscription(
+        yield self.application.engine.add_subscription(
             project_id, channel, self
         )
 
@@ -505,10 +509,9 @@ class Client(object):
 
         user_info = self.get_user_info(channel)
 
-        if self.application.state:
-            yield self.application.state.add_presence(
-                project_id, channel, self.uid, user_info
-            )
+        yield self.application.engine.add_presence(
+            project_id, channel, self.uid, user_info
+        )
 
         if namespace.get('join_leave', False):
             self.send_join_message(channel)
@@ -535,7 +538,7 @@ class Client(object):
 
         project_id = self.project_id
 
-        self.application.pubsub.remove_subscription(
+        self.application.engine.remove_subscription(
             project_id, channel, self
         )
 
@@ -544,10 +547,9 @@ class Client(object):
         except KeyError:
             pass
 
-        if self.application.state:
-            yield self.application.state.remove_presence(
-                project_id, channel, self.uid
-            )
+        yield self.application.engine.remove_presence(
+            project_id, channel, self.uid
+        )
 
         if namespace.get('join_leave', False):
             self.send_leave_message(channel)
@@ -647,7 +649,7 @@ class Client(object):
         """
         Generate and send message about join or leave event.
         """
-        subscription_key = self.application.pubsub.get_subscription_key(
+        subscription_key = self.application.engine.get_subscription_key(
             self.project_id, channel
         )
         user_info = self.get_user_info(channel)
@@ -655,7 +657,7 @@ class Client(object):
             "channel": channel,
             "data": user_info
         }
-        self.application.pubsub.publish(
+        self.application.engine.publish_message(
             subscription_key, message, method=message_method
         )
 
@@ -733,7 +735,7 @@ class Client(object):
         Send disconnect message - after receiving it proper client
         must close connection and do not reconnect.
         """
-        reason = 'go away!' or reason
+        reason = reason or "go away!"
         message_body = {
             "reason": reason
         }

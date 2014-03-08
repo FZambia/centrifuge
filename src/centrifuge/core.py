@@ -17,7 +17,6 @@ from centrifuge import utils
 from centrifuge.structure import Structure
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
-from centrifuge.pubsub.base import BasePubSub
 
 
 def get_host():
@@ -87,9 +86,6 @@ class Application(tornado.web.Application):
         # create unique uid for this application
         self.uid = uuid.uuid4().hex
 
-        # PUB/SUB manager class
-        self.pubsub = BasePubSub(self)
-
         # initialize dict to keep administrator's connections
         self.admin_connections = {}
 
@@ -102,8 +98,8 @@ class Application(tornado.web.Application):
         # application structure manager (projects, namespaces etc)
         self.structure = None
 
-        # application state manager
-        self.state = None
+        # application engine
+        self.engine = None
 
         # initialize dict to keep back-off information for projects
         self.back_off = {}
@@ -134,8 +130,8 @@ class Application(tornado.web.Application):
             'address': get_host(),
             'port': str(self.settings['options'].port),
             'nodes': len(self.nodes) + 1,
-            'channels': len(self.pubsub.subscriptions),
-            'clients': sum(len(v) for v in six.itervalues(self.pubsub.subscriptions)),
+            'channels': len(self.engine.subscriptions),
+            'clients': sum(len(v) for v in six.itervalues(self.engine.subscriptions)),
             'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
             'messages_per_second': "%0.2f" % msg_per_sec
         }
@@ -146,8 +142,7 @@ class Application(tornado.web.Application):
     def initialize(self):
         self.init_callbacks()
         self.init_structure()
-        self.init_pubsub()
-        self.init_state()
+        self.init_engine()
         self.init_ping()
         self.init_periodic_tasks()
 
@@ -161,10 +156,10 @@ class Application(tornado.web.Application):
 
         # detect and apply database storage module
         storage_backend = structure_settings.get(
-            'storage', 'centrifuge.structure.sqlite.Storage'
+            'class', 'centrifuge.structure.sqlite.Storage'
         )
         storage_backend_class = utils.namedAny(storage_backend)
-        logger.info("Storage module: {0}".format(storage_backend))
+        logger.info("Structure class: {0}".format(storage_backend))
 
         self.structure = Structure(self)
         storage = storage_backend_class(self.structure, structure_settings.get('settings', {}))
@@ -176,7 +171,7 @@ class Application(tornado.web.Application):
             # updates also triggered in real-time by message passing through control channel,
             # but in rare cases those update messages can be lost because of some kind of
             # network errors
-            logger.info("Structure storage connected")
+            logger.info("Structure initialized")
             self.structure.update()
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
                 self.structure.update, structure_settings.get('update_interval', 30)*1000
@@ -190,30 +185,22 @@ class Application(tornado.web.Application):
             )
         )
 
-    def init_state(self):
+    def init_engine(self):
         """
-        Initialize state manager.
+        Initialize engine.
         """
         config = self.settings['config']
-        state_config = config.get("state", {})
-        if not state_config:
+        engine_config = config.get("engine", {})
+        if not engine_config:
             logger.info(
-                "No state configured - some important features of Centrifuge "
-                "like channel history and presence will not work. Moreover "
-                "killed clients can reconnect to Centrifuge while their credentials"
-                "not expired."
+                "No engine configured - Centrifuge will run with default Memory Engine. "
+                "You can use only single node with it."
             )
-        else:
-            state_class_path = state_config.get('storage', 'centrifuge.state.base.State')
-            state_class = utils.namedAny(state_class_path)
-            self.state = state_class(self)
-            tornado.ioloop.IOLoop.instance().add_callback(self.state.initialize)
-
-    def init_pubsub(self):
-        """
-        Initialize and configure pub/sub manager.
-        """
-        self.pubsub.initialize()
+        engine_class_path = engine_config.get('class', 'centrifuge.engine.memory.MemoryEngine')
+        logger.info("Engine class: {0}".format(engine_class_path))
+        engine_class = utils.namedAny(engine_class_path)
+        self.engine = engine_class(self)
+        tornado.ioloop.IOLoop.instance().add_callback(self.engine.initialize)
 
     def init_callbacks(self):
         """
@@ -242,7 +229,7 @@ class Application(tornado.web.Application):
         self.periodic_node_info.start()
 
     def send_ping(self, ping_message):
-        self.pubsub.publish_control_message(ping_message)
+        self.engine.publish_control_message(ping_message)
 
     def review_ping(self):
         """
@@ -269,7 +256,7 @@ class Application(tornado.web.Application):
             'method': 'ping',
             'params': self.get_node_info()
         }
-        send_ping = partial(self.pubsub.publish_control_message, message)
+        send_ping = partial(self.engine.publish_control_message, message)
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, ping.start
@@ -295,14 +282,14 @@ class Application(tornado.web.Application):
         Send message to CONTROL channel. We use this channel to
         share commands between running instances.
         """
-        self.pubsub.publish_control_message(message)
+        self.engine.publish_control_message(message)
 
     def send_admin_message(self, message):
         """
         Send message to ADMIN channel. We use this channel to
         send events to administrative interface.
         """
-        self.pubsub.publish_admin_message(message)
+        self.engine.publish_admin_message(message)
 
     def add_connection(self, project_id, user, uid, client):
         """
@@ -489,16 +476,16 @@ class Application(tornado.web.Application):
 
         if namespace.get('is_watching', False):
             # send to admin channel
-            self.pubsub.publish_admin_message(message)
+            self.engine.publish_admin_message(message)
 
         # send to event channel
-        subscription_key = self.pubsub.get_subscription_key(
+        subscription_key = self.engine.get_subscription_key(
             project_id, channel
         )
 
-        self.pubsub.publish(subscription_key, message)
+        self.engine.publish_message(subscription_key, message)
 
-        yield self.state.add_history_message(
+        yield self.engine.add_history_message(
             project_id, channel, message,
             history_size=namespace.get('history_size')
         )
@@ -569,9 +556,6 @@ class Application(tornado.web.Application):
         """
         Return a list of last messages sent into channel.
         """
-        if not self.state:
-            raise Return((None, None))
-
         project_id = project['_id']
 
         channel = params.get("channel")
@@ -579,7 +563,7 @@ class Application(tornado.web.Application):
             "channel": channel,
             "data": []
         }
-        data, error = yield self.state.get_history(project_id, channel)
+        data, error = yield self.engine.get_history(project_id, channel)
         if error:
             raise Return((None, self.INTERNAL_SERVER_ERROR))
         if data:
@@ -591,9 +575,6 @@ class Application(tornado.web.Application):
         """
         Return current presence information for channel.
         """
-        if not self.state:
-            raise Return((None, None))
-
         project_id = project['_id']
 
         channel = params.get("channel")
@@ -601,7 +582,7 @@ class Application(tornado.web.Application):
             "channel": channel,
             "data": {}
         }
-        data, error = yield self.state.get_presence(project_id, channel)
+        data, error = yield self.engine.get_presence(project_id, channel)
         if data:
             message['data'] = data
         raise Return((message, error))

@@ -2,15 +2,15 @@
     "password": "123",
     "cookie_secret": "secret",
     "api_secret": "secret",
-    "state": {
-        "storage": "centrifuge.state.redis.State",
+    "engine": {
+        "class": "centrifuge.engine.memory.MemoryEngine",
         "settings": {
             "host": "localhost",
             "port": 6379
         }
     },
     "structure": {
-        "storage": "centrifuge.structure.sqlite.Storage",
+        "class": "centrifuge.structure.sqlite.Storage",
         "update_interval": 60,
 	      "settings": {
 	      }
@@ -18,6 +18,6 @@
     "admin_api_message_limit": 100,
     "client_api_message_limit": 100,
     "token_expire": true,
-    "token_expire_interval": 50,
-    "token_extend_interval": 20
+    "token_expire_interval": 10,
+    "token_extend_interval": 4
 }

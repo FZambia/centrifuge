@@ -278,10 +278,10 @@ class RedisEngine(BaseEngine):
         return "%s:presence:set:%s:%s" % (self, project_id, channel)
 
     def get_history_list_key(self, project_id, channel):
-        return "%s:history:%s:%s" % (self.prefix, project_id, channel)
+        return "%s:history:list:%s:%s" % (self.prefix, project_id, channel)
 
     def get_deactivated_key(self, project_id, user_id):
-        return "%s:deactivated:set:%s:%s" % (self.prefix, project_id, user_id)
+        return "%s:deactivated:%s:%s" % (self.prefix, project_id, user_id)
 
     @coroutine
     def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):

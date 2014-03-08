@@ -72,13 +72,9 @@ class MainHandler(BaseHandler):
                 'projects': projects
             }),
             'node_count': len(self.application.nodes) + 1,
-            'pubsub': getattr(self.application.pubsub, 'NAME', 'unknown'),
+            'engine': getattr(self.application.engine, 'NAME', 'unknown'),
             'structure': getattr(self.application.structure.storage, 'NAME', 'unknown')
         }
-        if self.application.state:
-            context['state'] = getattr(self.application.state, 'NAME', 'unknown')
-        else:
-            context['state'] = 'Not configured'
         self.render("main.html", **context)
 
 

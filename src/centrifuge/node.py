@@ -23,58 +23,11 @@ define(
 )
 
 define(
-    "zmq", default=False, help="use ZeroMQ PUB/SUB", type=bool
+    "zmq", default=False, help="use ZeroMQ io loop", type=bool
 )
 
 define(
-    "zmq_pub_listen", default="127.0.0.1", help="zmq pub listen", type=str
-)
-
-define(
-    "zmq_pub_port", default=7000, help="zmq pub port", type=int
-)
-
-define(
-    "zmq_pub_port_shift", default=None, type=int,
-    help="zmq port shift with respect to tornado port (useful "
-         "when deploying with supervisor on one machine)"
-)
-
-define(
-    "zmq_sub_address", default=["tcp://localhost:7000"], type=str, multiple=True,
-    help="comma-separated list of all ZeroMQ PUB socket addresses"
-)
-
-define(
-    "zmq_pub_sub_proxy", default=False, type=bool, help="use XPUB/XSUB proxy"
-)
-
-define(
-    "zmq_xsub", default="tcp://localhost:6000", type=str, help="XSUB socket address"
-)
-
-define(
-    "zmq_xpub", default="tcp://localhost:6001", type=str, help="XPUB socket address"
-)
-
-define(
-    "redis", default=False, help="use Redis for PUB/SUB", type=bool
-)
-
-define(
-    "redis_host", default="localhost", help="Redis host", type=str
-)
-
-define(
-    "redis_port", default=6379, help="Redis port", type=int
-)
-
-define(
-    "redis_db", default=0, help="Redis database number", type=int
-)
-
-define(
-    "redis_password", default="", help="Redis auth password", type=str
+    "asyncio", default=False, help="use asyncio io loop", type=bool
 )
 
 define(
@@ -92,6 +45,11 @@ if options.zmq:
     # Install ZMQ ioloop instead of a tornado ioloop
     # http://zeromq.github.com/pyzmq/eventloop.html
     ioloop.install()
+
+if options.asyncio:
+    # TODO: test this case
+    tornado.ioloop.IOLoop.configure('tornado.platform.asyncio.AsyncIOLoop')
+
 
 from centrifuge.log import logger
 from centrifuge.core import Application
@@ -234,16 +192,6 @@ def main():
     AdminSocketHandler.application = app
     Client.application = app
 
-    # choose PUB/SUB mechanism
-    if options.zmq:
-        from centrifuge.pubsub.zeromq import PubSub
-    elif options.redis:
-        from centrifuge.pubsub.redis import PubSub
-    else:
-        from centrifuge.pubsub.base import BasePubSub as PubSub
-
-    app.pubsub = PubSub(app)
-
     app.initialize()
 
     admin_api_message_limit = custom_settings.get('admin_api_message_limit')
@@ -282,8 +230,8 @@ def main():
         logger.info('interrupted')
     finally:
         # cleaning
-        if hasattr(app.pubsub, 'clean'):
-            app.pubsub.clean()
+        if hasattr(app.engine, 'clean'):
+            app.engine.clean()
 
 
 if __name__ == '__main__':

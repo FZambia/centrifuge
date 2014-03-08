@@ -40,7 +40,7 @@ class MemoryEngine(BaseEngine):
 
     @coroutine
     def publish_admin_message(self, message):
-        yield self.handle_control_message(message)
+        yield self.handle_admin_message(message)
         raise Return((True, None))
 
     @coroutine
