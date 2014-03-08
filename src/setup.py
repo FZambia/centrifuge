@@ -3,7 +3,6 @@ import sys
 from setuptools import setup
 
 
-with_zmq = True
 with_redis = True
 with_mongodb = True
 with_postgresql = True
@@ -11,9 +10,7 @@ with_postgresql = True
 filtered_args = []
 
 for arg in sys.argv:
-    if arg == '--without-zmq':
-        with_zmq = False
-    elif arg == '--without-redis':
+    if arg == '--without-redis':
         with_redis = False
     elif arg == '--without-mongodb':
         with_mongodb = False
@@ -95,10 +92,8 @@ install_requires = [
 ]
 
 
-if with_zmq:
-    install_requires.append('pyzmq==14.0.1')
 if with_redis:
-    install_requires.append('toredis-fork==0.1.2')
+    install_requires.append('toredis-fork==0.1.3')
 if with_mongodb:
     install_requires.append('motor==0.1.2')
 if with_postgresql:

@@ -119,15 +119,3 @@ class BaseEngine(object):
     @coroutine
     def get_history(self, project_id, channel):
         raise Return((None, None))
-
-    @coroutine
-    def add_deactivated_user(self, project_id, user_id, expire):
-        raise Return((True, None))
-
-    @coroutine
-    def remove_deactivated_user(self, project_id, user_id):
-        raise Return((True, None))
-
-    @coroutine
-    def is_user_deactivated(self, project_id, user_id):
-        raise Return((False, None))

@@ -44,8 +44,8 @@ Why the hell you dropped ZeroMQ support?
 
 Because of several reasons:
 
-* ZeroMQ is relatively hard to configure, it has nice features like brokerless etc but I think that it is not a big win in case of using with Centrifuge.
-* It's slow. I don't really know why but Redis is much much faster for real-time staff.
+* ZeroMQ is hard to configure, it has nice features like brokerless etc but I think that it is not a big win in case of using with Centrifuge.
+* It's relatively slow. Redis is much much faster for real-time staff.
 * To have history and presence support you will anyway need Redis.
 
 v0.4.2
