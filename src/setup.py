@@ -121,7 +121,6 @@ setup(
     entry_points={
         'console_scripts': [
             'centrifuge = centrifuge.node:main',
-            'xpub_xsub = centrifuge.proxy:main'
         ],
     },
     install_requires=install_requires,
