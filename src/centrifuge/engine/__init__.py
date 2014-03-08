@@ -86,10 +86,18 @@ class BaseEngine(object):
 
     @coroutine
     def publish_control_message(self, message):
+        """
+        Send message to control channel.
+        This channel for sharing commands between running instances.
+        """
         raise Return((True, None))
 
     @coroutine
     def publish_admin_message(self, message):
+        """
+        Send message to admin channel.
+        This channel for sending events to administrative interface.
+        """
         raise Return((True, None))
 
     @coroutine

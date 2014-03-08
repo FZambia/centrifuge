@@ -355,14 +355,6 @@ class Client(object):
         raise Return(('pong', None))
 
     @coroutine
-    def handle_disconnect(self, params):
-        """
-        Close this connection
-        """
-        yield self.close_sock(pause=False)
-        raise Return((True, None))
-
-    @coroutine
     def handle_connect(self, params):
         """
         Authenticate client's connection, initialize required

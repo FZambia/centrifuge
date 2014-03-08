@@ -271,25 +271,11 @@ class Application(tornado.web.Application):
         """
         Publish information about current node into admin channel
         """
-        self.send_admin_message({
+        self.engine.publish_admin_message({
             "admin": True,
             "type": "node",
             "data": self.get_node_info()
         })
-
-    def send_control_message(self, message):
-        """
-        Send message to CONTROL channel. We use this channel to
-        share commands between running instances.
-        """
-        self.engine.publish_control_message(message)
-
-    def send_admin_message(self, message):
-        """
-        Send message to ADMIN channel. We use this channel to
-        send events to administrative interface.
-        """
-        self.engine.publish_admin_message(message)
 
     def add_connection(self, project_id, user, uid, client):
         """
@@ -605,7 +591,7 @@ class Application(tornado.web.Application):
         result, error = yield self.handle_unsubscribe(params)
 
         # send to other nodes
-        self.send_control_message(message)
+        self.engine.publish_control_message(message)
 
         raise Return((result, error))
 

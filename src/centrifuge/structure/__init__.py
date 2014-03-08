@@ -248,7 +248,7 @@ class Structure:
             "method": "update_structure",
             "params": {}
         }
-        self.application.send_control_message(message)
+        self.application.engine.publish_control_message(message)
 
         # update structure of current instance
         success, error = yield self.update()
