@@ -611,8 +611,6 @@
         this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
         this._messages = [];
         this._isBatching = false;
-        this._extended_token = null;
-        this._extended_timestamp = null;
         this._config = {
             retry: 3000,
             info: null,
@@ -667,10 +665,6 @@
 
         if (!this._config.user) {
             throw 'Missing required configuration parameter \'user\' specifying user\'s unique ID in your application';
-        }
-
-        if (!this._config.timestamp) {
-            throw 'Missing required configuration parameter \'timestamp\'';
         }
 
         this._config.url = stripSlash(this._config.url);
@@ -770,9 +764,7 @@
                 'params': {
                     'token': self._config.token,
                     'user': self._config.user,
-                    'project': self._config.project,
-                    'timestamp': self._config.timestamp
-                }
+                    'project': self._config.project                }
             };
             if (self._config.info !== null) {
                 self._debug("connect using additional info");
@@ -780,13 +772,6 @@
             } else {
                 self._debug("connect without additional info");
             }
-
-            if (self._extended_token !== null && self._extended_timestamp !== null) {
-                self._debug("connect using extended credentials");
-                centrifugeMessage['params']['extended_token'] = self._extended_token;
-                centrifugeMessage['params']['extended_timestamp'] = self._extended_timestamp;
-            }
-
             self.send(centrifugeMessage);
         };
 
@@ -958,12 +943,6 @@
         subscription.trigger('leave', [body]);
     };
 
-    centrifuge_proto._extendResponse = function(message) {
-        this._debug("extend received", message);
-        this._extended_token = message.body['extended_token'];
-        this._extended_timestamp = message.body['extended_timestamp'];
-    };
-
     centrifuge_proto._messageResponse = function (message) {
         var body = message.body;
         var channel = body.channel;
@@ -1014,9 +993,6 @@
                 this._leaveResponse(message);
                 break;
             case 'ping':
-                break;
-            case 'extend':
-                this._extendResponse(message);
                 break;
             case 'message':
                 this._messageResponse(message);

@@ -211,19 +211,10 @@ client_api_schema = {
             "project": {
                 "type": "string"
             },
-            "timestamp": {
-                "type": "string"
-            },
             "info": {
-                "type": "string"
-            },
-            "extended_token": {
-                "type": "string"
-            },
-            "extended_timestamp": {
                 "type": "string"
             }
         },
-        "required": ["token", "user", "project", "timestamp"]
+        "required": ["token", "user", "project"]
     }
 }

@@ -280,9 +280,6 @@ class RedisEngine(BaseEngine):
     def get_history_list_key(self, project_id, channel):
         return "%s:history:list:%s:%s" % (self.prefix, project_id, channel)
 
-    def get_deactivated_key(self, project_id, user_id):
-        return "%s:deactivated:%s:%s" % (self.prefix, project_id, user_id)
-
     @coroutine
     def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
         now = int(time.time())
@@ -356,38 +353,3 @@ class RedisEngine(BaseEngine):
             raise Return((None, e))
         else:
             raise Return(([json_decode(x.decode()) for x in data], None))
-
-    @coroutine
-    def add_deactivated_user(self, project_id, user_id, expire):
-        key = self.get_deactivated_key(project_id, user_id)
-        try:
-            pipeline = self.worker.pipeline()
-            pipeline.multi()
-            pipeline.set(key, 1)
-            pipeline.expire(key, expire)
-            pipeline.execute()
-            yield Task(pipeline.send)
-        except StreamClosedError as e:
-            raise Return((None, e))
-        else:
-            raise Return((True, None))
-
-    @coroutine
-    def remove_deactivated_user(self, project_id, user_id):
-        key = self.get_deactivated_key(project_id, user_id)
-        try:
-            yield Task(self.worker.delete, key)
-        except StreamClosedError as e:
-            raise Return((None, e))
-        else:
-            raise Return((True, None))
-
-    @coroutine
-    def is_user_deactivated(self, project_id, user_id):
-        key = self.get_deactivated_key(project_id, user_id)
-        try:
-            result = yield Task(self.worker.exists, key)
-        except StreamClosedError as e:
-            raise Return((None, e))
-        else:
-            raise Return((result, None))
