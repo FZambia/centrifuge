@@ -41,13 +41,14 @@ INFO = json.dumps(None)
 #})
 
 
-def get_client_token(secret_key, project_id, user, info=None):
+def get_client_token(secret_key, project_id, user, timestamp, info=None):
     """
     Create token to validate information provided by new connection.
     """
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(project_id))
     sign.update(six.b(user))
+    sign.update(six.b(timestamp))
     if info is not None:
         sign.update(six.b(info))
     token = sign.hexdigest()
@@ -68,15 +69,16 @@ class SockjsHandler(tornado.web.RequestHandler):
         in Centrifuge.
         """
         user = USER_ID
-
+        now = str(int(time.time()))
         token = get_client_token(
-            options.secret_key, options.project_id, user, info=INFO
+            options.secret_key, options.project_id, user, now, info=INFO
         )
 
         auth_data = {
             'token': token,
             'user': user,
             'project': options.project_id,
+            'timestamp': now,
             'info': INFO
         }
 
@@ -95,15 +97,16 @@ class WebsocketHandler(tornado.web.RequestHandler):
         in Centrifuge.
         """
         user = USER_ID
-
+        now = str(int(time.time()))
         token = get_client_token(
-            options.secret_key, options.project_id, user, info=INFO
+            options.secret_key, options.project_id, user, now, info=INFO
         )
 
         auth_data = {
             'token': token,
             'user': user,
             'project': options.project_id,
+            'timestamp': now,
             'info': INFO
         }
 

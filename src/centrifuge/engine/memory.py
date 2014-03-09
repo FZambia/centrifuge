@@ -4,6 +4,8 @@
 # All rights reserved.
 import time
 import six
+from functools import partial
+
 from tornado.gen import coroutine, Return
 from tornado.escape import json_encode
 
@@ -21,6 +23,7 @@ class Engine(BaseEngine):
         self.subscriptions = {}
         self.history = {}
         self.presence = {}
+        self.deactivated = {}
 
     def initialize(self):
         logger.info("Memory engine initialized")
@@ -201,12 +204,43 @@ class Engine(BaseEngine):
 
     @coroutine
     def get_history(self, project_id, channel):
-
         history_key = self.get_history_key(project_id, channel)
-
         try:
             data = self.history[history_key]
         except KeyError:
             data = []
-
         raise Return((data, None))
+
+    def get_deactivated_key(self, project_id, user_id):
+        return "%s:deactivated:%s:%s" % (self.prefix, project_id, user_id)
+
+    @coroutine
+    def add_deactivated_user(self, project_id, user_id, expire):
+        key = self.get_deactivated_key(project_id, user_id)
+        self.deactivated[key] = time.time() + expire
+        callback = partial(self._delete_expired_deactivated_key, key)
+        self.io_loop.add_timeout(expire, callback)
+        raise Return((True, None))
+
+    @coroutine
+    def remove_deactivated_user(self, project_id, user_id):
+        key = self.get_deactivated_key(project_id, user_id)
+        try:
+            del self.deactivated[key]
+        except KeyError:
+            pass
+        raise Return((True, None))
+
+    @coroutine
+    def is_user_deactivated(self, project_id, user_id):
+        key = self.get_deactivated_key(project_id, user_id)
+        value = self.deactivated.get(key)
+        if value and value > time.time():
+            raise Return((True, None))
+        raise Return((False, None))
+
+    def _delete_expired_deactivated_key(self, key):
+        try:
+            del self.deactivated[key]
+        except KeyError:
+            pass

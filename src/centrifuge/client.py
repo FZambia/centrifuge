@@ -6,6 +6,7 @@
 import six
 import uuid
 import time
+import hmac
 import random
 
 try:
@@ -57,6 +58,7 @@ class Client(object):
         self.project_id = None
         self.channels = None
         self.presence_ping_task = None
+        self.extend_task = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -75,6 +77,9 @@ class Client(object):
         """
         if self.presence_ping_task:
             self.presence_ping_task.stop()
+
+        if self.extend_task:
+            self.extend_task.stop()
 
         project_id = self.project_id
 
@@ -366,7 +371,10 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
+        timestamp = params["timestamp"]
         user_info = params.get("info")
+        extended_token = params.get("extended_token")
+        extended_timestamp = params.get("extended_timestamp")
 
         project, error = yield self.application.get_project(project_id)
         if error:
@@ -376,6 +384,14 @@ class Client(object):
 
         if token != auth.get_client_token(secret_key, project_id, user, user_info=user_info):
             raise Return((None, "invalid token"))
+
+        disconnect_reason = self.check_token_expire(
+            project, token, timestamp, extended_token, extended_timestamp
+        )
+        if disconnect_reason:
+            yield self.send_disconnect_message(reason=disconnect_reason)
+            yield self.close_sock()
+            raise Return((False, disconnect_reason))
 
         if user_info is not None:
             try:
@@ -403,6 +419,41 @@ class Client(object):
         self.presence_ping_task.start()
 
         raise Return((self.uid, None))
+
+    def check_token_expire(self, project, token, timestamp, extended_token, extended_timestamp):
+        """
+        Check that connection timestamp is valid and is not too old.
+        If timestamp is expired then check extended credentials if present.
+        """
+        if not self.application.TOKEN_EXPIRE:
+            return
+
+        try:
+            timestamp = int(timestamp)
+        except ValueError:
+            return "invalid timestamp"
+
+        now = time.time()
+        if timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+            # it seems that connection expired, the only chance for client to stay connected
+            # is to have actual extended credentials in this request
+            if extended_token and extended_timestamp:
+                expected_token = self.get_extended_token(project, token, extended_timestamp)
+                if expected_token != extended_token:
+                    return "invalid extended token"
+                try:
+                    extended_timestamp = int(extended_timestamp)
+                except ValueError:
+                    return "invalid extended timestamp"
+                if extended_timestamp + self.application.TOKEN_EXPIRE_INTERVAL < now:
+                    return "connection expired"
+            else:
+                return "connection expired"
+
+        last_timestamp = max(timestamp, extended_timestamp) if extended_timestamp else timestamp
+        self.expire_at = last_timestamp + self.application.TOKEN_EXPIRE_INTERVAL
+        time_to_extend = self.application.TOKEN_EXTEND_INTERVAL - (now - last_timestamp)
+        IOLoop.instance().add_timeout(time.time() + time_to_extend, self.send_extend_message)
 
     @coroutine
     def handle_subscribe(self, params):
@@ -628,3 +679,59 @@ class Client(object):
         response = Response(method="disconnect", body=message_body)
         yield self.send(response.as_message())
         raise Return(True)
+
+    @staticmethod
+    def get_extended_token(project, original_token, timestamp):
+        """
+        Create and return extend token based on project secret key, original
+        token received on first connect and timestamp.
+        """
+        token = hmac.new(six.b(str(project['secret_key'])))
+        token.update(six.b(original_token))
+        token.update(six.b(timestamp))
+        return token.hexdigest()
+
+    @coroutine
+    def generate_extend_credentials(self):
+        """
+        Generate extended token and extended timestamp.
+        """
+        project, error = yield self.application.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        now = str(int(time.time()))
+        token = self.get_extended_token(project, self.token, now)
+        raise Return(((token, now), None))
+
+    @coroutine
+    def send_extend_message(self):
+        """
+        Send message to current client with extend credentials:
+        current timestamp and prolonged token based on project secret key,
+        initial connect token and current timestamp. After receiving this
+        message client must connect to Centrifuge with these credentials in
+        addition to first connect parameters.
+        """
+        if not self.is_authenticated:
+            raise Return(False)
+
+        credentials, error = yield self.generate_extend_credentials()
+        if error:
+            raise Return(False)
+
+        message_body = {
+            "extended_token": credentials[0],
+            "extended_timestamp": credentials[1]
+        }
+        response = Response(method="extend", body=message_body)
+        yield self.send(response.as_message())
+
+        if not self.extend_task:
+            self.extend_task = PeriodicCallback(
+                self.send_extend_message, self.application.TOKEN_EXTEND_INTERVAL*1000
+            )
+            self.extend_task.start()
+
+        raise Return(True)
+
