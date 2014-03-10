@@ -10,7 +10,9 @@ from centrifuge.utils import Form
 
 # regex pattern to match project and namespace names
 NAME_PATTERN = '^[^_]+[A-z0-9@\-_\.]{2,}$'
+
 NAME_PATTERN_DESCRIPTION = 'ascii symbols, digits, "-", "_" and "." only'
+
 NAME_RE = re.compile(NAME_PATTERN)
 
 # how many times we are trying to authorize subscription by default

@@ -3,12 +3,16 @@ CENTRIFUGE
 
 Simple real-time messaging in web applications.
 
-To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
-or [SockJS](https://github.com/sockjs/sockjs-client) library can be
-used. So it works in both modern and old browsers (IE 7 supported).
+In a few words: clients (users of your web application/site) connect to Centrifuge from browser,
+after connecting clients subscribe on channels. Every message which was published into that
+channel will be delivered to all clients which are currently subscribed on that channel.
 
-Centrifuge's backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) -
-extremely fast and mature Python's asynchronous web server.
+To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
+or [SockJS](https://github.com/sockjs/sockjs-client) library can be used. So it works in both
+modern and old browsers (IE 7 supported). Centrifuge has javascript client with simple API.
+
+Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - extremely fast and
+mature Python's asynchronous web server.
 
 Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
@@ -31,6 +35,7 @@ Main features
 * Presence data, history data, join/leave events for channels
 * Web interface for managing your projects
 * Flexible channel settings using namespaces
+* Language agnostic - you can use Centrifuge even if your site built in Perl, PHP, Ruby etc.
 
 To get more information please,
 
