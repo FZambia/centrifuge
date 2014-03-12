@@ -56,14 +56,14 @@ class Application(tornado.web.Application):
     # maximum number of messages in single client API request
     CLIENT_API_MESSAGE_LIMIT = 100
 
-    # does application check expiring tokens when client connects?
-    TOKEN_EXPIRE = True
+    # does application check expiring connections?
+    CONNECTION_EXPIRE_CHECK = True
 
-    # token expiration time in seconds
-    TOKEN_EXPIRE_INTERVAL = 24*3600
+    # how often in seconds this node should check expiring connections
+    CONNECTION_EXPIRE_COLLECT_INTERVAL = 30
 
-    # how often to extend token in seconds
-    TOKEN_EXTEND_INTERVAL = 3600
+    # how often in seconds this node should check expiring connections
+    CONNECTION_EXPIRE_CHECK_INTERVAL = 60
 
     LIMIT_EXCEEDED = 'limit exceeded'
 
@@ -116,6 +116,15 @@ class Application(tornado.web.Application):
         # time of last node info revision
         self.node_info_revision_time = time.time()
 
+        # periodic task to collect expired connections
+        self.periodic_connection_expire_collect = None
+
+        # periodic task to check expired connections
+        self.periodic_connection_expire_check = None
+
+        # dictionary to keep expired connections
+        self.expired_connections = {}
+
         # count of messages published since last node info revision
         self.messages_published = 0
 
@@ -144,7 +153,8 @@ class Application(tornado.web.Application):
         self.init_structure()
         self.init_engine()
         self.init_ping()
-        self.init_periodic_tasks()
+        self.init_node_info()
+        self.init_connection_expire()
 
     def init_structure(self):
         """
@@ -218,15 +228,29 @@ class Application(tornado.web.Application):
             callback = utils.namedAny(callable_path)
             self.post_publish_callbacks.append(callback)
 
-    def init_periodic_tasks(self):
-        """
-        Start different periodic tasks here
-        """
+    def init_node_info(self):
         self.periodic_node_info = tornado.ioloop.PeriodicCallback(
             self.publish_node_info,
             self.NODE_INFO_PUBLISH_INTERVAL
         )
         self.periodic_node_info.start()
+
+    def init_connection_expire(self):
+
+        if not self.CONNECTION_EXPIRE_CHECK:
+            return
+
+        self.periodic_connection_expire_collect = tornado.ioloop.PeriodicCallback(
+            self.collect_expired_connections,
+            self.CONNECTION_EXPIRE_COLLECT_INTERVAL
+        )
+        self.periodic_connection_expire_collect.start()
+
+        self.periodic_connection_expire_check = tornado.ioloop.PeriodicCallback(
+            self.check_expired_connections,
+            self.CONNECTION_EXPIRE_CHECK_INTERVAL
+        )
+        self.periodic_connection_expire_check.start()
 
     def send_ping(self, ping_message):
         self.engine.publish_control_message(ping_message)
@@ -276,6 +300,82 @@ class Application(tornado.web.Application):
             "type": "node",
             "data": self.get_node_info()
         })
+
+    @coroutine
+    def collect_expired_connections(self):
+        logger.debug("collecting expired connections")
+        projects, error = self.structure.project_list()
+        if error:
+            logger.error(error)
+            raise Return((None, error))
+
+        for project in projects:
+            project_id = project['_id']
+            expired_connections, error = yield self.get_project_expired_connections(project_id)
+            if error:
+                logger.error(error)
+                continue
+            if project_id not in self.expired_connections:
+                self.expired_connections[project_id] = {
+                    "users": set(),
+                    "checked_at": None
+                }
+            current_expired_connections = self.expired_connections[project_id]["users"]
+            self.expired_connections[project_id]["users"] = current_expired_connections | expired_connections
+
+        import pprint
+        pprint.pprint(self.expired_connections)
+        raise Return((True, None))
+
+    @coroutine
+    def check_expired_connections(self):
+        logger.debug("checking expired connections")
+        projects, error = self.structure.project_list()
+        if error:
+            logger.error(error)
+            raise Return((None, error))
+
+        for project in projects:
+            now = time.time()
+            project_id = project['_id']
+
+            checked_at = self.expired_connections.get(project_id, {}).get("checked_at")
+            if checked_at and (now - checked_at < project.get("connection_check_interval", 60)):
+                continue
+
+            users = self.expired_connections.get(project_id, {}).get("users").copy()
+            if not users:
+                continue
+
+            self.expired_connections[project_id]["users"] = set()
+
+            (invalid_users, new_expires), error = yield self.check_users(project, users)
+            if error:
+                logger.error(error)
+                continue
+
+            self.expired_connections[project_id]["checked_at"] = now
+            for user, user_connections in six.iteritems(self.connections[project_id]):
+                for uid, client in six.iteritems(user_connections):
+                    if client.user and client.user in invalid_users:
+                        yield client.send_disconnect_message("deactivated")
+                        yield client.close_sock()
+                    elif client.user:
+                        client.expires = new_expires
+
+        raise Return((True, None))
+
+    @coroutine
+    def get_project_expired_connections(self, project_id):
+        to_return = set()
+        now = time.time()
+        if project_id not in self.connections:
+            raise Return((to_return, None))
+        for user, user_connections in six.iteritems(self.connections[project_id]):
+            for uid, client in six.iteritems(user_connections):
+                if client.expires and client.expires < now:
+                    to_return.add(user)
+        raise Return((to_return, None))
 
     def add_connection(self, project_id, user, uid, client):
         """
