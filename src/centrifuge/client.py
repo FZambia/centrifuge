@@ -6,7 +6,6 @@
 import six
 import uuid
 import time
-import hmac
 import random
 
 try:
@@ -27,6 +26,8 @@ from centrifuge import auth
 from centrifuge.response import Response, MultiResponse
 from centrifuge.log import logger
 from centrifuge.schema import req_schema, client_api_schema
+
+import toro
 
 
 @coroutine
@@ -398,26 +399,23 @@ class Client(object):
 
         now = time.time()
 
-        user_expires = self.application.expirations[project_id].get(user)
+        user_expires = self.application.expirations.get(project_id, {}).get(user)
         if self.application.CONNECTION_EXPIRE_CHECK and expires < now:
             # connection expired
             # maybe we keep new expires for this user
             if user_expires and user_expires > now:
                 self.expires = user_expires
             else:
-                # the only possible way to connect is to ask web application if this user is valid
-                (invalid_users, new_expires), error = yield self.application.check_users(project, [user])
-                if error:
-                    yield self.close_sock()
-                if user in invalid_users:
-                    yield self.send_disconnect_message('deactivated')
+                self.application.expired_connections[project_id]["users"].add(user)
+                self.queue = toro.Queue(maxsize=1)
+                value = yield self.queue.get()
+                if not value:
                     yield self.close_sock()
         else:
             self.expires = max(expires, user_expires) if user_expires else expires
 
         self.is_authenticated = True
         self.project_id = project_id
-        self.expires = expires
         self.user = user
         self.token = token
         self.default_user_info = {

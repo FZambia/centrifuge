@@ -7,11 +7,20 @@ import six
 import uuid
 import time
 import socket
+import json
 from functools import partial
 
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+
+try:
+    from urllib import urlencode
+except ImportError:
+    # python 3
+    # noinspection PyUnresolvedReferences
+    from urllib.parse import urlencode
 
 from centrifuge import utils
 from centrifuge.structure import Structure
@@ -349,7 +358,7 @@ class Application(tornado.web.Application):
 
             self.expired_connections[project_id]["users"] = set()
 
-            (invalid_users, new_expires), error = yield self.check_users(project, users)
+            (deactivated_users, new_expires), error = yield self.check_users(project, users)
             if error:
                 logger.error(error)
                 continue
@@ -357,7 +366,7 @@ class Application(tornado.web.Application):
             self.expired_connections[project_id]["checked_at"] = now
             for user, user_connections in six.iteritems(self.connections[project_id]):
                 for uid, client in six.iteritems(user_connections):
-                    if client.user and client.user in invalid_users:
+                    if client.user and client.user in deactivated_users:
                         yield client.send_disconnect_message("deactivated")
                         yield client.close_sock()
                     elif client.user:
@@ -376,6 +385,42 @@ class Application(tornado.web.Application):
                 if client.expires and client.expires < now:
                     to_return.add(user)
         raise Return((to_return, None))
+
+    @staticmethod
+    @coroutine
+    def check_users(project, users, timeout=5):
+
+        url = project.get("connection_check_address")
+        if not url:
+            logger.debug("no connection check address for project {0}".format(project['name']))
+            raise Return(())
+
+        http_client = AsyncHTTPClient()
+        request = HTTPRequest(
+            url,
+            method="POST",
+            body=urlencode({
+                'users': json.dumps(users)
+            }),
+            request_timeout=timeout
+        )
+
+        try:
+            response = yield http_client.fetch(request)
+        except Exception as err:
+            raise Return((None, err))
+        else:
+            if response.code == 200:
+                # auth successful
+                try:
+                    content = json.loads(response.body)
+                except Exception as err:
+                    raise Return((None, err))
+
+                users = content.get("deactivated_users", [])
+                new_expires = content.get("expires", None)
+
+                raise Return(((users, new_expires), None))
 
     def add_connection(self, project_id, user, uid, client):
         """
