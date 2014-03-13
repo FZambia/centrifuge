@@ -6,8 +6,9 @@ As usual I've broken backwards compatibility again! I'm so sorry for this, but t
 Here is a list of changes:
 
 * MIT license instead of BSD
-* ZeroMQ is not supported anymore.
+* ZeroMQ is not supported by main repository anymore (you can write your own engine though).
 * Engine backends which now combine state and PUB/SUB - there are two of them Memory engine and Redis engine.
+* Connections can now expire if appropriate project option turned on. Connection parameters must contain `timestamp` - Unix seconds as string.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
@@ -19,7 +20,7 @@ As you can see there are lots of important changes, so I hope you forgive me for
 Migration notes:
 
 * update Cent client to the latest version
-* please update javascript client while migrating to Centrifuge 0.5.0
+* update javascript client
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
 
