@@ -11,8 +11,8 @@ To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be used. So it works in both
 modern and old browsers (IE 7 supported). Centrifuge has javascript client with simple API.
 
-Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - extremely fast and
-mature Python's asynchronous web server.
+Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - fast and mature Python's
+asynchronous web server which can handle lots of simultaneous connections.
 
 Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
@@ -23,19 +23,20 @@ structure and monitor important messages in real-time.
 
 Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
 When running Centrifuge instance processes on different machines [MongoDB](http://www.mongodb.org/)
-or [PostgreSQL](http://www.postgresql.org/) backends can be used instead of SQLite.
+or [PostgreSQL](http://www.postgresql.org/) backends can be used instead of SQLite. There is an option
+to hard-code all these settings in configuration file and go without any dependency on database.
 
 
 Main features
 -------------
 
 * Asynchronous backend on top of Tornado
-* SockJS and pure Websockets endpoints
+* SockJS and pure Websockets connection endpoints
 * Simple javascript client
-* Presence data, history data, join/leave events for channels
-* Web interface for managing your projects
-* Flexible channel settings using namespaces
-* Language agnostic - you can use Centrifuge even if your site built in Perl, PHP, Ruby etc.
+* Presence information, message history, join/leave events for channels
+* Web interface to manage your projects
+* Flexible channel settings via namespaces
+* Language agnostic - you can go with Centrifuge even if your site built in Perl, PHP, Ruby etc.
 
 To get more information please,
 
