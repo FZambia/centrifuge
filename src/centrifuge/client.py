@@ -53,13 +53,14 @@ class Client(object):
         self.is_authenticated = False
         self.user = ''
         self.token = None
-        self.expires = None
+        self.expire_at = None
         self.channel_user_info = {}
         self.default_user_info = {}
         self.project_id = None
         self.channels = None
         self.presence_ping_task = None
         self.extend_task = None
+        self.connect_queue = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -119,7 +120,7 @@ class Client(object):
         self.is_authenticated = False
         self.sock = None
         self.token = None
-        self.expires = None
+        self.expire_at = None
         raise Return((True, None))
 
     @coroutine
@@ -372,7 +373,7 @@ class Client(object):
         token = params["token"]
         user = params["user"]
         project_id = params["project"]
-        expires = params["expires"]
+        timestamp = params["timestamp"]
         user_info = params.get("info")
 
         project, error = yield self.application.get_project(project_id)
@@ -381,7 +382,7 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        if token != auth.get_client_token(secret_key, project_id, user, expires, user_info=user_info):
+        if token != auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info):
             raise Return((None, "invalid token"))
 
         if user_info is not None:
@@ -393,30 +394,34 @@ class Client(object):
                 user_info = None
 
         try:
-            expires = int(expires)
+            timestamp = int(timestamp)
         except ValueError:
-            raise Return((None, "invalid expires"))
+            raise Return((None, "invalid timestamp"))
 
         now = time.time()
 
+        self.user = user
+        self.expire_at = timestamp + project.get("connection_expire_time", 24*365*3600)
+
         user_expires = self.application.expirations.get(project_id, {}).get(user)
-        if self.application.CONNECTION_EXPIRE_CHECK and expires < now:
+        if self.application.CONNECTION_EXPIRE_CHECK and self.expire_at < now:
             # connection expired
             # maybe we keep new expires for this user
             if user_expires and user_expires > now:
-                self.expires = user_expires
+                self.expire_at = user_expires
             else:
+                self.connect_queue = toro.Queue(maxsize=1)
                 self.application.expired_connections[project_id]["users"].add(user)
-                self.queue = toro.Queue(maxsize=1)
-                value = yield self.queue.get()
+                value = yield self.connect_queue.get()
                 if not value:
                     yield self.close_sock()
+                else:
+                    self.connect_queue = None
         else:
-            self.expires = max(expires, user_expires) if user_expires else expires
+            self.expire_at = max(self.expire_at, user_expires) if user_expires else self.expire_at
 
         self.is_authenticated = True
         self.project_id = project_id
-        self.user = user
         self.token = token
         self.default_user_info = {
             'user_id': self.user,

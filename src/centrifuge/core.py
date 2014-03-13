@@ -358,19 +358,26 @@ class Application(tornado.web.Application):
 
             self.expired_connections[project_id]["users"] = set()
 
-            (deactivated_users, new_expires), error = yield self.check_users(project, users)
+            deactivated_users, error = yield self.check_users(project, users)
             if error:
                 logger.error(error)
                 continue
 
             self.expired_connections[project_id]["checked_at"] = now
+            now = time.time()
+
             for user, user_connections in six.iteritems(self.connections[project_id]):
                 for uid, client in six.iteritems(user_connections):
                     if client.user and client.user in deactivated_users:
-                        yield client.send_disconnect_message("deactivated")
-                        yield client.close_sock()
-                    elif client.user:
-                        client.expires = new_expires
+                        if client.connect_queue:
+                            yield client.connect_queue.put(False)
+                        else:
+                            yield client.send_disconnect_message("deactivated")
+                            yield client.close_sock()
+                    elif client.user and not client.connect_queue:
+                        client.expire_at = now + project.get("connection_expire_time", 24*365*3600)
+                    elif client.user and client.connect_queue:
+                        yield client.connect_queue.put(True)
 
         raise Return((True, None))
 
@@ -382,7 +389,7 @@ class Application(tornado.web.Application):
             raise Return((to_return, None))
         for user, user_connections in six.iteritems(self.connections[project_id]):
             for uid, client in six.iteritems(user_connections):
-                if client.expires and client.expires < now:
+                if client.expire_at and client.expire_at < now:
                     to_return.add(user)
         raise Return((to_return, None))
 
@@ -417,10 +424,7 @@ class Application(tornado.web.Application):
                 except Exception as err:
                     raise Return((None, err))
 
-                users = content.get("deactivated_users", [])
-                new_expires = content.get("expires", None)
-
-                raise Return(((users, new_expires), None))
+                raise Return((content, None))
 
     def add_connection(self, project_id, user, uid, client):
         """

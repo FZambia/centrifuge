@@ -211,13 +211,13 @@ client_api_schema = {
             "project": {
                 "type": "string"
             },
-            "expires": {
+            "timestamp": {
                 "type": "string"
             },
             "info": {
                 "type": "string"
             }
         },
-        "required": ["token", "user", "project", "expires"]
+        "required": ["token", "user", "project", "timestamp"]
     }
 }
