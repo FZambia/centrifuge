@@ -402,6 +402,7 @@ class Client(object):
             # connection expired
             self.connect_queue = toro.Queue(maxsize=1)
             self.application.expired_connections[project_id]["users"].add(user)
+
             value = yield self.connect_queue.get()
             if not value:
                 yield self.close_sock()

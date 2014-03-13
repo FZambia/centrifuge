@@ -360,6 +360,46 @@ class Application(tornado.web.Application):
         raise Return((to_return, None))
 
     @coroutine
+    def check_project_expired_connections(self, project):
+
+        now = time.time()
+        project_id = project['_id']
+
+        checked_at = self.expired_connections.get(project_id, {}).get("checked_at")
+        if checked_at and (now - checked_at < project.get("connection_check_interval", 60)):
+            raise Return((True, None))
+
+        users = self.expired_connections.get(project_id, {}).get("users").copy()
+        if not users:
+            raise Return((True, None))
+
+        self.expired_connections[project_id]["users"] = set()
+
+        deactivated_users, error = yield self.check_users(project, users)
+        if error:
+            logger.error(error)
+            raise Return((True, None))
+
+        self.expired_connections[project_id]["checked_at"] = now
+        now = time.time()
+
+        for user, user_connections in six.iteritems(self.connections[project_id]):
+            for uid, client in six.iteritems(user_connections):
+                if client.user and client.user in deactivated_users:
+                    if client.connect_queue:
+                        # client stuck on connect stage
+                        yield client.connect_queue.put(False)
+                    else:
+                        yield client.send_disconnect_message("deactivated")
+                        yield client.close_sock()
+                elif client.user:
+                    client.examined_at = now
+                    if client.connect_queue:
+                        yield client.connect_queue.put(True)
+
+        raise Return((True, None))
+
+    @coroutine
     def check_expired_connections(self):
         """
         For each project ask web application about users whose connections expired.
@@ -373,40 +413,7 @@ class Application(tornado.web.Application):
             raise Return((None, error))
 
         for project in projects:
-            now = time.time()
-            project_id = project['_id']
-
-            checked_at = self.expired_connections.get(project_id, {}).get("checked_at")
-            if checked_at and (now - checked_at < project.get("connection_check_interval", 60)):
-                continue
-
-            users = self.expired_connections.get(project_id, {}).get("users").copy()
-            if not users:
-                continue
-
-            self.expired_connections[project_id]["users"] = set()
-
-            deactivated_users, error = yield self.check_users(project, users)
-            if error:
-                logger.error(error)
-                continue
-
-            self.expired_connections[project_id]["checked_at"] = now
-            now = time.time()
-
-            for user, user_connections in six.iteritems(self.connections[project_id]):
-                for uid, client in six.iteritems(user_connections):
-                    if client.user and client.user in deactivated_users:
-                        if client.connect_queue:
-                            # client stuck on connect stage
-                            yield client.connect_queue.put(False)
-                        else:
-                            yield client.send_disconnect_message("deactivated")
-                            yield client.close_sock()
-                    elif client.user:
-                        client.examined_at = now
-                        if client.connect_queue:
-                            yield client.connect_queue.put(True)
+            yield self.check_project_expired_connections(project)
 
         raise Return((True, None))
 

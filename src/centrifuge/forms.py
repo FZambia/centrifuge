@@ -49,6 +49,40 @@ class ProjectMixin(object):
         description="human readable project name, will be used in web interface"
     )
 
+    connection_check = BooleanField(
+        label='connection check',
+        validators=[],
+        default=False,
+        description="check expired connections sending POST request to web application"
+    )
+
+    connection_lifetime = IntegerField(
+        label='connection lifetime in seconds',
+        validators=[
+            validators.NumberRange(min=1)
+        ],
+        default=3600,
+        description=""
+    )
+
+    connection_check_address = TextField(
+        label='connection check url address',
+        validators=[
+            validators.URL(require_tld=False),
+            validators.Optional()
+        ],
+        description="url address to check connections"
+    )
+
+    connection_check_interval = IntegerField(
+        label='periodic connection check interval in seconds',
+        validators=[
+            validators.NumberRange(min=1)
+        ],
+        default=10,
+        description=""
+    )
+
     max_auth_attempts = IntegerField(
         label='maximum auth attempts',
         validators=[
