@@ -117,7 +117,18 @@ class WebsocketHandler(tornado.web.RequestHandler):
         )
 
 
-class ValidateHandler(tornado.web.RequestHandler):
+class CheckHandler(tornado.web.RequestHandler):
+    """
+    Allow all users to subscribe on channels they want.
+    """
+    def check_xsrf_cookie(self):
+        pass
+
+    def post(self):
+        self.write(json.dumps(['2694']))
+
+
+class AuthorizeHandler(tornado.web.RequestHandler):
     """
     Allow all users to subscribe on channels they want.
     """
@@ -137,7 +148,8 @@ def run():
             (r'/', IndexHandler),
             (r'/sockjs', SockjsHandler),
             (r'/ws', WebsocketHandler),
-            (r'/validate', ValidateHandler),
+            (r'/check', CheckHandler),
+            (r'/authorize', AuthorizeHandler),
         ],
         debug=True
     )

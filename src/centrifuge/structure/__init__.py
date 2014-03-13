@@ -262,6 +262,10 @@ class Structure:
         options = {
             "name": kwargs['name'],
             "display_name": kwargs['display_name'],
+            "connection_check": kwargs['connection_check'],
+            "connection_lifetime": kwargs['connection_lifetime'],
+            "connection_check_interval": kwargs['connection_check_interval'],
+            "connection_check_address": kwargs['connection_check_address'],
             "max_auth_attempts": kwargs['max_auth_attempts'],
             "back_off_interval": kwargs['back_off_interval'],
             "back_off_max_timeout": kwargs['back_off_max_timeout'],
@@ -290,6 +294,10 @@ class Structure:
         options = {
             'name': kwargs['name'],
             'display_name': kwargs['display_name'],
+            "connection_check": kwargs['connection_check'],
+            "connection_lifetime": kwargs['connection_lifetime'],
+            "connection_check_interval": kwargs['connection_check_interval'],
+            "connection_check_address": kwargs['connection_check_address'],
             'max_auth_attempts': kwargs['max_auth_attempts'],
             'back_off_interval': kwargs['back_off_interval'],
             'back_off_max_timeout': kwargs['back_off_max_timeout'],

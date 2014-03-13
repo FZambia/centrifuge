@@ -30,7 +30,7 @@ DEFAULT_HISTORY_SIZE = 20
 
 class ProjectMixin(object):
 
-    BOOLEAN_FIELDS = []
+    BOOLEAN_FIELDS = ['connection_check']
 
     name = TextField(
         label='project name',
@@ -62,7 +62,8 @@ class ProjectMixin(object):
             validators.NumberRange(min=1)
         ],
         default=3600,
-        description=""
+        description="time interval in seconds for connection to expire. Keep it as large "
+                    "as possible in your case."
     )
 
     connection_check_address = TextField(
@@ -71,16 +72,18 @@ class ProjectMixin(object):
             validators.URL(require_tld=False),
             validators.Optional()
         ],
-        description="url address to check connections"
+        description="url address to check connections by periodically sending POST request "
+                    "to it with list of users with expired connections."
     )
 
     connection_check_interval = IntegerField(
-        label='periodic connection check interval in seconds',
+        label='connection check interval in seconds',
         validators=[
             validators.NumberRange(min=1)
         ],
         default=10,
-        description=""
+        description="minimum time interval in seconds between periodic connection "
+                    "check POST requests to your web application."
     )
 
     max_auth_attempts = IntegerField(

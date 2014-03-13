@@ -69,10 +69,10 @@ class Application(tornado.web.Application):
     CONNECTION_EXPIRE_CHECK = True
 
     # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_COLLECT_INTERVAL = 30
+    CONNECTION_EXPIRE_COLLECT_INTERVAL = 3
 
     # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_CHECK_INTERVAL = 60
+    CONNECTION_EXPIRE_CHECK_INTERVAL = 6
 
     LIMIT_EXCEEDED = 'limit exceeded'
 
@@ -251,13 +251,13 @@ class Application(tornado.web.Application):
 
         self.periodic_connection_expire_collect = tornado.ioloop.PeriodicCallback(
             self.collect_expired_connections,
-            self.CONNECTION_EXPIRE_COLLECT_INTERVAL
+            self.CONNECTION_EXPIRE_COLLECT_INTERVAL*1000
         )
         self.periodic_connection_expire_collect.start()
 
         self.periodic_connection_expire_check = tornado.ioloop.PeriodicCallback(
             self.check_expired_connections,
-            self.CONNECTION_EXPIRE_CHECK_INTERVAL
+            self.CONNECTION_EXPIRE_CHECK_INTERVAL*1000
         )
         self.periodic_connection_expire_check.start()
 
@@ -317,7 +317,7 @@ class Application(tornado.web.Application):
         """
         logger.debug("collecting expired connections")
 
-        projects, error = self.structure.project_list()
+        projects, error = yield self.structure.project_list()
         if error:
             logger.error(error)
             raise Return((None, error))
@@ -351,13 +351,30 @@ class Application(tornado.web.Application):
         project_id = project.get("_id")
         to_return = set()
         now = time.time()
-        if project_id not in self.connections:
+        if not project.get('connection_check') or project_id not in self.connections:
             raise Return((to_return, None))
         for user, user_connections in six.iteritems(self.connections[project_id]):
             for uid, client in six.iteritems(user_connections):
-                if client.examined_at and client.examined_at + project.get("connection_expire_time", 24*365*3600) < now:
+                if client.examined_at and client.examined_at + project.get("connection_lifetime", 24*365*3600) < now:
                     to_return.add(user)
         raise Return((to_return, None))
+
+    @coroutine
+    def check_expired_connections(self):
+        """
+        For each project ask web application about users whose connections expired.
+        Close connections of deactivated users and keep valid users' connections.
+        """
+        logger.debug("checking expired connections")
+
+        projects, error = yield self.structure.project_list()
+        if error:
+            raise Return((None, error))
+
+        for project in projects:
+            yield self.check_project_expired_connections(project)
+
+        raise Return((True, None))
 
     @coroutine
     def check_project_expired_connections(self, project):
@@ -369,7 +386,7 @@ class Application(tornado.web.Application):
         if checked_at and (now - checked_at < project.get("connection_check_interval", 60)):
             raise Return((True, None))
 
-        users = self.expired_connections.get(project_id, {}).get("users").copy()
+        users = self.expired_connections.get(project_id, {}).get("users", {}).copy()
         if not users:
             raise Return((True, None))
 
@@ -377,8 +394,9 @@ class Application(tornado.web.Application):
 
         deactivated_users, error = yield self.check_users(project, users)
         if error:
-            logger.error(error)
-            raise Return((True, None))
+            raise Return((False, error))
+
+        print deactivated_users
 
         self.expired_connections[project_id]["checked_at"] = now
         now = time.time()
@@ -399,39 +417,22 @@ class Application(tornado.web.Application):
 
         raise Return((True, None))
 
-    @coroutine
-    def check_expired_connections(self):
-        """
-        For each project ask web application about users whose connections expired.
-        Close connections of deactivated users and keep valid users' connections.
-        """
-        logger.debug("checking expired connections")
-
-        projects, error = self.structure.project_list()
-        if error:
-            logger.error(error)
-            raise Return((None, error))
-
-        for project in projects:
-            yield self.check_project_expired_connections(project)
-
-        raise Return((True, None))
-
     @staticmethod
     @coroutine
     def check_users(project, users, timeout=5):
 
-        url = project.get("connection_check_address")
-        if not url:
+        address = project.get("connection_check_address")
+        if not address:
+            print 1
             logger.debug("no connection check address for project {0}".format(project['name']))
             raise Return(())
 
         http_client = AsyncHTTPClient()
         request = HTTPRequest(
-            url,
+            address,
             method="POST",
             body=urlencode({
-                'users': json.dumps(users)
+                'users': json.dumps(list(users))
             }),
             request_timeout=timeout
         )
@@ -439,14 +440,16 @@ class Application(tornado.web.Application):
         try:
             response = yield http_client.fetch(request)
         except Exception as err:
-            raise Return((None, err))
+            logger.error(err)
+            raise Return(([], None))
         else:
             if response.code == 200:
                 # auth successful
                 try:
-                    content = json.loads(response.body)
+                    content = [str(x) for x in json.loads(response.body)]
                 except Exception as err:
-                    raise Return((None, err))
+                    logger.error(err)
+                    raise Return(([], err))
 
                 raise Return((content, None))
 
