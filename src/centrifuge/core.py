@@ -312,23 +312,30 @@ class Application(tornado.web.Application):
 
     @coroutine
     def collect_expired_connections(self):
+        """
+        Find all expired connections in projects to check them later.
+        """
         logger.debug("collecting expired connections")
+
         projects, error = self.structure.project_list()
         if error:
             logger.error(error)
             raise Return((None, error))
 
         for project in projects:
+
             project_id = project['_id']
-            expired_connections, error = yield self.get_project_expired_connections(project_id)
+            expired_connections, error = yield self.collect_project_expired_connections(project)
             if error:
                 logger.error(error)
                 continue
+
             if project_id not in self.expired_connections:
                 self.expired_connections[project_id] = {
                     "users": set(),
                     "checked_at": None
                 }
+
             current_expired_connections = self.expired_connections[project_id]["users"]
             self.expired_connections[project_id]["users"] = current_expired_connections | expired_connections
 
@@ -337,8 +344,29 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
+    def collect_project_expired_connections(self, project):
+        """
+        Find users in project whose connections expired.
+        """
+        project_id = project.get("_id")
+        to_return = set()
+        now = time.time()
+        if project_id not in self.connections:
+            raise Return((to_return, None))
+        for user, user_connections in six.iteritems(self.connections[project_id]):
+            for uid, client in six.iteritems(user_connections):
+                if client.examined_at and client.examined_at + project.get("connection_expire_time", 24*365*3600) < now:
+                    to_return.add(user)
+        raise Return((to_return, None))
+
+    @coroutine
     def check_expired_connections(self):
+        """
+        For each project ask web application about users whose connections expired.
+        Close connections of deactivated users and keep valid users' connections.
+        """
         logger.debug("checking expired connections")
+
         projects, error = self.structure.project_list()
         if error:
             logger.error(error)
@@ -370,28 +398,17 @@ class Application(tornado.web.Application):
                 for uid, client in six.iteritems(user_connections):
                     if client.user and client.user in deactivated_users:
                         if client.connect_queue:
+                            # client stuck on connect stage
                             yield client.connect_queue.put(False)
                         else:
                             yield client.send_disconnect_message("deactivated")
                             yield client.close_sock()
-                    elif client.user and not client.connect_queue:
-                        client.expire_at = now + project.get("connection_expire_time", 24*365*3600)
-                    elif client.user and client.connect_queue:
-                        yield client.connect_queue.put(True)
+                    elif client.user:
+                        client.examined_at = now
+                        if client.connect_queue:
+                            yield client.connect_queue.put(True)
 
         raise Return((True, None))
-
-    @coroutine
-    def get_project_expired_connections(self, project_id):
-        to_return = set()
-        now = time.time()
-        if project_id not in self.connections:
-            raise Return((to_return, None))
-        for user, user_connections in six.iteritems(self.connections[project_id]):
-            for uid, client in six.iteritems(user_connections):
-                if client.expire_at and client.expire_at < now:
-                    to_return.add(user)
-        raise Return((to_return, None))
 
     @staticmethod
     @coroutine

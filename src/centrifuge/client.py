@@ -53,7 +53,7 @@ class Client(object):
         self.is_authenticated = False
         self.user = ''
         self.token = None
-        self.expire_at = None
+        self.examined_at = None
         self.channel_user_info = {}
         self.default_user_info = {}
         self.project_id = None
@@ -86,32 +86,26 @@ class Client(object):
         project_id = self.project_id
 
         if project_id:
-
             self.application.remove_connection(
                 project_id, self.user, self.uid
             )
 
-            if self.channels is not None:
-
-                channels = self.channels.copy()
-
-                for channel_name, channel_info in six.iteritems(channels):
-
-                    yield self.application.engine.remove_presence(
-                        project_id, channel_name, self.uid
+        if project_id and self.channels is not None:
+            channels = self.channels.copy()
+            for channel_name, channel_info in six.iteritems(channels):
+                yield self.application.engine.remove_presence(
+                    project_id, channel_name, self.uid
+                )
+                self.application.engine.remove_subscription(
+                    project_id, channel_name, self
+                )
+                project, error = yield self.application.get_project(project_id)
+                if not error and project:
+                    namespace, error = yield self.application.get_namespace(
+                        project, channel_name
                     )
-
-                    self.application.engine.remove_subscription(
-                        project_id, channel_name, self
-                    )
-
-                    project, error = yield self.application.get_project(project_id)
-                    if not error and project:
-                        namespace, error = yield self.application.get_namespace(
-                            project, channel_name
-                        )
-                        if namespace and namespace.get("join_leave", False):
-                            self.send_leave_message(channel_name)
+                    if namespace and namespace.get("join_leave", False):
+                        self.send_leave_message(channel_name)
 
         self.channels = None
         self.channel_user_info = None
@@ -120,18 +114,17 @@ class Client(object):
         self.is_authenticated = False
         self.sock = None
         self.token = None
-        self.expire_at = None
+        self.examined_at = None
         raise Return((True, None))
 
     @coroutine
-    def close_sock(self, pause=True):
+    def close_sock(self, pause=True, pause_value=1):
         """
-        Force closing SockJS connection.
+        Force closing connection.
         """
-
         if pause:
             # sleep for a while before closing connection to prevent mass invalid reconnects
-            yield sleep(1)
+            yield sleep(pause_value)
 
         try:
             if self.sock:
@@ -401,24 +394,20 @@ class Client(object):
         now = time.time()
 
         self.user = user
-        self.expire_at = timestamp + project.get("connection_expire_time", 24*365*3600)
+        self.examined_at = timestamp
 
-        user_expires = self.application.expirations.get(project_id, {}).get(user)
-        if self.application.CONNECTION_EXPIRE_CHECK and self.expire_at < now:
+        expire_at = self.examined_at + project.get("connection_expire_time", 24*365*3600)
+
+        if self.application.CONNECTION_EXPIRE_CHECK and expire_at < now:
             # connection expired
-            # maybe we keep new expires for this user
-            if user_expires and user_expires > now:
-                self.expire_at = user_expires
+            self.connect_queue = toro.Queue(maxsize=1)
+            self.application.expired_connections[project_id]["users"].add(user)
+            value = yield self.connect_queue.get()
+            if not value:
+                yield self.close_sock()
+                raise Return((None, None))
             else:
-                self.connect_queue = toro.Queue(maxsize=1)
-                self.application.expired_connections[project_id]["users"].add(user)
-                value = yield self.connect_queue.get()
-                if not value:
-                    yield self.close_sock()
-                else:
-                    self.connect_queue = None
-        else:
-            self.expire_at = max(self.expire_at, user_expires) if user_expires else self.expire_at
+                self.connect_queue = None
 
         self.is_authenticated = True
         self.project_id = project_id
