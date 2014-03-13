@@ -396,7 +396,7 @@ class Client(object):
         self.user = user
         self.examined_at = timestamp
 
-        expire_at = self.examined_at + project.get("connection_expire_time", 24*365*3600)
+        expire_at = self.examined_at + project.get("connection_lifetime", 24*365*3600)
 
         if self.application.CONNECTION_EXPIRE_CHECK and expire_at < now:
             # connection expired
@@ -406,7 +406,7 @@ class Client(object):
             value = yield self.connect_queue.get()
             if not value:
                 yield self.close_sock()
-                raise Return((None, None))
+                raise Return((None, self.application.UNAUTHORIZED))
             else:
                 self.connect_queue = None
 
