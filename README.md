@@ -38,7 +38,8 @@ Main features
 * Flexible channel settings via namespaces
 * Language agnostic - you can go with Centrifuge even if your site built in Perl, PHP, Ruby etc.
 
-To get more information please,
+
+To get more information:
 
 * read the [documentation](https://centrifuge.readthedocs.org/en/latest/)
 * look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples).
@@ -59,7 +60,8 @@ var centrifuge = new Centrifuge({
     url: 'http://localhost:8000/connection',  // Centrifuge SockJS connection endpoint
     token: 'TOKEN', // token based on project's secret key, project ID, user ID and timestamp
     project: 'PROJECT_ID', // project ID from Centrifuge admin interface
-    user: 'USER_ID' // your application user ID (can be empty for anonymous access)
+    user: 'USER_ID', // your application user ID (can be empty for anonymous access)
+    timestamp: '123454545' // current UNIX timestamp (number of seconds as string)
 });
 
 centrifuge.on('connect', function() {
