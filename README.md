@@ -1,3 +1,5 @@
+Note, that there are lots of changes in 0.5 branch at moment. Some things will change (for example ZeroMQ won't be supported by main package), some will be improved. But the idea is still the same.
+
 CENTRIFUGE
 ==========
 
