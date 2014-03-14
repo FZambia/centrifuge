@@ -396,24 +396,28 @@ class Application(tornado.web.Application):
         if error:
             raise Return((False, error))
 
-        print deactivated_users
-
         self.expired_connections[project_id]["checked_at"] = now
         now = time.time()
 
+        clients_to_disconnect = []
+
         for user, user_connections in six.iteritems(self.connections[project_id]):
             for uid, client in six.iteritems(user_connections):
-                if client.user and client.user in deactivated_users:
+                if client.user is not None and client.user in deactivated_users:
                     if client.connect_queue:
                         # client stuck on connect stage
                         yield client.connect_queue.put(False)
                     else:
-                        yield client.send_disconnect_message("deactivated")
-                        yield client.close_sock()
-                elif client.user:
+                        clients_to_disconnect.append(client)
+                elif client.user is not None:
                     client.examined_at = now
                     if client.connect_queue:
                         yield client.connect_queue.put(True)
+
+        for client in clients_to_disconnect:
+            print "DUPLICATE DESTROY HERE"
+            yield client.send_disconnect_message("deactivated")
+            yield client.close_sock()
 
         raise Return((True, None))
 
