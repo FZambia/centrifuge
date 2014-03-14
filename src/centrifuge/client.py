@@ -68,6 +68,8 @@ class Client(object):
     @coroutine
     def close(self):
         yield self.clean()
+        import traceback
+        logger.exception(traceback.extract_stack())
         logger.debug('client destroyed (uid: %s)' % self.uid)
         raise Return((True, None))
 
@@ -410,6 +412,7 @@ class Client(object):
             else:
                 self.connect_queue = None
 
+        # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
         self.project_id = project_id
         self.token = token

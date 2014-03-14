@@ -6,14 +6,14 @@ As usual I've broken backwards compatibility again! I'm so sorry for this, but t
 Here is a list of changes:
 
 * MIT license instead of BSD
-* ZeroMQ is not supported by main repository anymore (you can write your own engine though).
-* Engine backends which now combine state and PUB/SUB - there are two of them Memory engine and Redis engine.
+* ZeroMQ is not supported by main repository anymore. You can write your own engine though.
+* Engine backends which now combine state and PUB/SUB - there are two of them: Memory engine and Redis engine.
 * Connections can now expire if appropriate project option turned on. Connection parameters must contain `timestamp` - Unix seconds as string.
-* Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
-* new client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
-* no more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings.
+* New client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
+* No more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings.
+* Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
 
 As you can see there are lots of important changes, so I hope you forgive me for migration inconveniences.
 

@@ -25,7 +25,7 @@ DEFAULT_BACK_OFF_INTERVAL = 100
 DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 
 # how many messages keep in channel history by default
-DEFAULT_HISTORY_SIZE = 20
+DEFAULT_HISTORY_SIZE = 50
 
 
 class ProjectMixin(object):

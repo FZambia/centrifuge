@@ -69,10 +69,10 @@ class Application(tornado.web.Application):
     CONNECTION_EXPIRE_CHECK = True
 
     # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_COLLECT_INTERVAL = 3
+    CONNECTION_EXPIRE_COLLECT_INTERVAL = 10
 
     # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_CHECK_INTERVAL = 6
+    CONNECTION_EXPIRE_CHECK_INTERVAL = 10
 
     LIMIT_EXCEEDED = 'limit exceeded'
 
@@ -404,11 +404,7 @@ class Application(tornado.web.Application):
         for user, user_connections in six.iteritems(self.connections[project_id]):
             for uid, client in six.iteritems(user_connections):
                 if client.user is not None and client.user in deactivated_users:
-                    if client.connect_queue:
-                        # client stuck on connect stage
-                        yield client.connect_queue.put(False)
-                    else:
-                        clients_to_disconnect.append(client)
+                    clients_to_disconnect.append(client)
                 elif client.user is not None:
                     client.examined_at = now
                     if client.connect_queue:
@@ -416,8 +412,12 @@ class Application(tornado.web.Application):
 
         for client in clients_to_disconnect:
             print "DUPLICATE DESTROY HERE"
-            yield client.send_disconnect_message("deactivated")
-            yield client.close_sock()
+            if client.connect_queue:
+                # client stuck on connect stage
+                yield client.connect_queue.put(False)
+            else:
+                yield client.send_disconnect_message("deactivated")
+                yield client.close_sock()
 
         raise Return((True, None))
 

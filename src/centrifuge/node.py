@@ -202,16 +202,13 @@ def main():
     if owner_api_project_param:
         app.OWNER_API_PROJECT_PARAM = owner_api_project_param
 
-    token_expire = custom_settings.get('token_expire', True)
-    app.TOKEN_EXPIRE = token_expire
+    connection_expire_collect_interval = custom_settings.get('connection_expire_collect_interval')
+    if connection_expire_collect_interval:
+        app.CONNECTION_EXPIRE_COLLECT_INTERVAL = connection_expire_collect_interval
 
-    token_expire_interval = custom_settings.get('token_expire_interval')
-    if token_expire_interval:
-        app.TOKEN_EXPIRE_INTERVAL = token_expire_interval
-
-    token_extend_interval = custom_settings.get('token_extend_interval')
-    if token_extend_interval:
-        app.TOKEN_EXTEND_INTERVAL = token_extend_interval
+    connection_expire_check_interval = custom_settings.get('connection_expire_check_interval')
+    if connection_expire_check_interval:
+        app.CONNECTION_EXPIRE_CHECK_INTERVAL = connection_expire_check_interval
 
     logger.info("Tornado port: {0}".format(options.port))
 
