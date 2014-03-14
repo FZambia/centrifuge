@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import print_function
 import hmac
 import time
 import json
@@ -61,30 +61,34 @@ class IndexHandler(tornado.web.RequestHandler):
         self.render('index.html')
 
 
+def get_auth_data():
+
+    user = USER_ID
+    now = str(int(time.time()))
+    token = get_client_token(
+        options.secret_key, options.project_id, user, now, info=INFO
+    )
+
+    auth_data = {
+        'token': token,
+        'user': user,
+        'project': options.project_id,
+        'timestamp': now,
+        'info': INFO
+    }
+
+    return auth_data
+
+
 class SockjsHandler(tornado.web.RequestHandler):
 
     def get(self):
         """
-        Render template with data required to authenticate connection
-        in Centrifuge.
+        Render template with data required to connect to Centrifuge using SockJS.
         """
-        user = USER_ID
-        now = str(int(time.time()))
-        token = get_client_token(
-            options.secret_key, options.project_id, user, now, info=INFO
-        )
-
-        auth_data = {
-            'token': token,
-            'user': user,
-            'project': options.project_id,
-            'timestamp': now,
-            'info': INFO
-        }
-
         self.render(
             "index_sockjs.html",
-            auth_data=auth_data,
+            auth_data=get_auth_data(),
             centrifuge_address=options.centrifuge
         )
 
@@ -93,26 +97,11 @@ class WebsocketHandler(tornado.web.RequestHandler):
 
     def get(self):
         """
-        Render template with data required to authenticate connection
-        in Centrifuge.
+        Render template with data required to connect to Centrifuge using Websockets.
         """
-        user = USER_ID
-        now = str(int(time.time()))
-        token = get_client_token(
-            options.secret_key, options.project_id, user, now, info=INFO
-        )
-
-        auth_data = {
-            'token': token,
-            'user': user,
-            'project': options.project_id,
-            'timestamp': now,
-            'info': INFO
-        }
-
         self.render(
             "index_websocket.html",
-            auth_data=auth_data,
+            auth_data=get_auth_data(),
             centrifuge_address=options.centrifuge
         )
 
@@ -125,7 +114,17 @@ class CheckHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
-        self.write(json.dumps(['2694']))
+
+        # the list of users connected to Centrifuge with expired connection
+        # web application must find deactivated users in this list
+        users_to_check = json.loads(self.get_argument("users"))
+        logging.info(users_to_check)
+
+        # list of deactivated users
+        deactivated_users = []
+
+        # send list of deactivated users as json
+        self.write(json.dumps(deactivated_users))
 
 
 class AuthorizeHandler(tornado.web.RequestHandler):
@@ -136,6 +135,18 @@ class AuthorizeHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
+
+        user = self.get_argument("user")
+        channel = self.get_argument("channel")
+
+        logging.info("{0} wants to subscribe on {1} channel".format(user, channel))
+
+        # web application now has user and channel and must decide that
+        # user has permissions to subscribe on that channel
+        # if permission denied - then you can return non 200 HTTP response
+
+        # but here we allow to join any private channel and return additional
+        # JSON info specific for channel
         self.write(json.dumps({
             'channel_data_example': 'you can add additional JSON data when authorizing'
         }))
