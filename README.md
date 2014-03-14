@@ -11,8 +11,8 @@ To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be used. So it works in both
 modern and old browsers (IE 7 supported). Centrifuge has javascript client with simple API.
 
-Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - fast and mature Python's
-asynchronous web server which can handle lots of simultaneous connections.
+Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - fast and mature
+asynchronous web server which can handle thousands of simultaneous connections.
 
 Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
