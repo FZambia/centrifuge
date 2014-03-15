@@ -466,7 +466,7 @@ class Client(object):
             raise Return((None, 'maximum channel length exceeded'))
 
         if self.application.USER_SEPARATOR in channel:
-            users_allowed = channel.split('#', 1)[0].split(',')
+            users_allowed = channel.split('#', 1)[1].split(',')
             if self.user not in users_allowed:
                 raise Return((None, self.application.PERMISSION_DENIED))
 

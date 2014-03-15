@@ -551,12 +551,8 @@ class Application(tornado.web.Application):
         Get namespace name from channel name
         """
         if self.NAMESPACE_SEPARATOR in channel:
-            if self.USER_SEPARATOR in channel:
-                # ex. USER_ID#NAMESPACE_NAME:REST_OF_CHANNEL_NAME
-                namespace_name = channel.split(self.USER_SEPARATOR, 1)[1].split(self.NAMESPACE_SEPARATOR, 1)[0]
-            else:
-                # ex. NAMESPACE_NAME:REST_OF_CHANNEL_NAME
-                namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
+            # namespace:rest_of_channel
+            namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
         else:
             namespace_name = None
 

@@ -57,12 +57,12 @@ Because of several reasons:
 This is very simple - just add user ID as part of channel name to subscribe!
 
 For example you have a user with ID "user42". Then private channel for him will be
-`user42#news` - i.e. user ID plus `#` separator plus rest of channel name.
+`news#user42` - i.e. main channel name plus `#` separator plus user ID.
 
-`#` in this case special symbol which tells Centrifuge that everything before it
-must be interpreted as user ID which only can to subscribe on this channel.
+`#` in this case special symbol which tells Centrifuge that everything after it
+must be interpreted as user ID which only can subscribe on this channel.
 
-Moreover you can create a channel like `user42,user43#dialog` to create private channel
+Moreover you can create a channel like `dialog#user42,user43` to create private channel
 for two users.
 
 BUT! Your fantasy here is limited by maximum channel length - 255 by default (can be changed
