@@ -44,8 +44,8 @@ To get more information:
 * read the [documentation](https://centrifuge.readthedocs.org/en/latest/)
 * look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples).
 
-Various packages and tools related to [Centrifuge](https://github.com/centrifugal) located
-in Centrifugal organization here on Github.
+Various packages and tools related to Centrifuge located in [Centrifugal](https://github.com/centrifugal)
+organization here on Github.
 
 Similar projects / alternatives:
 
