@@ -398,13 +398,29 @@ class Client(object):
         self.user = user
         self.examined_at = timestamp
 
-        expire_at = self.examined_at + project.get("connection_lifetime", 24*365*3600)
+        connection_check = project.get('connection_check', False)
 
-        if self.application.CONNECTION_EXPIRE_CHECK and expire_at < now:
-            # connection expired
-            self.connect_queue = toro.Queue(maxsize=1)
+        if connection_check and self.examined_at + project.get("connection_lifetime", 24*365*3600) < now:
+            # connection expired - this is a rare case when Centrifuge went offline
+            # for a while or client turned on his computer from sleeping mode.
+
+            # so we put this client into the queue of connections waiting for
+            # permission to reconnect with expired credentials. To avoid waiting
+            # client must reconnect with actual credentials i.e. reload browser
+            # window.
+
+            if project_id not in self.application.expired_reconnections:
+                self.application.expired_reconnections[project_id] = []
+            self.application.expired_reconnections[project_id].append(self)
+
+            if project_id not in self.application.expired_connections:
+                self.application.expired_connections[project_id] = {
+                    "users": set(),
+                    "checked_at": None
+                }
             self.application.expired_connections[project_id]["users"].add(user)
 
+            self.connect_queue = toro.Queue(maxsize=1)
             value = yield self.connect_queue.get()
             if not value:
                 yield self.close_sock()
@@ -429,6 +445,8 @@ class Client(object):
         )
         self.presence_ping_task.start()
 
+        self.application.add_connection(project_id, self.user, self.uid, self)
+
         raise Return((self.uid, None))
 
     @coroutine
@@ -449,8 +467,6 @@ class Client(object):
             raise Return((None, error))
 
         project_id = self.project_id
-
-        self.application.add_connection(project_id, self.user, self.uid, self)
 
         is_private = namespace.get('is_private', False)
 

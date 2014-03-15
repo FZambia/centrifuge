@@ -202,6 +202,10 @@ def main():
     if owner_api_project_param:
         app.OWNER_API_PROJECT_PARAM = owner_api_project_param
 
+    connection_expire_check = custom_settings.get('connection_expire_check', True)
+    if connection_expire_check:
+        app.CONNECTION_EXPIRE_CHECK = connection_expire_check
+
     connection_expire_collect_interval = custom_settings.get('connection_expire_collect_interval')
     if connection_expire_collect_interval:
         app.CONNECTION_EXPIRE_COLLECT_INTERVAL = connection_expire_collect_interval

@@ -69,10 +69,10 @@ class Application(tornado.web.Application):
     CONNECTION_EXPIRE_CHECK = True
 
     # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_COLLECT_INTERVAL = 10
+    CONNECTION_EXPIRE_COLLECT_INTERVAL = 3
 
     # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_CHECK_INTERVAL = 10
+    CONNECTION_EXPIRE_CHECK_INTERVAL = 6
 
     LIMIT_EXCEEDED = 'limit exceeded'
 
@@ -133,6 +133,9 @@ class Application(tornado.web.Application):
 
         # dictionary to keep expired connections
         self.expired_connections = {}
+
+        #
+        self.expired_reconnections = {}
 
         # count of messages published since last node info revision
         self.messages_published = 0
@@ -255,11 +258,10 @@ class Application(tornado.web.Application):
         )
         self.periodic_connection_expire_collect.start()
 
-        self.periodic_connection_expire_check = tornado.ioloop.PeriodicCallback(
-            self.check_expired_connections,
-            self.CONNECTION_EXPIRE_CHECK_INTERVAL*1000
+        tornado.ioloop.IOLoop.instance().add_timeout(
+            time.time()+self.CONNECTION_EXPIRE_CHECK_INTERVAL,
+            self.check_expired_connections
         )
-        self.periodic_connection_expire_check.start()
 
     def send_ping(self, ping_message):
         self.engine.publish_control_message(ping_message)
@@ -315,8 +317,6 @@ class Application(tornado.web.Application):
         """
         Find all expired connections in projects to check them later.
         """
-        logger.debug("collecting expired connections")
-
         projects, error = yield self.structure.project_list()
         if error:
             logger.error(error)
@@ -339,8 +339,6 @@ class Application(tornado.web.Application):
             current_expired_connections = self.expired_connections[project_id]["users"]
             self.expired_connections[project_id]["users"] = current_expired_connections | expired_connections
 
-        import pprint
-        pprint.pprint(self.expired_connections)
         raise Return((True, None))
 
     @coroutine
@@ -365,14 +363,25 @@ class Application(tornado.web.Application):
         For each project ask web application about users whose connections expired.
         Close connections of deactivated users and keep valid users' connections.
         """
-        logger.debug("checking expired connections")
-
         projects, error = yield self.structure.project_list()
         if error:
             raise Return((None, error))
 
+        checks = []
         for project in projects:
-            yield self.check_project_expired_connections(project)
+            if project.get('connection_check', False):
+                checks.append(self.check_project_expired_connections(project))
+
+        try:
+            # run all checks in parallel
+            yield checks
+        except Exception as err:
+            logger.error(err)
+
+        tornado.ioloop.IOLoop.instance().add_timeout(
+            time.time()+self.CONNECTION_EXPIRE_CHECK_INTERVAL,
+            self.check_expired_connections
+        )
 
         raise Return((True, None))
 
@@ -392,7 +401,10 @@ class Application(tornado.web.Application):
 
         self.expired_connections[project_id]["users"] = set()
 
-        deactivated_users, error = yield self.check_users(project, users)
+        expired_reconnect_clients = self.expired_reconnections.get(project_id, [])[:]
+        self.expired_reconnections[project_id] = []
+
+        inactive_users, error = yield self.check_users(project, users)
         if error:
             raise Return((False, error))
 
@@ -401,23 +413,31 @@ class Application(tornado.web.Application):
 
         clients_to_disconnect = []
 
-        for user, user_connections in six.iteritems(self.connections[project_id]):
-            for uid, client in six.iteritems(user_connections):
-                if client.user is not None and client.user in deactivated_users:
-                    clients_to_disconnect.append(client)
-                elif client.user is not None:
-                    client.examined_at = now
-                    if client.connect_queue:
-                        yield client.connect_queue.put(True)
+        if isinstance(inactive_users, list):
+            # a list of inactive users received, iterate trough connections
+            # destroy inactive, update active.
+            if project_id in self.connections:
+                for user, user_connections in six.iteritems(self.connections[project_id]):
+                    for uid, client in six.iteritems(user_connections):
+                        if client.user in inactive_users:
+                            clients_to_disconnect.append(client)
+                        elif client.user in users:
+                            client.examined_at = now
 
         for client in clients_to_disconnect:
-            print "DUPLICATE DESTROY HERE"
-            if client.connect_queue:
-                # client stuck on connect stage
-                yield client.connect_queue.put(False)
-            else:
-                yield client.send_disconnect_message("deactivated")
-                yield client.close_sock()
+            yield client.send_disconnect_message("deactivated")
+            yield client.close_sock()
+
+        if isinstance(inactive_users, list):
+            # now deal with users waiting for reconnect with expired credentials
+            for client in expired_reconnect_clients:
+                is_valid = client.user not in inactive_users
+                if is_valid:
+                    client.examined_at = now
+                if client.connect_queue:
+                    yield client.connect_queue.put(is_valid)
+                else:
+                    yield client.close_sock()
 
         raise Return((True, None))
 
@@ -427,7 +447,6 @@ class Application(tornado.web.Application):
 
         address = project.get("connection_check_address")
         if not address:
-            print 1
             logger.debug("no connection check address for project {0}".format(project['name']))
             raise Return(())
 
@@ -445,7 +464,7 @@ class Application(tornado.web.Application):
             response = yield http_client.fetch(request)
         except Exception as err:
             logger.error(err)
-            raise Return(([], None))
+            raise Return((None, None))
         else:
             if response.code == 200:
                 # auth successful
@@ -453,7 +472,7 @@ class Application(tornado.web.Application):
                     content = [str(x) for x in json.loads(response.body)]
                 except Exception as err:
                     logger.error(err)
-                    raise Return(([], err))
+                    raise Return((None, err))
 
                 raise Return((content, None))
 

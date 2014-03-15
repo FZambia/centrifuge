@@ -73,11 +73,11 @@ class ProjectMixin(object):
             validators.Optional()
         ],
         description="url address to check connections by periodically sending POST request "
-                    "to it with list of users with expired connections."
+                    "to it with list of users with expired connections. "
     )
 
     connection_check_interval = IntegerField(
-        label='connection check interval in seconds',
+        label='minimum connection check interval in seconds',
         validators=[
             validators.NumberRange(min=1)
         ],

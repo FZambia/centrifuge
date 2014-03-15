@@ -8,7 +8,8 @@ Here is a list of changes:
 * MIT license instead of BSD
 * ZeroMQ is not supported by main repository anymore. You can write your own engine though.
 * Engine backends which now combine state and PUB/SUB - there are two of them: Memory engine and Redis engine.
-* Connections can now expire if appropriate project option turned on. Connection parameters must contain `timestamp` - Unix seconds as string.
+* Connection parameters must contain `timestamp` - Unix seconds as string.
+* Experimental support for expiring connections. Connections can now expire if project option `connection_check` turned on.
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
 * New client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
