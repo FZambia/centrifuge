@@ -3,25 +3,6 @@ import sys
 from setuptools import setup
 
 
-with_redis = True
-with_mongodb = True
-with_postgresql = True
-
-filtered_args = []
-
-for arg in sys.argv:
-    if arg == '--without-redis':
-        with_redis = False
-    elif arg == '--without-mongodb':
-        with_mongodb = False
-    elif arg == '--without-postgresql':
-        with_postgresql = False
-    else:
-        filtered_args.append(arg)
-
-sys.argv = filtered_args
-
-
 if sys.argv[-1] == 'test':
     status = os.system("python -m unittest discover -p 'test_*.py'")
     sys.exit(1 if status > 127 else status)
@@ -88,16 +69,9 @@ install_requires = [
     'sockjs-tornado==1.0.0',
     'jsonschema==2.3.0',
     'toro==0.5',
-    'WTForms==1.0.4'
+    'WTForms==1.0.4',
+    'toredis-fork==0.1.3'
 ]
-
-
-if with_redis:
-    install_requires.append('toredis-fork==0.1.3')
-if with_mongodb:
-    install_requires.append('motor==0.1.2')
-if with_postgresql:
-    install_requires.append('Momoko==1.0.0')
 
 
 def long_description():
@@ -107,7 +81,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.4.3dev',
+    version='0.5.0dev',
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
