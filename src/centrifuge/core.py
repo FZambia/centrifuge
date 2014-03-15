@@ -466,15 +466,16 @@ class Application(tornado.web.Application):
             logger.error(err)
             raise Return((None, None))
         else:
-            if response.code == 200:
-                # auth successful
-                try:
-                    content = [str(x) for x in json.loads(response.body)]
-                except Exception as err:
-                    logger.error(err)
-                    raise Return((None, err))
+            if response.code != 200:
+                raise Return((None, None))
 
-                raise Return((content, None))
+            try:
+                content = [str(x) for x in json.loads(response.body)]
+            except Exception as err:
+                logger.error(err)
+                raise Return((None, err))
+
+            raise Return((content, None))
 
     def add_connection(self, project_id, user, uid, client):
         """
