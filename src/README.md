@@ -26,8 +26,7 @@ Migration notes:
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
 
-What does it mean that there are no namespaces in protocol anymore?
--------------------------------------------------------------------
+#### What does it mean that there are no namespaces in protocol anymore?
 
 In the earliest versions of Centrifuge to publish message you should send something like this
 via admin API:
@@ -44,8 +43,8 @@ Now you must do the same in this way:
 
 I.e. like from browser.
 
-Why the hell you dropped ZeroMQ support?
-----------------------------------------
+#### Why the hell you dropped ZeroMQ support?
+
 
 Because of several reasons:
 
@@ -53,8 +52,7 @@ Because of several reasons:
 * It's relatively slow. Redis is much much faster for real-time staff.
 * To have history and presence support you will anyway need Redis.
 
-How can I make private channel for user without sending POST request to my web app?
------------------------------------------------------------------------------------
+#### How can I make private channel for user without sending POST request to my web app?
 
 This is very simple - just add user ID as part of channel name to subscribe!
 
