@@ -186,6 +186,10 @@ def main():
 
     app.initialize()
 
+    max_channel_length = custom_settings.get('max_channel_length')
+    if max_channel_length:
+        app.MAX_CHANNEL_LENGTH = max_channel_length
+
     admin_api_message_limit = custom_settings.get('admin_api_message_limit')
     if admin_api_message_limit:
         app.ADMIN_API_MESSAGE_LIMIT = admin_api_message_limit

@@ -15,6 +15,7 @@ Here is a list of changes:
 * New client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
 * No more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
+* And really sweet - private channels for users without sending POST request to your web app
 
 As you can see there are lots of important changes, so I hope you forgive me for migration inconveniences.
 
@@ -26,6 +27,7 @@ Migration notes:
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
 
 What does it mean that there are no namespaces in protocol anymore?
+-------------------------------------------------------------------
 
 In the earliest versions of Centrifuge to publish message you should send something like this
 via admin API:
@@ -43,12 +45,31 @@ Now you must do the same in this way:
 I.e. like from browser.
 
 Why the hell you dropped ZeroMQ support?
+----------------------------------------
 
 Because of several reasons:
 
 * ZeroMQ is hard to configure, it has nice features like brokerless etc but I think that it is not a big win in case of using with Centrifuge.
 * It's relatively slow. Redis is much much faster for real-time staff.
 * To have history and presence support you will anyway need Redis.
+
+How can I make private channel for user without sending POST request to my web app?
+-----------------------------------------------------------------------------------
+
+This is very simple - just add user ID as part of channel name to subscribe!
+
+For example you have a user with ID "user42". Then private channel for him will be
+`user42#news` - i.e. user ID plus `#` separator plus rest of channel name.
+
+`#` in this case special symbol which tells Centrifuge that everything before it
+must be interpreted as user ID which only can to subscribe on this channel.
+
+Moreover you can create a channel like `user42,user43#dialog` to create private channel
+for two users.
+
+BUT! Your fantasy here is limited by maximum channel length - 255 by default (can be changed
+via configuration file option `max_channel_length`).
+
 
 v0.4.2
 ======

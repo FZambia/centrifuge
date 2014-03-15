@@ -39,6 +39,8 @@ def get_host():
 
 class Application(tornado.web.Application):
 
+    USER_SEPARATOR = '#'
+
     NAMESPACE_SEPARATOR = ":"
 
     # magic fake project ID for owner API purposes.
@@ -58,6 +60,9 @@ class Application(tornado.web.Application):
 
     # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
+
+    # maximum length of channel name
+    MAX_CHANNEL_LENGTH = 255
 
     # maximum number of messages in single admin API request
     ADMIN_API_MESSAGE_LIMIT = 100
@@ -541,13 +546,26 @@ class Application(tornado.web.Application):
             raise Return((None, self.PROJECT_NOT_FOUND))
         raise Return((project, None))
 
+    def extract_namespace_name(self, channel):
+        """
+        Get namespace name from channel name
+        """
+        if self.NAMESPACE_SEPARATOR in channel:
+            if self.USER_SEPARATOR in channel:
+                # ex. USER_ID#NAMESPACE_NAME:REST_OF_CHANNEL_NAME
+                namespace_name = channel.split(self.USER_SEPARATOR, 1)[1].split(self.NAMESPACE_SEPARATOR, 1)[0]
+            else:
+                # ex. NAMESPACE_NAME:REST_OF_CHANNEL_NAME
+                namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
+        else:
+            namespace_name = None
+
+        return namespace_name
+
     @coroutine
     def get_namespace(self, project, channel):
 
-        if self.NAMESPACE_SEPARATOR in channel:
-            namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
-        else:
-            namespace_name = None
+        namespace_name = self.extract_namespace_name(channel)
 
         if not namespace_name:
             raise Return((project, None))

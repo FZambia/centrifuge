@@ -462,6 +462,14 @@ class Client(object):
         if not channel:
             raise Return((None, 'channel required'))
 
+        if len(channel) > self.application.MAX_CHANNEL_LENGTH:
+            raise Return((None, 'maximum channel length exceeded'))
+
+        if self.application.USER_SEPARATOR in channel:
+            users_allowed = channel.split('#', 1)[0].split(',')
+            if self.user not in users_allowed:
+                raise Return((None, self.application.PERMISSION_DENIED))
+
         namespace, error = yield self.application.get_namespace(project, channel)
         if error:
             raise Return((None, error))
