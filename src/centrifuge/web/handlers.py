@@ -120,10 +120,8 @@ class ProjectCreateHandler(BaseHandler):
             self.redirect(self.reverse_url('main'))
 
 
-class ProjectSettingsHandler(BaseHandler):
-    """
-    Edit project setting.
-    """
+class ProjectDetailHandler(BaseHandler):
+
     @coroutine
     def get_project(self, project_id):
         project, error = yield self.application.structure.get_project_by_id(project_id)
@@ -132,7 +130,15 @@ class ProjectSettingsHandler(BaseHandler):
         raise Return((project, None))
 
     @coroutine
-    def get_general(self):
+    def get_credentials(self):
+        data = {
+            'user': self.current_user,
+            'project': self.project,
+        }
+        raise Return((data, None))
+
+    @coroutine
+    def get_namespaces(self):
         namespaces, error = yield self.application.structure.get_project_namespaces(self.project)
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
@@ -144,7 +150,7 @@ class ProjectSettingsHandler(BaseHandler):
         raise Return((data, None))
 
     @coroutine
-    def post_general(self, submit):
+    def post_credentials(self, submit):
 
         if submit != 'regenerate_secret':
             raise tornado.web.HTTPError(400)
@@ -156,10 +162,10 @@ class ProjectSettingsHandler(BaseHandler):
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
 
-        self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
+        self.redirect(self.reverse_url("project_detail", self.project['_id'], 'credentials'))
 
     @coroutine
-    def get_edit(self):
+    def get_settings(self):
         data = {
             'user': self.current_user,
             'project': self.project,
@@ -170,7 +176,7 @@ class ProjectSettingsHandler(BaseHandler):
         raise Return((data, None))
 
     @coroutine
-    def post_edit(self, submit):
+    def post_settings(self, submit):
 
         if submit == 'project_del':
             # completely remove project
@@ -181,7 +187,7 @@ class ProjectSettingsHandler(BaseHandler):
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 self.redirect(self.reverse_url("main"))
             else:
-                self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
+                self.redirect(self.reverse_url("project_detail", self.project['_id'], "settings"))
 
         else:
             # edit project
@@ -195,15 +201,15 @@ class ProjectSettingsHandler(BaseHandler):
             elif error:
                 # error is form with errors in this case
                 self.render(
-                    'project/settings_edit.html', project=self.project,
+                    'project/detail_settings.html', project=self.project,
                     form=error, render_control=render_control, render_label=render_label
                 )
             else:
-                self.redirect(self.reverse_url("project_settings", self.project['_id'], "edit"))
+                self.redirect(self.reverse_url("project_detail", self.project['_id'], "settings"))
 
     @coroutine
     def get_actions(self):
-        data, error = yield self.get_general()
+        data, error = yield self.get_credentials()
         raise Return((data, None))
 
     @coroutine
@@ -234,16 +240,20 @@ class ProjectSettingsHandler(BaseHandler):
 
         self.project, error = yield self.get_project(project_name)
 
-        if section == 'general':
-            template_name = 'project/settings_general.html'
-            func = self.get_general
+        if section == 'credentials':
+            template_name = 'project/detail_credentials.html'
+            func = self.get_credentials
 
-        elif section == 'edit':
-            template_name = 'project/settings_edit.html'
-            func = self.get_edit
+        elif section == 'settings':
+            template_name = 'project/detail_settings.html'
+            func = self.get_settings
+
+        elif section == 'namespaces':
+            template_name = 'project/detail_namespaces.html'
+            func = self.get_namespaces
 
         elif section == 'actions':
-            template_name = 'project/settings_actions.html'
+            template_name = 'project/detail_actions.html'
             func = self.get_actions
 
         else:
@@ -263,11 +273,11 @@ class ProjectSettingsHandler(BaseHandler):
 
         submit = self.get_argument('submit', None)
 
-        if section == 'general':
-            yield self.post_general(submit)
+        if section == 'credentials':
+            yield self.post_credentials(submit)
 
-        elif section == 'edit':
-            yield self.post_edit(submit)
+        elif section == 'settings':
+            yield self.post_settings(submit)
 
         elif section == 'actions':
             yield self.post_actions()
@@ -336,7 +346,7 @@ class NamespaceFormHandler(BaseHandler):
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
                 self.redirect(
-                    self.reverse_url("project_settings", self.project['_id'], 'general')
+                    self.reverse_url("project_detail", self.project['_id'], 'namespaces')
                 )
             else:
                 self.redirect(
@@ -367,7 +377,7 @@ class NamespaceFormHandler(BaseHandler):
                     render_control=render_control, render_label=render_label
                 )
             else:
-                self.redirect(self.reverse_url("project_settings", self.project['_id'], 'general'))
+                self.redirect(self.reverse_url("project_detail", self.project['_id'], 'namespaces'))
 
 
 class AdminSocketHandler(SockJSConnection):

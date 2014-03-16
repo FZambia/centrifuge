@@ -1,4 +1,6 @@
-{% extends 'settings.html' %}
+{% extends 'detail.html' %}
+
+{% block title %}{{_("Project actions")}}{% end %}
 
 {% block tab_actions %}active{% end %}
 
@@ -11,9 +13,7 @@
 {% end %}
 
 {% block section %}
-
     <h4>{{_("Admin API actions")}}</h4>
-
     <div>
         <form role="form" method="POST" action="">
             {% raw xsrf_form_html() %}
@@ -52,5 +52,4 @@
     <script type="text/x-jsrender" id="result_template">
         {{!:data}}
     </script>
-
 {% end %}

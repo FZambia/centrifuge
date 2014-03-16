@@ -3,7 +3,6 @@
 
 import time
 import six
-from functools import partial
 
 from tornado.gen import coroutine, Return
 from tornado.escape import json_encode

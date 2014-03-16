@@ -4,14 +4,15 @@
 <div class="marketing">
     <h1>Centrifuge</h1>
     <hr/>
-    <p class="muted">
+    <p class="text-muted">
         {{_("Simple real-time messaging in web applications.")}}
     </p>
     <hr/>
-    <form action="" method="post" class="form-inline">
+    <form action="" method="post" class="form">
         {% raw xsrf_form_html() %}
         <input class="form-control" type="password" name="password" placeholder="{{_('Type administrative password to log in...')}}"/>
-        <button type="submit" class="btn btn-primary">{{_("Let me in")}}</button>
+        <br />
+        <button type="submit" class="btn btn-primary">{{_("Sign in")}}</button>
     </form>
 </div>
 {% end %}

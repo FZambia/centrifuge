@@ -1,0 +1,30 @@
+{% extends '../base.html' %}
+
+{% block title %}{{_("Project page")}}{% end %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-3">
+            <ul class="nav nav-pills nav-stacked" id="tabs">
+                <li class="{% block tab_credentials %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'credentials')}}">{{_("Credentials")}}</a></li>
+                <li class="{% block tab_settings %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'settings')}}">{{_("Settings")}}</a></li>
+                <li class="{% block tab_namespaces %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'namespaces')}}">{{_("Namespaces")}}</a></li>
+                <li class="{% block tab_actions %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'actions')}}">{{_("Actions")}}</a></li>
+            </ul>
+        </div>
+        <div class="col-lg-9">
+            <div class="tab-content" id="tab-content">
+                <div class="tab-pane active in" id="{% block section_active %}{% end %}">
+                    <h2 class="project-header">Project "{{ project["name"] }}"</h2>
+                    {% block section %}{% end %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% end %}
+
+{% block panel %}{% end %}
+
+
+
+

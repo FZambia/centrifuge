@@ -353,7 +353,7 @@
                 var project = get_project_by_id(project_id);
                 highlight_tab(project, false);
                 if (project['_id'] !== options.project_tab) {
-                    project_settings_button.attr('href', '/project/' + project['_id'] + '/settings/general').show();
+                    project_settings_button.attr('href', '/project/' + project['_id'] + '/credentials').show();
                 } else {
                     project_settings_button.hide();
                 }

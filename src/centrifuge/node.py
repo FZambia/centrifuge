@@ -57,7 +57,7 @@ from centrifuge.web.handlers import AdminSocketHandler
 from centrifuge.web.handlers import Http404Handler
 from centrifuge.web.handlers import ProjectCreateHandler
 from centrifuge.web.handlers import NamespaceFormHandler
-from centrifuge.web.handlers import ProjectSettingsHandler
+from centrifuge.web.handlers import ProjectDetailHandler
 from centrifuge.web.handlers import StructureDumpHandler
 from centrifuge.web.handlers import StructureLoadHandler
 
@@ -82,9 +82,9 @@ def create_application_handlers(sockjs_settings):
             name="project_create"
         ),
         tornado.web.url(
-            r'/project/([^/]+)/settings/([^/]+)$',
-            ProjectSettingsHandler,
-            name="project_settings"
+            r'/project/([^/]+)/([^/]+)$',
+            ProjectDetailHandler,
+            name="project_detail"
         ),
         tornado.web.url(
             r'/project/([^/]+)/namespace/create$',
