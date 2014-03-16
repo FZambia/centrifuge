@@ -39,5 +39,6 @@ to hard-code all these settings in configuration file and go without any depende
 Where it can be useful
 ----------------------
 
-Everywhere you need real-time web page updates. There are tons of use cases where Centrifuge could be helpful - chat, graphs,
-comments, counters, games etc. Or if you just want to know how many users currently watching web page and who they are.
+Everywhere you need real-time web page updates. There are tons of use cases where Centrifuge
+could be helpful - chat, graphs, comments, counters, games etc. Or if you just want to know
+how many users currently watching web page and who they are.

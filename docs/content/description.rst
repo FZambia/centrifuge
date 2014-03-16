@@ -5,16 +5,12 @@ How it works
 
 Here I'll try to explain how Centrifuge actually works.
 
-In a few words
-~~~~~~~~~~~~~~
+Overview
+~~~~~~~~
 
 Clients from browsers connect to Centrifuge, after connecting clients subscribe
 on channels. And every message which was published into channel will be sent
 to all clients which are currently subscribed on this channel.
-
-
-In detail
-~~~~~~~~~
 
 This is an architecture diagram of Centrifuge:
 
@@ -61,7 +57,7 @@ more instances of Centrifuge and load balance clients between them.
 
 As was mentioned above it's time to use one of available PUB/SUB backends.
 
-Lets see on Redis backend first and then on ZeroMQ.
+Lets see on Redis backend first.
 
 Redis is very simple and recommended way to scale Centrifuge. I suppose that you have it installed
 and running with default settings.
@@ -107,57 +103,6 @@ My final note will be that you have other Redis related command-line options:
 
 As you can see those options are Redis address, port and password.
 
-
-Now lets talk about using ZeroMQ backend for PUB/SUB. It's a bit harder than going with Redis
-so I suppose you are experienced enough and understand why you need ZeroMQ instead of Redis.
-
-There are two ways of configuring ZeroMQ with Centrifuge.
-
-First way - manually set instance's publish socket and all publish sockets current
-instance must subscribe to. You should use these options for it. The drawback is that you
-should support correct settings for all instances and restart all instances with new
-socket configuration options when adding new instance.
-
-.. code-block:: bash
-
-    centrifuge --port=8000 --zmq_pub_port=7000 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
-    centrifuge --port=8001 --zmq_pub_port=7001 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
-
-Look, we selected two different ports for ZeroMQ PUB socket using ``--zmq_pub_port``
-option. And we told every instance a comma-separated list of all PUB socket addresses
-using ``--zmq_sub_address`` option. Instances now connected and you can load balance
-clients between them.
-
-Another way - use XPUB/XSUB proxy. Things will work according to this scheme.
-
-.. image:: img/xpub_xsub.png
-    :width: 650 px
-
-
-In this case you only need to provide proxy endpoints in command-line options which will
-be the same for all Centrifuge instances. Also you must run the proxy itself. The drawback
-is that proxy is a single point of failure. There is proxy written in Go language. You
-can run it instead of python version coming with Centrifuge.
-
-
-.. code-block:: bash
-
-    centrifuge --zmq_pub_sub_proxy --zmq_xsub=tcp://localhost:6000 --zmq_xpub=tcp://localhost:6001
-
-
-We told Centrifuge to use XPUB/XSUB proxy using flag ``--zmq_pub_sub_proxy`` and set
-XSUB (``--zmq_xsub``) and XPUB (``--zmq_xpub``) endpoints.
-
-And to start proxy:
-
-.. code-block:: bash
-
-    xpub_xsub --xsub=tcp://*:6000 --xpub=tcp://*:6001
-
-
-Now instances connected through XPUB/XSUB proxy. Success!
-
-
 Our next step will be talking about how presence and history data for channels work.
 
 Centrifuge can use process memory (single node only) or Redis (one or more nodes) for this.
@@ -174,4 +119,16 @@ it is impossible to use SQLite database. To avoid making query to database on ev
 request all structure information loaded into memory and then updated when something
 in structure changed and periodically to avoid inconsistency. There is also an option
 to set all structure in configuration file and go without any database.
+
+
+Channels
+~~~~~~~~
+
+
+Projects
+~~~~~~~~
+
+
+Namespaces
+~~~~~~~~~~
 

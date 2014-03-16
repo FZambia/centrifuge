@@ -1,7 +1,5 @@
 # coding: utf-8
-#
 # Copyright (c) Alexandr Emelin. MIT license.
-# All rights reserved.
 
 import six
 import uuid
@@ -84,6 +82,8 @@ class Application(tornado.web.Application):
     UNAUTHORIZED = 'unauthorized'
 
     PERMISSION_DENIED = 'permission denied'
+
+    NOT_AVAILABLE = 'not available'
 
     INTERNAL_SERVER_ERROR = 'internal server error'
 

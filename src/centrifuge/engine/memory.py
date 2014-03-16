@@ -1,7 +1,6 @@
 # coding: utf-8
-#
 # Copyright (c) Alexandr Emelin. MIT license.
-# All rights reserved.
+
 import time
 import six
 from functools import partial
@@ -210,37 +209,3 @@ class Engine(BaseEngine):
         except KeyError:
             data = []
         raise Return((data, None))
-
-    def get_deactivated_key(self, project_id, user_id):
-        return "%s:deactivated:%s:%s" % (self.prefix, project_id, user_id)
-
-    @coroutine
-    def add_deactivated_user(self, project_id, user_id, expire):
-        key = self.get_deactivated_key(project_id, user_id)
-        self.deactivated[key] = time.time() + expire
-        callback = partial(self._delete_expired_deactivated_key, key)
-        self.io_loop.add_timeout(expire, callback)
-        raise Return((True, None))
-
-    @coroutine
-    def remove_deactivated_user(self, project_id, user_id):
-        key = self.get_deactivated_key(project_id, user_id)
-        try:
-            del self.deactivated[key]
-        except KeyError:
-            pass
-        raise Return((True, None))
-
-    @coroutine
-    def is_user_deactivated(self, project_id, user_id):
-        key = self.get_deactivated_key(project_id, user_id)
-        value = self.deactivated.get(key)
-        if value and value > time.time():
-            raise Return((True, None))
-        raise Return((False, None))
-
-    def _delete_expired_deactivated_key(self, key):
-        try:
-            del self.deactivated[key]
-        except KeyError:
-            pass

@@ -1,7 +1,5 @@
 # coding: utf-8
-#
 # Copyright (c) Alexandr Emelin. MIT license.
-# All rights reserved.
 
 from tornado.gen import coroutine, Return
 from centrifuge.structure import BaseStorage

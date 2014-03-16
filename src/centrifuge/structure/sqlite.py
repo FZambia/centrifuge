@@ -1,7 +1,5 @@
 # coding: utf-8
-#
 # Copyright (c) Alexandr Emelin. MIT license.
-# All rights reserved.
 
 import sqlite3
 from tornado.gen import coroutine, Return

@@ -4,7 +4,7 @@ Contribute and license
 .. _contribute_license:
 
 
-Centrifuge has MIT license. This is open-source and pull requests are welcome!
+Centrifuge has MIT license. Pull requests are welcome!
 
 But, please, follow next principles:
 
@@ -13,4 +13,4 @@ But, please, follow next principles:
 - python 2.6, 2.7 and 3.3 compatible
 
 
-Code is on Github - https://github.com/FZambia/centrifuge
+Code is here - https://github.com/FZambia/centrifuge

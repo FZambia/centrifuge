@@ -1,7 +1,5 @@
 # coding: utf-8
-#
 # Copyright (c) Alexandr Emelin. MIT license.
-# All rights reserved.
 
 import six
 import uuid
@@ -51,7 +49,7 @@ class Client(object):
         self.info = info
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
-        self.user = ''
+        self.user = None
         self.token = None
         self.examined_at = None
         self.channel_user_info = {}
@@ -59,7 +57,6 @@ class Client(object):
         self.project_id = None
         self.channels = None
         self.presence_ping_task = None
-        self.extend_task = None
         self.connect_queue = None
         logger.debug("new client created (uid: {0}, ip: {1})".format(
             self.uid, getattr(self.info, 'ip', '-')
@@ -68,8 +65,6 @@ class Client(object):
     @coroutine
     def close(self):
         yield self.clean()
-        import traceback
-        logger.exception(traceback.extract_stack())
         logger.debug('client destroyed (uid: %s)' % self.uid)
         raise Return((True, None))
 
@@ -81,9 +76,6 @@ class Client(object):
         """
         if self.presence_ping_task:
             self.presence_ping_task.stop()
-
-        if self.extend_task:
-            self.extend_task.stop()
 
         project_id = self.project_id
 
@@ -115,6 +107,7 @@ class Client(object):
         self.project_id = None
         self.is_authenticated = False
         self.sock = None
+        self.user = None
         self.token = None
         self.examined_at = None
         raise Return((True, None))
@@ -252,6 +245,8 @@ class Client(object):
         """
         for channel, channel_info in six.iteritems(self.channels):
             user_info = self.get_user_info(channel)
+            if channel not in self.channels:
+                continue
             yield self.application.engine.add_presence(
                 self.project_id, channel, self.uid, user_info
             )
@@ -404,7 +399,7 @@ class Client(object):
             # connection expired - this is a rare case when Centrifuge went offline
             # for a while or client turned on his computer from sleeping mode.
 
-            # so we put this client into the queue of connections waiting for
+            # put this client into the queue of connections waiting for
             # permission to reconnect with expired credentials. To avoid waiting
             # client must reconnect with actual credentials i.e. reload browser
             # window.
@@ -553,6 +548,7 @@ class Client(object):
         """
         if channel in self.channels:
             return
+
         raise Return((None, self.application.PERMISSION_DENIED))
 
     @coroutine
@@ -573,7 +569,7 @@ class Client(object):
             raise Return((None, error))
 
         if not namespace.get('publish', False):
-            raise Return((None, 'publishing into this namespace not available'))
+            raise Return((None, self.application.PERMISSION_DENIED))
 
         user_info = self.get_user_info(channel)
 
@@ -602,7 +598,7 @@ class Client(object):
             raise Return((None, error))
 
         if not namespace.get('presence', False):
-            raise Return((None, 'presence for this namespace not available'))
+            raise Return((None, self.application.NOT_AVAILABLE))
 
         result, error = yield self.application.process_presence(
             project,
@@ -628,7 +624,7 @@ class Client(object):
             raise Return((None, error))
 
         if not namespace.get('history', False):
-            raise Return((None, 'history for this namespace not available'))
+            raise Return((None, self.application.NOT_AVAILABLE))
 
         result, error = yield self.application.process_history(
             project,
@@ -677,5 +673,5 @@ class Client(object):
             "reason": reason
         }
         response = Response(method="disconnect", body=message_body)
-        yield self.send(response.as_message())
-        raise Return(True)
+        result, error = yield self.send(response.as_message())
+        raise Return((result, error))

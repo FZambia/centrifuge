@@ -6,25 +6,19 @@ Web interface
 
 Centrifuge comes with administrative web interface.
 
-Using it you can create, edit or delete projects, namespaces, publish
-JSON messages into channels etc.
+It allows to create, edit or delete projects, namespaces, publish JSON
+messages into channels etc.
 
-Also you can watch for new messages in your projects in real-time.
+Also you can see messages in your projects in real-time.
 
 .. image:: img/main.png
     :width: 650 px
 
-
-Logging in
-~~~~~~~~~~
-
-.. _login:
-
-You can log into Centrifuge using **password** from configuration file.
+You can log in using **password** from configuration file.
 
 If you did not set password in configuration file - you will be log in as
 administrator automatically. But remember that this is normal only for
-development stage. In production you must use strong password.
+development stage. In production you must always use strong password.
 
 
 Creating new project
@@ -102,5 +96,5 @@ Namespace management
 Centrifuge allows to configure channel's settings using namespaces.
 
 You can create new namespace, configure its settings and after that every
-channel which belongs to this namespace will have those settings. It's flexible and
+channel which belongs to this namespace will have these settings. It's flexible and
 provides a great control over channel behaviour.

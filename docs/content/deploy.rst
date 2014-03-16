@@ -60,9 +60,6 @@ Here is an example Nginx configuration to deploy Centrifuge.
 
             location /static/ {
                 root /var/www/different/python/centrifuge/src/src/centrifuge/frontend;
-                if ($query_string) {
-                    expires max;
-                }
             }
             location = /favicon.ico {
                 rewrite (.*) /static/favicon.ico;
