@@ -606,13 +606,8 @@
         this._messageId = 0;
         this._clientId = null;
         this._subscriptions = {};
-        this._sep = ':';
-        this._fullRegex = /^([^_]+[A-z0-9_@\-]{2,}):([A-z0-9_@\-\.]+)$/;
-        this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
         this._messages = [];
         this._isBatching = false;
-        this._extended_token = null;
-        this._extended_timestamp = null;
         this._config = {
             retry: 3000,
             info: null,
@@ -681,16 +676,6 @@
                 throw 'You need to include SockJS client library before Centrifuge javascript client library or use pure Websocket connection endpoint';
             }
             this._sockjs = true;
-        }
-    };
-
-    centrifuge_proto._checkChannelName = function (channel) {
-        var fullMatches = this._fullRegex.exec(channel);
-        if (!fullMatches) {
-            var channelOnlyMatches = this._channelOnlyRegex.exec(channel);
-            if (!channelOnlyMatches) {
-                throw 'Invalid channel name';
-            }
         }
     };
 
@@ -774,12 +759,6 @@
                     'timestamp': self._config.timestamp
                 }
             };
-
-            if (self._extended_token !== null && self._extended_timestamp !== null) {
-                self._debug("connect using extended credentials");
-                centrifugeMessage['params']['extended_token'] = self._extended_token;
-                centrifugeMessage['params']['extended_timestamp'] = self._extended_timestamp;
-            }
 
             if (self._config.info !== null) {
                 self._debug("connect using additional info");
@@ -968,12 +947,6 @@
         subscription.trigger('message', [body]);
     };
 
-    centrifuge_proto._extendResponse = function(message) {
-        this._debug("extend received", message);
-        this._extended_token = message.body['extended_token'];
-        this._extended_timestamp = message.body['extended_timestamp'];
-    };
-
     centrifuge_proto._dispatchMessage = function(message) {
         if (message === undefined || message === null) {
             return;
@@ -1015,9 +988,6 @@
                 break;
             case 'ping':
                 break;
-            case 'extend':
-                this._extendResponse(message);
-                break;
             case 'message':
                 this._messageResponse(message);
                 break;
@@ -1058,8 +1028,6 @@
     centrifuge_proto.getClientId = function () {
         return this._clientId;
     };
-
-    centrifuge_proto.checkChannelName = centrifuge_proto._checkChannelName;
 
     centrifuge_proto.isConnected = centrifuge_proto._isConnected;
 
@@ -1182,7 +1150,6 @@
          * @param name the optional name of this centrifuge object
          */
         this._centrifuge = centrifuge;
-        this._centrifuge.checkChannelName(channel);
         this.channel = channel;
     }
 
