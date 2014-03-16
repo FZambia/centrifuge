@@ -5,29 +5,28 @@ from tornado.ioloop import IOLoop
 from tornado.gen import coroutine, Return
 
 
-PREFIX = 'centrifuge'
-
-# separator to join parts of channel name
-PART_DELIMITER = "|"
-
-# channel for administrative interface - watch for messages travelling around.
-ADMIN_CHANNEL = '_admin'
-
-# channel for sharing commands among all nodes.
-CONTROL_CHANNEL = '_control'
-
-# in seconds, how often connected clients must send presence info to state storage
-DEFAULT_PRESENCE_PING_INTERVAL = 25
-
-# in seconds, how long we must consider presence info valid after
-# receiving presence ping
-DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
-
-# how many messages keep in history for channel by default
-DEFAULT_HISTORY_SIZE = 20
-
-
 class BaseEngine(object):
+
+    PREFIX = 'centrifuge'
+
+    # separator to join parts of channel name
+    PART_DELIMITER = "|"
+
+    # channel for administrative web interface.
+    ADMIN_CHANNEL = '_admin'
+
+    # channel for sharing commands among all nodes.
+    CONTROL_CHANNEL = '_control'
+
+    # in seconds, how often connected clients must send presence info to state storage
+    DEFAULT_PRESENCE_PING_INTERVAL = 25
+
+    # in seconds, how long we must consider presence info valid after
+    # receiving presence ping
+    DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
+
+    # how many messages keep in history for channel by default
+    DEFAULT_HISTORY_SIZE = 20
 
     DEFAULT_PUBLISH_METHOD = 'message'
 
@@ -39,34 +38,34 @@ class BaseEngine(object):
         self.config = self.application.settings["config"].get("engine", {})
 
         self.prefix = self.config.get(
-            'prefix', PREFIX
+            'prefix', self.PREFIX
         )
 
         self.admin_channel_name = self.config.get(
-            'admin_channel_name', ADMIN_CHANNEL
+            'admin_channel_name', self.ADMIN_CHANNEL
         )
 
         self.control_channel_name = self.config.get(
-            'control_channel_name', CONTROL_CHANNEL
+            'control_channel_name', self.CONTROL_CHANNEL
         )
 
         self.part_delimiter = self.config.get(
-            'part_delimiter', PART_DELIMITER
+            'part_delimiter', self.PART_DELIMITER
         )
 
         self.presence_ping_interval = self.config.get(
             'presence_ping_interval',
-            DEFAULT_PRESENCE_PING_INTERVAL
+            self.DEFAULT_PRESENCE_PING_INTERVAL
         )*1000
 
         self.presence_timeout = self.config.get(
             "presence_expire_interval",
-            DEFAULT_PRESENCE_EXPIRE_INTERVAL
+            self.DEFAULT_PRESENCE_EXPIRE_INTERVAL
         )
 
         self.history_size = self.config.get(
             "history_size",
-            DEFAULT_HISTORY_SIZE
+            self.DEFAULT_HISTORY_SIZE
         )
 
     def initialize(self):
@@ -76,7 +75,7 @@ class BaseEngine(object):
         """
         Create subscription name to catch messages from specific project and channel.
         """
-        return PART_DELIMITER.join([self.prefix, project_id, channel])
+        return self.PART_DELIMITER.join([self.prefix, project_id, channel])
 
     @coroutine
     def publish_message(self, channel, body, method=DEFAULT_PUBLISH_METHOD):

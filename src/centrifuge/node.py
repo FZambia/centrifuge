@@ -137,7 +137,6 @@ def create_application_handlers(sockjs_settings):
 
 def main():
 
-    # load settings from configuration file
     try:
         custom_settings = json.load(open(options.config, 'r'))
     except IOError:

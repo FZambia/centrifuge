@@ -139,7 +139,7 @@ class Application(tornado.web.Application):
         # dictionary to keep expired connections
         self.expired_connections = {}
 
-        #
+        # dictionary to keep new connections with expired credentials until next connection check
         self.expired_reconnections = {}
 
         # count of messages published since last node info revision
@@ -148,30 +148,13 @@ class Application(tornado.web.Application):
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
-    def get_node_info(self):
-        current_time = time.time()
-        msg_per_sec = float(self.messages_published)/(current_time - self.node_info_revision_time)
-        info = {
-            'uid': self.uid,
-            'address': get_host(),
-            'port': str(self.settings['options'].port),
-            'nodes': len(self.nodes) + 1,
-            'channels': len(self.engine.subscriptions),
-            'clients': sum(len(v) for v in six.itervalues(self.engine.subscriptions)),
-            'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
-            'messages_per_second': "%0.2f" % msg_per_sec
-        }
-        self.messages_published = 0
-        self.node_info_revision_time = current_time
-        return info
-
     def initialize(self):
         self.init_callbacks()
         self.init_structure()
         self.init_engine()
         self.init_ping()
         self.init_node_info()
-        self.init_connection_expire()
+        self.init_connection_expire_check()
 
     def init_structure(self):
         """
@@ -252,7 +235,7 @@ class Application(tornado.web.Application):
         )
         self.periodic_node_info.start()
 
-    def init_connection_expire(self):
+    def init_connection_expire_check(self):
 
         if not self.CONNECTION_EXPIRE_CHECK:
             return
@@ -306,6 +289,23 @@ class Application(tornado.web.Application):
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, review_ping.start
         )
+
+    def get_node_info(self):
+        current_time = time.time()
+        msg_per_sec = float(self.messages_published)/(current_time - self.node_info_revision_time)
+        info = {
+            'uid': self.uid,
+            'address': get_host(),
+            'port': str(self.settings['options'].port),
+            'nodes': len(self.nodes) + 1,
+            'channels': len(self.engine.subscriptions),
+            'clients': sum(len(v) for v in six.itervalues(self.engine.subscriptions)),
+            'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
+            'messages_per_second': "%0.2f" % msg_per_sec
+        }
+        self.messages_published = 0
+        self.node_info_revision_time = current_time
+        return info
 
     def publish_node_info(self):
         """
@@ -683,6 +683,7 @@ class Application(tornado.web.Application):
             project_id, channel
         )
 
+        # no need in project id when sending message to clients
         del message['project_id']
 
         self.engine.publish_message(subscription_key, message)
