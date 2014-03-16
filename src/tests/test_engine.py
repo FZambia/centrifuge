@@ -1,42 +1,51 @@
 # coding: utf-8
-from __future__ import print_function
-from tornado.gen import Task
-from tornado.testing import AsyncTestCase, gen_test, main
-import time
-from centrifuge.state.base import State as BaseState
-from centrifuge.state.redis import State as RedisState
-import json
+from unittest import TestCase, main
+import sys
+import os
+
+path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, path)
+
+from centrifuge.engine.memory import Engine
+from centrifuge.core import Application
 
 
-class FakeApplication(object):
-    settings = {
-        "config": {
-            "state": {
+class FakeClient(object):
 
-            }
-        }
-    }
+    uid = 'test'
 
 
-class BaseStateTest(AsyncTestCase):
-    """ Test the client """
+class EngineTest(TestCase):
 
     def setUp(self):
-        super(BaseStateTest, self).setUp()
+        self.application = Application()
+        self.engine = Engine(self.application)
         self.project_id = 'test'
-        self.namespace = 'test'
         self.channel = 'test'
-        self.uid_1 = 'test-1'
-        self.uid_2 = 'test-2'
-        self.user_id = 'test'
-        self.user_id_extra = 'test_extra'
-        self.user_info = "{}"
-        self.message_1 = json.dumps('test message 1')
-        self.message_2 = json.dumps('test message 2')
-        self.message_3 = json.dumps('test message 3')
-        self.state = BaseState(FakeApplication, io_loop=self.io_loop)
-        self.state.history_size = 2
-        self.state.presence_timeout = 1
+
+    def test_get_subscription_key(self):
+        subscription_key = self.engine.get_subscription_key(
+            self.project_id, self.channel
+        )
+        self.assertTrue(isinstance(subscription_key, str))
+
+    def test_add_subscription(self):
+        self.engine.add_subscription(self.project_id, self.channel, FakeClient())
+
+        self.assertTrue(
+            self.engine.get_subscription_key(
+                self.project_id, self.channel
+            ) in self.engine.subscriptions
+        )
+
+    def test_remove_subscription(self):
+        self.engine.remove_subscription(self.project_id, self.channel, FakeClient())
+
+        self.assertTrue(
+            self.engine.get_subscription_key(
+                self.project_id, self.channel
+            ) not in self.engine.subscriptions
+        )
 
     @gen_test
     def test_presence(self):

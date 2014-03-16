@@ -92,6 +92,7 @@ class SchemaTest(TestCase):
             "token": "test",
             "user": "test",
             "project": "test",
+            "timestamp": "123"
         }
 
         self.assertEqual(
@@ -103,6 +104,7 @@ class SchemaTest(TestCase):
             "token": "test",
             "user": "test",
             "project": "test",
+            "timestamp": "123",
             "info": 1
         }
         try:
@@ -116,6 +118,7 @@ class SchemaTest(TestCase):
             "token": "test",
             "user": "test",
             "project": "test",
+            "timestamp": "123",
             "info": "{}"
         }
 

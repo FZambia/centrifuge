@@ -5,7 +5,7 @@ from tornado.testing import AsyncTestCase, gen_test
 from centrifuge.client import Client
 from centrifuge.schema import client_api_schema
 from centrifuge.core import Application
-from centrifuge.pubsub.base import BasePubSub
+from centrifuge.engine.memory import Engine
 import json
 
 
@@ -15,7 +15,7 @@ class FakeSock(object):
         return True
 
 
-class FakeState(object):
+class FakeEngine(Engine):
 
     @coroutine
     def add_presence(self, *args, **kwargs):
@@ -60,8 +60,7 @@ class ClientTest(AsyncTestCase):
         self.client.channels = {}
         self.client.presence_ping = FakePeriodic()
         self.client.application = Application()
-        self.client.application.pubsub = BasePubSub(self.client.application)
-        self.client.application.state = FakeState()
+        self.client.application.engine = FakeEngine(self.client.application)
 
     @gen_test
     def test_method_resolve(self):

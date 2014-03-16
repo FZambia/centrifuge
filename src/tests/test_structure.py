@@ -1,6 +1,6 @@
 # coding: utf-8
 from __future__ import print_function
-from tornado.testing import AsyncTestCase, gen_test, main
+from tornado.testing import AsyncTestCase, main
 
 from centrifuge.structure import flatten
 
