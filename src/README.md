@@ -12,7 +12,8 @@ Here is a list of changes:
 * Experimental support for expiring connections. Connections can now expire if project option `connection_check` turned on.
 * Centrifuge admin api can now work with list of messages instead of single one.
 * Javascript client now supports message batching.
-* New client `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
+* New client API `ping` method to prevent websocket disconnects on some hosting platforms (ex. Heroku)
+* New admin API `disconnect` method - disconnect user by user ID. Note, that this prevents official javascript client from reconnecting. But user can theoretically reconnect to Centrifuge immediately and his connection will be accepted. This is where connection check mechanism required.
 * No more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
 * And really sweet - private channels for users without sending POST request to your web app

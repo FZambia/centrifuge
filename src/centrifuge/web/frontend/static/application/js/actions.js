@@ -59,25 +59,26 @@ $(function(){
         return false;
     });
 
-    var extra_fields = ["data", "user"];
+    var fields = ["channel", "data", "user"];
 
     var method_fields = {
-        "publish": ["data"],
-        "presence": [],
-        "history": [],
-        "unsubscribe": ["user"]
+        "publish": ["channel", "data"],
+        "presence": ["channel"],
+        "history": ["channel"],
+        "unsubscribe": ["channel", "user"],
+        "disconnect": ["user"]
     };
 
     $('[name="method"]').on('change', function(){
         var method = $(this).val();
-        var extra = method_fields[method];
-        for (var i in extra) {
-            var field = $('#' + extra[i]);
+        var fields_to_show = method_fields[method];
+        for (var i in fields_to_show) {
+            var field = $('#' + fields_to_show[i]);
             field.attr('disabled', false).parents('.form-group:first').show();
         }
-        for (var k in extra_fields) {
-            var field_name = extra_fields[k];
-            if (extra.indexOf(field_name) === -1) {
+        for (var k in fields) {
+            var field_name = fields[k];
+            if (fields_to_show.indexOf(field_name) === -1) {
                 $('#' + field_name).attr('disabled', true).parents('.form-group:first').hide();
             }
         }

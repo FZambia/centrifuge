@@ -632,9 +632,14 @@ class Application(tornado.web.Application):
         if not user_connections:
             raise Return((True, None))
 
-        for uid, connection in six.iteritems(user_connections):
-            yield connection.send_disconnect_message(reason=reason)
-            yield connection.close_sock(pause=False)
+        clients_to_disconnect = []
+
+        for uid, client in six.iteritems(user_connections):
+            clients_to_disconnect.append(client)
+
+        for client in clients_to_disconnect:
+            yield client.send_disconnect_message(reason=reason)
+            yield client.close_sock(pause=False)
 
         raise Return((True, None))
 
@@ -804,6 +809,26 @@ class Application(tornado.web.Application):
 
         # handle on this node
         result, error = yield self.handle_unsubscribe(params)
+
+        # send to other nodes
+        self.engine.publish_control_message(message)
+
+        raise Return((result, error))
+
+    @coroutine
+    def process_disconnect(self, project, params):
+        """
+        Unsubscribe user from channels.
+        """
+        params["project"] = project
+        message = {
+            'app_id': self.uid,
+            'method': 'disconnect',
+            'params': params
+        }
+
+        # handle on this node
+        result, error = yield self.handle_disconnect(params)
 
         # send to other nodes
         self.engine.publish_control_message(message)

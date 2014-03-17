@@ -13,7 +13,7 @@
 {% end %}
 
 {% block section %}
-    <h4>{{_("Admin API actions")}}</h4>
+    <h4>{{_("Project actions")}}</h4>
     <div>
         <form role="form" method="POST" action="">
             {% raw xsrf_form_html() %}
@@ -24,6 +24,7 @@
                     <option value="presence">presence</option>
                     <option value="history">history</option>
                     <option value="unsubscribe">unsubscribe</option>
+                    <option value="disconnect">disconnect</option>
                 </select>
             </div>
             <div class="form-group">
