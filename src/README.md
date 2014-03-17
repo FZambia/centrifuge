@@ -5,7 +5,7 @@ As usual I've broken backwards compatibility again! I'm so sorry for this, but t
 
 Here is a list of changes:
 
-* MIT license instead of BSD
+* MIT license instead of BSD.
 * ZeroMQ is not supported by main repository anymore. You can write your own engine though.
 * Engine backends which now combine state and PUB/SUB - there are two of them: Memory engine and Redis engine.
 * Connection parameters must contain `timestamp` - Unix seconds as string.
@@ -16,6 +16,7 @@ Here is a list of changes:
 * New admin API `disconnect` method - disconnect user by user ID. Note, that this prevents official javascript client from reconnecting. But user can theoretically reconnect to Centrifuge immediately and his connection will be accepted. This is where connection check mechanism required.
 * No more namespaces in protocol. Now namespaces are virtual - i.e. if channel name starts with `namespace_name:` then Centrifuge backend will search for its settings.
 * Tornado updated to version 3.2 - this means that websockets become faster due to Tornado Websocket C module
+* MongoDB and PostgreSQL structure backends must be installed from their own packages from Pypi.
 * And really sweet - private channels for users without sending POST request to your web app
 
 As you can see there are lots of important changes, so I hope you forgive me for migration inconveniences.
@@ -23,7 +24,9 @@ As you can see there are lots of important changes, so I hope you forgive me for
 Migration notes:
 
 * update Cent client to the latest version
-* update javascript client
+* update javascript client to the latest version
+* it's recommended to flush your structure database
+* fix your configuration file to fit new changes
 * `magic_project_param` configuration setting renamed to `owner_api_project_param`
 * `magic_project_id` configuration setting renamed to `owner_api_project_id` - no more magic.
 
@@ -68,6 +71,12 @@ for two users.
 
 BUT! Your fantasy here is limited by maximum channel length - 255 by default (can be changed
 via configuration file option `max_channel_length`).
+
+
+### Where can I found structure backends for MongoDB and PostgreSQL
+
+MongoDB backend: https://github.com/centrifugal/centrifuge-mongodb
+PostgreSQL backend: https://github.com/centrifugal/centrifuge-postgresql
 
 
 v0.4.2
