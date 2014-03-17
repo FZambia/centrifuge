@@ -1,4 +1,4 @@
-Note, that there are lots of changes in 0.5 branch at moment. Some things will change (for example ZeroMQ won't be supported by main package), some will be improved. But the idea is still the same.
+Note, that there are lots of changes in 0.5 branch at moment. Some things will change (for example ZeroMQ won't be supported by main package), some will be improved. But the idea is still the same. See the list of upcoming changes [here](https://github.com/FZambia/centrifuge/blob/0.5/src/README.md)
 
 CENTRIFUGE
 ==========
