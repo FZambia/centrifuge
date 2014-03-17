@@ -76,6 +76,7 @@ via configuration file option `max_channel_length`).
 ### Where can I found structure backends for MongoDB and PostgreSQL
 
 MongoDB backend: https://github.com/centrifugal/centrifuge-mongodb
+
 PostgreSQL backend: https://github.com/centrifugal/centrifuge-postgresql
 
 
