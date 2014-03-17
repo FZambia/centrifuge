@@ -11,6 +11,7 @@ import json
 
 class FakeSock(object):
 
+    @coroutine
     def send(self, message):
         return True
 
@@ -26,6 +27,17 @@ class FakeEngine(Engine):
         raise Return((True, None))
 
 
+class FakeApplication(Application):
+
+    @coroutine
+    def get_project(self, project_id):
+        raise Return(({'_id': 'test', 'name': 'test'}, None))
+
+    @coroutine
+    def get_namespace(self, project, params):
+        raise Return(({'_id': 'test', 'name': 'test'}, None))
+
+
 class FakePeriodic(object):
 
     def stop(self):
@@ -37,14 +49,6 @@ class TestClient(Client):
     @coroutine
     def handle_test(self, params):
         raise Return((True, None))
-
-    @coroutine
-    def get_project(self, project_id):
-        raise Return(({'_id': 'test', 'name': 'test'}, None))
-
-    @coroutine
-    def get_namespace(self, project, params):
-        raise Return(({'_id': 'test', 'name': 'test'}, None))
 
 
 class ClientTest(AsyncTestCase):
@@ -59,7 +63,7 @@ class ClientTest(AsyncTestCase):
         self.client.user = "test_user"
         self.client.channels = {}
         self.client.presence_ping = FakePeriodic()
-        self.client.application = Application()
+        self.client.application = FakeApplication()
         self.client.application.engine = FakeEngine(self.client.application)
 
     @gen_test
@@ -68,9 +72,6 @@ class ClientTest(AsyncTestCase):
             "method": "test",
             "params": {}
         })
-        result, error = yield self.client.message_received(message)
-        self.assertTrue(error is not None)
-
         client_api_schema["test"] = {
             "type": "object"
         }
@@ -82,41 +83,27 @@ class ClientTest(AsyncTestCase):
     def test_client(self):
 
         params = {
-            "namespace": "test"
-        }
-        result, error = yield self.client.handle_subscribe(params)
-        self.assertTrue(error is not None)
-
-        params = {
-            "namespace": "test",
             "channel": "test"
         }
         result, error = yield self.client.handle_subscribe(params)
-        self.assertEqual(result, True)
+        self.assertEqual(result, {"channel": "test"})
         self.assertEqual(error, None)
 
-        conns = self.client.application.connections
-        self.assertTrue(self.client.project_id in conns)
-        self.assertTrue(self.client.user in conns[self.client.project_id])
-        self.assertTrue(self.client.uid in conns[self.client.project_id][self.client.user])
-
-        subs = self.client.application.pubsub.subscriptions
-        subscription = self.client.application.pubsub.get_subscription_key(
-            self.client.project_id, params["namespace"], params["channel"]
+        subs = self.client.application.engine.subscriptions
+        subscription = self.client.application.engine.get_subscription_key(
+            self.client.project_id, params["channel"]
         )
         self.assertTrue(subscription in subs)
 
-        self.assertTrue(params["namespace"] in self.client.channels)
-        self.assertTrue(params["channel"] in self.client.channels[params["namespace"]])
+        self.assertTrue(params["channel"] in self.client.channels)
 
         result, error = yield self.client.handle_unsubscribe(params)
-        self.assertEqual(result, True)
+        self.assertEqual(result, {"channel": "test"})
         self.assertEqual(error, None)
         self.assertTrue(subscription not in subs)
 
-        self.assertTrue(params["namespace"] not in self.client.channels)
+        self.assertTrue(params["channel"] not in self.client.channels)
 
         result, error = yield self.client.clean()
         self.assertEqual(result, True)
         self.assertEqual(error, None)
-        self.assertTrue(self.client.project_id not in conns)

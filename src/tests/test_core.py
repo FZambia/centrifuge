@@ -19,6 +19,7 @@ class CoreTest(TestCase):
         self.app = TestApp()
 
     def test_extracting_namespace(self):
+
         channel = 'channel'
         self.assertEqual(self.app.extract_namespace_name(channel), None)
 

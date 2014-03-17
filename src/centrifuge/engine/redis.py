@@ -53,9 +53,9 @@ class Engine(BaseEngine):
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self._need_reconnect = False
 
-        self.subscriber = toredis.Client()
-        self.publisher = toredis.Client()
-        self.worker = toredis.Client()
+        self.subscriber = toredis.Client(io_loop=self.io_loop)
+        self.publisher = toredis.Client(io_loop=self.io_loop)
+        self.worker = toredis.Client(io_loop=self.io_loop)
 
         self.subscriptions = {}
 
