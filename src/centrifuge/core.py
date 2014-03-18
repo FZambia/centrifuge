@@ -1,6 +1,7 @@
 # coding: utf-8
 # Copyright (c) Alexandr Emelin. MIT license.
 
+import sys
 import six
 import uuid
 import time
@@ -164,12 +165,25 @@ class Application(tornado.web.Application):
         custom_settings = self.settings['config']
         structure_settings = custom_settings.get('structure', {})
 
-        # detect and apply database storage module
-        storage_backend = structure_settings.get(
-            'class', 'centrifuge.structure.sqlite.Storage'
-        )
-        storage_backend_class = utils.namedAny(storage_backend)
+        if not structure_settings:
+            logger.info(
+                "No structure described in configuration file - using "
+                "SQLite storage with default settings"
+            )
+            storage_backend = 'centrifuge.structure.sqlite.Storage'
+        else:
+            # detect and apply database storage module
+            storage_backend = structure_settings.get('class')
+            if not storage_backend:
+                logger.error("no structure storage class defined, exiting")
+                sys.exit(1)
+
         logger.info("Structure class: {0}".format(storage_backend))
+        try:
+            storage_backend_class = utils.namedAny(storage_backend)
+        except Exception as err:
+            logger.error(err)
+            sys.exit(1)
 
         self.structure = Structure(self)
         storage = storage_backend_class(self.structure, structure_settings.get('settings', {}))
@@ -183,8 +197,14 @@ class Application(tornado.web.Application):
             # network errors
             logger.info("Structure initialized")
             self.structure.update()
+            structure_update_interval = custom_settings.get('structure_update_interval', 60)
+            logger.info(
+                "Periodic structure update interval: {0} seconds".format(
+                    structure_update_interval
+                )
+            )
             periodic_structure_update = tornado.ioloop.PeriodicCallback(
-                self.structure.update, structure_settings.get('update_interval', 30)*1000
+                self.structure.update, structure_update_interval*1000
             )
             periodic_structure_update.start()
 
@@ -199,16 +219,35 @@ class Application(tornado.web.Application):
         """
         Initialize engine.
         """
+        options = self.settings['options']
         config = self.settings['config']
-        engine_config = config.get("engine", {})
+        engine_config = config.get("engine", None)
         if not engine_config:
-            logger.info(
-                "No engine configured - Centrifuge will run with default Memory engine. "
-                "You can use only single node with it."
-            )
-        engine_class_path = engine_config.get('class', 'centrifuge.engine.memory.Engine')
+            if not options.redis:
+                logger.info(
+                    "No engine described in configuration file - using "
+                    "Memory engine with default settings"
+                )
+                engine_class_path = 'centrifuge.engine.memory.Engine'
+            else:
+                logger.info(
+                    "No engine described in configuration file - using "
+                    "Redis engine with default settings"
+                )
+                engine_class_path = 'centrifuge.engine.redis.Engine'
+        else:
+            engine_class_path = engine_config.get('class')
+            if not engine_class_path:
+                logger.error("no engine class defined, exiting")
+                sys.exit(1)
+
         logger.info("Engine class: {0}".format(engine_class_path))
-        engine_class = utils.namedAny(engine_class_path)
+        try:
+            engine_class = utils.namedAny(engine_class_path)
+        except Exception as err:
+            logger.error(err)
+            sys.exit(1)
+
         self.engine = engine_class(self)
         tornado.ioloop.IOLoop.instance().add_callback(self.engine.initialize)
 

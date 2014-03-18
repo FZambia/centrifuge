@@ -1,20 +1,5 @@
 {
     "password": "123",
     "cookie_secret": "secret",
-    "api_secret": "secret",
-    "engine": {
-        "class": "centrifuge.engine.redis.Engine",
-        "settings": {
-            "host": "localhost",
-            "port": 6379
-        }
-    },
-    "structure": {
-        "class": "centrifuge.structure.sqlite.Storage",
-        "update_interval": 60,
-	      "settings": {
-	      }
-    },
-    "admin_api_message_limit": 100,
-    "client_api_message_limit": 100
+    "api_secret": "secret"
 }

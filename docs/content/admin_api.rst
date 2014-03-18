@@ -52,7 +52,6 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "publish",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME",
             "data": {}
         }
@@ -65,8 +64,17 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "unsubscribe",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME",
+            "user": "USER ID"
+    }
+
+**disconnect** - disconnect user by user ID.
+
+.. code-block:: javascript
+
+    {
+        "method": "disconnect",
+        "params": {
             "user": "USER ID"
     }
 
@@ -88,7 +96,6 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "history",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME"
     }
 

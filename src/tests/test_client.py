@@ -1,6 +1,6 @@
 # coding: utf-8
 from __future__ import print_function
-from tornado.gen import Task, coroutine, Return
+from tornado.gen import coroutine, Return
 from tornado.testing import AsyncTestCase, gen_test
 from centrifuge.client import Client
 from centrifuge.schema import client_api_schema

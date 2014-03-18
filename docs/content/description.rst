@@ -1,35 +1,26 @@
-How it works
-============
+Description
+===========
 
 .. _description:
-
-Here I'll try to explain how Centrifuge actually works.
 
 Overview
 ~~~~~~~~
 
-Clients from browsers connect to Centrifuge, after connecting clients subscribe
-on channels. And every message which was published into channel will be sent
+Here I'll try to explain how Centrifuge actually works.
+
+In a few words - clients from browsers connect to Centrifuge, after connecting clients
+subscribe on channels. And every message which was published into channel will be sent
 to all clients which are currently subscribed on this channel.
-
-This is an architecture diagram of Centrifuge:
-
-.. image:: img/centrifuge_architecture.png
-    :width: 650 px
-
 
 When you start Centrifuge instance you start Tornado instance on a certain port number.
 That port number can be configured using command-line option ``--port`` . By default it is 8000.
 
 In general you should provide path to JSON configuration file when starting Centrifuge instance
 using ``--config`` option. You can start Centrifuge without configuration file but this is
-not secure and must be used only during development.
-
-Configuration file must contain valid JSON. But for now let's omit configuration file.
-By default Centrifuge will use insecure cookie secret, no administrative password, local SQLite
-storage as structure database and no Redis (no presence and message history data will be available).
-
-In production you always need to provide proper configuration file with secure settings!
+not secure and must be used only during development. Configuration file must contain valid JSON.
+But for now let's omit configuration file. By default Centrifuge will use insecure cookie secret,
+no administrative password, local SQLite storage as structure database and no Memory engine (more
+about what is structure and what is engine later).
 
 So the final command to start one instance of Centrifuge will be
 
@@ -37,77 +28,62 @@ So the final command to start one instance of Centrifuge will be
 
     centrifuge --config=config.json
 
-You can run more instances to scale but in this case you should use one of available
-PUB/SUB backends - Redis or ZeroMQ based.
+Or just
 
-Well, you started one instance of Centrifuge - clients from web browsers can start connecting to it.
+.. code-block:: bash
 
-There are two endpoints for browser connections - ``/connection`` for SockJS and
+    centrifuge
+
+You can run more instances of Centrifuge using Redis engine. But for now one instance is more
+than enough.
+
+Well, you started one instance of Centrifuge - clients from web browsers can start connecting
+to it.
+
+There are two endpoints for connections - ``/connection`` for SockJS and
 ``/connection/websocket`` for pure Websocket connections. On browser side you now know the
-url to connect - for our simple case it is ``http://localhost:port/connection`` in case of
-using SockJS library and ``ws://localhost:port/connection/websocket`` in case of using
+url to connect - for our simple case it is ``http://localhost:8000/connection`` in case of
+using SockJS library and ``ws://localhost:8000/connection/websocket`` in case of using
 pure Websockets.
 
 To communicate with Centrifuge from browser you should use javascript client which comes
 with Centrifuge (find it in repository) and provides simple API. Please, read a chapter about
 client API to get more information.
 
-Ok, now you have one working instance. But sometimes it is not enough and you need to run
-more instances of Centrifuge and load balance clients between them.
+Sometimes you need to run more instances of Centrifuge and load balance clients between them.
+As was mentioned above when you start default instance of Centrifuge - you start it with
+Memory Engine. Centrifuge holds all state in memory. But to run several Centrifuge instances
+we must have a way to share current state between instances. For this purpose Centrifuge
+utilizes Redis. To run Centrifuge using Redis you should configure Redis Engine in configuration
+file instead of default Memory Engine. See chapter about configuration file to see how you can
+configure engine to use.
 
-As was mentioned above it's time to use one of available PUB/SUB backends.
-
-Lets see on Redis backend first.
-
-Redis is very simple and recommended way to scale Centrifuge. I suppose that you have it installed
-and running with default settings.
-
-Start first Centrifuge instance:
-
-.. code-block:: bash
-
-    centrifuge --config=config.json --redis
-
-
-See th difference? Yep, we added ``--redis`` option. This tells Centrifuge to connect to Redis
-and use its PUB/SUB capabilities.
-
-But our goal is to run several instances of Centrifuge. So lets run another one:
+I suppose you properly created configuration file and  configured Redis Engine. Now you can start
+several instances of Centrifuge. Let's start 2 instances. Open terminal and run first instance:
 
 .. code-block:: bash
 
-    centrifuge --config=config.json --redis --port==8001
+    centrifuge --config=config.json --port=8000
 
+Then open another terminal window and run second instance using another tornado port:
 
-Note, that in this case we used ``--port`` option. This is necessary because every Centrifuge
-instance must be run on its own port number.
+.. code-block:: bash
 
-So two instances running and connected via Redis. Cool!
+    centrifuge --config=config.json --port=8001
+
+Now two instances running and connected via Redis. Cool!
 
 But what is an url to connect from browser - ``http://localhost:8000/connection`` or
-``http://localhost:8001/connection``? None of them, because Centrifuge must be kept
-behind proper load balancer such as Nginx. Nginx must be configured in a way to balance
-client connections from browser between our two instances. You can find Nginx configuration
-example in repo.
+``http://localhost:8001/connection``?
+
+None of them, because Centrifuge must be kept behind proper load balancer such as Nginx.
+Nginx must be configured in a way to balance client connections from browser between our
+two instances. You can find Nginx configuration example in repo.
 
 New client can connect to any of running instances. If client sends message we must
 send that message to other clients including those who connected to another instance
-at this moment. This is why we need PUB/SUB here. All instances listen to special Redis
-channels and get messages from those channels.
-
-My final note will be that you have other Redis related command-line options:
-
-.. code-block:: bash
-
-    centrifuge --config=config.json --redis --redis_host=localhost --redis_port=6379 --redis_password=
-
-As you can see those options are Redis address, port and password.
-
-Our next step will be talking about how presence and history data for channels work.
-
-Centrifuge can use process memory (single node only) or Redis (one or more nodes) for this.
-State settings must be set up in configuration file.
-
+at this moment. This is why we need Redis PUB/SUB here. All instances listen to special
+Redis channels and receive messages from those channels.
 
 Finally let's talk about structure database.
 
@@ -121,14 +97,45 @@ in structure changed and periodically to avoid inconsistency. There is also an o
 to set all structure in configuration file and go without any database.
 
 
-Channels
-~~~~~~~~
-
-
 Projects
 ~~~~~~~~
 
+When you have running Centrifuge's instance and want to create web application using it -
+first you should do is to add your project into Centrifuge. It's very simple - just fill
+the form.
+
+**name** - unique project name, must be written using ascii symbols only. This is project
+slug, human-readable identity.
+
+**display name** - project's name in web interface.
+
+**auth address** - url for authorization purposes, when your web application's client
+joins to Centrifuge - you can provide user id. Also you must provide permissions for
+every connected user. More about user id and permissions later. Anyway this is an address
+of your web application that will be used to authorize new client's connection. Centrifuge
+sends POST request with user id and permissions to this url and your application must decide
+to allow authorization or not.
+
+**max auth attempts** - amount of attempts Centrifuge will try to validate user's permissions
+sending POST request to ``auth address``
+
+**back off interval** - at the moment when Centrifuge restarts your web application can
+have lots of active connected clients. All those client will reconnect and Centrifuge will
+send authorization request to your web application's ``auth address``. For such cases Centrifuge
+has `exponential back-off <http://en.wikipedia.org/wiki/Exponential_backoff>`_ support to reduce
+load on your application. This is time of back of minimum interval in milliseconds.
+
+**back off max timeout** - maximum time in milliseconds for backoff timeout (time before client
+connects to Centrifuge and sending authorization request to ``auth address``).
+
+Channels
+~~~~~~~~
 
 Namespaces
 ~~~~~~~~~~
 
+Centrifuge allows to configure channel's settings using namespaces.
+
+You can create new namespace, configure its settings and after that every
+channel which belongs to this namespace will have these settings. It's flexible and
+provides a great control over channel behaviour.

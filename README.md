@@ -22,8 +22,8 @@ Centrifuge comes with administrative web interface to manage project/namespace
 structure and monitor important messages in real-time.
 
 Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
-When running Centrifuge instance processes on different machines [MongoDB](http://www.mongodb.org/)
-or [PostgreSQL](http://www.postgresql.org/) backends can be used instead of SQLite. There is an option
+When running Centrifuge instance processes on different machines [MongoDB](https://github.com/centrifugal/centrifuge-mongodb)
+or [PostgreSQL](https://github.com/centrifugal/centrifuge-postgresql) backends can be used instead of SQLite. There is an option
 to hard-code all these settings in configuration file and go without any dependency on database.
 
 
@@ -60,10 +60,10 @@ Basic usage from browser
 ```javascript
 var centrifuge = new Centrifuge({
     url: 'http://localhost:8000/connection',  // Centrifuge SockJS connection endpoint
-    token: 'TOKEN', // token based on project's secret key, project ID, user ID and timestamp
     project: 'PROJECT_ID', // project ID from Centrifuge admin interface
     user: 'USER_ID', // your application user ID (can be empty for anonymous access)
-    timestamp: '123454545' // current UNIX timestamp (number of seconds as string)
+    timestamp: '1395086390', // current UNIX timestamp (number of seconds as string)
+    token: 'TOKEN', // HMAC token based on project's secret key, project ID, user ID and timestamp
 });
 
 centrifuge.on('connect', function() {

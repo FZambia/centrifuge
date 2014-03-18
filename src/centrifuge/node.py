@@ -21,11 +21,15 @@ define(
 )
 
 define(
-    "zmq", default=False, help="use ZeroMQ io loop", type=bool
+    "config", default='config.json', help="JSON config file", type=str
 )
 
 define(
-    "config", default='config.json', help="JSON config file", type=str
+    "redis", default=False, help="use Redis engine with default settings", type=bool
+)
+
+define(
+    "zmq", default=False, help="install ZeroMQ io loop", type=bool
 )
 
 
@@ -34,7 +38,11 @@ tornado.options.parse_command_line()
 
 if options.zmq:
 
-    from zmq.eventloop import ioloop
+    try:
+        from zmq.eventloop import ioloop
+    except ImportError:
+        logger.error("pyzmq must be installed to use its io loop")
+        sys.exit(1)
 
     # Install ZMQ ioloop instead of a tornado ioloop
     # http://zeromq.github.com/pyzmq/eventloop.html
