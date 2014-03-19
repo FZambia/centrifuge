@@ -737,7 +737,7 @@ class Application(tornado.web.Application):
             project, message
         )
         if error:
-            raise Return((False, self.INTERNAL_SERVER_ERROR))
+            raise Return((False, error))
 
         for callback in self.post_publish_callbacks:
             try:
