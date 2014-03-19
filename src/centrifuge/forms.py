@@ -7,9 +7,9 @@ from centrifuge.utils import Form
 
 
 # regex pattern to match project and namespace names
-NAME_PATTERN = '^[^_]+[A-z0-9@\-_\.]{2,}$'
+NAME_PATTERN = r'^[-a-zA-Z0-9_]{2,}$'
 
-NAME_PATTERN_DESCRIPTION = 'ascii symbols, digits, "-", "_" and "." only'
+NAME_PATTERN_DESCRIPTION = 'must consist of letters, numbers, underscores or hyphens'
 
 NAME_RE = re.compile(NAME_PATTERN)
 
@@ -35,7 +35,7 @@ class ProjectMixin(object):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="project name, regex pattern: {0}".format(NAME_PATTERN_DESCRIPTION)
+        description="project name: {0}".format(NAME_PATTERN_DESCRIPTION)
     )
 
     display_name = TextField(
@@ -202,7 +202,7 @@ class NamespaceNameMixin(object):
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
         ],
-        description="unique namespace name, regex pattern: {0}".format(NAME_PATTERN_DESCRIPTION)
+        description="unique namespace name: {0}".format(NAME_PATTERN_DESCRIPTION)
     )
 
 
