@@ -841,7 +841,13 @@
     };
 
     centrifuge_proto._subscribeResponse = function (message) {
+        if (message.error !== null) {
+            this.trigger('error', [message]);
+        }
         var body = message.body;
+        if (body === null) {
+            return;
+        }
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
         if (!subscription) {
@@ -853,7 +859,6 @@
         } else {
             subscription.trigger('subscribe:error', [message.error]);
             subscription.trigger('error', [message]);
-            this.trigger('error', [message]);
         }
     };
 
