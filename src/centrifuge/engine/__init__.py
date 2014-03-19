@@ -35,36 +35,37 @@ class BaseEngine(object):
     def __init__(self, application, io_loop=None):
         self.application = application
         self.io_loop = io_loop or IOLoop.instance()
-        self.config = self.application.settings.get("config", {}).get("engine", {})
+        self.config = self.application.settings.get("config", {})
+        self.options = self.application.settings.get('options')
 
         self.prefix = self.config.get(
-            'prefix', self.PREFIX
+            'engine_prefix', self.PREFIX
         )
 
         self.admin_channel_name = self.config.get(
-            'admin_channel_name', self.ADMIN_CHANNEL
+            'engine_admin_channel_name', self.ADMIN_CHANNEL
         )
 
         self.control_channel_name = self.config.get(
-            'control_channel_name', self.CONTROL_CHANNEL
+            'engine_control_channel_name', self.CONTROL_CHANNEL
         )
 
         self.part_delimiter = self.config.get(
-            'part_delimiter', self.PART_DELIMITER
+            'engine_part_delimiter', self.PART_DELIMITER
         )
 
         self.presence_ping_interval = self.config.get(
-            'presence_ping_interval',
+            'engine_presence_ping_interval',
             self.DEFAULT_PRESENCE_PING_INTERVAL
         )*1000
 
         self.presence_timeout = self.config.get(
-            "presence_expire_interval",
+            "engine_presence_expire_interval",
             self.DEFAULT_PRESENCE_EXPIRE_INTERVAL
         )
 
         self.history_size = self.config.get(
-            "history_size",
+            "engine_history_size",
             self.DEFAULT_HISTORY_SIZE
         )
 

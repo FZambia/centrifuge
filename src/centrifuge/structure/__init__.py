@@ -379,9 +379,8 @@ class BaseStorage(object):
 
     NAME = "Abstract base storage"
 
-    def __init__(self, structure, storage_settings):
-        self.structure = structure
-        self.settings = storage_settings
+    def __init__(self, options):
+        self.options = options
 
     def connect(self, callback=None):
         raise NotImplementedError()

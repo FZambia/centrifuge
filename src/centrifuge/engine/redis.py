@@ -15,6 +15,23 @@ from centrifuge.response import Response
 from centrifuge.log import logger
 from centrifuge.engine import BaseEngine
 
+from tornado.options import define
+
+define(
+    "redis_host", default="localhost", help="Redis host", type=str
+)
+
+define(
+    "redis_port", default=6379, help="Redis port", type=int
+)
+
+define(
+    "redis_db", default=0, help="Redis database number", type=int
+)
+
+define(
+    "redis_password", default="", help="Redis auth password", type=str
+)
 
 range_func = six.moves.xrange
 
@@ -46,10 +63,11 @@ class Engine(BaseEngine):
     def __init__(self, *args, **kwargs):
         super(Engine, self).__init__(*args, **kwargs)
 
-        self.host = self.config.get("host", "localhost")
-        self.port = self.config.get("port", 6379)
-        self.password = self.config.get("password", "")
-        self.db = self.config.get("db", 0)
+        self.host = self.options.redis_host
+        self.port = self.options.redis_port
+        self.password = self.options.redis_password
+        self.db = self.options.redis_db
+
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self._need_reconnect = False
 

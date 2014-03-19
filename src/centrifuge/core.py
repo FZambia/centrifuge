@@ -1,7 +1,6 @@
 # coding: utf-8
 # Copyright (c) Alexandr Emelin. MIT license.
 
-import sys
 import six
 import uuid
 import time
@@ -110,6 +109,9 @@ class Application(tornado.web.Application):
         # dictionary to keep ping from nodes
         self.nodes = {}
 
+        # storage to use
+        self.storage = None
+
         # application structure manager (projects, namespaces etc)
         self.structure = None
 
@@ -163,31 +165,8 @@ class Application(tornado.web.Application):
         in configuration file.
         """
         custom_settings = self.settings['config']
-        structure_settings = custom_settings.get('structure', {})
-
-        if not structure_settings:
-            logger.info(
-                "No structure described in configuration file - using "
-                "SQLite storage with default settings"
-            )
-            storage_backend = 'centrifuge.structure.sqlite.Storage'
-        else:
-            # detect and apply database storage module
-            storage_backend = structure_settings.get('class')
-            if not storage_backend:
-                logger.error("no structure storage class defined, exiting")
-                sys.exit(1)
-
-        logger.info("Structure class: {0}".format(storage_backend))
-        try:
-            storage_backend_class = utils.namedAny(storage_backend)
-        except Exception as err:
-            logger.error(err)
-            sys.exit(1)
-
         self.structure = Structure(self)
-        storage = storage_backend_class(self.structure, structure_settings.get('settings', {}))
-        self.structure.set_storage(storage)
+        self.structure.set_storage(self.storage)
 
         def run_periodic_structure_update():
             # update structure periodically from database. This is necessary to be sure
@@ -210,7 +189,7 @@ class Application(tornado.web.Application):
 
         tornado.ioloop.IOLoop.instance().add_callback(
             partial(
-                storage.connect,
+                self.storage.connect,
                 run_periodic_structure_update
             )
         )
@@ -219,36 +198,6 @@ class Application(tornado.web.Application):
         """
         Initialize engine.
         """
-        options = self.settings['options']
-        config = self.settings['config']
-        engine_config = config.get("engine", None)
-        if not engine_config:
-            if not options.redis:
-                logger.info(
-                    "No engine described in configuration file - using "
-                    "Memory engine with default settings"
-                )
-                engine_class_path = 'centrifuge.engine.memory.Engine'
-            else:
-                logger.info(
-                    "No engine described in configuration file - using "
-                    "Redis engine with default settings"
-                )
-                engine_class_path = 'centrifuge.engine.redis.Engine'
-        else:
-            engine_class_path = engine_config.get('class')
-            if not engine_class_path:
-                logger.error("no engine class defined, exiting")
-                sys.exit(1)
-
-        logger.info("Engine class: {0}".format(engine_class_path))
-        try:
-            engine_class = utils.namedAny(engine_class_path)
-        except Exception as err:
-            logger.error(err)
-            sys.exit(1)
-
-        self.engine = engine_class(self)
         tornado.ioloop.IOLoop.instance().add_callback(self.engine.initialize)
 
     def init_callbacks(self):
@@ -777,18 +726,18 @@ class Application(tornado.web.Application):
             project, params, client
         )
         if error:
-            raise Return((None, error))
+            raise Return((False, self.INTERNAL_SERVER_ERROR))
 
         if not message:
             # message was discarded
-            raise Return((True, None))
+            raise Return((False, None))
 
         # publish prepared message
         result, error = yield self.publish_message(
             project, message
         )
         if error:
-            raise Return((None, error))
+            raise Return((False, self.INTERNAL_SERVER_ERROR))
 
         for callback in self.post_publish_callbacks:
             try:
@@ -804,18 +753,11 @@ class Application(tornado.web.Application):
         Return a list of last messages sent into channel.
         """
         project_id = project['_id']
-
         channel = params.get("channel")
-        message = {
-            "channel": channel,
-            "data": []
-        }
         data, error = yield self.engine.get_history(project_id, channel)
         if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if data:
-            message['data'] = data
-        raise Return((message, error))
+            raise Return((data, self.INTERNAL_SERVER_ERROR))
+        raise Return((data, None))
 
     @coroutine
     def process_presence(self, project, params):
@@ -823,16 +765,11 @@ class Application(tornado.web.Application):
         Return current presence information for channel.
         """
         project_id = project['_id']
-
         channel = params.get("channel")
-        message = {
-            "channel": channel,
-            "data": {}
-        }
         data, error = yield self.engine.get_presence(project_id, channel)
-        if data:
-            message['data'] = data
-        raise Return((message, error))
+        if error:
+            raise Return((data, self.INTERNAL_SERVER_ERROR))
+        raise Return((data, None))
 
     @coroutine
     def process_unsubscribe(self, project, params):
@@ -852,7 +789,9 @@ class Application(tornado.web.Application):
         # send to other nodes
         self.engine.publish_control_message(message)
 
-        raise Return((result, error))
+        if error:
+            raise Return((result, self.INTERNAL_SERVER_ERROR))
+        raise Return((result, None))
 
     @coroutine
     def process_disconnect(self, project, params):
@@ -872,7 +811,9 @@ class Application(tornado.web.Application):
         # send to other nodes
         self.engine.publish_control_message(message)
 
-        raise Return((result, error))
+        if error:
+            raise Return((result, self.INTERNAL_SERVER_ERROR))
+        raise Return((result, None))
 
     @coroutine
     def process_dump_structure(self, project, params):

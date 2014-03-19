@@ -460,14 +460,18 @@ class Client(object):
         if len(channel) > self.application.MAX_CHANNEL_LENGTH:
             raise Return((None, 'maximum channel length exceeded'))
 
+        body = {
+            "channel": channel,
+        }
+
         if self.application.USER_SEPARATOR in channel:
             users_allowed = channel.split('#', 1)[1].split(',')
             if self.user not in users_allowed:
-                raise Return((None, self.application.PERMISSION_DENIED))
+                raise Return((body, self.application.PERMISSION_DENIED))
 
         namespace, error = yield self.application.get_namespace(project, channel)
         if error:
-            raise Return((None, error))
+            raise Return((body, error))
 
         project_id = self.project_id
 
@@ -478,14 +482,14 @@ class Client(object):
             if not auth_address:
                 auth_address = project.get('auth_address', None)
             if not auth_address:
-                raise Return((None, 'no auth address found'))
+                raise Return((body, 'no auth address found'))
             is_authorized, error = yield self.authorize(
                 auth_address, project, channel
             )
             if error:
-                raise Return((None, self.application.INTERNAL_SERVER_ERROR))
+                raise Return((body, self.application.INTERNAL_SERVER_ERROR))
             if not is_authorized:
-                raise Return((None, self.application.PERMISSION_DENIED))
+                raise Return((body, self.application.PERMISSION_DENIED))
 
         yield self.application.engine.add_subscription(
             project_id, channel, self
@@ -502,7 +506,7 @@ class Client(object):
         if namespace.get('join_leave', False):
             self.send_join_message(channel)
 
-        raise Return(({"channel": channel}, None))
+        raise Return((body, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
@@ -516,15 +520,19 @@ class Client(object):
         channel = params.get('channel')
 
         if not channel:
-            raise Return((True, None))
+            raise Return((None, "channel required"))
+
+        body = {
+            "channel": channel,
+        }
 
         namespace, error = yield self.application.get_namespace(project, channel)
         if error:
-            raise Return((None, error))
+            raise Return((body, error))
 
         project_id = self.project_id
 
-        self.application.engine.remove_subscription(
+        yield self.application.engine.remove_subscription(
             project_id, channel, self
         )
 
@@ -540,7 +548,7 @@ class Client(object):
         if namespace.get('join_leave', False):
             self.send_leave_message(channel)
 
-        raise Return(({"channel": channel}, None))
+        raise Return((body, None))
 
     def check_channel_permission(self, channel):
         """
@@ -562,14 +570,19 @@ class Client(object):
 
         channel = params.get('channel')
 
+        body = {
+            "channel": channel,
+            "status": False
+        }
+
         self.check_channel_permission(channel)
 
         namespace, error = yield self.application.get_namespace(project, channel)
         if error:
-            raise Return((None, error))
+            raise Return((body, error))
 
         if not namespace.get('publish', False):
-            raise Return((None, self.application.PERMISSION_DENIED))
+            raise Return((body, self.application.PERMISSION_DENIED))
 
         user_info = self.get_user_info(channel)
 
@@ -578,7 +591,8 @@ class Client(object):
             params,
             client=user_info
         )
-        raise Return(({"channel": channel, "status": result}, error))
+        body["status"] = result
+        raise Return((body, error))
 
     @coroutine
     def handle_presence(self, params):
@@ -591,20 +605,25 @@ class Client(object):
 
         channel = params.get('channel')
 
+        body = {
+            "channel": channel,
+        }
+
         self.check_channel_permission(channel)
 
         namespace, error = yield self.application.get_namespace(project, channel)
         if error:
-            raise Return((None, error))
+            raise Return((body, error))
 
         if not namespace.get('presence', False):
-            raise Return((None, self.application.NOT_AVAILABLE))
+            raise Return((body, self.application.NOT_AVAILABLE))
 
-        result, error = yield self.application.process_presence(
+        data, error = yield self.application.process_presence(
             project,
             params
         )
-        raise Return((result, error))
+        body["data"] = data
+        raise Return((body, error))
 
     @coroutine
     def handle_history(self, params):
@@ -617,20 +636,25 @@ class Client(object):
 
         channel = params.get('channel')
 
+        body = {
+            "channel": channel,
+        }
+
         self.check_channel_permission(channel)
 
         namespace, error = yield self.application.get_namespace(project, channel)
         if error:
-            raise Return((None, error))
+            raise Return((body, error))
 
         if not namespace.get('history', False):
-            raise Return((None, self.application.NOT_AVAILABLE))
+            raise Return((body, self.application.NOT_AVAILABLE))
 
-        result, error = yield self.application.process_history(
+        data, error = yield self.application.process_history(
             project,
             params
         )
-        raise Return((result, error))
+        body["data"] = data
+        raise Return((body, error))
 
     def send_join_leave_message(self, channel, message_method):
         """

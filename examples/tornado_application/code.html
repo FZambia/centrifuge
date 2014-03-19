@@ -33,7 +33,7 @@
 
             draw_message('connected');
 
-            var subscription = centrifuge.subscribe('python:django', function(message) {
+            var subscription = centrifuge.subscribe('public:chat', function(message) {
                 var client_id;
                 if (message["client"] !== null){
                     client_id = message["client"]["client_id"];
@@ -90,7 +90,7 @@
             var input = $(this).find('input[type="text"]');
 
             if (centrifuge.isConnected() === true) {
-                var subscription = centrifuge.publish('python:django', {"input": input.val()}, function() {
+                var subscription = centrifuge.publish('public:chat', {"input": input.val()}, function() {
                     console.log('message successfully sent');
                 });
                 console.log(subscription);

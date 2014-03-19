@@ -9,6 +9,13 @@ import json
 from centrifuge.structure import BaseStorage
 
 
+from tornado.options import define
+
+define(
+    "path", default='centrifuge.db', help="SQLite database file", type=str
+)
+
+
 def dict_factory(cursor, row):
     d = {}
     for idx, col in enumerate(cursor.description):
@@ -33,7 +40,7 @@ class Storage(BaseStorage):
         self._cursor = None
 
     def create_connection_cursor(self):
-        conn = sqlite3.connect(self.settings.get('path', 'centrifuge.db'))
+        conn = sqlite3.connect(self.options.path)
         conn.row_factory = dict_factory
         cursor = conn.cursor()
         self._cursor = cursor

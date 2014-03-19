@@ -1,7 +1,7 @@
 Centrifuge client's application example
 =======================================
 
-First, run Centrifuge, create new project and bidirectional category "python" in it
+First, run Centrifuge, create new project and namespace `public` in it with `publish` permission
 and then run this app with correct Centrifuge address, project id and project secret key:
 
 ```bash

@@ -11,6 +11,8 @@ import tornado.options
 import tornado.httpserver
 from tornado.options import define, options
 
+from centrifuge.utils import namedAny
+
 
 define(
     "debug", default=False, help="tornado debug mode", type=bool
@@ -24,29 +26,30 @@ define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
-define(
-    "redis", default=False, help="use Redis engine with default settings", type=bool
-)
 
-define(
-    "zmq", default=False, help="install ZeroMQ io loop", type=bool
-)
+engine = os.environ.get('CENTRIFUGE_ENGINE')
+if not engine or engine == 'memory':
+    engine_class_path = 'centrifuge.engine.memory.Engine'
+elif engine == "redis":
+    engine_class_path = 'centrifuge.engine.redis.Engine'
+else:
+    engine_class_path = engine
+
+engine_class = namedAny(engine_class_path)
+
+
+storage = os.environ.get('CENTRIFUGE_STORAGE')
+if not storage or storage == 'sqlite':
+    storage_class_path = 'centrifuge.structure.sqlite.Storage'
+elif storage == "config":
+    storage_class_path = 'centrifuge.structure.config.Storage'
+else:
+    storage_class_path = storage
+
+storage_class = namedAny(storage_class_path)
 
 
 tornado.options.parse_command_line()
-
-
-if options.zmq:
-
-    try:
-        from zmq.eventloop import ioloop
-    except ImportError:
-        logger.error("pyzmq must be installed to use its io loop")
-        sys.exit(1)
-
-    # Install ZMQ ioloop instead of a tornado ioloop
-    # http://zeromq.github.com/pyzmq/eventloop.html
-    ioloop.install()
 
 
 from centrifuge.log import logger
@@ -184,6 +187,12 @@ def main():
         server.listen(options.port)
     except Exception as e:
         return stop_running(str(e))
+
+    logger.info("Engine class: {0}".format(engine_class_path))
+    app.engine = engine_class(app)
+
+    logger.info("Storage class: {0}".format(storage_class_path))
+    app.storage = storage_class(options)
 
     # create references to application from SockJS handlers
     AdminSocketHandler.application = app

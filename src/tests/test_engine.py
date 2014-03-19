@@ -21,11 +21,19 @@ class FakeClient(object):
     uid = 'test_uid'
 
 
+class Options(object):
+
+    redis_host = "localhost"
+    redis_port = 6379
+    redis_password = ""
+    redis_db = 0
+
+
 class BaseEngineTest(AsyncTestCase):
 
     def setUp(self):
         super(BaseEngineTest, self).setUp()
-        self.application = Application()
+        self.application = Application(**{'options': Options})
         self.engine = BaseEngine(self.application)
 
     def test_get_subscription_key(self):
@@ -37,7 +45,7 @@ class MemoryEngineTest(AsyncTestCase):
 
     def setUp(self):
         super(MemoryEngineTest, self).setUp()
-        self.application = Application()
+        self.application = Application(**{'options': Options})
         self.engine = MemoryEngine(self.application)
         self.engine.initialize()
         self.engine.history_size = 2
@@ -177,7 +185,7 @@ class RedisEngineTest(AsyncTestCase):
 
     def setUp(self):
         super(RedisEngineTest, self).setUp()
-        self.application = Application()
+        self.application = Application(**{'options': Options})
         self.engine = RedisEngine(self.application, io_loop=self.io_loop)
         self.engine.initialize()
         self.engine.history_size = 2
