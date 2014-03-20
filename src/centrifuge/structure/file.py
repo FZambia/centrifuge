@@ -15,7 +15,7 @@ define(
 
 class Storage(BaseStorage):
 
-    NAME = "Config"
+    NAME = "JSON file"
 
     def __init__(self, *args, **kwargs):
         super(Storage, self).__init__(*args, **kwargs)

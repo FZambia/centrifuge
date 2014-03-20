@@ -70,6 +70,12 @@ Open terminal and run first instance:
 I.e. you tell Centrifuge to use Redis Engine providing environment variable
 ``CENTRIGUGE_ENGINE`` when launching it.
 
+Explore available command line options specific for Redis engine using ``--help``:
+
+.. code-block:: bash
+
+    CENTRIFUGE_ENGINE=redis centrifuge --help
+
 ``CENTRIFUGE_ENGINE`` can be ``memory``, ``redis`` or pythonic path to custom engine
 like ``path.to.custom.Engine``
 
@@ -105,7 +111,41 @@ PostgeSQL or MongoDB backends if your web site already uses them.
 To avoid making query to database on every request all structure information loaded into memory and then updated when something
 in structure changed and periodically to avoid inconsistency. There is also an option
 to set all structure in configuration file and go without any database (no database, no
-dependencies - but structure can not be changed via web interface).
+dependencies - but structure can not be changed via API or web interface).
+
+You can choose structure backend in the same way as engine - via environment variable
+``CENTRIFUGE_STORAGE``:
+
+.. code-block:: bash
+
+    CENTRIFUGE_STORAGE=sqlite centrifuge --path=/tmp/centrifuge.db
+
+Use default SQLite database.
+
+Or:
+
+.. code-block:: bash
+
+    CENTRIFUGE_STORAGE=file centrifuge --port=8001 --path=/path/to/json/file/with/structure
+
+Use structure from JSON file.
+
+Or:
+
+.. code-block:: bash
+
+    CENTRIFUGE_STORAGE=centrifuge_mongodb.Storage centrifuge --mongodb_host=localhost
+
+To use installed MongoDB backend.
+
+Or:
+
+.. code-block:: bash
+
+    CENTRIFUGE_STORAGE=centrifuge_postgresql.Storage centrifuge
+
+As in case of engine you can use ``--help`` to see available options for each of
+structure storage backends.
 
 
 Projects

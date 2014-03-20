@@ -41,8 +41,8 @@ engine_class = namedAny(engine_class_path)
 storage = os.environ.get('CENTRIFUGE_STORAGE')
 if not storage or storage == 'sqlite':
     storage_class_path = 'centrifuge.structure.sqlite.Storage'
-elif storage == "config":
-    storage_class_path = 'centrifuge.structure.config.Storage'
+elif storage == "file":
+    storage_class_path = 'centrifuge.structure.file.Storage'
 else:
     storage_class_path = storage
 

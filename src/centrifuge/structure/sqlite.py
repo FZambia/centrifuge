@@ -12,7 +12,7 @@ from centrifuge.structure import BaseStorage
 from tornado.options import define
 
 define(
-    "path", default='centrifuge.db', help="SQLite database file", type=str
+    "path", default='centrifuge.db', help="path to SQLite database file", type=str
 )
 
 
