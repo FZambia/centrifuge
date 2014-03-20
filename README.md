@@ -24,7 +24,7 @@ structure and monitor important messages in real-time.
 Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
 When running Centrifuge instance processes on different machines [MongoDB](https://github.com/centrifugal/centrifuge-mongodb)
 or [PostgreSQL](https://github.com/centrifugal/centrifuge-postgresql) backends can be used instead of SQLite. There is an option
-to hard-code all these settings in configuration file and go without any dependency on database.
+to hard-code all these settings in JSON file and go without any dependency on database.
 
 
 Main features
@@ -37,7 +37,7 @@ Main features
 * Web interface to manage your projects
 * Flexible channel settings via namespaces
 * Language agnostic - you can go with Centrifuge even if your site built in Perl, PHP, Ruby etc.
-
+* Easily integrates with existing web site.
 
 To get more information:
 
