@@ -14,7 +14,7 @@ channel will be delivered to all clients which are currently subscribed on that 
 
 To connect to Centrifuge from browser pure `Websockets <http://en.wikipedia.org/wiki/WebSocket>`_
 or `SockJS <https://github.com/sockjs/sockjs-client>`_) library can be used. So it works in both
-modern and old browsers (IE 7 supported). Centrifuge has javascript client with simple API.
+modern and old browsers (IE 7 supported). Centrifuge has `javascript client <https://github.com/FZambia/centrifuge/tree/master/javascript>`_ with simple API.
 
 Backend is built on top of `Tornado <http://www.tornadoweb.org/en/stable/>`_ - fast and mature
 asynchronous web server which can handle thousands of simultaneous connections.
@@ -42,3 +42,6 @@ Where it can be useful
 Everywhere you need real-time web page updates. There are tons of use cases where Centrifuge
 could be helpful - chat, graphs, comments, counters, games etc. Or if you just want to know
 how many users currently watching web page and who they are.
+
+Centrifuge can be easily integrated with your existing web site - you don't need to change code
+to get real-time events. Just install Centrifuge and let your users connect to it.
