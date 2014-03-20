@@ -127,7 +127,7 @@ class NamespaceMixin(object):
         validators=[],
         default=True,
         description="publish messages into admin channel "
-                    "(messages will be visible in web interface). Turn it off"
+                    "(messages will be visible in web interface). Turn it off "
                     "if you expect high load in channels."
     )
 
