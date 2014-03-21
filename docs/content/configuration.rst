@@ -59,7 +59,7 @@ Centrifuge has several command line arguments.
 
 
 Some other command line options come with engine or structure storage backend -
-explore them using ``--help``
+explore them using ``--help``, for example:
 
 .. code-block:: bash
 
