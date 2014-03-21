@@ -101,11 +101,6 @@ centrifuge.connect();
 
 For more information about javascript client API see [documentation chapter](https://centrifuge.readthedocs.org/en/latest/content/client_api.html)
 
-Architecture diagram
---------------------
-
-![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/centrifuge_architecture.png "centrifuge")
-
 Admin web interface
 -------------------
 
