@@ -8,6 +8,7 @@ Here is a list of changes:
 * MIT license instead of BSD.
 * ZeroMQ is not supported by main repository anymore. You can write your own engine though.
 * Engine backends which now combine state and PUB/SUB - there are two of them: Memory engine and Redis engine.
+* Engine and structure storage backend are now set up via environment variables when starting Centrifuge.
 * Connection parameters must contain `timestamp` - Unix seconds as string.
 * Experimental support for expiring connections. Connections can now expire if project option `connection_check` turned on.
 * Centrifuge admin api can now work with list of messages instead of single one.
@@ -23,6 +24,7 @@ As you can see there are lots of important changes, so I hope you forgive me for
 
 Migration notes:
 
+* read updated documentation
 * update Cent client to the latest version
 * update javascript client to the latest version
 * it's recommended to flush your structure database

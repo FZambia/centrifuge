@@ -41,7 +41,7 @@ rm -rf %{name}/src/.idea*
 
 virtualenv --distribute %{name}/env
 %{name}/env/bin/easy_install -U distribute
-%{name}/env/bin/pip install -r %{name}/src/src/requirements.txt --upgrade
+%{name}/env/bin/pip install -r %{name}/src/requirements.txt --upgrade
 %{name}/env/bin/pip install supervisor
 virtualenv --relocatable %{name}/env
 
