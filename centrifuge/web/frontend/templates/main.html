@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block extra_scripts %}
+<script type="text/javascript" src="{{ static_url('libs/sockjs/sockjs-0.3.4.min.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('application/js/prettify.js') }}"></script>
+<script type="text/javascript" src="{{ static_url('application/js/main.js') }}"></script>
+<script type="text/javascript">
+    $(document).ready(function() {
+        var js_data = {% raw js_data %};
+        $.centrifuge_main(js_data);
+    });
+</script>
+{% end %}
+
+{% block content %}
+<script type="text/x-jsrender" id="event_template">
+    <div class="event" id="event-{{!>event_id}}" style="display: none;">
+        <div class="event-header">
+            <span class="event-key">
+                <span class="event-key-word text-muted">
+                    {{!>channel}}
+                </span>
+                <span class="event-time text-muted">{{!>time}}</span>
+            </span>
+        </div>
+        <div class="event-description">
+            <pre>{{!:data}}</pre>
+        </div>
+    </div>
+</script>
+
+<script type="text/x-jsrender" id="tab_pane_template">
+    <div class="tab-pane in active" id="{{!>name}}" data-id="{{!>_id}}">
+        <div class="log"></div>
+    </div>
+</script>
+
+<script type="text/x-jsrender" id="tab_template">
+    <li>
+        <a class="project-tab" href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-tab-open="{{!>_id}}" data-toggle="tab">
+            {{!>tab_text}}
+            <span class="label label-success pull-right project-event-counter hidden">0</span>
+        </a>
+    </li>
+</script>
+
+<script type="text/x-jsrender" id="node_info_row_template">
+    <tr id="node-info-row-{{!>uid}}">
+        <td class="node-info-address">{{!>address}}</td>
+        <td class="node-info-port">{{!>port}}</td>
+        <td class="node-info-channels">{{!>channels}}</td>
+        <td class="node-info-clients">{{!>clients}}</td>
+        <td class="node-info-unique-clients">{{!>unique_clients}}</td>
+        <td class="node-info-messages-per-second">{{!>messages_per_second}}</td>
+    </tr>
+</script>
+
+<div id="main-content">
+    <div class="row">
+        <div class="col-lg-3">
+            <ul class="nav nav-pills nav-stacked" id="tabs">
+                <li class="general-info-item">
+                    <a class="info-tab" href="#_info" id="tab-_info" data-id="_info" data-tab-open="_info" data-name="_info" data-toggle="tab">
+                        {{_("General information")}}
+                        <span class="label label-success pull-right project-event-counter hidden">0</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="col-lg-9">
+            <a href="#" class="btn btn-success" id="project-settings">{{_("project management")}}</a>
+            <span class="pull-right connected" title="connected, waiting for messages..."><img src="{{ static_url('application/img/loader.gif') }}"></span>
+            <span class="pull-right not-connected" style="display: none;">{{ _("disconnected") }}</span>
+            <div class="tab-content" id="tab-content">
+                <div class="tab-pane" id="_info">
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("SockJS endpoint") }}:</span>
+                        &nbsp;
+                        <span class="stat-value" id="sockjs-endpoint"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("WebSocket endpoint") }}:</span>
+                        &nbsp;
+                        <span class="stat-value" id="websocket-endpoint"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("Structure storage") }}:</span>
+                        &nbsp;
+                        <span class="stat-value">{{ structure }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("Engine") }}:</span>
+                        &nbsp;
+                        <span class="stat-value">{{ engine }}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("Nodes running") }}:</span>
+                        &nbsp;
+                        <span class="stat-value" id="node-count">{{ node_count }}</span>
+                    </div>
+                    <div class="node_info">
+                        <table class="table table-bordered">
+                            <thead class="cf">
+                            <tr>
+                                <th title="node address">Address</th>
+                                <th title="node port">Port</th>
+                                <th title="active channels">Channels</th>
+                                <th title="connected clients">Clients</th>
+                                <th title="unique clients">Unique</th>
+                                <th title="messages per second">Msg/sec</th>
+                            </tr>
+                            </thead>
+                            <tbody id="node-info">
+                                <tr id="node-info-loader">
+                                    <td colspan="6">{{ _("Waiting for information...") }}</td>
+                                <tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}
+
+
+

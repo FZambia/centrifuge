@@ -1,0 +1,34 @@
+<nav class="navbar navbar-inverse" role="navigation">
+    <div class="navbar-header">
+        <button data-target=".navbar-ex8-collapse" data-toggle="collapse" class="navbar-toggle" type="button">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <a href="{{reverse_url('main')}}" class="navbar-brand">Centrifuge</a>
+    </div>
+    <div class="collapse navbar-collapse navbar-ex8-collapse">
+        <ul class="nav navbar-nav">
+            {% if handler.get_current_user() %}
+            <li class="">
+                <a href="{{reverse_url('main')}}">{{_("Home")}}</a>
+            </li>
+            <li class="">
+                <a href="{{reverse_url('project_create')}}">{{_("Create project")}}</a>
+            </li>
+            {% end %}
+            <li class="">
+                <a href="http://centrifuge.readthedocs.org/en/latest/" target="_blank">{{_("Documentation")}}</a>
+            </li>
+            <li class="">
+                <a href="https://github.com/FZambia/centrifuge" target="_blank">{{_("Source code")}}</a>
+            </li>
+            <li>
+                {% if current_user and handler.opts.get("password") %}
+                    <a href="{{handler.reverse_url('logout')}}">{{_("Logout")}}</a>
+                {% end %}
+            </li>
+        </ul>
+    </div>
+</nav>

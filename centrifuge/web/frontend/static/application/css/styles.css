@@ -1,0 +1,247 @@
+html {
+    overflow-y: scroll;
+}
+body, pre {
+    background: url('../img/bg.png');
+}
+h4 {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus {
+    background: url('../img/bg.png')
+}
+input, select, option {
+    background-color: #F5F3F3 !important;
+}
+input:-webkit-autofill {
+    color: #fff !important;
+}
+.nav > li > a:hover, .nav > li > a:focus {
+    background: #D4D4D4;
+}
+#tabs a {
+    font-size: 18px;
+}
+.form-control {
+    padding-left: 2px;
+    max-width: 500px;
+}
+label {
+    font-weight: normal;
+}
+.navbar {
+    border-radius: 0;
+}
+#wrap {
+    margin: 20px auto;
+    width: 80%;
+    max-width: 1400px;
+    padding-bottom: 30px;
+}
+.marketing h1 {
+    margin: 60px 0 10px;
+    font-size: 60px;
+    font-weight: 200;
+    line-height: 1;
+    letter-spacing: -1px;
+    color: #4b4b4b;
+}
+.marketing p {
+    font-size: 30px;
+    line-height: 40px;
+}
+.baseform input, .baseform textarea {
+    width: 50%;
+}
+.navbar {
+    margin-bottom: 0;
+}
+.label-counter {
+    margin-left: 5px;
+}
+.right {
+    text-align: right !important;
+}
+.center {
+    text-align: center !important;
+}
+.hidden {
+    display: none;
+}
+.row .col-lg-3, .row .col-lg-9 {
+    padding-top:10px;
+}
+.event {
+	margin: 10px 0 10px 0;
+}
+.event-header {
+    border-radius: 2px 2px 0 0;
+    box-shadow: none;
+    margin-bottom: -1px;
+    overflow: hidden;
+    padding: 10px;
+}
+.event-key {
+    font-size: 20px;
+    font-family: Tahoma, Geneva, sans-serif;
+}
+.event-description {
+    padding: 0;
+    padding-left: 0;
+}
+.event-time {
+    font-size: 10px;
+}
+.project {
+    margin-left: 0 !important;
+    margin-bottom: 60px;
+}
+.project-header {}
+.project-name {
+    font-size: 30px;
+    font-family: Tahoma,Geneva,sans-serif;
+}
+.project-settings {
+    font-size: 14px;
+}
+.project-meta {
+    color: #999999;
+}
+.connection-status {
+    margin-left: 15px;
+    font-size: 18px;
+}
+.connected {
+    color: #AAA;
+}
+.not-connected {
+    color: darkred;
+}
+.bs-callout {
+    border-left: 5px solid #EEEEEE;
+    margin: 4px 0;
+    padding: 5px 30px 5px 5px;
+    max-width: 500px;
+}
+.bs-callout-large {
+    border-left: 5px solid #EEEEEE;
+    margin: 10px 0;
+    padding: 15px 30px 15px 15px;
+    max-width: 700px;
+}
+.bs-callout-danger {
+    background-color: #FFDDDD;
+    border-color: #DFB5B4;
+}
+.string { color: green; }
+.number { color: darkorange; }
+.boolean { color: blue; }
+.null { color: magenta; }
+.key { color: red; }
+
+.box404 {
+    text-align: center;
+}
+.text404 {
+    font-size: 40px;
+}
+.code404 {
+    font-size: 160px;
+}
+.back404 {
+    margin-top: 50px;
+}
+.box {
+    border-color: rgba(0, 0, 0, 0.3);
+    border-style: solid;
+    border-width: 1px;
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2) inset;
+    color: rgba(0, 0, 0, 0.8);
+    border-radius: 4px 4px 4px 4px;
+    display: inline-block;
+    font-size: 14px;
+    font-weight: normal;
+    margin-bottom: 0;
+    padding: 6px 12px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.box-error {
+    background: none repeat scroll 0 0 #CC8888;
+}
+.box-success {
+    background: none repeat scroll 0 0 #88CC88;
+}
+.general-info-item {
+    margin-bottom: 20px;
+}
+.stat-row {
+    margin-bottom: 20px;
+}
+.stat-key {
+    font-size: 18px;
+}
+.stat-value {
+    font-size: 18px;
+}
+#data-editor {
+    max-width: 500px;
+    height: 150px;
+}
+#form-result{
+    margin-top: 10px;
+}
+.project-header {
+    margin-top: 0;
+}
+.bottom_buffer {
+    margin-bottom: 40px;
+}
+.confirm-input {
+    width: 200px;
+}
+
+.table th {
+    font-weight: normal;
+    text-transform: uppercase;
+    background: #428bca;
+    color: #fff;
+}
+.table-bordered {
+    border: 1px solid #DDDDDD;
+}
+.table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > tfoot > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > td, .table-bordered > tfoot > tr > td {
+    border: 1px solid #DDDDDD;
+}
+.table-bordered > thead > tr > th, .table-bordered > thead > tr > td {
+    border-bottom-width: 2px;
+}
+
+@media only screen and (max-width: 800px) {
+    .table .cf:after { visibility: hidden; display: block; font-size: 0; content: " "; clear: both; height: 0; }
+    .table * html .cf { zoom: 1; }
+    .table *:first-child+html .cf { zoom: 1; }
+    .table { width: 100%; border-collapse: collapse; border-spacing: 0; border: none !important; }
+
+    .table th,
+    .table td { margin: 0; vertical-align: top; }
+    .table th { text-align: left; }
+    .table { display: block; position: relative; width: 100%; }
+    .table thead { display: block; float: left; }
+    .table tbody { display: block; width: auto; position: relative; overflow-x: auto; white-space: nowrap; }
+    .table thead tr { display: block; }
+    .table th { display: block; text-align: right; }
+    .table tbody tr { display: inline-block; vertical-align: top; }
+    .table tbody tr { border-left: none !important;}
+    .table tbody tr td { border-left: none !important;}
+    .table td { display: block; min-height: 1.25em; text-align: left; }
+
+
+    /* sort out borders */
+
+    .table th { border-bottom: 0; border-left: 0; }
+    .table td { border-left: 0; border-right: 0; border-bottom: 0; }
+    .table tbody tr { border-left: 1px solid #babcbf; }
+}

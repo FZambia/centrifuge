@@ -1,0 +1,29 @@
+{% extends '../project/detail.html' %}
+
+{% block title %}{{_("Centrifuge")}}{% end %}
+
+{% block tab_namespaces %}active{% end %}
+
+{% block section_active %}namespaces{% end %}
+
+{% block section %}
+    <h4>{{_("Edit namespace")}}</h4>
+    {% include '../form.html' %}
+
+    <h4>{{_("Danger zone")}}</h4>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="bs-callout-large bs-callout-danger">
+                {{_("Remove namespace. This action will also remove all data related to this namespace.")}}
+            </div>
+            <form class="form-inline" method="post" action="">
+                {% raw xsrf_form_html() %}
+                <input type="text" class="form-control" style="width: 50%;" name="confirm" placeholder="{{_("Type namespace name")}}">
+                <button type="submit" name="submit" value="namespace_delete" class="btn btn-danger">{{_("I understand. Delete namespace.")}}</button>
+            </form>
+        </div>
+    </div>
+
+{% end %}
+
+{% block panel %}{% end %}

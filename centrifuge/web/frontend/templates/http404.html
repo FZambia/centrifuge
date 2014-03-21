@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 col-lg-offset-2">
+        <div class="box404">
+            <div class="text-muted text404">No such page!</div>
+            <div class="text-muted code404">404</div>
+            <div class="back404">
+                <a href="{{reverse_url('main')}}" class="btn btn-primary">
+                    Back to main page
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% end %}

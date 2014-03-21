@@ -1,0 +1,2 @@
+include setup.py MANIFEST.in
+recursive-include centrifuge/web/frontend *
