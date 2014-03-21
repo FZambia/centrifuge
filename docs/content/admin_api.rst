@@ -52,7 +52,6 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "publish",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME",
             "data": {}
         }
@@ -65,8 +64,17 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "unsubscribe",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME",
+            "user": "USER ID"
+    }
+
+**disconnect** - disconnect user by user ID.
+
+.. code-block:: javascript
+
+    {
+        "method": "disconnect",
+        "params": {
             "user": "USER ID"
     }
 
@@ -88,7 +96,6 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "history",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME"
     }
 
@@ -206,13 +213,18 @@ Cent contains Client class to send messages to Centrifuge from your python-power
     from cent.core import Client
 
     client = Client("http://localhost:8000/api", "project_id", "project_secret_key")
-    result, error = client.send(
-        "publish", {
+    client.add(
+        "publish", 
+        {
             "namespace": "python",
             "channel": "django",
             "data": "hello world"
         }
     )
+    result, error = client.send()
+
+you can use ``add`` method to add several messages which will be sent. But up to 100 
+(default, can be configured via Centrifuge configuration file using ``admin_api_message_limit`` option)
 
 
 Python

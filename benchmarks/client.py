@@ -39,7 +39,7 @@ class ClientProtocol(WebSocketClientProtocol):
         message = {
             "method": "connect",
             "params": {
-                "token": generate_token(SECRET_KEY, PROJECT_ID, USER_ID),
+                "token": generate_token(SECRET_KEY, PROJECT_ID, USER_ID, str(int(time.time()))),
                 "user": USER_ID,
                 "project": PROJECT_ID
             }
@@ -149,10 +149,11 @@ class ReceiveClientProtocol(ClientProtocol):
             COUNT = 0
 
 
-def generate_token(secret_key, project_id, user_id):
+def generate_token(secret_key, project_id, user_id, timestamp):
     sign = hmac.new(six.b(str(secret_key)))
     sign.update(six.b(str(project_id)))
     sign.update(six.b(user_id))
+    sign.update(six.b(timestamp))
     token = sign.hexdigest()
     return token
 

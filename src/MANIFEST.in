@@ -1,2 +1,0 @@
-include setup.py MANIFEST.in LICENSE
-recursive-include centrifuge/web/frontend *

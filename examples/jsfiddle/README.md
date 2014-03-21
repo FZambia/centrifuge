@@ -1,4 +1,4 @@
-Follow this link to see websocket demo chat example on JSFiddle:
+Follow this link to see simplified websocket demo chat example on JSFiddle:
 
 http://jsfiddle.net/FZambia/yG7Uw/
 

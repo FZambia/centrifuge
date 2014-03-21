@@ -11,10 +11,11 @@ import (
     "strconv"
 )
 
-func generate_token(secret_key, project_id, user_id string) string {
+func generate_token(secret_key, project_id, user_id string, timestamp string) string {
     token := hmac.New(md5.New, []byte(secret_key))
     token.Write([]byte(project_id))
     token.Write([]byte(user_id))
+    token.Write([]byte(timestamp))
     hex := fmt.Sprintf("%02x", token.Sum(nil))
     return hex
 }
@@ -127,6 +128,7 @@ func main() {
     url := os.Args[1]
     project_id := os.Args[2]
     project_secret := os.Args[3]
+    timestamp := string(time.Now().Unix())
     max_clients, _ := strconv.Atoi(os.Args[4])
     increment, _ := strconv.Atoi(os.Args[5])
     repeats, _ := strconv.Atoi(os.Args[6])

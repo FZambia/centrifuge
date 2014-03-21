@@ -1,6 +1,6 @@
 /**
  * Centrifuge javascript DOM jQuery plugin
- * v0.4.1
+ * v0.5.0
  */
 ;(function (jQuery) {
     jQuery.extend({
@@ -13,6 +13,7 @@
                 tokenSelector: '#centrifuge-token',
                 projectSelector: '#centrifuge-project',
                 userSelector: '#centrifuge-user',
+                timestampSelector: '#centrifuge-timestamp',
                 infoSelector: '#centrifuge-info',
                 valueAttrName: 'data-centrifuge-value',
                 namespaceAttr: 'data-centrifuge-namespace',
@@ -229,6 +230,12 @@
                     return;
                 }
 
+                var timestamp = $(options.timestampSelector).attr(options.valueAttrName);
+                if (!timestamp) {
+                    console.log("Centrifuge timestamp not found");
+                    return;
+                }
+
                 var url;
                 if (options.url === null) {
                     url = $(options.urlSelector).attr(options.valueAttrName);
@@ -251,6 +258,7 @@
                     token: token,
                     project: project,
                     user: user,
+                    timestamp: timestamp,
                     info: info
                 });
 

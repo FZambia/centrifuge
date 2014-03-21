@@ -1,0 +1,7 @@
+six==1.3.0
+tornado==3.2
+sockjs-tornado==1.0.0
+jsonschema==2.3.0
+toro==0.5
+WTForms==1.0.4
+toredis-fork==0.1.3

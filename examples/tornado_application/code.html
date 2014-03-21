@@ -1,3 +1,4 @@
+<script type="text/javascript" src="https://raw.github.com/FZambia/centrifuge/0.5/javascript/centrifuge.js"></script>
 <script type="text/javascript">
     'use strict';
 
@@ -17,13 +18,16 @@
 
     $(function() {
 
+        var channel = "public:chat";
+
         var centrifuge = new Centrifuge({
             url: '{{protocol}}://{{centrifuge_address}}{{endpoint}}',
             token: '{{auth_data["token"]}}',
             project: '{{auth_data["project"]}}',
             user: '{{auth_data["user"]}}',
+            timestamp: '{{auth_data["timestamp"]}}',
             info: '{% raw auth_data["info"] %}',
-            //protocols_whitelist: ["xhr-streaming"],
+            protocols_whitelist: ["xhr-polling"],
             debug: true
         });
 
@@ -31,7 +35,7 @@
 
             draw_message('connected');
 
-            var subscription = centrifuge.subscribe('python:django', function(message) {
+            var subscription = centrifuge.subscribe(channel, function(message) {
                 var client_id;
                 if (message["client"] !== null){
                     client_id = message["client"]["client_id"];
@@ -54,11 +58,12 @@
             });
 
             subscription.on('join', function(message) {
-                draw_message('Someone joined channel (uid ' + message.data["client_id"] + ')');
+                console.log(message);
+                draw_message('Someone joined channel ' + message.channel + ' (uid ' + message.data["client_id"] + ')');
             });
 
             subscription.on('leave', function(message) {
-                draw_message('Someone left channel (uid ' + message.data["client_id"] + ')');
+                draw_message('Someone left channel ' + message.channel + ' (uid ' + message.data["client_id"] + ')');
             })
 
         });
@@ -87,7 +92,7 @@
             var input = $(this).find('input[type="text"]');
 
             if (centrifuge.isConnected() === true) {
-                var subscription = centrifuge.publish('python:django', {"input": input.val()}, function() {
+                var subscription = centrifuge.publish(channel, {"input": input.val()}, function() {
                     console.log('message successfully sent');
                 });
                 console.log(subscription);

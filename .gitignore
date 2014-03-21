@@ -1,8 +1,9 @@
 *.pyc
-src/config_dev.json
-src/centrifuge.db
-src/build/*
-src/centrifuge.egg-info/*
-src/dist/*
+config_dev.json
+centrifuge.db
+build/*
+centrifuge.egg-info/*
+dist/*
 *.rdb
 docs/_build/*
+javascript/node_modules/*

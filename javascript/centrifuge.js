@@ -1,6 +1,6 @@
 /**
  * Centrifuge javascript client
- * v0.4.1
+ * v0.5.0
  */
 ;(function () {
     'use strict';
@@ -606,9 +606,8 @@
         this._messageId = 0;
         this._clientId = null;
         this._subscriptions = {};
-        this._sep = ':';
-        this._fullRegex = /^([^_]+[A-z0-9_@\-]{2,}):([A-z0-9_@\-\.]+)$/;
-        this._channelOnlyRegex = /^([A-z0-9_@\-\.]+)$/;
+        this._messages = [];
+        this._isBatching = false;
         this._config = {
             retry: 3000,
             info: null,
@@ -665,46 +664,19 @@
             throw 'Missing required configuration parameter \'user\' specifying user\'s unique ID in your application';
         }
 
+        if (!this._config.timestamp) {
+            throw 'Missing required configuration parameter \'timestamp\'';
+        }
+
         this._config.url = stripSlash(this._config.url);
 
         if (endsWith(this._config.url, 'connection')) {
             //noinspection JSUnresolvedVariable
             if (typeof window.SockJS === 'undefined') {
-                throw 'You need to include SockJS client library before Centrifuge javascript client library or use pure Websocket endpoint';
+                throw 'You need to include SockJS client library before Centrifuge javascript client library or use pure Websocket connection endpoint';
             }
             this._sockjs = true;
         }
-    };
-
-    centrifuge_proto._parsePath = function (path) {
-        var channel, namespace;
-        var fullMatches = this._fullRegex.exec(path);
-        if (fullMatches) {
-            namespace = fullMatches[1];
-            channel = fullMatches[2];
-        } else {
-            var channelOnlyMatches = this._channelOnlyRegex.exec(path);
-            if (!channelOnlyMatches) {
-                throw 'Invalid path';
-            }
-            namespace = null;
-            channel = channelOnlyMatches[1];
-        }
-        return [namespace, channel]
-    };
-
-    centrifuge_proto._makePath = function (namespace, channel) {
-        if (namespace === '' || namespace === null || namespace == undefined) {
-            if (!this._channelOnlyRegex.test(channel)) {
-                throw "Invalid channel name " + channel;
-            }
-            return channel;
-        }
-        var path = namespace + this._sep + channel;
-        if (!this._fullRegex.test(path)) {
-            throw "Invalid path " + path;
-        }
-        return path;
     };
 
     centrifuge_proto._setStatus = function (newStatus) {
@@ -783,20 +755,22 @@
                 'params': {
                     'token': self._config.token,
                     'user': self._config.user,
-                    'project': self._config.project
+                    'project': self._config.project,
+                    'timestamp': self._config.timestamp
                 }
             };
+
             if (self._config.info !== null) {
                 self._debug("connect using additional info");
-                centrifugeMessage['params']['info'] = self._config.info
+                centrifugeMessage['params']['info'] = self._config.info;
             } else {
                 self._debug("connect without additional info");
             }
-            self._send([centrifugeMessage]);
+            self.send(centrifugeMessage);
         };
 
         this._transport.onerror = function (error) {
-            this._debug(error);
+            self._debug(error);
         };
 
         this._transport.onclose = function () {
@@ -805,7 +779,7 @@
             if (self._reconnect === true) {
                 window.setTimeout(function () {
                     if (self._reconnect === true) {
-                        self._connect.call(self)
+                        self._connect.call(self);
                     }
                 }, self._config.retry);
             }
@@ -827,33 +801,20 @@
         this._transport.close();
     };
 
-    centrifuge_proto._getSubscription = function (path) {
-        var subscription = this._subscriptions[path];
+    centrifuge_proto._getSubscription = function (channel) {
+        var subscription;
+        subscription = this._subscriptions[channel];
         if (!subscription) {
             return null;
         }
         return subscription;
     };
 
-    centrifuge_proto._findSubscription = function (namespace, channel) {
-        var subscription;
-        var path = this._makePath(namespace, channel);
-        subscription = this._subscriptions[path];
-        if (!subscription) {
-            path = this._makePath(null, channel);
-            subscription = this._subscriptions[path];
-            if (!subscription) {
-                return null;
-            }
-        }
-        return subscription;
-    };
-
-    centrifuge_proto._removeSubscription = function (path) {
+    centrifuge_proto._removeSubscription = function (channel) {
         try {
-            delete this._subscriptions[path];
+            delete this._subscriptions[channel];
         } catch (e) {
-            this._debug('nothing to delete for path ', path);
+            this._debug('nothing to delete for channel ', channel);
         }
     };
 
@@ -870,99 +831,111 @@
 
     centrifuge_proto._disconnectResponse = function (message) {
         if (message.error === null) {
-            this._clientId = null;
-            this._setStatus('disconnected');
-            this.trigger('disconnect', [message]);
-            this.trigger('disconnect:success', [message]);
+            this.disconnect();
+            //this.trigger('disconnect', [message]);
+            //this.trigger('disconnect:success', [message]);
         } else {
             this.trigger('error', [message]);
-            this.trigger('disconnect:error', [message]);
+            this.trigger('disconnect:error', [message.error]);
         }
     };
 
     centrifuge_proto._subscribeResponse = function (message) {
-        var namespace = message.params["namespace"];
-        var channel = message.params["channel"];
-        var path = this._makePath(namespace, channel);
-        var subscription = this._subscriptions[path];
+        if (message.error !== null) {
+            this.trigger('error', [message]);
+        }
+        var body = message.body;
+        if (body === null) {
+            return;
+        }
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.subscribed = true;
-            subscription.trigger('subscribe:success', [message]);
-            subscription.trigger('ready', [message]);
+            subscription.trigger('subscribe:success', [body]);
+            subscription.trigger('ready', [body]);
         } else {
-            subscription.trigger('subscribe:error', [message]);
+            subscription.trigger('subscribe:error', [message.error]);
             subscription.trigger('error', [message]);
-            this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._unsubscribeResponse = function (message) {
-        if (message.error !== null) {
-            this.trigger('error', [message]);
-        }
-    };
-
-    centrifuge_proto._publishResponse = function (message) {
-        var namespace = message.params["namespace"];
-        var channel = message.params["channel"];
-        var path = this._makePath(namespace, channel);
-        var subscription = this._subscriptions[path];
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.trigger('publish:success', [message]);
+            subscription.trigger('unsubscribe', [body]);
+            this._centrifuge._removeSubscription(channel);
+        }
+    };
+
+    centrifuge_proto._publishResponse = function (message) {
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
+        if (!subscription) {
+            return;
+        }
+        if (message.error === null) {
+            subscription.trigger('publish:success', [body]);
         } else {
-            subscription.trigger('publish:error', [message]);
+            subscription.trigger('publish:error', [message.error]);
             this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._presenceResponse = function (message) {
-        var namespace = message.body["namespace"];
-        var channel = message.body["channel"];
-        var subscription = this._findSubscription(namespace, channel);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.trigger('presence', [message.body]);
-            subscription.trigger('presence:success', [message]);
+            subscription.trigger('presence', [body]);
+            subscription.trigger('presence:success', [body]);
         } else {
-            subscription.trigger('presence:error', [message]);
+            subscription.trigger('presence:error', [message.error]);
             this.trigger('error', [message]);
         }
     };
 
     centrifuge_proto._historyResponse = function (message) {
-        var namespace = message.body["namespace"];
-        var channel = message.body["channel"];
-        var subscription = this._findSubscription(namespace, channel);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         if (message.error === null) {
-            subscription.trigger('history', [message.body]);
-            subscription.trigger('history:success', [message]);
+            subscription.trigger('history', [body]);
+            subscription.trigger('history:success', [body]);
         } else {
-            subscription.trigger('history:error', [message]);
+            subscription.trigger('history:error', [message.error]);
             this.trigger('error', [message]);
         }
     };
 
-    centrifuge_proto._joinResponse = function(body) {
-        var subscription = this._findSubscription(body.namespace, body.channel);
+    centrifuge_proto._joinResponse = function(message) {
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
         subscription.trigger('join', [body]);
     };
 
-    centrifuge_proto._leaveResponse = function(body) {
-        var subscription = this._findSubscription(body.namespace, body.channel);
+    centrifuge_proto._leaveResponse = function(message) {
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
         if (!subscription) {
             return;
         }
@@ -970,32 +943,25 @@
     };
 
     centrifuge_proto._messageResponse = function (message) {
-        if (message.body) {
-            //noinspection JSValidateTypes
-            var body = message.body;
-            if (body.message_type === 'join') {
-                this._joinResponse(body);
-            } else if (body.message_type === 'leave') {
-                this._leaveResponse(body);
-            } else if (body.message_type === 'message') {
-                var subscription = this._findSubscription(body.namespace, body.channel);
-                if (!subscription) {
-                    return;
-                }
-                subscription.trigger('message', [body]);
-            }
-        } else {
-            this._debug('Unknown message', message);
+        var body = message.body;
+        var channel = body.channel;
+        var subscription = this.getSubscription(channel);
+        if (subscription === null) {
+            return;
         }
+        subscription.trigger('message', [body]);
     };
 
-    centrifuge_proto._receive = function (message) {
-
+    centrifuge_proto._dispatchMessage = function(message) {
         if (message === undefined || message === null) {
             return;
         }
 
         var method = message.method;
+
+        if (!method) {
+            return;
+        }
 
         switch (method) {
             case 'connect':
@@ -1025,6 +991,8 @@
             case 'leave':
                 this._leaveResponse(message);
                 break;
+            case 'ping':
+                break;
             case 'message':
                 this._messageResponse(message);
                 break;
@@ -1033,15 +1001,38 @@
         }
     };
 
+    centrifuge_proto._receive = function (data) {
+        if (Object.prototype.toString.call(data) === Object.prototype.toString.call([])) {
+            for (var i in data) {
+                if (data.hasOwnProperty(i)) {
+                    var msg = data[i];
+                    this._dispatchMessage(msg);
+                }
+            }
+        } else if (Object.prototype.toString.call(data) === Object.prototype.toString.call({})) {
+            this._dispatchMessage(data);
+        }
+    };
+
+    centrifuge_proto._flush = function() {
+        var messages = this._messages.slice(0);
+        this._messages = [];
+        this._send(messages);
+    };
+
+    centrifuge_proto._ping = function () {
+        var centrifugeMessage = {
+            "method": "ping",
+            "params": {}
+        };
+        this.send(centrifugeMessage);
+    };
+
     /* PUBLIC API */
 
     centrifuge_proto.getClientId = function () {
         return this._clientId;
     };
-
-    centrifuge_proto.parsePath = centrifuge_proto._parsePath;
-
-    centrifuge_proto.makePath = centrifuge_proto._makePath;
 
     centrifuge_proto.isConnected = centrifuge_proto._isConnected;
 
@@ -1057,125 +1048,135 @@
 
     centrifuge_proto.getSubscription = centrifuge_proto._getSubscription;
 
-    centrifuge_proto.findSubscription = centrifuge_proto._findSubscription;
+    centrifuge_proto.ping = centrifuge_proto._ping;
 
     centrifuge_proto.send = function (message) {
-        this._send([message]);
+        if (this._isBatching === true) {
+            this._messages.push(message);
+        } else {
+            this._send([message]);
+        }
     };
 
-    centrifuge_proto.subscribe = function (path, callback) {
+    centrifuge_proto.startBatching = function () {
+        // start collecting messages without sending them to Centrifuge until flush
+        // method called
+        this._isBatching = true;
+    };
+
+    centrifuge_proto.stopBatching = function(flush) {
+        // stop collecting messages
+        flush = flush || false;
+        this._isBatching = false;
+        if (flush === true) {
+            this.flush();
+        }
+    };
+
+    centrifuge_proto.flush = function() {
+        this._flush();
+    };
+
+    centrifuge_proto.subscribe = function (channel, callback) {
 
         if (arguments.length < 1) {
             throw 'Illegal arguments number: required 1, got ' + arguments.length;
         }
-        if (!isString(path)) {
+        if (!isString(channel)) {
             throw 'Illegal argument type: channel must be a string';
         }
         if (this.isDisconnected()) {
             throw 'Illegal state: already disconnected';
         }
 
-        var current_subscription = this._getSubscription(path);
+        var current_subscription = this.getSubscription(channel);
 
         if (current_subscription !== null) {
             return current_subscription;
         } else {
-            var subscription = new Subscription(this, path);
-            this._subscriptions[path] = subscription;
+            var subscription = new Subscription(this, channel);
+            this._subscriptions[channel] = subscription;
             subscription.subscribe(callback);
             return subscription;
         }
     };
 
-    centrifuge_proto.unsubscribe = function (path) {
+    centrifuge_proto.unsubscribe = function (channel) {
         if (arguments.length < 1) {
             throw 'Illegal arguments number: required 1, got ' + arguments.length;
         }
-        if (!isString(path)) {
+        if (!isString(channel)) {
             throw 'Illegal argument type: channel must be a string';
         }
         if (this.isDisconnected()) {
             return;
         }
 
-        var current_subscription = this._getSubscription(path);
-        if (current_subscription !== null) {
-            current_subscription.unsubscribe();
+        var subscription = this.getSubscription(channel);
+        if (subscription !== null) {
+            subscription.unsubscribe();
         }
     };
 
-    centrifuge_proto.publish = function (path, data, callback) {
-        var subscription = this.getSubscription(path);
+    centrifuge_proto.publish = function (channel, data, callback) {
+        var subscription = this.getSubscription(channel);
         if (subscription === null) {
-            this._debug("subscription not found for path " + path);
+            this._debug("subscription not found for channel " + channel);
             return null;
         }
         subscription.publish(data, callback);
         return subscription;
     };
 
-    centrifuge_proto.presence = function (path, callback) {
-        var subscription = this.getSubscription(path);
+    centrifuge_proto.presence = function (channel, callback) {
+        var subscription = this.getSubscription(channel);
         if (subscription === null) {
-            this._debug("subscription not found for path " + path);
+            this._debug("subscription not found for channel " + channel);
             return null;
         }
         subscription.presence(callback);
         return subscription;
     };
 
-    centrifuge_proto.history = function (path, callback) {
-        var subscription = this.getSubscription(path);
+    centrifuge_proto.history = function (channel, callback) {
+        var subscription = this.getSubscription(channel);
         if (subscription === null) {
-            this._debug("subscription not found for path " + path);
+            this._debug("subscription not found for channel " + channel);
             return null;
         }
         subscription.history(callback);
         return subscription;
     };
 
-    function Subscription(centrifuge, path) {
+    function Subscription(centrifuge, channel) {
         /**
          * The constructor for a centrifuge object, identified by an optional name.
          * The default name is the string 'default'.
          * @param name the optional name of this centrifuge object
          */
         this._centrifuge = centrifuge;
-        this._path = path;
-        var matches = this.parsePath();
-        this.namespace = matches[0];
-        this.channel = matches[1];
-        this.subscribed = false;
+        this.channel = channel;
     }
 
     extend(Subscription, EventEmitter);
 
     var sub_proto = Subscription.prototype;
 
-    sub_proto.getPath = function () {
-        return this._path;
+    sub_proto.getChannel = function () {
+        return this.channel;
     };
 
     sub_proto.getCentrifuge = function () {
         return this._centrifuge;
     };
 
-    sub_proto.parsePath = function () {
-        return this._centrifuge.parsePath(this._path);
-    };
-
     sub_proto.subscribe = function (callback) {
         var centrifugeMessage = {
             "method": "subscribe",
             "params": {
-                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.namespace === null) {
-            // using default namespace
-            delete centrifugeMessage["params"]["namespace"];
-        }
         this._centrifuge.send(centrifugeMessage);
         if (callback) {
             this.on('message', callback);
@@ -1183,19 +1184,13 @@
     };
 
     sub_proto.unsubscribe = function () {
-        this.subscribed = false;
-        this._centrifuge._removeSubscription(this._path);
+        this._centrifuge._removeSubscription(this.channel);
         var centrifugeMessage = {
             "method": "unsubscribe",
             "params": {
-                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.namespace === null) {
-            // using default namespace
-            delete centrifugeMessage["params"]["namespace"];
-        }
         this._centrifuge.send(centrifugeMessage);
     };
 
@@ -1203,15 +1198,10 @@
         var centrifugeMessage = {
             "method": "publish",
             "params": {
-                "namespace": this.namespace,
                 "channel": this.channel,
                 "data": data
             }
         };
-        if (this.namespace === null) {
-            // using default namespace
-            delete centrifugeMessage["params"]["namespace"];
-        }
         if (callback) {
             this.on('publish:success', callback);
         }
@@ -1222,14 +1212,9 @@
         var centrifugeMessage = {
             "method": "presence",
             "params": {
-                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.namespace === null) {
-            // using default namespace
-            delete centrifugeMessage["params"]["namespace"];
-        }
         if (callback) {
             this.on('presence', callback);
         }
@@ -1240,14 +1225,9 @@
         var centrifugeMessage = {
             "method": "history",
             "params": {
-                "namespace": this.namespace,
                 "channel": this.channel
             }
         };
-        if (this.namespace === null) {
-            // using default namespace
-            delete centrifugeMessage["params"]["namespace"];
-        }
         if (callback) {
             this.on('history', callback);
         }

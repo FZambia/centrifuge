@@ -1,0 +1,24 @@
+{% extends 'detail.html' %}
+
+{% block title %}{{_("Project settings")}}{% end %}
+
+{% block tab_settings %}active{% end %}
+
+{% block section_active %}settings{% end %}
+
+{% block section %}
+    <div class="bottom_buffer">
+        <h4>{{_("Settings")}}</h4>
+        {% include '../form.html' %}
+    </div>
+
+    <h4>{{_("Danger zone")}}</h4>
+    <div class="bs-callout-large bs-callout-danger">
+        {{_("Remove Project. This action will also remove all data related to this project.")}}
+    </div>
+    <form class="form-inline" method="post" action="">
+        {% raw xsrf_form_html() %}
+        <input type="text" class="form-control confirm-input" name="confirm" placeholder="{{_('Type project name to confirm')}}">
+        <button type="submit" name="submit" value="project_del" class="btn btn-danger">{{_("I understand. Delete project.")}}</button>
+    </form>
+{% end %}

@@ -1,0 +1,5 @@
+{
+    "password": "123",
+    "cookie_secret": "secret",
+    "api_secret": "secret"
+}
