@@ -135,7 +135,3 @@ MIT
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/FZambia/centrifuge/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 [![Requirements Status](https://requires.io/github/FZambia/centrifuge/requirements.png?branch=master)](https://requires.io/github/FZambia/centrifuge/requirements/?branch=master)
-<<<<<<< HEAD
-=======
-
->>>>>>> 0.5
