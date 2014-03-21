@@ -124,8 +124,8 @@ Contributing
 
 Pull requests are welcome! But, please, follow next principles:
 
-* keep things as simple as possible
-* pep8
+* keep things simple
+* pep8 friendly
 * python 2.6, 2.7 and 3.3 compatible
 
 LICENSE
