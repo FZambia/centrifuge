@@ -4,6 +4,11 @@
 import time
 import six
 
+try:
+    import urlparse
+except ImportError:
+    import urllib.parse as urlparse
+
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
 from tornado.iostream import StreamClosedError
@@ -32,6 +37,11 @@ define(
 define(
     "redis_password", default="", help="Redis auth password", type=str
 )
+
+define(
+    "redis_url", default="", help="Redis URL", type=str
+)
+
 
 range_func = six.moves.xrange
 
@@ -63,10 +73,18 @@ class Engine(BaseEngine):
     def __init__(self, *args, **kwargs):
         super(Engine, self).__init__(*args, **kwargs)
 
-        self.host = self.options.redis_host
-        self.port = self.options.redis_port
-        self.password = self.options.redis_password
-        self.db = self.options.redis_db
+        if not self.options.redis_url:
+            self.host = self.options.redis_host
+            self.port = self.options.redis_port
+            self.password = self.options.redis_password
+            self.db = self.options.redis_db
+        else:
+            # according to https://devcenter.heroku.com/articles/redistogo
+            parsed_url = urlparse.urlparse(self.options.redis_url)
+            self.host = parsed_url.hostname
+            self.port = int(parsed_url.port)
+            self.db = 0
+            self.password = parsed_url.password
 
         self.connection_check = PeriodicCallback(self.check_connection, 1000)
         self._need_reconnect = False
