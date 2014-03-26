@@ -101,11 +101,6 @@ centrifuge.connect();
 
 For more information about javascript client API see [documentation chapter](https://centrifuge.readthedocs.org/en/latest/content/client_api.html)
 
-Architecture diagram
---------------------
-
-![centrifuge](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/centrifuge_architecture.png "centrifuge")
-
 Admin web interface
 -------------------
 
@@ -135,7 +130,3 @@ MIT
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/FZambia/centrifuge/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 [![Requirements Status](https://requires.io/github/FZambia/centrifuge/requirements.png?branch=master)](https://requires.io/github/FZambia/centrifuge/requirements/?branch=master)
-<<<<<<< HEAD
-=======
-
->>>>>>> 0.5
