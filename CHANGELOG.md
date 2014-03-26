@@ -1,3 +1,8 @@
+v0.5.1
+======
+
+* Redis engine now supports redis_url command line option
+
 v0.5.0
 ======
 
