@@ -66,6 +66,7 @@ you want to send into channel. **It must be valid JSON**.
         "params": {
             "channel": "CHANNEL NAME",
             "user": "USER ID"
+        }
     }
 
 **disconnect** - disconnect user by user ID.
@@ -76,6 +77,7 @@ you want to send into channel. **It must be valid JSON**.
         "method": "disconnect",
         "params": {
             "user": "USER ID"
+        }
     }
 
 **presence** - get channel presence information (all clients currently subscribed on this channel).
@@ -85,8 +87,8 @@ you want to send into channel. **It must be valid JSON**.
     {
         "method": "presence",
         "params": {
-            "namespace": "NAMESPACE NAME",
             "channel": "CHANNEL NAME"
+        }
     }
 
 **history** - get channel history information (list of last messages sent into channel).
@@ -97,6 +99,7 @@ you want to send into channel. **It must be valid JSON**.
         "method": "history",
         "params": {
             "channel": "CHANNEL NAME"
+        }
     }
 
 
