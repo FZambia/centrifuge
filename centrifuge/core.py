@@ -681,10 +681,11 @@ class Application(tornado.web.Application):
 
         self.engine.publish_message(subscription_key, message)
 
-        yield self.engine.add_history_message(
-            project_id, channel, message,
-            history_size=namespace.get('history_size')
-        )
+        if namespace.get('history', False):
+            yield self.engine.add_history_message(
+                project_id, channel, message,
+                history_size=namespace.get('history_size')
+            )
 
         self.messages_published += 1
 
