@@ -225,8 +225,7 @@ Cent contains Client class to send messages to Centrifuge from your python-power
     client.add(
         "publish", 
         {
-            "namespace": "python",
-            "channel": "django",
+            "channel": "python",
             "data": "hello world"
         }
     )
