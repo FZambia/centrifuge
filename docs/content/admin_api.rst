@@ -196,7 +196,7 @@ It is easy enough:
 
 .. code-block:: bash
 
-    cent python publish --params='{"namespace": "django", "channel": "news", "data": {"title": "Django 1.6 finally released", "text": "Release keynotes:..."}}'
+    cent football publish --params='{"channel": "news", "data": {"title": "World Cup 2018", "text": "some text..."}}'
 
 
 - **cent** is the name of program
@@ -225,8 +225,7 @@ Cent contains Client class to send messages to Centrifuge from your python-power
     client.add(
         "publish", 
         {
-            "namespace": "python",
-            "channel": "django",
+            "channel": "python",
             "data": "hello world"
         }
     )

@@ -15,7 +15,7 @@ First, import javascript client into your web page:
 
 .. code-block:: html
 
-    <script src="https://raw.github.com/FZambia/centrifuge/master/javascript/centrifuge.js"></script>
+    <script src="https://rawgit.com/FZambia/centrifuge/master/javascript/centrifuge.js"></script>
 
 Javascript client built on top of Event Emitter written by `Oliver Caldwell <https://github.com/Wolfy87>`_.
 
@@ -45,7 +45,7 @@ it must be imported on your page before Centrifuge's javascript client:
 .. code-block:: html
 
     <script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js" type="text/javascript"></script>
-    <script src="https://rawgithub.com/FZambia/centrifuge/master/javascript/centrifuge.js" type="text/javascript"></script>
+    <script src="https://rawgit.com/FZambia/centrifuge/master/javascript/centrifuge.js" type="text/javascript"></script>
 
 
 In case of using SockJS additional configuration parameter can be used - ``protocols_whitelist``.
@@ -281,7 +281,7 @@ First, add ``centrifuge.dom.js`` on your page:
 
 .. code-block:: html
 
-    <script src="rawgithub.com/FZambia/centrifuge/master/javascript/centrifuge.dom.js"></script>
+    <script src="http://rawgit.com/FZambia/centrifuge/master/javascript/centrifuge.dom.js"></script>
 
 
 Note, that ``centrifuge.dom.js`` requires **jQuery**!
