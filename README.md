@@ -47,6 +47,8 @@ To get more information:
 Various packages and tools related to Centrifuge located in [Centrifugal](https://github.com/centrifugal)
 organization here on Github.
 
+![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/centrifuge.png "scheme")
+
 Similar projects / alternatives:
 
 * [Pusher](http://pusher.com/) (cloud service)
