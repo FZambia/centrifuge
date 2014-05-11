@@ -123,7 +123,7 @@ Pull requests are welcome! But, please, follow next principles:
 
 * keep things simple
 * pep8 friendly
-* python 2.6, 2.7 and 3.3 compatible
+* python 2.6, 2.7, 3.3 and 3.4 compatible
 
 LICENSE
 -------
