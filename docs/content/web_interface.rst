@@ -20,3 +20,17 @@ If you did not set password in configuration file - you will be log in as
 administrator automatically. But remember that this is normal only for
 development stage. In production you must always use strong password.
 
+
+If you want to customize how Centrifuge's web interface looks - consider using
+one of free themes from `bootswatch.com <http://bootswatch.com>`_. The following themes
+fit nice to Centrifuge:
+
+* `united <http://bootswatch.com/united/>`_
+* `spacelab <http://bootswatch.com/spacelab/>`_
+* `simplex <http://bootswatch.com/simplex/>`_
+* `readable <http://bootswatch.com/readable/>`_
+* `lumen <http://bootswatch.com/readable/>`_
+* `journal <http://bootswatch.com/journal/>`_
+* `flatly <http://bootswatch.com/flatly/>`_
+* `cosmo <http://bootswatch.com/cosmo/>`_
+* `cerulean <http://bootswatch.com/cerulean/>`_
