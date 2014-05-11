@@ -59,16 +59,18 @@ providing prefix, host and port to send metrics via UDP.
         "cookie_secret": "secret",
         "api_secret": "secret",
         "metrics": {
-            "host": "carbon.hostedgraphite.com",
-            "port": 2003,
-            "prefix": "MY_HOSTED_GRAPHITE_KEY.centrifuge",
-            "interval": 10,
-            "log": true
+            "admin": true,
+            "log": true,
+            "graphite": true,
+            "graphite_host": "carbon.hostedgraphite.com",
+            "graphite_port": 2003,
+            "graphite_prefix": "MY_HOSTED_GRAPHITE_KEY.centrifuge",
+            "interval": 10
         }
     }
 
-Metrics will be aggregated in a 10 seconds interval and then will be sent into log
-and into Graphite
+Metrics will be aggregated in a 10 seconds interval and then will be sent into log, into
+admin channel and into Graphite.
 
 At moment Centrifuge collects for each node:
 

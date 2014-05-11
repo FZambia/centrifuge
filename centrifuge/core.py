@@ -162,9 +162,9 @@ class Application(tornado.web.Application):
 
         self.log_metrics = False
 
-        self.web_metrics = True
+        self.admin_metrics = True
 
-        self.export_metrics = False
+        self.graphite_metrics = False
 
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
@@ -265,23 +265,28 @@ class Application(tornado.web.Application):
         config = self.settings['config']
         metrics_config = config.get('metrics', {})
 
-        prefix = metrics_config.get("prefix", "")
-        if prefix and not prefix.endswith(Collector.SEP):
-            prefix = prefix + Collector.SEP
-
-        prefix += self.name
-
         self.log_metrics = metrics_config.get('log', False)
-        self.web_metrics = metrics_config.get('web', True)
-        self.export_metrics = metrics_config.get('export', True)
+        self.admin_metrics = metrics_config.get('admin', True)
+        self.graphite_metrics = metrics_config.get('graphite', False)
 
-        if not self.log_metrics and not self.web_metrics and not self.export_metrics:
+        if not self.log_metrics and not self.admin_metrics and not self.graphite_metrics:
             return
 
         self.collector = Collector()
 
-        if self.export_metrics:
-            self.exporter = Exporter(metrics_config["host"], metrics_config["port"], prefix=prefix)
+        if self.graphite_metrics:
+
+            prefix = metrics_config.get("graphite_prefix", "")
+            if prefix and not prefix.endswith(Exporter.SEP):
+                prefix = prefix + Exporter.SEP
+
+            prefix += self.name
+
+            self.exporter = Exporter(
+                metrics_config["graphite_host"],
+                metrics_config["graphite_port"],
+                prefix=prefix
+            )
 
         self.periodic_metrics_export = tornado.ioloop.PeriodicCallback(
             self.flush_metrics,
@@ -299,13 +304,13 @@ class Application(tornado.web.Application):
 
         metrics = self.collector.get()
 
-        if self.web_metrics:
+        if self.admin_metrics:
             self.publish_node_info(metrics)
 
         if self.log_metrics:
             logger.info(metrics)
 
-        if self.export_metrics:
+        if self.graphite_metrics:
             self.exporter.export(metrics)
 
     @property
