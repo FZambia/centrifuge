@@ -80,6 +80,7 @@ At moment Centrifuge collects for each node:
 * channels - amount of active channels
 * clients - amount of connected clients
 * unique_clients - amount of unique clients connected
+* api - count and rate of admin API calls
 
 
 Command-line options
