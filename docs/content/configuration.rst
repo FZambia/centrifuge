@@ -52,7 +52,7 @@ object in configuration JSON.
 In example below I enable logging metrics, and export into https://www.hostedgraphite.com/ service
 providing prefix, host and port to send metrics via UDP.
 
-..code-block::javascript
+.. code-block:: javascript
 
     {
         "password": "admin",
