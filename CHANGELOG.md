@@ -1,3 +1,9 @@
+v0.5.2
+======
+
+* Centrifuge now collects various metrics and has an option to log them or to export them into Graphite
+* New optional `--name` launch option to give your node human readable unique name (will be used in web interface and Graphite data path)
+
 v0.5.1
 ======
 
