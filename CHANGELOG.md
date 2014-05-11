@@ -4,6 +4,17 @@ v0.5.2
 * Centrifuge now collects various metrics and has an option to log them or to export them into Graphite
 * New optional `--name` launch option to give your node human readable unique name (will be used in web interface and Graphite data path)
 
+At moment Centrifuge collects following metrics:
+
+* broadcast - time in milliseconds spent to broadcast messages (average, min, max, count of broadcasts)
+* connect - amount and rate of connect attempts to Centrifuge
+* messages - amount and rate of messages published
+* channels - amount of active channels
+* clients - amount of connected clients
+* unique_clients - amount of unique clients connected
+* api - count and rate of admin API calls
+
+
 v0.5.1
 ======
 
