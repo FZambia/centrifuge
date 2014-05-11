@@ -65,11 +65,11 @@ providing prefix, host and port to send metrics via UDP.
             "graphite_host": "carbon.hostedgraphite.com",
             "graphite_port": 2003,
             "graphite_prefix": "MY_HOSTED_GRAPHITE_KEY.centrifuge",
-            "interval": 10
+            "interval": 30
         }
     }
 
-Metrics will be aggregated in a 10 seconds interval and then will be sent into log, into
+Metrics will be aggregated in a 30 seconds interval and then will be sent into log, into
 admin channel and into Graphite.
 
 At moment Centrifuge collects for each node:
