@@ -1,5 +1,6 @@
 # coding: utf-8
 # Copyright (c) Alexandr Emelin. MIT license.
+
 import six
 import time
 import socket
@@ -70,9 +71,10 @@ class Collector(object):
     Lots of ideas and some code borrowed from Statsd server/client
     implementations and adapted to use with Centrifuge.
     """
-    def __init__(self, prefix=None, sep=None):
-        self.prefix = prefix or ''
-        self.sep = sep or '.'
+    SEP = '.'
+
+    def __init__(self, sep=None):
+        self.sep = sep or self.SEP
         self._counters = None
         self._times = None
         self._gauges = None
@@ -89,13 +91,11 @@ class Collector(object):
         to_return = {}
 
         for metric, value in six.iteritems(self._counters):
-            key = self.get_key(metric)
-            to_return[key] = value
-            to_return[key + self.sep + 'rate'] = value / (timestamp - self._last_reset)
+            to_return[metric + self.sep + 'count'] = value
+            to_return[metric + self.sep + 'rate'] = round(value / (timestamp - self._last_reset), 2)
 
         for metric, value in six.iteritems(self._gauges):
-            key = self.get_key(metric)
-            to_return[key] = value
+            to_return[metric] = value
 
         for metric, intervals in six.iteritems(self._times):
             prepared_timing_data = self.prepare_timing_data(intervals)
@@ -120,7 +120,7 @@ class Collector(object):
             if interval < min_interval:
                 min_interval = interval
         if count:
-            avg_interval = total / count
+            avg_interval = round(total / count, 2)
 
         return {
             "min": min_interval,
@@ -128,14 +128,6 @@ class Collector(object):
             "avg": avg_interval,
             "count": count
         }
-
-    def get_key(self, metric):
-        if not self.prefix:
-            return metric
-        if self.prefix.endswith(self.sep):
-            return self.prefix + metric
-        else:
-            return self.prefix + self.sep + metric
 
     def reset(self):
         self._counters = defaultdict(int)
@@ -175,20 +167,31 @@ class Exporter(object):
     Export collected metrics into Graphite
     """
 
-    def __init__(self, host, port, max_udp_size=512):
+    SEP = "."
+
+    def __init__(self, host, port, prefix=None, sep=None, max_udp_size=512):
         self.host = host
         self.port = port
+        self.prefix = prefix or ""
+        self.sep = sep or self.SEP
         self._address = (socket.gethostbyname(host), port)
         self.max_udp_size = max_udp_size
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.setblocking(0)
 
-    @classmethod
-    def prepare_metrics(cls, metrics):
+    def get_key(self, metric):
+        if not self.prefix:
+            return metric
+        if self.prefix.endswith(self.sep):
+            return self.prefix + metric
+        else:
+            return self.prefix + self.sep + metric
+
+    def prepare_metrics(self, metrics):
         to_return = []
         timestamp = int(time.time())
         for metric, value in six.iteritems(metrics):
-            to_return.append('{0} {1} {2}'.format(metric, int(value), timestamp))
+            to_return.append('{0} {1} {2}'.format(self.get_key(metric), int(value), timestamp))
         return to_return
 
     def export(self, metrics):

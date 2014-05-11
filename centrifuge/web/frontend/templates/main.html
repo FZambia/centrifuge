@@ -46,12 +46,11 @@
 
 <script type="text/x-jsrender" id="node_info_row_template">
     <tr id="node-info-row-{{!>uid}}">
-        <td class="node-info-address">{{!>address}}</td>
-        <td class="node-info-port">{{!>port}}</td>
-        <td class="node-info-channels">{{!>channels}}</td>
-        <td class="node-info-clients">{{!>clients}}</td>
-        <td class="node-info-unique-clients">{{!>unique_clients}}</td>
-        <td class="node-info-messages-per-second">{{!>messages_per_second}}</td>
+        <td class="node-info-name">{{!>name}}</td>
+        <td class="node-info-channels">{{!>metrics['channels']}}</td>
+        <td class="node-info-clients">{{!>metrics['clients']}}</td>
+        <td class="node-info-unique-clients">{{!>metrics['unique_clients']}}</td>
+        <td class="node-info-messages-per-second">{{!>metrics['messages.rate'] || 0}}</td>
     </tr>
 </script>
 
@@ -102,8 +101,7 @@
                         <table class="table table-bordered">
                             <thead class="cf">
                             <tr>
-                                <th title="node address">Address</th>
-                                <th title="node port">Port</th>
+                                <th title="node name">Node name</th>
                                 <th title="active channels">Channels</th>
                                 <th title="connected clients">Clients</th>
                                 <th title="unique clients">Unique</th>

@@ -24,15 +24,16 @@ from centrifuge import utils
 from centrifuge.structure import Structure
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
+from centrifuge.metrics import Collector, Exporter
 
 
-def get_host():
+def get_address():
     try:
-        host = socket.gethostbyname(socket.gethostname())
+        address = socket.gethostbyname(socket.gethostname())
     except Exception as err:
         logger.warning(err)
-        host = "?"
-    return host
+        address = "?"
+    return address
 
 
 class Application(tornado.web.Application):
@@ -76,6 +77,9 @@ class Application(tornado.web.Application):
 
     # how often in seconds this node should check expiring connections
     CONNECTION_EXPIRE_CHECK_INTERVAL = 6
+
+    # default metrics export interval in seconds
+    METRICS_EXPORT_INTERVAL = 10
 
     LIMIT_EXCEEDED = 'limit exceeded'
 
@@ -127,9 +131,6 @@ class Application(tornado.web.Application):
         # list of coroutines that must be done after message publishing
         self.post_publish_callbacks = []
 
-        # periodic task for sending current node information into admin channel
-        self.periodic_node_info = None
-
         # time of last node info revision
         self.node_info_revision_time = time.time()
 
@@ -145,8 +146,25 @@ class Application(tornado.web.Application):
         # dictionary to keep new connections with expired credentials until next connection check
         self.expired_reconnections = {}
 
+        self.address = get_address()
+
         # count of messages published since last node info revision
         self.messages_published = 0
+
+        # metrics collector class instance
+        self.collector = None
+
+        # metric exporter class instance
+        self.exporter = None
+
+        # periodic task to export collected metrics
+        self.periodic_metrics_export = None
+
+        self.log_metrics = False
+
+        self.web_metrics = True
+
+        self.export_metrics = False
 
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
@@ -156,8 +174,8 @@ class Application(tornado.web.Application):
         self.init_structure()
         self.init_engine()
         self.init_ping()
-        self.init_node_info()
         self.init_connection_expire_check()
+        self.init_metrics()
 
     def init_structure(self):
         """
@@ -216,14 +234,13 @@ class Application(tornado.web.Application):
             callback = utils.namedAny(callable_path)
             self.post_publish_callbacks.append(callback)
 
-    def init_node_info(self):
-        self.periodic_node_info = tornado.ioloop.PeriodicCallback(
-            self.publish_node_info,
-            self.NODE_INFO_PUBLISH_INTERVAL
-        )
-        self.periodic_node_info.start()
-
     def init_connection_expire_check(self):
+        """
+        Initialize periodic connection expiration check task if enabled.
+        We periodically check the time of client connection expiration time
+        and ask web application about these clients - are they still active in
+        web application?
+        """
 
         if not self.CONNECTION_EXPIRE_CHECK:
             return
@@ -238,6 +255,64 @@ class Application(tornado.web.Application):
             time.time()+self.CONNECTION_EXPIRE_CHECK_INTERVAL,
             self.check_expired_connections
         )
+
+    def init_metrics(self):
+        """
+        Initialize metrics collector - different counters, timers in
+        Centrifuge which then will be exported into web interface, log or
+        Graphite.
+        """
+        config = self.settings['config']
+        metrics_config = config.get('metrics', {})
+
+        prefix = metrics_config.get("prefix", "")
+        if prefix and not prefix.endswith(Collector.SEP):
+            prefix = prefix + Collector.SEP
+
+        prefix += self.name
+
+        self.log_metrics = metrics_config.get('log', False)
+        self.web_metrics = metrics_config.get('web', True)
+        self.export_metrics = metrics_config.get('export', True)
+
+        if not self.log_metrics and not self.web_metrics and not self.export_metrics:
+            return
+
+        self.collector = Collector()
+
+        if self.export_metrics:
+            self.exporter = Exporter(metrics_config["host"], metrics_config["port"], prefix=prefix)
+
+        self.periodic_metrics_export = tornado.ioloop.PeriodicCallback(
+            self.flush_metrics,
+            metrics_config.get("interval", self.METRICS_EXPORT_INTERVAL)*1000
+        )
+        self.periodic_metrics_export.start()
+
+    def flush_metrics(self):
+
+        if not self.collector:
+            return
+
+        for key, value in six.iteritems(self.get_node_gauges()):
+            self.collector.gauge(key, value)
+
+        metrics = self.collector.get()
+
+        if self.web_metrics:
+            self.publish_node_info(metrics)
+
+        if self.log_metrics:
+            logger.info(metrics)
+
+        if self.export_metrics:
+            self.exporter.export(metrics)
+
+    @property
+    def name(self):
+        if self.settings['options'].name:
+            return self.settings['options'].name
+        return self.address.replace(".", "_") + '_' + str(self.settings['options'].port)
 
     def send_ping(self, ping_message):
         self.engine.publish_control_message(ping_message)
@@ -265,7 +340,10 @@ class Application(tornado.web.Application):
         message = {
             'app_id': self.uid,
             'method': 'ping',
-            'params': self.get_node_info()
+            'params': {
+                'uid': self.uid,
+                'name': self.name
+            }
         }
         send_ping = partial(self.engine.publish_control_message, message)
         ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
@@ -278,31 +356,27 @@ class Application(tornado.web.Application):
             self.PING_INTERVAL, review_ping.start
         )
 
-    def get_node_info(self):
-        current_time = time.time()
-        msg_per_sec = float(self.messages_published)/(current_time - self.node_info_revision_time)
-        info = {
-            'uid': self.uid,
-            'address': get_host(),
-            'port': str(self.settings['options'].port),
-            'nodes': len(self.nodes) + 1,
+    def get_node_gauges(self):
+        gauges = {
             'channels': len(self.engine.subscriptions),
             'clients': sum(len(v) for v in six.itervalues(self.engine.subscriptions)),
             'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
-            'messages_per_second': "%0.2f" % msg_per_sec
         }
-        self.messages_published = 0
-        self.node_info_revision_time = current_time
-        return info
+        return gauges
 
-    def publish_node_info(self):
+    def publish_node_info(self, metrics):
         """
         Publish information about current node into admin channel
         """
         self.engine.publish_admin_message({
             "admin": True,
             "type": "node",
-            "data": self.get_node_info()
+            "data": {
+                "uid": self.uid,
+                "nodes": len(self.nodes) + 1,
+                "name": self.name,
+                "metrics": metrics
+            }
         })
 
     @coroutine
@@ -687,7 +761,8 @@ class Application(tornado.web.Application):
                 history_size=namespace.get('history_size')
             )
 
-        self.messages_published += 1
+        if self.collector:
+            self.collector.incr('messages')
 
         raise Return((True, None))
 

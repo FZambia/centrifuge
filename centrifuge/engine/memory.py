@@ -81,11 +81,18 @@ class Engine(BaseEngine):
         if channel not in self.subscriptions:
             raise Return((True, None))
 
+        timer = None
+        if self.application.collector:
+            timer = self.application.collector.get_timer('broadcast')
+
         response = Response(method=method, body=body)
         prepared_response = response.as_message()
         for uid, client in six.iteritems(self.subscriptions[channel]):
             if channel in self.subscriptions and uid in self.subscriptions[channel]:
                 yield client.send(prepared_response)
+
+        if timer:
+            timer.stop()
 
         raise Return((True, None))
 

@@ -176,6 +176,9 @@ class ApiHandler(BaseHandler):
         else:
             raise tornado.web.HTTPError(400, log_message="data not a list or dictionary")
 
+        if self.application.collector:
+            self.application.collector.incr('api')
+
         self.json_response(multi_response.as_message())
 
 
