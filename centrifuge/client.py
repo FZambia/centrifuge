@@ -357,6 +357,9 @@ class Client(object):
         Authenticate client's connection, initialize required
         variables in case of successful authentication.
         """
+        if self.application.collector:
+            self.application.collector.incr('connect')
+
         if self.is_authenticated:
             raise Return((self.uid, None))
 

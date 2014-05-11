@@ -26,6 +26,10 @@ define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
+define(
+    "name", default='', help="unique node name", type=str
+)
+
 
 engine = os.environ.get('CENTRIFUGE_ENGINE')
 if not engine or engine == 'memory':

@@ -45,6 +45,43 @@ configuration file. Example:
 
 Here I set custom ``sockjs_url`` option, list of all available options can be found in sockjs-tornado source code: `show on Github <https://github.com/mrjoes/sockjs-tornado/blob/master/sockjs/tornado/router.py#L14>`_
 
+Centrifuge also allows to collect and export various metrics into Graphite.
+You can configure metric collecting and exporting behaviour using ``metrics``
+object in configuration JSON.
+
+In example below I enable logging metrics, and export into https://www.hostedgraphite.com/ service
+providing prefix, host and port to send metrics via UDP.
+
+.. code-block:: javascript
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "api_secret": "secret",
+        "metrics": {
+            "admin": true,
+            "log": true,
+            "graphite": true,
+            "graphite_host": "carbon.hostedgraphite.com",
+            "graphite_port": 2003,
+            "graphite_prefix": "MY_HOSTED_GRAPHITE_KEY.centrifuge",
+            "interval": 30
+        }
+    }
+
+Metrics will be aggregated in a 30 seconds interval and then will be sent into log, into
+admin channel and into Graphite.
+
+At moment Centrifuge collects for each node:
+
+* broadcast - time in milliseconds spent to broadcast messages (average, min, max, count of broadcasts)
+* connect - amount and rate of connect attempts to Centrifuge
+* messages - amount and rate of messages published
+* channels - amount of active channels
+* clients - amount of connected clients
+* unique_clients - amount of unique clients connected
+* api - count and rate of admin API calls
+
 
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
@@ -56,6 +93,8 @@ Centrifuge has several command line arguments.
 ``--debug`` - run Centrifuge in debug mode:
 
 ``--port`` - port to bind (default 8000)
+
+``--name`` - unique node name (optional) - will be used in web interface metric table or in graphite data path
 
 
 Some other command line options come with engine or structure storage backend -
