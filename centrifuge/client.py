@@ -191,7 +191,6 @@ class Client(object):
         Called when message from client received.
         """
         multi_response = MultiResponse()
-
         try:
             data = json_decode(message)
         except ValueError:
@@ -375,7 +374,13 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        if token != auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info):
+        try:
+            client_token = auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info)
+        except Exception as err:
+            logger.error(err)
+            raise Return((None, "invalid connection parameters"))
+
+        if token != client_token:
             raise Return((None, "invalid token"))
 
         if user_info is not None:

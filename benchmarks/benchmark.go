@@ -128,7 +128,8 @@ func main() {
     url := os.Args[1]
     project_id := os.Args[2]
     project_secret := os.Args[3]
-    timestamp := string(time.Now().Unix())
+    timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+    fmt.Println(timestamp)
     max_clients, _ := strconv.Atoi(os.Args[4])
     increment, _ := strconv.Atoi(os.Args[5])
     repeats, _ := strconv.Atoi(os.Args[6])
@@ -139,11 +140,11 @@ func main() {
 
     messages_received := 0
 
-    token := generate_token(project_secret, project_id, "test")
+    token := generate_token(project_secret, project_id, "test", timestamp)
 
-    connect_message := fmt.Sprintf("{\"params\": {\"project\": \"%s\", \"token\": \"%s\", \"user\": \"test\"}, \"method\": \"connect\"}", project_id, token)
-    subscribe_message := "{\"params\": {\"namespace\": \"test\", \"channel\": \"test\"}, \"method\": \"subscribe\"}"
-    publish_message := "{\"params\": {\"data\": {\"input\": \"I am benchmarking Centrifuge at moment\"}, \"namespace\": \"test\", \"channel\": \"test\"}, \"method\": \"publish\"}"
+    connect_message := fmt.Sprintf("{\"params\": {\"project\": \"%s\", \"timestamp\": \"%s\", \"token\": \"%s\", \"user\": \"test\"}, \"method\": \"connect\"}", project_id, timestamp, token)
+    subscribe_message := "{\"params\": {\"channel\": \"test\"}, \"method\": \"subscribe\"}"
+    publish_message := "{\"params\": {\"data\": {\"input\": \"I am benchmarking Centrifuge at moment\"}, \"channel\": \"test\"}, \"method\": \"publish\"}"
 
     ch_sub := make(chan int)
     ch_msg := make(chan int)
