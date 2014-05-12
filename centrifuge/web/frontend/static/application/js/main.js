@@ -10,9 +10,9 @@
                 project_tab: '_info',
                 projects: [],
                 socket_url: '/socket',
+                metrics_interval: 10000,
                 global_content_element: '#main-content',
                 global_tabs_element: '#tabs',
-                node_info_timeout: 15000,
                 transports: [
                     'websocket',
                     'xdr-streaming',
@@ -179,7 +179,7 @@
                         node_info_row.remove();
                         delete node_timeouts[uid];
                     }
-                }, options.node_info_timeout);
+                }, options.metrics_interval + 5000);
             };
 
             var handle_admin_message = function(message) {

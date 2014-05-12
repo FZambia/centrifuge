@@ -63,11 +63,15 @@ class MainHandler(BaseHandler):
         if error:
             raise tornado.web.HTTPError(500, log_message=str(error))
 
+        config = self.application.settings.get('config', {})
+        metrics_interval = config.get('metrics', {}).get('interval', self.application.METRICS_EXPORT_INTERVAL)*1000
+
         context = {
             'js_data': tornado.escape.json_encode({
                 'current_user': user,
                 'socket_url': '/socket',
-                'projects': projects
+                'projects': projects,
+                'metrics_interval': metrics_interval
             }),
             'node_count': len(self.application.nodes) + 1,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
