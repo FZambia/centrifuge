@@ -51,6 +51,8 @@
         <td class="node-info-clients">{{!>metrics['clients']}}</td>
         <td class="node-info-unique-clients">{{!>metrics['unique_clients']}}</td>
         <td class="node-info-messages-per-second">{{!>metrics['messages.rate'] || 0}}</td>
+        <td class="node-info-broadcast-avg">{{!>metrics['broadcast.avg'] || 0}}</td>
+        <td class="node-info-api-count">{{!>metrics['api.count'] || 0}}</td>
     </tr>
 </script>
 
@@ -106,6 +108,8 @@
                                 <th title="connected clients">Clients</th>
                                 <th title="unique clients">Unique</th>
                                 <th title="messages per second">Msg/sec</th>
+                                <th title="broadcast average time in milliseconds">Broadcast</th>
+                                <th title="api calls">API calls</th>
                             </tr>
                             </thead>
                             <tbody id="node-info">
