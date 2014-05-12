@@ -160,10 +160,13 @@ class Application(tornado.web.Application):
         # periodic task to export collected metrics
         self.periodic_metrics_export = None
 
+        # log collected metrics
         self.log_metrics = False
 
+        # send collected metrics into admin channel
         self.admin_metrics = True
 
+        # export collected metrics into Graphite
         self.graphite_metrics = False
 
         # initialize tornado's application
@@ -265,8 +268,8 @@ class Application(tornado.web.Application):
         config = self.settings['config']
         metrics_config = config.get('metrics', {})
 
-        self.log_metrics = metrics_config.get('log', False)
         self.admin_metrics = metrics_config.get('admin', True)
+        self.log_metrics = metrics_config.get('log', False)
         self.graphite_metrics = metrics_config.get('graphite', False)
 
         if not self.log_metrics and not self.admin_metrics and not self.graphite_metrics:
