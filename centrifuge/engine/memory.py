@@ -2,6 +2,7 @@
 # Copyright (c) Alexandr Emelin. MIT license.
 
 import time
+import heapq
 import six
 
 from tornado.gen import coroutine, Return
@@ -20,6 +21,7 @@ class Engine(BaseEngine):
         super(Engine, self).__init__(*args, **kwargs)
         self.subscriptions = {}
         self.history = {}
+        self.history_expire = []
         self.presence = {}
         self.deactivated = {}
 
@@ -194,9 +196,14 @@ class Engine(BaseEngine):
         return "%s:history:%s:%s" % (self.prefix, project_id, channel)
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size=None, history_expire=0):
 
         history_key = self.get_history_key(project_id, channel)
+
+        if history_expire:
+            expire_at = int(time.time()) + history_expire
+            heapq.heappush(self.history_expire, (expire_at, history_key))
+
         if history_key not in self.history:
             self.history[history_key] = []
 
