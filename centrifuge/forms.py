@@ -25,6 +25,9 @@ DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 # how many messages keep in channel history by default
 DEFAULT_HISTORY_SIZE = 50
 
+# how long in seconds we keep history in inactive channels (0 - forever until size is not exceeded)
+DEFAULT_HISTORY_EXPIRE = 3600*24  # 24 hours by default
+
 
 class ProjectMixin(object):
 
@@ -179,6 +182,18 @@ class NamespaceMixin(object):
         ],
         default=DEFAULT_HISTORY_SIZE,
         description="maximum amount of messages in history for single channel"
+    )
+
+    history_expire = IntegerField(
+        label="history expire",
+        validators=[
+            validators.NumberRange(min=0)
+        ],
+        default=DEFAULT_HISTORY_EXPIRE,
+        description="time in seconds to keep history for inactive channels. 0 - "
+                    "do not expire at all - not recommended though as this can lead to"
+                    "memory leaks (as Centrifuge keeps all history in memory), default "
+                    "is 86400 seconds (24 hours)"
     )
 
     join_leave = BooleanField(
