@@ -766,7 +766,8 @@ class Application(tornado.web.Application):
         if namespace.get('history', False):
             yield self.engine.add_history_message(
                 project_id, channel, message,
-                history_size=namespace.get('history_size')
+                history_size=namespace.get('history_size'),
+                history_expire=namespace.get('history_expire', 0)
             )
 
         if self.collector:

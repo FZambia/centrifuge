@@ -213,6 +213,8 @@ class Engine(BaseEngine):
             expire_at = int(time.time()) + history_expire
             self.history_expire_at[history_key] = expire_at
             heapq.heappush(self.history_expire_heap, (expire_at, history_key))
+        elif history_key in self.history_expire_at:
+            del self.history_expire_at[history_key]
 
         if history_key not in self.history:
             self.history[history_key] = []
@@ -225,18 +227,16 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     @coroutine
-    def get_history(self, project_id, channel, history_expire=0):
+    def get_history(self, project_id, channel):
         history_key = self.get_history_key(project_id, channel)
 
         now = int(time.time())
-        if history_expire and history_key in self.history_expire_at and self.history_expire_at[history_key] <= now:
-            self.remove_history(history_key)
-            raise Return(([], None))
 
-        if history_expire and history_key in self.history_expire_at:
-            expire_at = now + history_expire
-            self.history_expire_at[history_key] = expire_at
-            heapq.heappush(self.history_expire_heap, (expire_at, history_key))
+        if history_key in self.history_expire_at:
+            expire_at = self.history_expire_at[history_key]
+            if expire_at <= now:
+                self.remove_history(history_key)
+                raise Return(([], None))
 
         try:
             data = self.history[history_key]
