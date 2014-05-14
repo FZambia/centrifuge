@@ -272,6 +272,7 @@ class Structure:
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
+            'history_expire': kwargs['history_expire'],
             'is_private': kwargs['is_private'],
             'auth_address': kwargs['auth_address'],
             'join_leave': kwargs['join_leave']
@@ -304,6 +305,7 @@ class Structure:
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
+            'history_expire': kwargs['history_expire'],
             'is_private': kwargs['is_private'],
             'auth_address': kwargs['auth_address'],
             'join_leave': kwargs['join_leave']
@@ -338,6 +340,7 @@ class Structure:
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
+            'history_expire': kwargs['history_expire'],
             'is_private': kwargs['is_private'],
             'auth_address': kwargs['auth_address'],
             'join_leave': kwargs['join_leave']
@@ -357,6 +360,7 @@ class Structure:
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
+            'history_expire': kwargs['history_expire'],
             'is_private': kwargs['is_private'],
             'auth_address': kwargs['auth_address'],
             'join_leave': kwargs['join_leave']
