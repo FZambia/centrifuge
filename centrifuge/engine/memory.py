@@ -3,9 +3,11 @@
 
 import time
 import six
+import heapq
 
 from tornado.gen import coroutine, Return
 from tornado.escape import json_encode
+from tornado.ioloop import PeriodicCallback
 
 from centrifuge.response import Response
 from centrifuge.log import logger
@@ -16,14 +18,23 @@ class Engine(BaseEngine):
 
     NAME = 'In memory - single node only'
 
+    HISTORY_EXPIRE_TASK_INTERVAL = 60000  # once in a minute
+
     def __init__(self, *args, **kwargs):
         super(Engine, self).__init__(*args, **kwargs)
         self.subscriptions = {}
         self.history = {}
+        self.history_expire_at = {}
+        self.history_expire_heap = []
         self.presence = {}
         self.deactivated = {}
+        self.history_expire_task = PeriodicCallback(
+            self.check_history_expire,
+            self.HISTORY_EXPIRE_TASK_INTERVAL
+        )
 
     def initialize(self):
+        self.history_expire_task.start()
         logger.info("Memory engine initialized")
 
     @coroutine
@@ -194,9 +205,17 @@ class Engine(BaseEngine):
         return "%s:history:%s:%s" % (self.prefix, project_id, channel)
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size=None, history_expire=0):
 
         history_key = self.get_history_key(project_id, channel)
+
+        if history_expire:
+            expire_at = int(time.time()) + history_expire
+            self.history_expire_at[history_key] = expire_at
+            heapq.heappush(self.history_expire_heap, (expire_at, history_key))
+        elif history_key in self.history_expire_at:
+            del self.history_expire_at[history_key]
+
         if history_key not in self.history:
             self.history[history_key] = []
 
@@ -210,8 +229,42 @@ class Engine(BaseEngine):
     @coroutine
     def get_history(self, project_id, channel):
         history_key = self.get_history_key(project_id, channel)
+
+        now = int(time.time())
+
+        if history_key in self.history_expire_at:
+            expire_at = self.history_expire_at[history_key]
+            if expire_at <= now:
+                self.remove_history(history_key)
+                raise Return(([], None))
+
         try:
             data = self.history[history_key]
         except KeyError:
             data = []
+
         raise Return((data, None))
+
+    def remove_history(self, history_key):
+        try:
+            del self.history[history_key]
+        except KeyError:
+            pass
+        try:
+            del self.history_expire_at[history_key]
+        except KeyError:
+            pass
+
+    def check_history_expire(self):
+        now = int(time.time())
+        while True:
+            try:
+                expire, history_key = heapq.heappop(self.history_expire_heap)
+            except IndexError:
+                return
+
+            if expire <= now:
+                if history_key in self.history_expire_at and self.history_expire_at[history_key] <= now:
+                    self.remove_history(history_key)
+            else:
+                break

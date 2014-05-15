@@ -217,6 +217,15 @@ to allow authorization or not.
 
 **history** - enable/disable history of messages
 
+**history size** - Centrifuge keeps all history in memory. In process memory in case of using Memory Engine
+and in Redis (which also in-memory store) in case of using Redis Engine. So it's very important to limit
+maximum amount of messages in channel history. This setting is exactly for this.
+
+**history expire** - as all history is storing in memory it is also very important to get rid of old history
+data for unused (inactive for a long time) channels. This is interval in seconds to keep history for channel
+after last publishing into it. If you set this setting to 0 - history will never expire but it is not
+recommended due to design of Centrifuge.
+
 **join/leave messages** - enable/disable sending join(leave) messages when client subscribes
 on channel (unsubscribes from channel)
 

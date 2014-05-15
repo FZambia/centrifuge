@@ -366,13 +366,17 @@ class Engine(BaseEngine):
             raise Return((dict_from_list(data), None))
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size=None, history_expire=0):
         history_size = history_size or self.history_size
-        list_key = self.get_history_list_key(project_id, channel)
+        history_list_key = self.get_history_list_key(project_id, channel)
         try:
             pipeline = self.worker.pipeline()
-            pipeline.lpush(list_key, json_encode(message))
-            pipeline.ltrim(list_key, 0, history_size - 1)
+            pipeline.lpush(history_list_key, json_encode(message))
+            pipeline.ltrim(history_list_key, 0, history_size - 1)
+            if history_expire:
+                pipeline.expire(history_list_key, history_expire)
+            else:
+                pipeline.persist(history_list_key)
             yield Task(pipeline.send)
         except StreamClosedError as e:
             raise Return((None, e))

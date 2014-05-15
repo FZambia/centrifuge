@@ -1,5 +1,5 @@
 # coding: utf-8
-from unittest import TestCase, main
+from unittest import main
 import sys
 import os
 import json
@@ -180,6 +180,28 @@ class MemoryEngineTest(AsyncTestCase):
         self.assertEqual(error, None)
         self.assertEqual(len(result), 2)
 
+    @gen_test
+    def test_history_expire(self):
+        result, error = yield self.engine.add_history_message(
+            self.project_id, self.channel, self.message_1, history_expire=1
+        )
+        self.assertEqual(error, None)
+        self.assertEqual(result, True)
+
+        result, error = yield self.engine.get_history(
+            self.project_id, self.channel
+        )
+        self.assertEqual(error, None)
+        self.assertEqual(len(result), 1)
+
+        time.sleep(2)
+
+        result, error = yield self.engine.get_history(
+            self.project_id, self.channel
+        )
+        self.assertEqual(error, None)
+        self.assertEqual(len(result), 0)
+
 
 class RedisEngineTest(AsyncTestCase):
     """ Test the client """
@@ -307,6 +329,31 @@ class RedisEngineTest(AsyncTestCase):
         )
         self.assertEqual(error, None)
         self.assertEqual(len(result), 2)
+
+    @gen_test
+    def test_history_expire(self):
+        result = yield Task(self.engine.worker.flushdb)
+        self.assertEqual(result, "OK")
+
+        result, error = yield self.engine.add_history_message(
+            self.project_id, self.channel, self.message_1, history_expire=1
+        )
+        self.assertEqual(error, None)
+        self.assertEqual(result, True)
+
+        result, error = yield self.engine.get_history(
+            self.project_id, self.channel
+        )
+        self.assertEqual(error, None)
+        self.assertEqual(len(result), 1)
+
+        time.sleep(2)
+
+        result, error = yield self.engine.get_history(
+            self.project_id, self.channel
+        )
+        self.assertEqual(error, None)
+        self.assertEqual(len(result), 0)
 
 
 if __name__ == '__main__':
