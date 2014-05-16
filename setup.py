@@ -3,9 +3,14 @@ import sys
 from setuptools import setup
 
 
-if sys.argv[-1] == 'test':
-    status = os.system("python -m unittest discover -p 'test_*.py'")
-    sys.exit(1 if status > 127 else status)
+if sys.version_info[:2] < (2, 7):
+    tests_require = 'unittest2'
+    test_suite = 'unittest2.collector'
+else:
+    # In Python 2.7+, unittest has a built-in collector.
+    # Test everything under 'test/'.
+    tests_require = None
+    test_suite = 'test'
 
 
 def full_split(path, result=None):
@@ -97,6 +102,8 @@ setup(
             'centrifuge = centrifuge.node:main',
         ],
     },
+    tests_require=tests_require,
+    test_suite=test_suite,
     install_requires=install_requires,
     classifiers=[
         'Development Status :: 4 - Beta',

@@ -1,11 +1,6 @@
 # coding: utf-8
 from unittest import TestCase, main
-import sys
-import os
 import time
-
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, path)
 
 
 from centrifuge.metrics import *

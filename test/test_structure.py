@@ -1,11 +1,6 @@
 # coding: utf-8
 from __future__ import print_function
 from tornado.testing import AsyncTestCase, main
-import os
-import sys
-
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, path)
 
 from centrifuge.structure import flatten
 

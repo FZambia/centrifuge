@@ -112,8 +112,9 @@ Admin web interface
 To run tests type the following from `tests` directory (`centrifuge` must be in PYTHONPATH):
 
 ```python
-# IMPORTANT! Tests clear Redis database on every running. Be aware of this.
-python -m unittest discover -p 'test_*.py'
+# IMPORTANT! Tests require Redis running and clear database on every running. Be aware of this!
+pip install tox
+tox
 ```
 
 Contributing

@@ -1,13 +1,7 @@
 # coding: utf-8
-import sys
-import os
 import json
 import time
 from unittest import TestCase, main
-
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, path)
-
 
 from centrifuge.auth import decode_data, get_client_token
 

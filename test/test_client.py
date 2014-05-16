@@ -2,11 +2,12 @@
 from __future__ import print_function
 from tornado.gen import coroutine, Return
 from tornado.testing import AsyncTestCase, gen_test
+import json
+
 from centrifuge.client import Client
 from centrifuge.schema import client_api_schema
 from centrifuge.core import Application
 from centrifuge.engine.memory import Engine
-import json
 
 
 class FakeSock(object):

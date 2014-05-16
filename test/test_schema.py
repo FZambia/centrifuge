@@ -1,13 +1,8 @@
 # coding: utf-8
 from unittest import TestCase, main
-import sys
-import os
 
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, path)
 
-from centrifuge.schema import req_schema, server_api_schema,\
-    client_api_schema
+from centrifuge.schema import req_schema, server_api_schema, client_api_schema
 from jsonschema import validate, ValidationError
 
 

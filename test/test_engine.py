@@ -7,8 +7,6 @@ import time
 from tornado.gen import Task
 from tornado.testing import AsyncTestCase, gen_test
 
-path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, path)
 
 from centrifuge.engine import BaseEngine
 from centrifuge.engine.memory import Engine as MemoryEngine
@@ -228,7 +226,7 @@ class RedisEngineTest(AsyncTestCase):
     def test_presence(self):
 
         result = yield Task(self.engine.worker.flushdb)
-        self.assertEqual(result, "OK")
+        self.assertEqual(result, b"OK")
 
         result, error = yield self.engine.get_presence(
             self.project_id, self.channel
@@ -292,7 +290,7 @@ class RedisEngineTest(AsyncTestCase):
     @gen_test
     def test_history(self):
         result = yield Task(self.engine.worker.flushdb)
-        self.assertEqual(result, "OK")
+        self.assertEqual(result, b"OK")
 
         result, error = yield self.engine.add_history_message(
             self.project_id, self.channel, self.message_1
@@ -333,7 +331,7 @@ class RedisEngineTest(AsyncTestCase):
     @gen_test
     def test_history_expire(self):
         result = yield Task(self.engine.worker.flushdb)
-        self.assertEqual(result, "OK")
+        self.assertEqual(result, b"OK")
 
         result, error = yield self.engine.add_history_message(
             self.project_id, self.channel, self.message_1, history_expire=1
