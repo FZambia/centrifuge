@@ -109,10 +109,12 @@ Admin web interface
 ![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/main.png "admin web interface")
 
 
-To run tests type the following from `tests` directory (`centrifuge` must be in PYTHONPATH):
+Run tests
+----------
+
+IMPORTANT! At moment tests require Redis running and clear database on every running. Be aware of this!
 
 ```python
-# IMPORTANT! Tests require Redis running and clear database on every running. Be aware of this!
 pip install tox
 tox
 ```
