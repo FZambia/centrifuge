@@ -4,6 +4,7 @@ v0.5.2
 * Centrifuge now collects various metrics and has an option to log them or to export them into Graphite
 * New optional `--name` launch option to give your node human readable unique name (will be used in web interface and Graphite data path)
 * History for inactive channels now expires to prevent permanent memory grows (expiration time is configurable via project/namespace settings).
+* Tox for testing
 
 At moment Centrifuge collects following metrics:
 

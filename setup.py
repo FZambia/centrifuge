@@ -80,13 +80,12 @@ install_requires = [
 
 
 def long_description():
-    return "Simple open-source platform for real-time message " \
-           "broadcasting in web applications"
+    return "Simple real-time messaging in web applications"
 
 
 setup(
     name='centrifuge',
-    version='0.5.2dev',
+    version='0.5.2',
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',

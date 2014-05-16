@@ -109,14 +109,20 @@ Admin web interface
 ![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/main.png "admin web interface")
 
 
-Run tests
-----------
+Tests
+-----
 
 IMPORTANT! At moment tests require Redis running and clear database on every running. Be aware of this!
 
-```python
+```bash
 pip install tox
 tox
+```
+
+or just
+
+```bash
+python setup.py test
 ```
 
 Contributing
