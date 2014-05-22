@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta content="noindex" name="robots">
+        <link href="http://codepen.io/cguillou/pen/lcImj" rel="canonical">
+
+        <link href="http://s.codepen.io/assets/reset/reset.css" rel="stylesheet">
+        <script src="http://s.codepen.io/assets/libs/prefixfree.min.js"></script>
+        <style>
+            /* Import Icon fonts and web font */
+            @import "http://fonts.googleapis.com/css?family=Open+Sans:400,300,700";
+            @import "http://weloveiconfonts.com/api/?family=entypo";
+            @import url(http://weloveiconfonts.com/api/?family=fontawesome);
+
+                /* entypo */
+            [class*="entypo-"]:before {
+                font-family: 'entypo', sans-serif;
+            }
+
+                /* fontawesome */
+            [class*="fontawesome-"]:before {
+                font-family: 'FontAwesome', sans-serif;
+            }
+
+            .wrapper {
+                width: 600px;
+                margin: 0 auto;
+                background-color: #1f222a;
+                border-radius: 7px;
+                vertical-align: middle;
+            }
+
+            body {
+                color: #eeeeee;
+                font-family: 'Open Sans', sans-serif;
+                background-color: #1f222a;
+            }
+
+            nav {
+                width: 120px;
+                height: 100%;
+                float: left;
+                background-color: #373b46;
+                border-radius: 7px;
+            }
+
+            nav ul li {
+                width: 120px;
+                height: 90px;
+                float: left;
+                text-align: center;
+                line-height: 90px;
+                background-color: #373b46;
+            }
+
+            nav ul li.last {
+                height: 100px;
+                line-height: 140px;
+            }
+
+            nav ul li.active {
+                background-color: #4b4e57;
+                border-radius: 7px 0px 0px 0px;
+            }
+
+            nav ul li a {
+                color: #eeeeee;
+                font-size: 2.2em;
+                text-decoration: none;
+                transition: font-size 0.2s;
+            }
+
+            nav ul li a:hover {
+                font-size: 2.6em;
+            }
+
+            section {
+                height: 100%;
+                box-sizing: border-box;
+                padding: 10px 40px;
+                float: left;
+                position: relative;
+                background-color: #1f222a;
+                border-radius: 7px;
+            }
+
+            section h1 {
+                width: 400px;
+                padding: 20px 0px 35px 0px;
+                position: relative;
+                font-size: 1.5em;
+                border-bottom: 2px solid #4b4e57;
+            }
+
+            section h1 a.add {
+                width: 50px;
+                height: 50px;
+                position: absolute;
+                top: 10px;
+                right: 0px;
+                color: #4b4e57;
+                font-size: 2.4em;
+                text-align: center;
+                line-height: 45px;
+                text-decoration: none;
+                background-color: black;
+                border-radius: 3px;
+                transition: color 0.5s;
+            }
+
+            section h1 a.add:hover {
+                color: #eeeeee;
+            }
+
+            section .temperature {
+                padding: 40px 0px;
+                color: #3d414c;
+                font-size: 6em;
+                transition: color 0.5s ease;
+            }
+
+            section .temperature:hover {
+                color: yellow;
+            }
+
+            section .temperature h2 {
+                display: inline;
+                color: #eeeeee;
+                font-weight: 300;
+            }
+
+            section .temperature h2 span.degree-symbol {
+                display: inline-block;
+                margin: 0px 15px;
+                font-size: 0.6em;
+                vertical-align: top;
+            }
+
+            section .temperature h2 span.celcius {
+                display: inline-block;
+                margin: 10px 0px 0px 15px;
+                color: #3d414c;
+                font-size: 0.3em;
+                vertical-align: top;
+            }
+
+            section ul {
+                padding: 5px;
+                margin-bottom: 70px;
+            }
+
+            section ul li {
+                display: block;
+                float: left;
+                margin-right: 60px;
+                color: #3d414c;
+                font-size: 2em;
+            }
+
+            section ul li:last-child {
+                margin-right: 0px;
+            }
+
+            section ul li span {
+                padding-left: 10px;
+                color: #eeeeee;
+                font-size: 0.6em;
+                line-height: 30px;
+                vertical-align: top;
+            }
+
+            section .bullets {
+                height: 70px;
+                color: #3d414c;
+                text-align: center;
+            }
+
+            section .bullets span {
+                margin-right: 10px;
+                font-size: 0.6em;
+            }
+
+            section .bullets span.active {
+                color: #eeeeee;
+                font-size: 0.8em;
+            }
+
+            section a {
+                color: #60646e;
+                font-size: 1.2em;
+                text-decoration: none;
+                transition: color 0.5s;
+            }
+
+            section a:hover {
+                color: #eeeeee;
+            }
+
+            section a .external-link {
+                padding-left: 5px;
+                font-size: 0.6em;
+                vertical-align: middle;
+            }
+
+            section .share {
+                width: 100px;
+                height: 90px;
+                position: absolute;
+                bottom: 20px;
+                right: -10px;
+                color: #eeeeee;
+                font-size: 2em;
+                text-align: center;
+                line-height: 90px;
+                background-color: rgba(210, 58, 81, 0.9);
+                transition: right 0.2s;
+            }
+
+            @media (max-width: 400px) {
+                .wrapper {
+                    width: 100%;
+                }
+            }
+
+        </style>
+        {% block extra_head %}{% endblock %}
+    </head>
+    <body>
+        <div class="wrapper">
+            {% block content %}{% endblock %}
+        </div>
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+    </body>
+</html>

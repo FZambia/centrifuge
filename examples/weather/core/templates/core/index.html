@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <section>
+
+        <h1>{{ WEATHER_CITY|upper }}</h1>
+
+        <div class="temperature entypo-light-up">
+            <h2>24<span class="degree-symbol">°</span>C</h2>
+        </div>
+
+        <ul>
+            <li class="fontawesome-leaf left">
+                <span>4 mph</span>
+            </li>
+            <li class="fontawesome-tint center">
+                <span>65%</span>
+            </li>
+            <li class="fontawesome-umbrella right">
+                <span>10%</span>
+            </li>
+        </ul>
+
+    </section>
+{% endblock %}
