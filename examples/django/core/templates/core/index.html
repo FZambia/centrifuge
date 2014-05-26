@@ -53,9 +53,6 @@
             };
             var map = new google.maps.Map($("#map-canvas").get(0), mapOptions);
 
-            //var marker = new google.maps.Marker( {position: center, map: map} )
-            //marker.setMap(map);
-
             function CustomMarker(latlng, map, cls) {
                 this.latlng_ = latlng;
                 this.cls = cls;
@@ -99,6 +96,7 @@
                     div.style.top = point.y + 'px';
                 }
             };
+
             CustomMarker.prototype.remove = function () {
                 // Check if the overlay was on the map and needs to be removed.
                 if (this.div_) {
@@ -106,6 +104,7 @@
                     this.div_ = null;
                 }
             };
+
             CustomMarker.prototype.getPosition = function () {
                 return this.latlng_;
             };
@@ -124,7 +123,6 @@
             centrifuge.on('connect', function(){
 
                 var subscription = centrifuge.subscribe(channel, function(message) {
-                    console.log(message);
                     var data = message.data;
                     var position = new google.maps.LatLng(data["lat"], data["long"]);
                     var overlay = new CustomMarker(position, map, 's active');
