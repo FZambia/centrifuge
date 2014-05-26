@@ -3,6 +3,7 @@ config_dev.json
 centrifuge.db
 build/*
 centrifuge.egg-info/*
+node_modules/*
 dist/*
 *.rdb
 docs/_build/*

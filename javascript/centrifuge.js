@@ -1,6 +1,6 @@
 /**
  * Centrifuge javascript client
- * v0.5.0
+ * v0.5.1
  */
 ;(function () {
     'use strict';
@@ -660,7 +660,7 @@
             throw 'Missing required configuration parameter \'project\' specifying project ID in Centrifuge';
         }
 
-        if (!this._config.user) {
+        if (!this._config.user && this._config.user !== '') {
             throw 'Missing required configuration parameter \'user\' specifying user\'s unique ID in your application';
         }
 
