@@ -1,5 +1,5 @@
 """
-Django settings for weather project.
+Django settings for project.
 
 For more information on this file, see
 https://docs.djangoproject.com/en/1.6/topics/settings/
@@ -48,9 +48,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'weather.urls'
+ROOT_URLCONF = 'application.urls'
 
-WSGI_APPLICATION = 'weather.wsgi.application'
+WSGI_APPLICATION = 'application.wsgi.application'
 
 
 # Database
@@ -98,5 +98,3 @@ USE_L10N = True
 USE_TZ = True
 
 STATIC_URL = '/static/'
-
-WEATHER_CITY = 'moscow'

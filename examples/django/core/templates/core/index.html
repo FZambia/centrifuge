@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+
+{% block extra_head %}
+    <style>
+        html, body, #map-canvas {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        #map-canvas {
+            position: relative;
+        }
+
+        .s {
+            border-radius: 50%;
+            cursor: pointer;
+            float: left;
+            height: 10px;
+            transition: all 0.2s ease 0s;
+            width: 10px;
+        }
+
+        .s {
+            animation: 1.0s ease-out 0.4s normal none infinite r20;
+            background: none repeat scroll 0 0 #FF3333;
+        }
+
+        @-moz-keyframes r20 {
+            0% {
+                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
+            }
+            100% {
+                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
+            }
+        }
+
+    </style>
+    <script type="text/javascript">
+        $(function () {
+            var center = new google.maps.LatLng(55.65, 37.57);
+            var mapOptions = {
+                zoom: 9,
+                center: center,
+                mapTypeId: google.maps.MapTypeId.ROADMAP
+            };
+            var map = new google.maps.Map($("#map-canvas").get(0), mapOptions);
+
+            //var marker = new google.maps.Marker( {position: center, map: map} )
+            //marker.setMap(map);
+
+            function CustomMarker(latlng, map, cls) {
+                this.latlng_ = latlng;
+                this.cls = cls;
+                // Once the LatLng and text are set, add the overlay to the map. This will
+                // trigger a call to panes_changed which should in turn call draw.
+                this.setMap(map);
+            }
+
+            CustomMarker.prototype = new google.maps.OverlayView();
+
+            CustomMarker.prototype.draw = function () {
+                var me = this;
+                // Check if the div has been created.
+                var div = this.div_;
+                if (!div) {
+                    // Create a overlay text DIV
+                    div = this.div_ = document.createElement('DIV');
+                    // Create the DIV representing our CustomMarker
+                    div.className = this.cls;
+                    div.style.border = "none";
+                    div.style.position = "absolute";
+                    div.style.paddingLeft = "0px";
+                    div.style.cursor = 'pointer';
+                    var img = document.createElement("img");
+                    img.src = "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
+                    div.appendChild(img);
+                    google.maps.event.addDomListener(div, "click", function (event) {
+                        google.maps.event.trigger(me, "click");
+                    });
+                    // Then add the overlay to the DOM
+                    var panes = this.getPanes();
+                    panes.overlayImage.appendChild(div);
+                }
+                // Position the overlay
+                var point = this.getProjection().fromLatLngToDivPixel(this.latlng_);
+                if (point) {
+                    div.style.left = point.x + 'px';
+                    div.style.top = point.y + 'px';
+                }
+            };
+            CustomMarker.prototype.remove = function () {
+                // Check if the overlay was on the map and needs to be removed.
+                if (this.div_) {
+                    this.div_.parentNode.removeChild(this.div_);
+                    this.div_ = null;
+                }
+            };
+            CustomMarker.prototype.getPosition = function () {
+                return this.latlng_;
+            };
+
+            overlay = new CustomMarker(center, map, 's');
+            var iw = new google.maps.InfoWindow({content: "Hello!", pixelOffset: new google.maps.Size(5,0)});
+            iw.open(map, overlay);
+            google.maps.event.addListener(overlay, "click", function() {
+                iw.open(map, overlay);
+            });
+
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+    <div id="map-canvas"></div>
+{% endblock %}
