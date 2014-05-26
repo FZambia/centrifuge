@@ -94,11 +94,11 @@ Also you can optionally provide extra parameter ``info`` when connecting to Cent
 
     var centrifuge = new Centrifuge({
         url: 'http://centrifuge.example.com',
-        project: 'id',
-        user: 'id',
+        project: 'PROJECT ID',
+        user: 'USER ID',
         timestamp: 'timestamp',
         info: '{"first_name": "Alexandr", "last_name": "Emelin"}',
-        token: 'token',
+        token: 'token'
     });
 
 

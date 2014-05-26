@@ -12,6 +12,13 @@
             position: relative;
         }
 
+        #map-canvas div.noscrollbars{
+            line-height:1.35;
+            overflow:hidden;
+            white-space:nowrap;
+            padding: 2px;
+        }
+
         .s {
             border-radius: 50%;
             cursor: pointer;
@@ -19,11 +26,11 @@
             height: 10px;
             transition: all 0.2s ease 0s;
             width: 10px;
+            background: none repeat scroll 0 0 #FF3333;
         }
 
-        .s {
+        .s.active {
             animation: 1.0s ease-out 0.4s normal none infinite r20;
-            background: none repeat scroll 0 0 #FF3333;
         }
 
         @-moz-keyframes r20 {
@@ -38,9 +45,9 @@
     </style>
     <script type="text/javascript">
         $(function () {
-            var center = new google.maps.LatLng(55.65, 37.57);
+            var center = new google.maps.LatLng(0, 0);
             var mapOptions = {
-                zoom: 9,
+                zoom: 2,
                 center: center,
                 mapTypeId: google.maps.MapTypeId.ROADMAP
             };
@@ -78,6 +85,9 @@
                     google.maps.event.addDomListener(div, "click", function (event) {
                         google.maps.event.trigger(me, "click");
                     });
+                    setTimeout(function() {
+                        $(div).removeClass('active');
+                    }, 5300);
                     // Then add the overlay to the DOM
                     var panes = this.getPanes();
                     panes.overlayImage.appendChild(div);
@@ -100,12 +110,60 @@
                 return this.latlng_;
             };
 
-            overlay = new CustomMarker(center, map, 's');
-            var iw = new google.maps.InfoWindow({content: "Hello!", pixelOffset: new google.maps.Size(5,0)});
-            iw.open(map, overlay);
-            google.maps.event.addListener(overlay, "click", function() {
-                iw.open(map, overlay);
+            var centrifuge = new Centrifuge({
+                url: '{{ CENTRIFUGE_URL }}',
+                project: '{{ CENTRIFUGE_PROJECT }}',
+                user: '{{ CENTRIFUGE_USER }}',
+                timestamp: '{{ CENTRIFUGE_TIMESTAMP }}',
+                token: '{{ CENTRIFUGE_TOKEN }}',
+                debug: true
             });
+
+            var channel = 'map';
+
+            centrifuge.on('connect', function(){
+
+                var subscription = centrifuge.subscribe(channel, function(message) {
+                    console.log(message);
+                    var data = message.data;
+                    var position = new google.maps.LatLng(data["lat"], data["long"]);
+                    var overlay = new CustomMarker(position, map, 's active');
+                    var content = '<div class="noscrollbars">' + data["content"] + '</div>';
+                    var iw = new google.maps.InfoWindow({
+                        content: content,
+                        pixelOffset: new google.maps.Size(5,0)
+                    });
+                    iw.open(map, overlay);
+                    google.maps.event.addListener(overlay, "click", function() {
+                        iw.open(map, overlay);
+                    });
+                });
+
+                subscription.on('ready', function() {
+                    subscription.presence(function(data) {
+                        console.log(data);
+                    });
+                });
+
+                subscription.on('join', function(message) {
+                    console.log(message);
+                });
+
+                subscription.on('leave', function(message) {
+                    console.log(message);
+                });
+
+            });
+
+            centrifuge.on('error', function(error_message) {
+                console.log(error_message);
+            });
+
+            centrifuge.on('disconnect', function(){
+
+            });
+
+            centrifuge.connect();
 
         });
     </script>
