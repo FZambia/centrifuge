@@ -37,4 +37,13 @@ You will see a map and you can start sending events into `map` channel. For exam
 echo '{"channel": "map", "data": {"lat": 33, "long": 55, "content": "I am testing Centrifuge"}}'|cent map publish
 ```
 
+The contents of my `~/.centrc` file in this case:
+
+```bash
+[map]
+address = http://localhost:8000/api
+project_id = 1d88332ec09e4ed3805fc1999379bcfd
+secret_key = 1ee93d4ac83e4ccf87d2bbd0e447275b
+```
+
 After this all connected clients will see new event on map.
