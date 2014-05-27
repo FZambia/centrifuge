@@ -122,7 +122,7 @@ class NamespaceMixin(object):
 
     BOOLEAN_FIELDS = [
         'is_watching', 'is_private', 'publish',
-        'presence', 'history', 'join_leave'
+        'presence', 'history', 'join_leave', 'anonymous'
     ]
 
     is_watching = BooleanField(

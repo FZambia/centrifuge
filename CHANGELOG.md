@@ -1,3 +1,9 @@
+v0.5.4
+======
+
+* fix anonymous field updating via API
+
+
 v0.5.3
 ======
 
