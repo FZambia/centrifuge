@@ -132,6 +132,9 @@
                         pixelOffset: new google.maps.Size(5,0)
                     });
                     iw.open(map, overlay);
+                    setTimeout(function() {
+                        iw.close();
+                    }, 5300);
                     google.maps.event.addListener(overlay, "click", function() {
                         iw.open(map, overlay);
                     });

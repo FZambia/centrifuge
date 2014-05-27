@@ -31,7 +31,19 @@ python manage.py runserver 0:8080
 5) Go to http://localhost:8080
 
 
-You will see a map and you can start sending events into `map` channel. For example:
+You will see a map and you can start sending events into `map` channel:
+
+```bash
+python manage.py publish --lat=34 --long=54 --content="test"
+```
+
+Where:
+
+`--lat` - latitude
+`--long` - longitude
+`--content` - content of Info Window
+
+Or via `cent`:
 
 ```bash
 echo '{"channel": "map", "data": {"lat": 33, "long": 55, "content": "I am testing Centrifuge"}}'|cent map publish
