@@ -483,6 +483,10 @@ class Client(object):
 
         project_id = self.project_id
 
+        anonymous = namespace.get('anonymous', False)
+        if not anonymous and not self.user:
+            raise Return((body, self.application.PERMISSION_DENIED))
+
         is_private = namespace.get('is_private', False)
 
         if is_private:

@@ -269,6 +269,7 @@ class Structure:
             "back_off_max_timeout": kwargs['back_off_max_timeout'],
             'publish': kwargs['publish'],
             'is_watching': kwargs['is_watching'],
+            'anonymous': kwargs['anonymous'],
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
@@ -302,6 +303,7 @@ class Structure:
             'back_off_max_timeout': kwargs['back_off_max_timeout'],
             'publish': kwargs['publish'],
             'is_watching': kwargs['is_watching'],
+            'anonymous': kwargs['anonymous'],
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
@@ -337,6 +339,7 @@ class Structure:
         options = {
             'publish': kwargs['publish'],
             'is_watching': kwargs['is_watching'],
+            'anonymous': kwargs['anonymous'],
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],
@@ -357,6 +360,7 @@ class Structure:
         options = {
             'publish': kwargs['publish'],
             'is_watching': kwargs['is_watching'],
+            'anonymous': kwargs['anonymous'],
             'presence': kwargs['presence'],
             'history': kwargs['history'],
             'history_size': kwargs['history_size'],

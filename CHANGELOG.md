@@ -1,3 +1,10 @@
+v0.5.3
+======
+
+* register anonymous connections, do not check anonymous connection expiration
+* add `anonymous access` option to project/namespace settings
+
+
 v0.5.2
 ======
 

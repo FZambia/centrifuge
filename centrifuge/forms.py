@@ -159,6 +159,13 @@ class NamespaceMixin(object):
                     "(your web application never receive those messages)"
     )
 
+    anonymous = BooleanField(
+        label='anonymous access',
+        validators=[],
+        default=False,
+        description="allow anonymous (with empty USER ID) clients to subscribe on channels"
+    )
+
     presence = BooleanField(
         label='presence',
         validators=[],

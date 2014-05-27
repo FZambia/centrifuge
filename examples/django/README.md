@@ -22,13 +22,15 @@ CENTRIFUGE_PROJECT_SECRET = '1ee93d4ac83e4ccf87d2bbd0e447275b'
 CENTRIFUGE_TIMEOUT = 5
 ```
 
-4) Run server
+4) Make sure that `anonymous access` allowed in project settings in Centrifuge - as all users anonymous in our case.
+
+5) Run Django server
 
 ```bash
 python manage.py runserver 0:8080
 ```
 
-5) Go to http://localhost:8080
+6) Go to http://localhost:8080
 
 
 You will see a map and you can start sending events into `map` channel:

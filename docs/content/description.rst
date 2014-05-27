@@ -213,6 +213,8 @@ to allow authorization or not.
 
 **publish** - allow clients to publish messages in channels (your web application never receive those messages)
 
+**anonymous access** - allow anonymous (with empty USER ID) clients to subscribe on channels
+
 **presence** - enable/disable presence information
 
 **history** - enable/disable history of messages

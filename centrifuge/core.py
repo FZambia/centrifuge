@@ -426,10 +426,17 @@ class Application(tornado.web.Application):
         now = time.time()
         if not project.get('connection_check') or project_id not in self.connections:
             raise Return((to_return, None))
+
         for user, user_connections in six.iteritems(self.connections[project_id]):
+
+            if user == '':
+                # do not collect anonymous connections
+                continue
+
             for uid, client in six.iteritems(user_connections):
                 if client.examined_at and client.examined_at + project.get("connection_lifetime", 24*365*3600) < now:
                     to_return.add(user)
+
         raise Return((to_return, None))
 
     @coroutine
@@ -558,10 +565,10 @@ class Application(tornado.web.Application):
         """
         if project_id not in self.connections:
             self.connections[project_id] = {}
-        if user and user not in self.connections[project_id]:
+        if user not in self.connections[project_id]:
             self.connections[project_id][user] = {}
-        if user:
-            self.connections[project_id][user][uid] = client
+
+        self.connections[project_id][user][uid] = client
 
     def remove_connection(self, project_id, user, uid):
         """
