@@ -94,3 +94,8 @@ CENTRIFUGE_ADDRESS = 'http://localhost:8000'
 CENTRIFUGE_PROJECT_ID = '1d88332ec09e4ed3805fc1999379bcfd'
 CENTRIFUGE_PROJECT_SECRET = '1ee93d4ac83e4ccf87d2bbd0e447275b'
 CENTRIFUGE_TIMEOUT = 5
+
+try:
+    from local_settings import *
+except ImportError:
+    pass

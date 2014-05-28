@@ -25,19 +25,47 @@
 
         .flash {
             border-radius: 50%;
+            -webkit-border-radius: 50%;
+            -moz-border-radius: 50%;
             cursor: pointer;
             float: left;
             transition: all 0.2s ease 0s;
-            width: 1px;
-            height: 1px;
+            width: 2px;
+            height: 2px;
             background: none repeat scroll 0 0 #FF3333;
         }
 
         .flash.active {
             animation: 1.0s ease-out 0.4s normal none infinite r20;
+            -webkit-animation: r20 1.0s 0.4s ease-out infinite;
+            -moz-animation: r20 1.0s 0.4s ease-out infinite;
         }
 
         @-moz-keyframes r20 {
+            0% {
+                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
+            }
+            100% {
+                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
+            }
+        }
+        @-webkit-keyframes r20 {
+            0% {
+                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
+            }
+            100% {
+                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
+            }
+        }
+        @-o-keyframes r20 {
+            0% {
+                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
+            }
+            100% {
+                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
+            }
+        }
+        @keyframes r20 {
             0% {
                 box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
             }
@@ -88,7 +116,7 @@
                     effect_div.className = this.cls;
                     effect_div.style.position = 'absolute';
                     effect_div.style.bottom = '1px';
-                    effect_div.style.left = '10px';
+                    effect_div.style.left = '9px';
                     div.appendChild(effect_div);
                     google.maps.event.addDomListener(div, "click", function (event) {
                         google.maps.event.trigger(me, "click");

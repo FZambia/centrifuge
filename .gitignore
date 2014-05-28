@@ -1,4 +1,5 @@
 *.pyc
+examples/django/application/local_settings.py
 config_dev.json
 centrifuge.db
 build/*
