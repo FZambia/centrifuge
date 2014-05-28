@@ -20,16 +20,16 @@
         }
 
         #map-canvas div.noscrollbars img{
-            max-width: 300px;
+            width: 100%;
         }
 
         .s {
             border-radius: 50%;
             cursor: pointer;
             float: left;
-            height: 10px;
             transition: all 0.2s ease 0s;
             width: 10px;
+            height: 10px;
             background: none repeat scroll 0 0 #FF3333;
         }
 
@@ -81,7 +81,7 @@
                     div.style.paddingLeft = "0px";
                     div.style.cursor = 'pointer';
                     var img = document.createElement("img");
-                    img.src = "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
+                    img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
                     div.appendChild(img);
                     google.maps.event.addDomListener(div, "click", function (event) {
                         google.maps.event.trigger(me, "click");
@@ -97,7 +97,7 @@
                 var point = this.getProjection().fromLatLngToDivPixel(this.latlng_);
                 if (point) {
                     div.style.left = point.x + 'px';
-                    div.style.top = point.y + 'px';
+                    div.style.top = point.y - 5 + 'px';
                 }
             };
 
@@ -129,11 +129,28 @@
                 var subscription = centrifuge.subscribe(channel, function(message) {
                     var data = message.data;
                     var position = new google.maps.LatLng(data["lat"], data["long"]);
-                    var overlay = new CustomMarker(position, map, 's active');
                     var content = '<div class="noscrollbars">' + data["content"] + '</div>';
+
+                    /*
+                    var marker = new google.maps.Marker({map: map, position: position, clickable: true});
+                    marker.info = new google.maps.InfoWindow({
+                        content: content,
+                        pixelOffset: new google.maps.Size(0, 15),
+                        maxWidth: parseInt($(window).width()*0.2)
+                    });
+                    google.maps.event.addListener(marker, 'click', function() {
+                        marker.info.open(map, marker);
+                    });
+                    marker.info.open(map, marker);
+                    */
+
+
+                    var overlay = new CustomMarker(position, map, 's active');
+
                     var iw = new google.maps.InfoWindow({
                         content: content,
-                        pixelOffset: new google.maps.Size(5,0)
+                        pixelOffset: new google.maps.Size(5,0),
+                        maxWidth: parseInt($(window).width()*0.2)
                     });
                     iw.open(map, overlay);
                     setTimeout(function() {
@@ -142,6 +159,7 @@
                     google.maps.event.addListener(overlay, "click", function() {
                         iw.open(map, overlay);
                     });
+
                 });
 
                 subscription.on('ready', function() {
