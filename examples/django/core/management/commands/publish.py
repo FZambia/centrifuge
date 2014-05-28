@@ -6,8 +6,8 @@ from adjacent import Client
 class Command(BaseCommand):
 
     option_list = BaseCommand.option_list + (
-        make_option('--lat', default=0, dest='lat', type='int', help='Latitude'),
-        make_option('--long', default=0, dest='long', type='int', help='Longitude'),
+        make_option('--lat', default=0, dest='lat', type='float', help='Latitude'),
+        make_option('--long', default=0, dest='long', type='float', help='Longitude'),
         make_option('--content', default='', dest='content', help='Content'),
     )
 

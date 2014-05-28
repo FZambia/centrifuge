@@ -23,17 +23,17 @@
             width: 100%;
         }
 
-        .s {
+        .flash {
             border-radius: 50%;
             cursor: pointer;
             float: left;
             transition: all 0.2s ease 0s;
-            width: 10px;
-            height: 10px;
+            width: 1px;
+            height: 1px;
             background: none repeat scroll 0 0 #FF3333;
         }
 
-        .s.active {
+        .flash.active {
             animation: 1.0s ease-out 0.4s normal none infinite r20;
         }
 
@@ -57,9 +57,10 @@
             };
             var map = new google.maps.Map($("#map-canvas").get(0), mapOptions);
 
-            function CustomMarker(latlng, map, cls) {
+            function CustomMarker(latlng, map, cls, img) {
                 this.latlng_ = latlng;
                 this.cls = cls;
+                this.img = img || "//maps.google.com/mapfiles/marker.png";
                 // Once the LatLng and text are set, add the overlay to the map. This will
                 // trigger a call to panes_changed which should in turn call draw.
                 this.setMap(map);
@@ -75,19 +76,25 @@
                     // Create a overlay text DIV
                     div = this.div_ = document.createElement('DIV');
                     // Create the DIV representing our CustomMarker
-                    div.className = this.cls;
+                    //div.className = this.cls;
                     div.style.border = "none";
                     div.style.position = "absolute";
                     div.style.paddingLeft = "0px";
                     div.style.cursor = 'pointer';
                     var img = document.createElement("img");
-                    img.src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+                    img.src = this.img;
                     div.appendChild(img);
+                    var effect_div = document.createElement('DIV');
+                    effect_div.className = this.cls;
+                    effect_div.style.position = 'absolute';
+                    effect_div.style.bottom = '1px';
+                    effect_div.style.left = '10px';
+                    div.appendChild(effect_div);
                     google.maps.event.addDomListener(div, "click", function (event) {
                         google.maps.event.trigger(me, "click");
                     });
                     setTimeout(function() {
-                        $(div).removeClass('active');
+                        $(effect_div).removeClass('active');
                     }, 5300);
                     // Then add the overlay to the DOM
                     var panes = this.getPanes();
@@ -96,8 +103,8 @@
                 // Position the overlay
                 var point = this.getProjection().fromLatLngToDivPixel(this.latlng_);
                 if (point) {
-                    div.style.left = point.x + 'px';
-                    div.style.top = point.y - 5 + 'px';
+                    div.style.left = point.x - 10 + 'px';
+                    div.style.top = point.y - 35 + 'px';
                 }
             };
 
@@ -144,12 +151,11 @@
                     marker.info.open(map, marker);
                     */
 
-
-                    var overlay = new CustomMarker(position, map, 's active');
+                    var overlay = new CustomMarker(position, map, 'flash active');
 
                     var iw = new google.maps.InfoWindow({
                         content: content,
-                        pixelOffset: new google.maps.Size(5,0),
+                        pixelOffset: new google.maps.Size(0,-15),
                         maxWidth: parseInt($(window).width()*0.2)
                     });
                     iw.open(map, overlay);
