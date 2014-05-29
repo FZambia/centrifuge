@@ -1,3 +1,9 @@
+v0.5.5
+======
+
+* `/loads` handler improvements - structure now uses default values for optional parameters
+
+
 v0.5.4
 ======
 
