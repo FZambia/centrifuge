@@ -16,7 +16,6 @@
                 timestampSelector: '#centrifuge-timestamp',
                 infoSelector: '#centrifuge-info',
                 valueAttrName: 'data-centrifuge-value',
-                namespaceAttr: 'data-centrifuge-namespace',
                 channelAttr: 'data-centrifuge-channel',
                 messageEventNameAttr: 'data-centrifuge-message',
                 eventPrefix: 'centrifuge.',
@@ -66,12 +65,10 @@
             }
 
             function get_handler_subscription(handler, centrifuge) {
-                var handler_namespace = handler.attr(options.namespaceAttr);
                 var handler_channel = handler.attr(options.channelAttr);
-                var subscription_path = centrifuge.makePath(handler_namespace, handler_channel);
-                var subscription = centrifuge.getSubscription(subscription_path);
+                var subscription = centrifuge.getSubscription(handler_channel);
                 if (subscription === null) {
-                    debug('no subscription found for path ' + subscription_path);
+                    debug('no subscription found for channel ' + handler_channel);
                 }
                 return subscription;
             }
@@ -193,10 +190,8 @@
             function parse_dom(centrifuge) {
                 handlers.each(function (index, element) {
                     var handler = jQuery(element);
-                    var handler_namespace = handler.attr(options.namespaceAttr);
                     var handler_channel = handler.attr(options.channelAttr);
-                    var subscription_path = centrifuge.makePath(handler_namespace, handler_channel);
-                    compliance[subscription_path] = handler;
+                    compliance[handler_channel] = handler;
                 });
             }
 
