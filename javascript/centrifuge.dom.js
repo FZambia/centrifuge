@@ -1,6 +1,6 @@
 /**
  * Centrifuge javascript DOM jQuery plugin
- * v0.5.0
+ * v0.5.1
  */
 ;(function (jQuery) {
     jQuery.extend({
