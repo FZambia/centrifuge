@@ -1,88 +1,21 @@
 {% extends 'core/base.html' %}
 
 {% block extra_head %}
-    <style>
-        html, body, #map-canvas {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-        #map-canvas {
-            position: relative;
-        }
-
-        #map-canvas div.noscrollbars{
-            line-height:1.35;
-            overflow:hidden;
-            white-space:nowrap;
-            padding: 2px;
-        }
-
-        #map-canvas div.noscrollbars img{
-            width: 100%;
-        }
-
-        .flash {
-            border-radius: 50%;
-            -webkit-border-radius: 50%;
-            -moz-border-radius: 50%;
-            cursor: pointer;
-            float: left;
-            transition: all 0.2s ease 0s;
-            width: 2px;
-            height: 2px;
-            background: none repeat scroll 0 0 #FF3333;
-        }
-
-        .flash.active {
-            animation: 1.0s ease-out 0.4s normal none infinite r20;
-            -webkit-animation: r20 1.0s 0.4s ease-out infinite;
-            -moz-animation: r20 1.0s 0.4s ease-out infinite;
-        }
-
-        @-moz-keyframes r20 {
-            0% {
-                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
-            }
-            100% {
-                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
-            }
-        }
-        @-webkit-keyframes r20 {
-            0% {
-                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
-            }
-            100% {
-                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
-            }
-        }
-        @-o-keyframes r20 {
-            0% {
-                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
-            }
-            100% {
-                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
-            }
-        }
-        @keyframes r20 {
-            0% {
-                box-shadow: 0 0 8px 6px #FF1A1A, 0 0 12px 10px rgba(0,0,0,0.0), 0 0 12px 14px #FF1A1A;
-            }
-            100% {
-                box-shadow: 0 0 8px 6px rgba(255, 26, 26, 0), 0 0 4px 40px rgba(0,0,0,0.0), 0 0 4px 41px rgba(255, 26, 26, 0);
-            }
-        }
-
-    </style>
+     {% load static %}
+    <link rel="stylesheet" href="{% static 'core/css/styles.css' %}"/>
     <script type="text/javascript">
         $(function () {
+
             var center = new google.maps.LatLng(0, 0);
+
+            var flash_duration = 5300;
+
             var mapOptions = {
                 zoom: 2,
                 center: center,
                 mapTypeId: google.maps.MapTypeId.ROADMAP
             };
+
             var map = new google.maps.Map($("#map-canvas").get(0), mapOptions);
 
             function CustomMarker(latlng, map, cls, img) {
@@ -103,8 +36,6 @@
                 if (!div) {
                     // Create a overlay text DIV
                     div = this.div_ = document.createElement('DIV');
-                    // Create the DIV representing our CustomMarker
-                    //div.className = this.cls;
                     div.style.border = "none";
                     div.style.position = "absolute";
                     div.style.paddingLeft = "0px";
@@ -123,7 +54,7 @@
                     });
                     setTimeout(function() {
                         $(effect_div).removeClass('active');
-                    }, 5300);
+                    }, flash_duration);
                     // Then add the overlay to the DOM
                     var panes = this.getPanes();
                     panes.overlayImage.appendChild(div);
