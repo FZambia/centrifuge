@@ -340,12 +340,14 @@
                 }
                 var sockjs_endpoint_container = $("#sockjs-endpoint");
                 var websocket_endpoint_container = $('#websocket-endpoint');
+                var api_endpoint_container = $('#api-endpoint');
 
                 var sockjs_protocol = is_secure? "https://": "http://";
                 var websocket_protocol = is_secure? "wss://": "ws://";
 
                 sockjs_endpoint_container.text(sockjs_protocol + window.location.host + '/connection');
                 websocket_endpoint_container.text(websocket_protocol + window.location.host + '/connection/websocket');
+                api_endpoint_container.text(sockjs_protocol + window.location.host + '/api');
             };
 
 			var route = function(tab) {
