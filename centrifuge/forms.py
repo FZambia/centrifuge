@@ -28,6 +28,12 @@ DEFAULT_HISTORY_SIZE = 50
 # how long in seconds we keep history in inactive channels (0 - forever until size is not exceeded)
 DEFAULT_HISTORY_EXPIRE = 3600*24  # 24 hours by default
 
+# seconds
+DEFAULT_CONNECTION_LIFETIME = 3600
+
+# seconds
+DEFAULT_CONNECTION_CHECK_INTERVAL = 10
+
 
 class ProjectMixin(object):
 
@@ -62,7 +68,7 @@ class ProjectMixin(object):
         validators=[
             validators.NumberRange(min=1)
         ],
-        default=3600,
+        default=DEFAULT_CONNECTION_LIFETIME,
         description="time interval in seconds for connection to expire. Keep it as large "
                     "as possible in your case."
     )
@@ -82,7 +88,7 @@ class ProjectMixin(object):
         validators=[
             validators.NumberRange(min=1)
         ],
-        default=10,
+        default=DEFAULT_CONNECTION_CHECK_INTERVAL,
         description="minimum time interval in seconds between periodic connection "
                     "check POST requests to your web application."
     )

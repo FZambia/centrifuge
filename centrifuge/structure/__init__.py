@@ -6,7 +6,7 @@ from toro import Lock
 from tornado.ioloop import PeriodicCallback
 
 from centrifuge.log import logger
-
+from centrifuge import forms
 
 lock = Lock()
 
@@ -260,23 +260,23 @@ class Structure:
         options = {
             "name": kwargs['name'],
             "display_name": kwargs['display_name'],
-            "connection_check": kwargs['connection_check'],
-            "connection_lifetime": kwargs['connection_lifetime'],
-            "connection_check_interval": kwargs['connection_check_interval'],
-            "connection_check_address": kwargs['connection_check_address'],
-            "max_auth_attempts": kwargs['max_auth_attempts'],
-            "back_off_interval": kwargs['back_off_interval'],
-            "back_off_max_timeout": kwargs['back_off_max_timeout'],
-            'publish': kwargs['publish'],
-            'is_watching': kwargs['is_watching'],
-            'anonymous': kwargs['anonymous'],
-            'presence': kwargs['presence'],
-            'history': kwargs['history'],
-            'history_size': kwargs['history_size'],
-            'history_expire': kwargs['history_expire'],
-            'is_private': kwargs['is_private'],
-            'auth_address': kwargs['auth_address'],
-            'join_leave': kwargs['join_leave']
+            "connection_check": kwargs.get("connection_check", False),
+            "connection_lifetime": kwargs.get('connection_lifetime', forms.DEFAULT_CONNECTION_LIFETIME),
+            "connection_check_interval": kwargs.get('connection_check_interval', forms.DEFAULT_CONNECTION_CHECK_INTERVAL),
+            "connection_check_address": kwargs.get('connection_check_address', ''),
+            "max_auth_attempts": kwargs.get('max_auth_attempts', forms.DEFAULT_MAX_AUTH_ATTEMPTS),
+            "back_off_interval": kwargs.get('back_off_interval', forms.DEFAULT_BACK_OFF_INTERVAL),
+            "back_off_max_timeout": kwargs.get('back_off_max_timeout', forms.DEFAULT_BACK_OFF_MAX_TIMEOUT),
+            'publish': kwargs.get('publish', False),
+            'is_watching': kwargs.get('is_watching', True),
+            'anonymous': kwargs.get('anonymous', False),
+            'presence': kwargs.get('presence', True),
+            'history': kwargs.get('history', True),
+            'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
+            'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
+            'is_private': kwargs.get('is_private', False),
+            'auth_address': kwargs.get('auth_address', ''),
+            'join_leave': kwargs.get('join_leave', True)
         }
 
         secret_key = uuid.uuid4().hex
@@ -294,23 +294,23 @@ class Structure:
         options = {
             'name': kwargs['name'],
             'display_name': kwargs['display_name'],
-            "connection_check": kwargs['connection_check'],
-            "connection_lifetime": kwargs['connection_lifetime'],
-            "connection_check_interval": kwargs['connection_check_interval'],
-            "connection_check_address": kwargs['connection_check_address'],
-            'max_auth_attempts': kwargs['max_auth_attempts'],
-            'back_off_interval': kwargs['back_off_interval'],
-            'back_off_max_timeout': kwargs['back_off_max_timeout'],
-            'publish': kwargs['publish'],
-            'is_watching': kwargs['is_watching'],
-            'anonymous': kwargs['anonymous'],
-            'presence': kwargs['presence'],
-            'history': kwargs['history'],
-            'history_size': kwargs['history_size'],
-            'history_expire': kwargs['history_expire'],
-            'is_private': kwargs['is_private'],
-            'auth_address': kwargs['auth_address'],
-            'join_leave': kwargs['join_leave']
+            "connection_check": kwargs.get("connection_check", False),
+            "connection_lifetime": kwargs.get('connection_lifetime', forms.DEFAULT_CONNECTION_LIFETIME),
+            "connection_check_interval": kwargs.get('connection_check_interval', forms.DEFAULT_CONNECTION_CHECK_INTERVAL),
+            "connection_check_address": kwargs.get('connection_check_address', ''),
+            "max_auth_attempts": kwargs.get('max_auth_attempts', forms.DEFAULT_MAX_AUTH_ATTEMPTS),
+            "back_off_interval": kwargs.get('back_off_interval', forms.DEFAULT_BACK_OFF_INTERVAL),
+            "back_off_max_timeout": kwargs.get('back_off_max_timeout', forms.DEFAULT_BACK_OFF_MAX_TIMEOUT),
+            'publish': kwargs.get('publish', False),
+            'is_watching': kwargs.get('is_watching', True),
+            'anonymous': kwargs.get('anonymous', False),
+            'presence': kwargs.get('presence', True),
+            'history': kwargs.get('history', True),
+            'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
+            'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
+            'is_private': kwargs.get('is_private', False),
+            'auth_address': kwargs.get('auth_address', ''),
+            'join_leave': kwargs.get('join_leave', True)
         }
 
         result, error = yield self.call_and_update_structure(
@@ -337,16 +337,16 @@ class Structure:
     def namespace_create(self, project, **kwargs):
 
         options = {
-            'publish': kwargs['publish'],
-            'is_watching': kwargs['is_watching'],
-            'anonymous': kwargs['anonymous'],
-            'presence': kwargs['presence'],
-            'history': kwargs['history'],
-            'history_size': kwargs['history_size'],
-            'history_expire': kwargs['history_expire'],
-            'is_private': kwargs['is_private'],
-            'auth_address': kwargs['auth_address'],
-            'join_leave': kwargs['join_leave']
+            'publish': kwargs.get('publish', False),
+            'is_watching': kwargs.get('is_watching', True),
+            'anonymous': kwargs.get('anonymous', False),
+            'presence': kwargs.get('presence', True),
+            'history': kwargs.get('history', True),
+            'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
+            'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
+            'is_private': kwargs.get('is_private', False),
+            'auth_address': kwargs.get('auth_address', ''),
+            'join_leave': kwargs.get('join_leave', True)
         }
 
         result, error = yield self.call_and_update_structure(
@@ -358,16 +358,16 @@ class Structure:
     def namespace_edit(self, namespace, **kwargs):
 
         options = {
-            'publish': kwargs['publish'],
-            'is_watching': kwargs['is_watching'],
-            'anonymous': kwargs['anonymous'],
-            'presence': kwargs['presence'],
-            'history': kwargs['history'],
-            'history_size': kwargs['history_size'],
-            'history_expire': kwargs['history_expire'],
-            'is_private': kwargs['is_private'],
-            'auth_address': kwargs['auth_address'],
-            'join_leave': kwargs['join_leave']
+            'publish': kwargs.get('publish', False),
+            'is_watching': kwargs.get('is_watching', True),
+            'anonymous': kwargs.get('anonymous', False),
+            'presence': kwargs.get('presence', True),
+            'history': kwargs.get('history', True),
+            'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
+            'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
+            'is_private': kwargs.get('is_private', False),
+            'auth_address': kwargs.get('auth_address', ''),
+            'join_leave': kwargs.get('join_leave', True)
         }
 
         result, error = yield self.call_and_update_structure(
