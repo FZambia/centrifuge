@@ -1,8 +1,8 @@
 [program:centrifuge]
 process_name = %(process_num)s
-environment=PYTHONPATH="/opt/centrifuge/src"
+environment=PYTHONPATH="/opt/centrifuge/src",CENTRIFUGE_STORAGE="sqlite"
 directory = /opt/centrifuge/src
-command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge/centrifuge-%(process_num)s.log --config=/etc/centrifuge/centrifuge.json --port=%(process_num)s
+command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge/centrifuge-%(process_num)s.log --config=/etc/centrifuge/centrifuge.json --port=%(process_num)s --path=/var/db/centrifuge/centrifuge.sqlite
 numprocs = 1
 numprocs_start = 8000
 user = centrifuge
