@@ -39,6 +39,9 @@ cp -r %{source} %{name}/src
 rm -rf %{name}/src/.git*
 rm -rf %{name}/src/.idea*
 
+# copy actual javascript files into Centrifuge static folder
+cp -r %{name}/src/javascript/* %{name}/src/centrifuge/web/frontend/static/
+
 virtualenv --distribute %{name}/env
 %{name}/env/bin/easy_install -U distribute
 %{name}/env/bin/pip install -r %{name}/src/requirements.txt --upgrade
