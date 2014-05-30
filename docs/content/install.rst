@@ -6,7 +6,7 @@ Installation
 Centrifuge was developed and tested on Linux and Mac OS X operating systems. The work on
 other systems is not guaranteed.
 
-It is written on Python. Python 2.6, Python 2.7 or Python 3.3 are supported.
+It is written on Python. Python 2.6, 2.7, 3.3, 3.4 are supported versions.
 
 You can find nice guide about how to install Python on Mac OS X or Linux
 `here <https://python-guide.readthedocs.org/en/latest/starting/install/osx/>`_ and
@@ -22,21 +22,18 @@ If you are not familiar with it yet - please, make time and read about it
     . centrifuge/env/bin/activate
 
 
-Of course, you can name folders as you like. This is just an example.
-
-.. code-block:: bash
-
-    pip install centrifuge
-
-
-Also if you have problems with installing Centrifuge on Python 3.3 or later, make sure you have `pip`
-installed:
+On Python 3 make sure you have `pip` installed:
 
 .. code-block:: bash
 
     curl -O http://python-distribute.org/distribute_setup.py
     python distribute_setup.py
     easy_install pip
+
+
+.. code-block:: bash
+
+    pip install centrifuge
 
 
 Now you can run centrifuge:
@@ -46,10 +43,8 @@ Now you can run centrifuge:
     centrifuge
 
 
-Custom options can be set using configuration JSON file. You can find example of those
-file in Centrifuge's repository. During development configuration file can be omitted.
-But in production it must be used because it contains important security settings like
-cookie_secret, administrative password etc.
+Custom options can be set using command-line arguments and configuration JSON file. Note, that in
+production you always need configuration file (read about this more in next chapters).
 
 Go to http://localhost:8000/ and make sure that it is running.
 
