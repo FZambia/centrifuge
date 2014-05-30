@@ -1,7 +1,8 @@
 v0.5.5
 ======
 
-* `/loads` handler improvements - structure now uses default values for optional parameters
+* `/loads` handler improvements - structure now uses default values for optional project/namespace parameters
+* show HTTP API endpoint in web interface
 
 
 v0.5.4
