@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import hmac
 import time
 import json
 import logging
 
-import six
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
