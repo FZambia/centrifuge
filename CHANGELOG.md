@@ -1,3 +1,9 @@
+v0.5.6
+======
+
+* tornado version updated
+* six requirement updated
+
 v0.5.5
 ======
 
