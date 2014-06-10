@@ -76,6 +76,7 @@ At moment Centrifuge collects for each node:
 
 * broadcast - time in milliseconds spent to broadcast messages (average, min, max, count of broadcasts)
 * connect - amount and rate of connect attempts to Centrifuge
+* transport - counters for different transports (websocket, xhr_polling etc)
 * messages - amount and rate of messages published
 * channels - amount of active channels
 * clients - amount of connected clients

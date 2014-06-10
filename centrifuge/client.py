@@ -58,8 +58,8 @@ class Client(object):
         self.channels = None
         self.presence_ping_task = None
         self.connect_queue = None
-        logger.debug("new client created (uid: {0}, ip: {1})".format(
-            self.uid, getattr(self.info, 'ip', '-')
+        logger.debug("client created via {0} (uid: {1}, ip: {2})".format(
+            self.sock.session.transport_name, self.uid, getattr(self.info, 'ip', '-')
         ))
 
     @coroutine
@@ -358,6 +358,7 @@ class Client(object):
         """
         if self.application.collector:
             self.application.collector.incr('connect')
+            self.application.collector.incr(self.sock.session.transport_name)
 
         if self.is_authenticated:
             raise Return((self.uid, None))
