@@ -8,8 +8,8 @@ Version: %{version}
 Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
-BuildRequires: python rpm-build redhat-rpm-config zeromq3-devel postgresql-devel
-Requires: python, zeromq3, nginx >= 1.3.13
+BuildRequires: python rpm-build redhat-rpm-config postgresql-devel
+Requires: python, nginx >= 1.3.13
 License: BSD
 
 
@@ -38,6 +38,9 @@ mkdir -p %{name}
 cp -r %{source} %{name}/src
 rm -rf %{name}/src/.git*
 rm -rf %{name}/src/.idea*
+
+# copy actual javascript files into Centrifuge static folder
+cp -r %{name}/src/javascript/* %{name}/src/centrifuge/web/frontend/static/
 
 virtualenv --distribute %{name}/env
 %{name}/env/bin/easy_install -U distribute

@@ -131,10 +131,10 @@ centrifuge.conf (put it into ``/etc/supervisor/conf.d/centrifuge.conf``)
 
     [program:centrifuge]
     process_name = %(process_num)s
-    environment=PYTHONPATH="/opt/centrifuge/src/src"
-    directory = /opt/centrifuge/src/src
-    command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge/centrifuge-%(process_num)s.log --config=/opt/centrifuge/src/src/config.json --port=%(process_num)s --zmq_pub_port_shift=1000 --zmq_sub_address=tcp://localhost:7000,tcp://localhost:7001
-    numprocs = 2
+    environment=PYTHONPATH="/opt/centrifuge/src",CENTRIFUGE_STORAGE="sqlite"
+    directory = /opt/centrifuge/src
+    command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge/centrifuge-%(process_num)s.log --config=/etc/centrifuge/centrifuge.json --port=%(process_num)s --path=/var/db/centrifuge/centrifuge.sqlite
+    numprocs = 1
     numprocs_start = 8000
     user = centrifuge
 
@@ -142,10 +142,9 @@ centrifuge.conf (put it into ``/etc/supervisor/conf.d/centrifuge.conf``)
 Centos 6
 ~~~~~~~~
 
-In `deploy` folder of repository you can find everything to build rpm for Centos 6.
+`In repository <https://github.com/FZambia/centrifuge/tree/master/deploy>`_  you can find everything to build rpm for Centos 6.
 
-If you are not a Centos 6 user you can find a lot of useful things there, which were
-successfully tested in production environment.
+If you are not a Centos 6 user you can find a lot of useful things there, which were successfully tested in production environment.
 
 Heroku
 ~~~~~~
@@ -154,6 +153,6 @@ Centrifuge can be deployed on Heroku. Note that Heroku disables inactive WebSock
 after 55 sec, so you need to implement some sort of ping on client side. There is an example
 in Centrifuge repo - simple chat on JSFiddle using Centrifuge hosted on Heroku.
 
-The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/nigma/heroku-centrifuge
+The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/centrifugal/heroku-centrifuge
 
 The final result is available here: `centrifuge.herokuapp.com <https://centrifuge.herokuapp.com/>`_ (password = ``password``)

@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import hmac
 import time
 import json
 import logging
 
-import six
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
+from cent.core import generate_token
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -41,20 +40,6 @@ INFO = json.dumps(None)
 #})
 
 
-def get_client_token(secret_key, project_id, user, timestamp, info=None):
-    """
-    Create token to validate information provided by new connection.
-    """
-    sign = hmac.new(six.b(str(secret_key)))
-    sign.update(six.b(project_id))
-    sign.update(six.b(user))
-    sign.update(six.b(timestamp))
-    if info is not None:
-        sign.update(six.b(info))
-    token = sign.hexdigest()
-    return token
-
-
 class IndexHandler(tornado.web.RequestHandler):
 
     def get(self):
@@ -65,9 +50,7 @@ def get_auth_data():
 
     user = USER_ID
     now = str(int(time.time()))
-    token = get_client_token(
-        options.secret_key, options.project_id, user, now, info=INFO
-    )
+    token = generate_token(options.secret_key, options.project_id, user, now, user_info=INFO)
 
     auth_data = {
         'token': token,

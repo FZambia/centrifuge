@@ -69,8 +69,8 @@ for dir_path, dir_names, file_names in os.walk(project_dir):
 
 
 install_requires = [
-    'six==1.3.0',
-    'tornado==3.2.1',
+    'six>=1.3.0',
+    'tornado==3.2.2',
     'sockjs-tornado==1.0.0',
     'jsonschema==2.3.0',
     'toro==0.5',
@@ -85,7 +85,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.5.5',
+    version='0.5.6',
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
