@@ -10,7 +10,14 @@ from centrifuge.core import Application
 from centrifuge.engine.memory import Engine
 
 
+class FakeSession(object):
+
+    transport_name = 'test'
+
+
 class FakeSock(object):
+
+    session = FakeSession()
 
     @coroutine
     def send(self, message):
