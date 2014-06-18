@@ -70,8 +70,12 @@
         </div>
         <div class="col-lg-9">
             <a href="#" class="btn btn-success" id="project-settings">{{_("project management")}}</a>
-            <span class="pull-right connected" title="connected, waiting for messages..."><img src="{{ static_url('application/img/loader.gif') }}"></span>
-            <span class="pull-right not-connected" style="display: none;">{{ _("disconnected") }}</span>
+            <span class="pull-right connected" title='{{ _("connected, waiting for messages...") }}'>
+                {{ _("Connected") }}
+            </span>
+            <span class="pull-right not-connected" style="display: none;" title='{{ _("disconnected from Centrifuge") }}'>
+                {{ _("Disconnected") }}
+            </span>
             <div class="tab-content" id="tab-content">
                 <div class="tab-pane" id="_info">
                     <div class="stat-row">

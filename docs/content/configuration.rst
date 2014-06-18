@@ -105,6 +105,11 @@ explore them using ``--help``, for example:
 
     CENTRIFUGE_ENGINE=redis centrifuge --help
 
+or
+
+.. code-block:: bash
+
+    CENTRIFUGE_STRUCTURE=sqlite centrifuge --help
 
 
 

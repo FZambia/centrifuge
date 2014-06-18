@@ -113,10 +113,12 @@ label {
     font-size: 18px;
 }
 .connected {
-    color: #AAA;
+    color: #006400;
+    text-transform: uppercase;
 }
 .not-connected {
-    color: darkred;
+    color: #8b0000;
+    text-transform: uppercase;
 }
 .bs-callout {
     border-left: 5px solid #EEEEEE;

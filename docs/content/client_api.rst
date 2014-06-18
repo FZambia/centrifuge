@@ -125,6 +125,9 @@ If you don't want to use ``info`` - you can omit this parameter while connecting
 to Centrifuge. But if you omit it then make sure that it does not affect token
 generation - i.e. in this case you need to generate token without ``sign.update(user_info)``.
 
+If you are using Python - then you can use `generate_token` function from `cent` library to generate
+tokens for your users.
+
 You can combine Centrifuge initialization and configuration and write in this way:
 
 .. code-block:: javascript
@@ -181,7 +184,7 @@ When your client connected, it is time to subscribe on channel of certain namesp
     });
 
 
-If namespace of channel has publish option on you can publish messages into this
+If namespace of channel has `publish` option enabled you can publish messages into this
 channel. But you can not do it immediately after subscription request. You can
 only publish when ``subscribe:success`` event will be fired. The same in case of presence
 and history requests. Lets publish message, get presence and get history data as
