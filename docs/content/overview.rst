@@ -41,3 +41,7 @@ how many users currently watching web page and who they are.
 Centrifuge can be easily integrated with your existing web site - you don't need to change your project
 infrastructure and philosophy to get real-time events. Just install Centrifuge and let your users connect
 to it.
+
+There are tons of examples in internet about how to add real-time events on your site. But very few
+of them provide complete, scalable, full-featured, ready to deploy solution. Centrifuge aims to be
+such a solution with simplicity in mind.

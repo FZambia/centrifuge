@@ -26,6 +26,10 @@ When running Centrifuge instance processes on different machines [MongoDB](https
 or [PostgreSQL](https://github.com/centrifugal/centrifuge-postgresql) backends can be used instead of SQLite. There is an option
 to hard-code all these settings in JSON file and go without any dependency on database.
 
+There are tons of examples in internet about how to add real-time events on your site. But very few
+of them provide complete, scalable, full-featured, ready to deploy solution. Centrifuge aims to be
+such a solution with simplicity in mind.
+
 
 Main features
 -------------
