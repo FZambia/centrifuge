@@ -6,9 +6,9 @@ import six
 import heapq
 
 from tornado.gen import coroutine, Return
-from tornado.escape import json_encode
 from tornado.ioloop import PeriodicCallback
 
+from centrifuge.utils import json_encode
 from centrifuge.response import Response
 from centrifuge.log import logger
 from centrifuge.engine import BaseEngine

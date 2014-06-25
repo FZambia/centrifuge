@@ -1,7 +1,7 @@
 # coding: utf-8
 # Copyright (c) Alexandr Emelin. MIT license.
 
-from tornado.escape import json_decode
+from centrifuge.utils import json_decode
 import hmac
 import six
 

@@ -1,3 +1,9 @@
+v0.5.7
+======
+
+* send connection transport name counters into graphite
+* use `ujson` if available for JSON encoding/decoding 
+
 v0.5.6
 ======
 

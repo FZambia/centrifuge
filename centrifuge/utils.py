@@ -7,6 +7,13 @@ import six
 import weakref
 from wtforms import Form as WTForm
 
+try:
+    import ujson
+    json_encode = ujson.dumps
+    json_decode = ujson.loads
+except ImportError:
+    from tornado.escape import json_encode, json_decode
+
 
 class Form(WTForm):
     """

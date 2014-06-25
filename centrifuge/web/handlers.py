@@ -10,10 +10,10 @@ import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
-from tornado.escape import json_encode, json_decode
 from sockjs.tornado import SockJSConnection
 
 from centrifuge.log import logger
+from centrifuge.utils import json_encode, json_decode
 from centrifuge.handlers import BaseHandler
 from centrifuge.forms import ProjectForm, NamespaceForm
 

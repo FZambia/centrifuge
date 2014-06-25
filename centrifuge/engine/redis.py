@@ -12,10 +12,10 @@ except ImportError:
 from tornado.ioloop import PeriodicCallback
 from tornado.gen import coroutine, Return, Task
 from tornado.iostream import StreamClosedError
-from tornado.escape import json_encode, json_decode
 
 import toredis
 
+from centrifuge.utils import json_encode, json_decode
 from centrifuge.response import Response
 from centrifuge.log import logger
 from centrifuge.engine import BaseEngine

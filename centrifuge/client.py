@@ -15,12 +15,12 @@ except ImportError:
 
 from tornado.ioloop import IOLoop, PeriodicCallback
 from tornado.httpclient import AsyncHTTPClient, HTTPRequest
-from tornado.escape import json_decode
 from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
 
 from centrifuge import auth
+from centrifuge.utils import json_decode
 from centrifuge.response import Response, MultiResponse
 from centrifuge.log import logger
 from centrifuge.schema import req_schema, client_api_schema

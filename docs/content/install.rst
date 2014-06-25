@@ -48,3 +48,4 @@ production you always need configuration file (read about this more in next chap
 
 Go to http://localhost:8000/ and make sure that it is running.
 
+Btw, you can speed up your Centrifuge installation. As Centrifuge works a lot with JSON data - encoding/decoding - you can install `ujson` module to improve performance significantly. `pip install ujson` will do the work.
