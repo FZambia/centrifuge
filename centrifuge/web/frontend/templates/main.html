@@ -70,11 +70,11 @@
         </div>
         <div class="col-lg-9">
             <a href="#" class="btn btn-success" id="project-settings">{{_("project management")}}</a>
-            <span class="pull-right connected" title='{{ _("connected, waiting for messages...") }}'>
-                {{ _("Connected") }}
+            <span class="pull-right connected label label-success" title='{{ _("connected to Centrifuge") }}'>
+                {{ _("connected") }}
             </span>
-            <span class="pull-right not-connected" style="display: none;" title='{{ _("disconnected from Centrifuge") }}'>
-                {{ _("Disconnected") }}
+            <span class="pull-right not-connected label label-danger" style="display: none;" title='{{ _("disconnected from Centrifuge") }}'>
+                {{ _("disconnected") }}
             </span>
             <div class="tab-content" id="tab-content">
                 <div class="tab-pane" id="_info">

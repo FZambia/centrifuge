@@ -108,18 +108,6 @@ label {
 .project-meta {
     color: #999999;
 }
-.connection-status {
-    margin-left: 15px;
-    font-size: 18px;
-}
-.connected {
-    color: #006400;
-    text-transform: uppercase;
-}
-.not-connected {
-    color: #8b0000;
-    text-transform: uppercase;
-}
 .bs-callout {
     border-left: 5px solid #EEEEEE;
     margin: 4px 0;
