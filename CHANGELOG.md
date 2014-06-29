@@ -1,6 +1,8 @@
 v0.5.7
 ======
 
+* history is now disabled by default - this will prevent extra memory usage in simple setups - where history is not used
+* `history_expire` is now 1 hour by default instead of 24 hours
 * send connection transport name counters into graphite
 * use `ujson` if available for JSON encoding/decoding 
 

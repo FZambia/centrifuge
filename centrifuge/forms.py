@@ -26,7 +26,7 @@ DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
 DEFAULT_HISTORY_SIZE = 50
 
 # how long in seconds we keep history in inactive channels (0 - forever until size is not exceeded)
-DEFAULT_HISTORY_EXPIRE = 3600*24  # 24 hours by default
+DEFAULT_HISTORY_EXPIRE = 3600  # 1 hour by default
 
 # seconds
 DEFAULT_CONNECTION_LIFETIME = 3600
@@ -176,16 +176,15 @@ class NamespaceMixin(object):
         label='presence',
         validators=[],
         default=True,
-        description="enable presence information for channels "
-                    "(state must be configured)"
+        description="enable presence information for channels"
     )
 
     history = BooleanField(
         label='history',
         validators=[],
-        default=True,
+        default=False,
         description="enable history information for channels "
-                    "(state must be configured)"
+                    "(messages will be kept in process memory or in Redis depending on engine used)"
     )
 
     history_size = IntegerField(
