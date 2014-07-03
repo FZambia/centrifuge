@@ -3,6 +3,18 @@ CENTRIFUGE
 
 Simple real-time messaging in web applications.
 
+Quick start:
+------------
+```bash
+pip install centrifuge
+centrifuge
+```
+
+Go to [http://localhost:8000](http://localhost:8000) - this is an administrative interface of Centrifuge node you just started. More about installation and configuration in [documentation](https://centrifuge.readthedocs.org/en/latest/).
+
+Overview
+--------
+
 In a few words: clients (users of your web application/site) connect to Centrifuge from browser,
 after connecting clients subscribe on channels. Every message which was published into that
 channel will be delivered to all clients which are currently subscribed on that channel.
