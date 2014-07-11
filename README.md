@@ -3,8 +3,8 @@ CENTRIFUGE
 
 Simple real-time messaging in web applications.
 
-Quick start:
-------------
+Quick start
+-----------
 ```bash
 pip install centrifuge
 centrifuge
