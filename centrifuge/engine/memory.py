@@ -257,13 +257,9 @@ class Engine(BaseEngine):
 
     def check_history_expire(self):
         now = int(time.time())
-        while True:
-            try:
+        while self.history_expire_heap:
+            if self.history_expire_heap[0][0] <= now:
                 expire, history_key = heapq.heappop(self.history_expire_heap)
-            except IndexError:
-                return
-
-            if expire <= now:
                 if history_key in self.history_expire_at and self.history_expire_at[history_key] <= now:
                     self.remove_history(history_key)
             else:
