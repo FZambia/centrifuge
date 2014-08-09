@@ -1,3 +1,8 @@
+v0.5.8
+======
+
+* refactor history expire heap checking
+
 v0.5.7
 ======
 
