@@ -58,14 +58,14 @@ class Client(object):
         self.channels = None
         self.presence_ping_task = None
         self.connect_queue = None
-        logger.debug("client created via {0} (uid: {1}, ip: {2})".format(
+        logger.info("client created via {0} (uid: {1}, ip: {2})".format(
             self.sock.session.transport_name, self.uid, getattr(self.info, 'ip', '-')
         ))
 
     @coroutine
     def close(self):
         yield self.clean()
-        logger.debug('client destroyed (uid: %s)' % self.uid)
+        logger.info('client destroyed (uid: %s)' % self.uid)
         raise Return((True, None))
 
     @coroutine
@@ -212,7 +212,7 @@ class Client(object):
         elif isinstance(data, list):
             # multiple object request
             if len(data) > self.application.CLIENT_API_MESSAGE_LIMIT:
-                logger.debug("client API message limit exceeded")
+                logger.info("client API message limit exceeded")
                 yield self.close_sock()
                 raise Return((True, None))
 
@@ -322,6 +322,7 @@ class Client(object):
             except Exception as err:
                 # let it fail and try again after some timeout
                 # until we have auth attempts
+                logger.info("error fetching auth address {0}".format(auth_address))
                 logger.debug(err)
             else:
                 # reset back-off attempts
@@ -388,8 +389,8 @@ class Client(object):
             try:
                 user_info = json_decode(user_info)
             except Exception as err:
-                logger.debug("malformed JSON data in user_info")
-                logger.debug(err)
+                logger.error("malformed JSON data in user_info")
+                logger.error(err)
                 user_info = None
 
         try:

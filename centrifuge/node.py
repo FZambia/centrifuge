@@ -4,6 +4,7 @@
 import os
 import sys
 import json
+import logging
 import tornado
 import tornado.web
 import tornado.ioloop
@@ -11,6 +12,7 @@ import tornado.options
 import tornado.httpserver
 from tornado.options import define, options
 
+from centrifuge.log import logger
 from centrifuge.utils import namedAny
 
 
@@ -56,11 +58,22 @@ storage_class = namedAny(storage_class_path)
 tornado.options.parse_command_line()
 
 
-from centrifuge.log import logger
-from centrifuge.core import Application
+def setup_logging_level(level):
+    """
+    Set logging level for Centrifuge logger according to command-line option provided
+    """
+    if level == 'none':
+        return
+
+    logger.setLevel(getattr(logging, level.upper()))
+
+
+setup_logging_level(options.logging)
+
 
 from sockjs.tornado import SockJSRouter
 
+from centrifuge.core import Application
 from centrifuge.handlers import ApiHandler
 from centrifuge.handlers import SockjsConnection
 from centrifuge.handlers import Client
