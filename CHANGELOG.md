@@ -1,3 +1,8 @@
+v0.5.9
+======
+
+* centrifuge logs now look at tornado `logging` option and behave accordingly
+
 v0.5.8
 ======
 
