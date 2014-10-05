@@ -93,7 +93,7 @@ Also you can optionally provide extra parameter ``info`` when connecting to Cent
 .. code-block:: javascript
 
     var centrifuge = new Centrifuge({
-        url: 'http://centrifuge.example.com',
+        url: 'http://centrifuge.example.com/connection',
         project: 'PROJECT ID',
         user: 'USER ID',
         timestamp: 'timestamp',
