@@ -1,3 +1,9 @@
+v0.5.9
+======
+
+* centrifuge logs now look at tornado `logging` option and behave accordingly
+* Dockerfile (thanks [Brett Ausmeier](https://github.com/bausmeier))
+
 v0.5.8
 ======
 

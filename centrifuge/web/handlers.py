@@ -390,13 +390,13 @@ class AdminSocketHandler(SockJSConnection):
     def subscribe(self):
         self.uid = uuid.uuid4().hex
         self.application.add_admin_connection(self.uid, self)
-        logger.debug('admin connected')
+        logger.info('admin connected')
 
     def unsubscribe(self):
         if not hasattr(self, 'uid'):
             return
         self.application.remove_admin_connection(self.uid)
-        logger.debug('admin disconnected')
+        logger.info('admin disconnected')
 
     def on_open(self, info):
         try:

@@ -9,7 +9,7 @@ Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildRequires: python rpm-build redhat-rpm-config postgresql-devel
-Requires: python, nginx >= 1.3.13
+Requires: python
 License: BSD
 
 

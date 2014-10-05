@@ -12,6 +12,12 @@ centrifuge
 
 Go to [http://localhost:8000](http://localhost:8000) - this is an administrative interface of Centrifuge node you just started. More about installation and configuration in [documentation](https://centrifuge.readthedocs.org/en/latest/).
 
+You can also run Centrifuge in a Docker container by running:
+```bash
+docker build -t centrifuge
+docker run -it -p 8000:8000 centrifuge
+```
+
 Overview
 --------
 

@@ -119,6 +119,8 @@ interface to help with managing structure.
 
 **project_get** - get information about project options
 
+**project_by_name** - get project options by project name.  pass "name" in params
+
 **project_edit** - edit project options
 
 **project_delete** - completely delete project

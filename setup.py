@@ -85,7 +85,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.5.8',
+    version='0.5.9dev',
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',
