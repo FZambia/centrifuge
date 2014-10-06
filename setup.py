@@ -1,5 +1,6 @@
 import os
 import sys
+import platform
 from setuptools import setup
 
 
@@ -74,9 +75,12 @@ install_requires = [
     'sockjs-tornado==1.0.0',
     'jsonschema==2.3.0',
     'toro==0.5',
-    'WTForms==1.0.4',
-    'toredis-fork==0.1.3'
+    'WTForms==1.0.4'
 ]
+
+if platform.system() != "Windows":
+    # Redis engine does not work on Windows
+    install_requires.append("toredis-fork==0.1.3")
 
 
 def long_description():
