@@ -1,6 +1,7 @@
 import os
 import sys
 import platform
+import centrifuge
 from setuptools import setup
 
 
@@ -89,7 +90,7 @@ def long_description():
 
 setup(
     name='centrifuge',
-    version='0.5.9dev',
+    version=centrifuge.__version__,
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
     url='https://github.com/FZambia/centrifuge',

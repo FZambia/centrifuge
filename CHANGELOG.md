@@ -4,6 +4,7 @@ v0.5.9
 * centrifuge logs now look at tornado `logging` option and behave accordingly
 * Dockerfile (thanks [Brett Ausmeier](https://github.com/bausmeier))
 * remove redis dependency on Windows - as it's not supported
+* show Centrifuge version in web interface
 
 v0.5.8
 ======

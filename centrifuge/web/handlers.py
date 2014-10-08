@@ -12,6 +12,7 @@ from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
 from sockjs.tornado import SockJSConnection
 
+import centrifuge
 from centrifuge.log import logger
 from centrifuge.utils import json_encode, json_decode
 from centrifuge.handlers import BaseHandler
@@ -73,6 +74,7 @@ class MainHandler(BaseHandler):
                 'projects': projects,
                 'metrics_interval': metrics_interval
             }),
+            'centrifuge_version': centrifuge.__version__,
             'node_count': len(self.application.nodes) + 1,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
             'structure': getattr(self.application.structure.storage, 'NAME', 'unknown')
