@@ -250,4 +250,9 @@ Java
 There is an implementation of Centrifuge API client written by `Markus Coetzee <https://github.com/mcoetzee>`_.
 The source code is available `here <https://github.com/mcoetzee/centrifuge-publisher>`_
 
+PHP
+~~~~
+
+There is an implementation of Centrifuge API client written by `Dmitriy Soldatenko <https://github.com/sl4mmer>`_.
+The source code is available `here <https://github.com/sl4mmer/phpcent>`_
 
