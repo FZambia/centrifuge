@@ -2,7 +2,7 @@
 # Copyright (c) Alexandr Emelin. MIT license.
 
 import re
-from wtforms import TextField, IntegerField, BooleanField, validators
+from wtforms import StringField, IntegerField, BooleanField, validators
 from centrifuge.utils import Form
 
 
@@ -39,7 +39,7 @@ class ProjectMixin(object):
 
     BOOLEAN_FIELDS = ['connection_check']
 
-    name = TextField(
+    name = StringField(
         label='project name',
         validators=[
             validators.Regexp(regex=NAME_RE, message="invalid name")
@@ -47,7 +47,7 @@ class ProjectMixin(object):
         description="project name: {0}".format(NAME_PATTERN_DESCRIPTION)
     )
 
-    display_name = TextField(
+    display_name = StringField(
         label='display name',
         validators=[
             validators.Length(min=3, max=50),
@@ -73,7 +73,7 @@ class ProjectMixin(object):
                     "as possible in your case."
     )
 
-    connection_check_address = TextField(
+    connection_check_address = StringField(
         label='connection check url address',
         validators=[
             validators.URL(require_tld=False),
@@ -124,6 +124,17 @@ class ProjectMixin(object):
     )
 
 
+class NamespaceNameMixin(object):
+
+    name = StringField(
+        label='namespace name',
+        validators=[
+            validators.Regexp(regex=NAME_RE, message="invalid name")
+        ],
+        description="unique namespace name: {0}".format(NAME_PATTERN_DESCRIPTION)
+    )
+
+
 class NamespaceMixin(object):
 
     BOOLEAN_FIELDS = [
@@ -148,7 +159,7 @@ class NamespaceMixin(object):
                     "POST request to provided auth address (see below)"
     )
 
-    auth_address = TextField(
+    auth_address = StringField(
         label='auth url address',
         validators=[
             validators.URL(require_tld=False),
@@ -222,17 +233,6 @@ class ProjectForm(ProjectMixin, NamespaceMixin, Form):
     BOOLEAN_FIELDS = ProjectMixin.BOOLEAN_FIELDS + NamespaceMixin.BOOLEAN_FIELDS
 
 
-class NamespaceNameMixin(object):
-
-    name = TextField(
-        label='namespace name',
-        validators=[
-            validators.Regexp(regex=NAME_RE, message="invalid name")
-        ],
-        description="unique namespace name: {0}".format(NAME_PATTERN_DESCRIPTION)
-    )
-
-
 class NamespaceForm(NamespaceNameMixin, NamespaceMixin, Form):
 
-    field_order = ('name', '*')
+    pass
