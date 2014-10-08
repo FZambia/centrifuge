@@ -72,16 +72,16 @@ for dir_path, dir_names, file_names in os.walk(project_dir):
 
 install_requires = [
     'six>=1.3.0',
-    'tornado==3.2.2',
-    'sockjs-tornado==1.0.0',
+    'tornado==4.0.2',
+    'sockjs-tornado==1.0.1',
     'jsonschema==2.3.0',
-    'toro==0.5',
+    'toro==0.6',
     'WTForms==1.0.4'
 ]
 
 if platform.system() != "Windows":
     # Redis engine does not work on Windows
-    install_requires.append("toredis-fork==0.1.3")
+    install_requires.append("toredis-fork==0.1.4")
 
 
 def long_description():
