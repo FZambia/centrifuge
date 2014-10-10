@@ -129,6 +129,8 @@ interface to help with managing structure.
 
 **namespace_list** - get all project namespaces.
 
+**namespace_create** - create new namespace.
+
 **namespace_get** - get namespace by its ``_id``
 
 **namespace_edit** - edit namespace by its ``_id``
