@@ -1,4 +1,4 @@
-Vagrant
+Vagrant environment
 =============================
 
 A ready-to-go hybrid development environment for building and running Centrifuge.
@@ -9,7 +9,7 @@ It was built to make it easier for developers to build centrifuge from the sourc
 
 To install, download and install [Vagrant](https://www.vagrantup.com/downloads.html) for your platform, then download and install [VirtualBox](http://virtualbox.org/).
 
-Once Vagrant and VirtualBox are installed, you can download the latest release of this GitHub repo, and unzip it. `cd` into the unzipped folder and run:
+Once Vagrant and VirtualBox are installed, you can download the latest release of this GitHub repo, and unzip it. `cd` into the unzipped folder at deploy/vagrant directory and run:
 
 ```bash
 $ vagrant up
@@ -26,10 +26,11 @@ You can use the data directory to put and keep your own centrifuge.db and centri
 By default, the port is 8000 but you can also edit `Vagrantfile` and `start.sh` to configure another port.
 
 ```bash
-$ /vagrant/start.sh
+$ cd /vagrant
+$ ./start.sh
 ```
 
-To compile again:
+You can edit the source on windows with your favorite editor and compile again:
 
 ```bash
 $ cd /home/centrifuge
