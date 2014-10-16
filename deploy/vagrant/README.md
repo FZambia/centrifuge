@@ -9,7 +9,7 @@ It was built to make it easier for developers to build centrifuge from the sourc
 
 To install, download and install [Vagrant](https://www.vagrantup.com/downloads.html) for your platform, then download and install [VirtualBox](http://virtualbox.org/).
 
-Once Vagrant and VirtualBox are installed, you can download the latest release of this GitHub repo, and unzip it. `cd` into the unzipped folder at deploy/vagrant directory and run:
+Once Vagrant and VirtualBox are installed, `cd` into this folder (deploy/vagrant) and run:
 
 ```bash
 $ vagrant up
