@@ -18,6 +18,19 @@ docker build -t centrifuge
 docker run -it -p 8000:8000 centrifuge
 ```
 
+If you want to contribute into Centrifuge - some steps below to help you configure development environment:
+```
+mkdir centrifuge
+cd centrifuge
+virtualenv env
+. env/bin/activate
+git clone https://github.com/FZambia/centrifuge.git src/
+cd src
+pip install -r requirements.txt
+export PYTHONPATH=.
+python centrifuge/node.py
+```
+
 Overview
 --------
 

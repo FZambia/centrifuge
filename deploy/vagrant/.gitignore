@@ -1,0 +1,4 @@
+.vagrant
+data/*.db
+data/*.json
+data/*.log
