@@ -1,6 +1,6 @@
 /**
  * Centrifuge javascript client
- * v0.5.1
+ * v0.5.2
  */
 ;(function () {
     'use strict';
@@ -612,6 +612,7 @@
             retry: 3000,
             info: null,
             debug: false,
+            server: null,
             protocols_whitelist: [
                 'websocket',
                 'xdr-streaming',
@@ -738,9 +739,14 @@
 
         if (this._sockjs === true) {
             //noinspection JSUnresolvedFunction
-            this._transport = new SockJS(this._config.url, null, {
+            var sockjs_options = {
                 protocols_whitelist: this._config.protocols_whitelist
-            });
+            };
+            if (this._config.server !== null) {
+                sockjs_options['server'] = this._config.server;
+            }
+
+            this._transport = new SockJS(this._config.url, null, sockjs_options);
 
         } else {
             this._transport = new WebSocket(this._config.url);
