@@ -1,2 +1,4 @@
 .vagrant
-data/*
+data/*.db
+data/*.json
+data/*.log
