@@ -2,7 +2,18 @@
 
 {% block content %}
 <div class="marketing">
-    <h1>Centrifuge</h1>
+    <div class="row">
+    <div class="col-lg-3 hidden-md hidden-sm hidden-xs">
+        {% set logo_width = "100%" %}
+        {% set logo_height = "100%" %}
+        {% set logo_first_color = "#777777" %}
+        {% set logo_second_color = "#428bca" %}
+        {% include "logo.svg" %}
+    </div>
+    <div class="col-lg-9">
+    <h1>
+        Centrifuge
+    </h1>
     <p class="text-muted">
         {{_("Simple real-time messaging in web applications.")}}
     </p>
@@ -13,5 +24,7 @@
         </div>
         <button type="submit" class="btn btn-primary">{{_("Sign in")}}</button>
     </form>
+    </div>
+    </div>
 </div>
 {% end %}
