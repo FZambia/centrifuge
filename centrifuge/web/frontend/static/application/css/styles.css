@@ -191,10 +191,9 @@ label {
 .bottom_buffer {
     margin-bottom: 40px;
 }
-.confirm-input {
+.form-inline .form-control.confirm-input {
     width: 200px;
 }
-
 .table th {
     font-weight: normal;
     text-transform: uppercase;

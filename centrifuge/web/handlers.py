@@ -19,14 +19,59 @@ from centrifuge.handlers import BaseHandler
 from centrifuge.forms import ProjectForm, NamespaceForm
 
 
-class LogoutHandler(BaseHandler):
+flash_messages = {
+    "project_create_success": "New project created",
+    "project_update_success": "Project settings updated",
+    "project_delete_success": "Project deleted",
+    "project_delete_error": "Project not deleted",
+    "project_secret_regenerate_success": "Project secret key regenerated",
+    "project_secret_regenerate_error": "Project secret key not modified",
+    "namespace_create_success": "New namespace created",
+    "namespace_update_success": "Namespace settings updated",
+    "namespace_delete_success": "Namespace deleted",
+    "namespace_delete_error": "Namespace not deleted",
+}
+
+
+class WebBaseHandler(BaseHandler):
+
+    FLASH_COOKIE_NAME = 'flash'
+
+    def get_current_user(self):
+        user = self.get_secure_cookie("user")
+        if not user:
+            return None
+        return user
+
+    def get_flash_message(self):
+        """
+        Returns the flash message.
+        """
+        cookie = self.get_secure_cookie(self.FLASH_COOKIE_NAME)
+        if cookie:
+            self.clear_cookie(self.FLASH_COOKIE_NAME)
+            return json_decode(cookie)
+        return None
+
+    def set_flash_message(self, message, status='success'):
+        """
+        Stores a Flash object as a flash cookie under a given key.
+        """
+        flash = {
+            'message': message,
+            'status': status
+        }
+        self.set_secure_cookie(self.FLASH_COOKIE_NAME, json_encode(flash))
+
+
+class LogoutHandler(WebBaseHandler):
 
     def get(self):
         self.clear_cookie("user")
         self.redirect(self.reverse_url("main"))
 
 
-class AuthHandler(BaseHandler):
+class AuthHandler(WebBaseHandler):
 
     def authorize(self):
         self.set_secure_cookie("user", "authorized")
@@ -50,7 +95,7 @@ class AuthHandler(BaseHandler):
             self.render('index.html')
 
 
-class MainHandler(BaseHandler):
+class MainHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     @coroutine
@@ -96,7 +141,7 @@ def params_from_request(request):
     return dict((k, ''.join([x.decode('utf-8') for x in v])) for k, v in six.iteritems(request.arguments))
 
 
-class ProjectCreateHandler(BaseHandler):
+class ProjectCreateHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     def get(self):
@@ -123,10 +168,11 @@ class ProjectCreateHandler(BaseHandler):
                 render_control=render_control, render_label=render_label
             )
         else:
+            self.set_flash_message(flash_messages["project_create_success"])
             self.redirect(self.reverse_url('main'))
 
 
-class ProjectDetailHandler(BaseHandler):
+class ProjectDetailHandler(WebBaseHandler):
 
     @coroutine
     def get_project(self, project_id):
@@ -167,6 +213,9 @@ class ProjectDetailHandler(BaseHandler):
             res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
+            self.set_flash_message(flash_messages["project_secret_regenerate_success"])
+        else:
+            self.set_flash_message(flash_messages["project_secret_regenerate_error"], status="danger")
 
         self.redirect(self.reverse_url("project_detail", self.project['_id'], 'credentials'))
 
@@ -191,8 +240,10 @@ class ProjectDetailHandler(BaseHandler):
                 res, error = yield self.application.structure.project_delete(self.project)
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
+                self.set_flash_message(flash_messages["project_delete_success"])
                 self.redirect(self.reverse_url("main"))
             else:
+                self.set_flash_message(flash_messages["project_delete_error"], status="danger")
                 self.redirect(self.reverse_url("project_detail", self.project['_id'], "settings"))
 
         else:
@@ -211,6 +262,7 @@ class ProjectDetailHandler(BaseHandler):
                     form=error, render_control=render_control, render_label=render_label
                 )
             else:
+                self.set_flash_message(flash_messages["project_update_success"])
                 self.redirect(self.reverse_url("project_detail", self.project['_id'], "settings"))
 
     @coroutine
@@ -292,7 +344,7 @@ class ProjectDetailHandler(BaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-class NamespaceFormHandler(BaseHandler):
+class NamespaceFormHandler(WebBaseHandler):
 
     @coroutine
     def get_project(self, project_id):
@@ -351,17 +403,22 @@ class NamespaceFormHandler(BaseHandler):
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
+                self.set_flash_message(flash_messages["namespace_delete_success"])
                 self.redirect(
                     self.reverse_url("project_detail", self.project['_id'], 'namespaces')
                 )
             else:
+                self.set_flash_message(flash_messages["namespace_delete_error"], status="danger")
                 self.redirect(
                     self.reverse_url("namespace_edit", self.project['_id'], namespace_id)
                 )
         else:
             params = params_from_request(self.request)
 
+            is_editing = False
+
             if namespace_id:
+                is_editing = True
                 template_name = 'namespace/edit.html'
                 params['_id'] = namespace_id
                 result, error = yield self.application.process_namespace_edit(
@@ -383,6 +440,8 @@ class NamespaceFormHandler(BaseHandler):
                     render_control=render_control, render_label=render_label
                 )
             else:
+                flash_key = "namespace_update_success" if is_editing else "namespace_create_success"
+                self.set_flash_message(flash_messages[flash_key])
                 self.redirect(self.reverse_url("project_detail", self.project['_id'], 'namespaces'))
 
 
@@ -418,13 +477,13 @@ class AdminSocketHandler(SockJSConnection):
         self.unsubscribe()
 
 
-class Http404Handler(BaseHandler):
+class Http404Handler(WebBaseHandler):
 
     def get(self):
         self.render("http404.html")
 
 
-class StructureDumpHandler(BaseHandler):
+class StructureDumpHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     @coroutine
@@ -443,7 +502,7 @@ class StructureDumpHandler(BaseHandler):
         self.finish(json_encode(data))
 
 
-class StructureLoadHandler(BaseHandler):
+class StructureLoadHandler(WebBaseHandler):
 
     @tornado.web.authenticated
     def get(self):

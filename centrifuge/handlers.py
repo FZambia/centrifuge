@@ -16,12 +16,6 @@ from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
 
 class BaseHandler(tornado.web.RequestHandler):
 
-    def get_current_user(self):
-        user = self.get_secure_cookie("user")
-        if not user:
-            return None
-        return user
-
     def json_response(self, to_return):
         """
         Finish asynchronous request and return JSON response.
