@@ -65,6 +65,11 @@ def dict_from_list(key_value_list):
 
 
 class Engine(BaseEngine):
+    """
+    This is Redis engine. It allows to start many instances of Centrifuge and they will
+    be connected between each other due to Redis PUB/SUB mechanism. Of course you need
+    Redis server running to use this engine.
+    """
 
     NAME = 'Redis'
 
@@ -269,12 +274,8 @@ class Engine(BaseEngine):
 
     @coroutine
     def add_subscription(self, project_id, channel, client):
-        """
-        Subscribe application on channel if necessary and register client
-        to receive messages from that channel.
-        """
-        subscription_key = self.get_subscription_key(project_id, channel)
 
+        subscription_key = self.get_subscription_key(project_id, channel)
         self.subscribe_key(subscription_key)
 
         if subscription_key not in self.subscriptions:
@@ -286,10 +287,7 @@ class Engine(BaseEngine):
 
     @coroutine
     def remove_subscription(self, project_id, channel, client):
-        """
-        Unsubscribe application from channel if necessary and prevent client
-        from receiving messages from that channel.
-        """
+
         subscription_key = self.get_subscription_key(project_id, channel)
 
         try:

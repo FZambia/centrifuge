@@ -15,6 +15,12 @@ from centrifuge.engine import BaseEngine
 
 
 class Engine(BaseEngine):
+    """
+    This is an in-memory engine. This engine allows to run ONLY ONE instance
+    of Centrifuge. If you want to scale - you should use Redis engine instead
+    of this one. This engine is perfect when you have limited amount of users.
+    This engine keeps all data in process memory.
+    """
 
     NAME = 'In memory - single node only'
 
@@ -109,10 +115,7 @@ class Engine(BaseEngine):
 
     @coroutine
     def add_subscription(self, project_id, channel, client):
-        """
-        Subscribe application on channel if necessary and register client
-        to receive messages from that channel.
-        """
+
         subscription_key = self.get_subscription_key(project_id, channel)
 
         if subscription_key not in self.subscriptions:
@@ -124,10 +127,7 @@ class Engine(BaseEngine):
 
     @coroutine
     def remove_subscription(self, project_id, channel, client):
-        """
-        Unsubscribe application from channel if necessary and prevent client
-        from receiving messages from that channel.
-        """
+
         subscription_key = self.get_subscription_key(project_id, channel)
 
         try:

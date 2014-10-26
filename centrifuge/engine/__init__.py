@@ -6,6 +6,15 @@ from tornado.gen import coroutine, Return
 
 
 class BaseEngine(object):
+    """
+    This is base interface for all engines.
+
+    Most of its coroutine methods should be implemented in actual engine class.
+
+    There three main components - PUB/SUB logic to connect Centrifuge instances, presence
+    logic to maintain actual presence information for channels and history logic to control
+    channel history.
+    """
 
     PREFIX = 'centrifuge'
 
@@ -70,6 +79,9 @@ class BaseEngine(object):
         )
 
     def initialize(self):
+        """
+        Put engine specific initialization logic here. At this moment IO LOOP already started.
+        """
         pass
 
     def get_subscription_key(self, project_id, channel):
@@ -80,6 +92,9 @@ class BaseEngine(object):
 
     @coroutine
     def publish_message(self, channel, body, method=DEFAULT_PUBLISH_METHOD):
+        """
+        Send message with body into channel with specified method.
+        """
         raise Return((True, None))
 
     @coroutine
@@ -100,28 +115,52 @@ class BaseEngine(object):
 
     @coroutine
     def add_subscription(self, project_id, channel, client):
+        """
+        Subscribe application on channel if necessary and register client
+        to receive messages from that channel.
+        """
         raise Return((True, None))
 
     @coroutine
     def remove_subscription(self, project_id, channel, client):
+        """
+        Unsubscribe application from channel if necessary and prevent client
+        from receiving messages from that channel.
+        """
         raise Return((True, None))
 
     @coroutine
     def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
+        """
+        Add (or update) presence information when client subscribed on channel
+        (or still in channel) in project.
+        """
         raise Return((True, None))
 
     @coroutine
     def remove_presence(self, project_id, channel, uid):
+        """
+        Remove presence information when client unsubscribed from channel in project.
+        """
         raise Return((True, None))
 
     @coroutine
     def get_presence(self, project_id, channel):
+        """
+        Get presence information for channel in project.
+        """
         raise Return((None, None))
 
     @coroutine
     def add_history_message(self, project_id, channel, message, history_size=None):
+        """
+        Add new history message for channel, trim history if needed.
+        """
         raise Return((True, None))
 
     @coroutine
     def get_history(self, project_id, channel):
+        """
+        Return history messages for channel in project.
+        """
         raise Return((None, None))
