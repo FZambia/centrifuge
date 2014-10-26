@@ -59,6 +59,14 @@ label {
 .navbar {
     margin-bottom: 0;
 }
+.navbar-brand {
+    padding-left: 45px;
+}
+.navbar .navbar-logo {
+    position: absolute;
+    top: 10px;
+    left: 5px;
+}
 .label-counter {
     margin-left: 5px;
 }

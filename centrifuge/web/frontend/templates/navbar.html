@@ -6,13 +6,22 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
         </button>
-        <a href="{{reverse_url('main')}}" class="navbar-brand">Centrifuge</a>
+        <a href="{{reverse_url('main')}}" class="navbar-brand">
+            <span class="navbar-logo">
+                {% set logo_width = "24pt" %}
+                {% set logo_height = "24pt" %}
+                {% set logo_first_color = "#777777" %}
+                {% set logo_second_color = "#AAAAAA" %}
+                {% include "logo.svg" %}
+            </span>
+            Centrifuge
+        </a>
     </div>
     <div class="collapse navbar-collapse navbar-ex8-collapse">
         <ul class="nav navbar-nav">
             {% if handler.get_current_user() %}
             <li class="">
-                <a href="{{reverse_url('main')}}">{{_("Home")}}</a>
+                <a href="{{reverse_url('main')}}">{{_("Dashboard")}}</a>
             </li>
             <li class="">
                 <a href="{{reverse_url('project_create')}}">{{_("Create project")}}</a>
