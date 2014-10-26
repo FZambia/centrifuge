@@ -10,6 +10,7 @@
         {% block extra_head %}{% end %}
     </head>
     <body>
+        {% block body %}
         {% include 'navbar.html' %}
         <div id="wrap">
             <div class="row">
@@ -29,6 +30,7 @@
             </div>
             <div id="push"></div>
         </div>
+        {% end %}
         {% block extra_scripts %}{% end %}
     </body>
 </html>

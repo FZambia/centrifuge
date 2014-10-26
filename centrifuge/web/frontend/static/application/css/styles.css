@@ -35,23 +35,10 @@ label {
 }
 #wrap {
     margin: 20px auto;
+    margin-top: 70px;
     width: 80%;
     max-width: 1400px;
     padding-bottom: 30px;
-}
-.marketing h1 {
-    margin: 10px 0 10px;
-    font-size: 60px;
-    line-height: 1;
-    letter-spacing: -1px;
-    color: #4b4b4b;
-}
-.marketing p {
-    font-size: 30px;
-    line-height: 40px;
-}
-.marketing .form {
-    margin-top: 30px;
 }
 .baseform input, .baseform textarea {
     width: 50%;
@@ -243,4 +230,37 @@ label {
     .table th { border-bottom: 0; border-left: 0; }
     .table td { border-left: 0; border-right: 0; border-bottom: 0; }
     .table tbody tr { border-left: 1px solid #babcbf; }
+}
+
+.intro {
+    background: url("../img/intro-bg.jpg") no-repeat scroll center bottom / cover #000;
+    color: #f5f5f5;
+    display: table;
+    height: 100%;
+    padding: 0;
+    text-align: center;
+    width: 100%;
+}
+.intro .intro-body {
+    display: table-cell;
+    vertical-align: middle;
+}
+.intro .intro-body .brand-heading {
+    font-size: 40px;
+    margin-top: 0;
+}
+.intro .intro-body .intro-text {
+    font-size: 18px;
+}
+@media (min-width: 767px) {
+    .intro {
+        height: 100%;
+        padding: 0;
+    }
+    .intro .intro-body .brand-heading {
+        font-size: 80px;
+    }
+    .intro .intro-body .intro-text {
+        font-size: 25px;
+    }
 }
