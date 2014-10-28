@@ -142,7 +142,7 @@ centrifuge.conf (put it into ``/etc/supervisor/conf.d/centrifuge.conf``)
 Centos 6
 ~~~~~~~~
 
-`In repository <https://github.com/FZambia/centrifuge/tree/master/deploy>`_  you can find everything to build rpm for Centos 6.
+`In repository <https://github.com/centrifugal/centrifuge/tree/master/deploy>`_  you can find everything to build rpm for Centos 6.
 
 If you are not a Centos 6 user you can find a lot of useful things there, which were successfully tested in production environment.
 

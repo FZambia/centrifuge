@@ -24,7 +24,7 @@ mkdir centrifuge
 cd centrifuge
 virtualenv env
 . env/bin/activate
-git clone https://github.com/FZambia/centrifuge.git src/
+git clone https://github.com/centrifugal/centrifuge.git src/
 cd src
 pip install -r requirements.txt
 export PYTHONPATH=.
@@ -40,7 +40,7 @@ channel will be delivered to all clients which are currently subscribed on that 
 
 To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be used. So it works in both
-modern and old browsers (IE 7 supported). Centrifuge has [javascript client](https://github.com/FZambia/centrifuge/tree/master/javascript) with simple API.
+modern and old browsers (IE 7 supported). Centrifuge has [javascript client](https://github.com/centrifugal/centrifuge/tree/master/javascript) with simple API.
 
 Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - fast and mature
 asynchronous web server which can handle thousands of simultaneous connections.
@@ -77,12 +77,12 @@ Main features
 To get more information:
 
 * read the [documentation](https://centrifuge.readthedocs.org/en/latest/)
-* look at [examples](https://github.com/FZambia/centrifuge/tree/master/examples).
+* look at [examples](https://github.com/centrifugal/centrifuge/tree/master/examples).
 
 Various packages and tools related to Centrifuge located in [Centrifugal](https://github.com/centrifugal)
 organization here on Github.
 
-![scheme](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/centrifuge.png "scheme")
+![scheme](https://raw.github.com/centrifugal/centrifuge/master/docs/content/img/centrifuge.png "scheme")
 
 Similar projects / alternatives:
 
@@ -141,7 +141,7 @@ For more information about javascript client API see [documentation chapter](htt
 Admin web interface
 -------------------
 
-![admin_web_interface](https://raw.github.com/FZambia/centrifuge/master/docs/content/img/centrifuge.gif "admin web interface")
+![admin_web_interface](https://raw.github.com/centrifugal/centrifuge/master/docs/content/img/centrifuge.gif "admin web interface")
 
 
 Tests
@@ -174,5 +174,4 @@ LICENSE
 
 MIT
 
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/FZambia/centrifuge/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-[![Requirements Status](https://requires.io/github/FZambia/centrifuge/requirements.png?branch=master)](https://requires.io/github/FZambia/centrifuge/requirements/?branch=master)
+[![Requirements Status](https://requires.io/github/centrifugal/centrifuge/requirements.png?branch=master)](https://requires.io/github/centrifugal/centrifuge/requirements/?branch=master)

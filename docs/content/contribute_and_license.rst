@@ -13,4 +13,4 @@ But, please, follow next principles:
 - python 2.6, 2.7, 3.3 and 3.4 compatible
 
 
-Code is here - https://github.com/FZambia/centrifuge
+Code is here - https://github.com/centrifugal/centrifuge

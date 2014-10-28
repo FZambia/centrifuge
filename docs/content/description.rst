@@ -47,7 +47,7 @@ using SockJS library and ``ws://localhost:8000/connection/websocket`` in case of
 pure Websockets.
 
 To communicate with Centrifuge from browser you should use javascript client which comes
-with Centrifuge (find it `in repository <https://github.com/FZambia/centrifuge/tree/master/javascript>`_) and provides simple API. Please, read a chapter about
+with Centrifuge (find it `in repository <https://github.com/centrifugal/centrifuge/tree/master/javascript>`_) and provides simple API. Please, read a chapter about
 client API to get more information.
 
 Sometimes you need to run more instances of Centrifuge and load balance clients between them.
