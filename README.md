@@ -1,7 +1,7 @@
 CENTRIFUGE
 ==========
 
-Simple real-time messaging in web applications.
+Simple real-time messaging in web applications. [Demo instance on Heroku](https://habrifuge.herokuapp.com) - password `habrahabr`.
 
 Quick start
 -----------
