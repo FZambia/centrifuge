@@ -1,5 +1,5 @@
-Master branch
-=============
+v0.6.0
+======
 
 * use Tornado 4 (redis client, sockjs-tornado and other requirements updated too)
 * Bootstrap 3.2.0
