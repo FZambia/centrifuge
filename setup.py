@@ -93,7 +93,7 @@ setup(
     version=centrifuge.__version__,
     description="Simple real-time messaging in web applications",
     long_description=long_description(),
-    url='http://centrifugal.github.io/centrifuge',
+    url='http://centrifugal.github.io',
     download_url='https://github.com/centrifugal/centrifuge',
     author="Alexandr Emelin",
     author_email='frvzmb@gmail.com',
