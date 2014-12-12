@@ -44,7 +44,7 @@ it must be imported on your page before Centrifuge's javascript client:
 
 .. code-block:: html
 
-    <script src="http://cdn.sockjs.org/sockjs-0.3.4.min.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js" type="text/javascript"></script>
     <script src="https://rawgit.com/centrifugal/centrifuge/master/javascript/centrifuge.js" type="text/javascript"></script>
 
 
