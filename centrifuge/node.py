@@ -195,6 +195,13 @@ def main():
     )
 
     sockjs_settings = custom_settings.get("sockjs_settings", {})
+    if not sockjs_settings or not sockjs_settings.get("sockjs_url"):
+        # SockJS CDN will be retired
+        # see https://github.com/sockjs/sockjs-client/issues/198
+        # if no explicit SockJS url provided in configuration file
+        # then we use jsdelivr CDN instead of default cdn.sockjs.org
+        # this can be fixed directly in SockJS-Tornado soon
+        sockjs_settings["sockjs_url"] = "https://cdn.jsdelivr.net/sockjs/0.3/sockjs.min.js"
 
     handlers = create_application_handlers(sockjs_settings)
 
