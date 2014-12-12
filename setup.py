@@ -75,7 +75,7 @@ install_requires = [
     'tornado==4.0.2',
     'sockjs-tornado==1.0.1',
     'jsonschema==2.4.0',
-    'toro==0.6',
+    'toro==0.7',
     'WTForms==2.0.1'
 ]
 
