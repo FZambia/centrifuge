@@ -169,10 +169,21 @@ def main():
         custom_settings = json.load(open(options.config, 'r'))
     except IOError:
         logger.warning(
-            "Application started without configuration file.\n"
-            "This is normal only during development"
+            "No configuration file found. "
+            "In production make sure security settings provided"
         )
         custom_settings = {}
+
+    # override security related options using environment variable
+    # value if exists
+    for option_name in ["password", "cookie_secret", "api_secret"]:
+        environment_var_name = "CENTRIFUGE_{0}".format(option_name.upper())
+        environment_value = os.environ.get(environment_var_name)
+        if environment_value:
+            logger.debug("using {0} environment variable for {1} option value".format(
+                environment_var_name, option_name
+            ))
+            custom_settings[option_name] = environment_value
 
     ioloop_instance = tornado.ioloop.IOLoop.instance()
 
