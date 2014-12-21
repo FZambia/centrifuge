@@ -12,6 +12,10 @@ centrifuge
 
 Go to [http://localhost:8000](http://localhost:8000) - this is an administrative interface of Centrifuge node you just started. More about installation and configuration in [documentation](https://centrifuge.readthedocs.org/en/latest/).
 
+Alternatively you can quickly install Centrifuge on Heroku (administrative password will be `password`):
+
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/centrifugal/heroku-centrifuge)
+
 You can also run Centrifuge in a Docker container by running:
 ```bash
 docker build -t centrifuge
