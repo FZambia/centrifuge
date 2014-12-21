@@ -1,3 +1,14 @@
+v0.6.1
+======
+
+* possibility to override security related options via environment variables (see example below)
+* Toro dependency updated
+* Use new SockJS cdn if no explicitly provided (cdn.sockjs.org will be retired soon)
+
+```bash
+CENTRIFUGE_PASSWORD=x45d CENTRIFUGE_COOKIE_SECRET=longlongrandomstring CENTRIFUGE_API_SECRET=54sfg centrifuge --logging=DEBUG
+```
+
 v0.6.0
 ======
 
