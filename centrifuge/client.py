@@ -14,7 +14,7 @@ except ImportError:
     from urllib.parse import urlencode
 
 from tornado.ioloop import IOLoop, PeriodicCallback
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
 from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
@@ -319,11 +319,19 @@ class Client(object):
 
             try:
                 response = yield http_client.fetch(request)
+            except HTTPError as err:
+                if err.code == 403:
+                    # access denied for this client
+                    raise Return((False, None))
+                else:
+                    # let it fail and try again after some timeout
+                    logger.info("{0} status code when fetching auth address {1}".format(
+                        err.code, auth_address
+                    ))
             except Exception as err:
-                # let it fail and try again after some timeout
-                # until we have auth attempts
-                logger.info("error fetching auth address {0}".format(auth_address))
-                logger.debug(err)
+                logger.error("error fetching auth address {0}".format(auth_address))
+                logger.exception(err)
+                raise Return((False, None))
             else:
                 # reset back-off attempts
                 self.application.back_off[project_id] = 0
