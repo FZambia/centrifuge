@@ -25,6 +25,10 @@ define(
 )
 
 define(
+    "address", default="", help="address to bind to", type=str
+)
+
+define(
     "config", default='config.json', help="JSON config file", type=str
 )
 
@@ -219,7 +223,7 @@ def main():
     try:
         app = Application(handlers=handlers, **settings)
         server = tornado.httpserver.HTTPServer(app)
-        server.listen(options.port)
+        server.listen(options.port, address=options.address)
     except Exception as e:
         return stop_running(str(e))
 
@@ -267,7 +271,7 @@ def main():
     if connection_expire_check_interval:
         app.CONNECTION_EXPIRE_CHECK_INTERVAL = connection_expire_check_interval
 
-    logger.info("Tornado port: {0}".format(options.port))
+    logger.info("Tornado port: {0}, address: {1}".format(options.port, options.address))
 
     # finally, let's go
     try:

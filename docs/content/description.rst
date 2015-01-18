@@ -14,6 +14,7 @@ to all clients which are currently subscribed on this channel.
 
 When you start Centrifuge instance you start Tornado instance on a certain port number.
 That port number can be configured using command-line option ``--port`` . By default it is 8000.
+You can also specify the address to bind to with the ``--address`` option. For example you can specify ``localhost`` which is recommended if you want to keep centrifuge behind a proxy (e.g.: Nginx). The port and the address will eventually be used by Tornado's TCPServer.
 
 In general you should provide path to JSON configuration file when starting Centrifuge instance
 using ``--config`` option. You can start Centrifuge without configuration file but this is
@@ -205,9 +206,9 @@ Turn it off if you expect high load in channels.
 **is private** - authorize every subscription on channel using POST request to provided auth address (see below)
 
 **auth url address** - url for authorization purposes, when your web application's client
-joins to Centrifuge - you provide user id in connection parameters. Centrifuge sends POST 
-request with user id and channel name on this URL address when client wants to subscribe on channel 
-and then Centrifuge checks response code returned from your web application (200 means allow to subscribe 
+joins to Centrifuge - you provide user id in connection parameters. Centrifuge sends POST
+request with user id and channel name on this URL address when client wants to subscribe on channel
+and then Centrifuge checks response code returned from your web application (200 means allow to subscribe
 on channel, 403 - access denied, other error HTTP codes result in further attempts to ask your web app
 about authorization after some timeout - see ``max_auth_attempts``). This can be rather expensive for web application so using # in channel name
 or using hard-to-guess channel names to restrict access to channels could be a better choice.
