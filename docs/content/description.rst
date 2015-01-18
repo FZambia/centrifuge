@@ -205,11 +205,11 @@ Turn it off if you expect high load in channels.
 **is private** - authorize every subscription on channel using POST request to provided auth address (see below)
 
 **auth url address** - url for authorization purposes, when your web application's client
-joins to Centrifuge - you can provide user id. Also you must provide permissions for
-every connected user. More about user id and permissions later. Anyway this is an address
-of your web application that will be used to authorize new client's connection. Centrifuge
-sends POST request with user id and permissions to this url and your application must decide
-to allow authorization or not.
+joins to Centrifuge - you provide user id in connection parameters. Centrifuge sends POST 
+request with user id and channel name on this URL address when client wants to subscribe on channel 
+and then Centrifuge checks response code returned from your web application (200 means allow to subscribe 
+on channel). This can be rather expensive for web application so using # in channel name 
+or using hard-to-guess channel names to restrict access to channels could be a better choice.
 
 **publish** - allow clients to publish messages in channels (your web application never receive those messages)
 
