@@ -208,7 +208,8 @@ Turn it off if you expect high load in channels.
 joins to Centrifuge - you provide user id in connection parameters. Centrifuge sends POST 
 request with user id and channel name on this URL address when client wants to subscribe on channel 
 and then Centrifuge checks response code returned from your web application (200 means allow to subscribe 
-on channel). This can be rather expensive for web application so using # in channel name 
+on channel, 403 - access denied, other error HTTP codes result in further attempts to ask your web app
+about authorization after some timeout - see ``max_auth_attempts``). This can be rather expensive for web application so using # in channel name
 or using hard-to-guess channel names to restrict access to channels could be a better choice.
 
 **publish** - allow clients to publish messages in channels (your web application never receive those messages)

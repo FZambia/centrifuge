@@ -1,3 +1,9 @@
+v0.6.2
+======
+
+* refactor authorization logic (POST request to `auth_url_address`) when using `is_private` namespace option. 403 response code from web application now results in immediate return without permission to subscribe on channel.
+
+
 v0.6.1
 ======
 
