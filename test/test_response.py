@@ -25,7 +25,11 @@ class ResponseTest(TestCase):
         self.assertTrue('body' in response_dict)
 
         response_message = response.as_message()
-        self.assertEqual(response_message, json.dumps(response_dict))
+        response = json.loads(response_message)
+        self.assertEqual(response["uid"], "test_uid")
+        self.assertEqual(response["method"], "test_method")
+        self.assertEqual(response["error"], "test_error")
+        self.assertEqual(response["body"], "test_body")
 
 
 class MultiResponseTest(TestCase):
@@ -34,8 +38,8 @@ class MultiResponseTest(TestCase):
         pass
 
     def test_response(self):
-        response_1 = Response(uid='test_uid', method='test_method', error='test_error', body='test_body')
-        response_2 = Response(uid='test_uid', method='test_method', error='test_error', body='test_body')
+        response_1 = Response(uid='test_uid1', method='test_method1', error='test_error1', body='test_body1')
+        response_2 = Response(uid='test_uid2', method='test_method2', error='test_error2', body='test_body2')
         
         multi_response = MultiResponse()
         multi_response.add(response_1)
@@ -49,7 +53,17 @@ class MultiResponseTest(TestCase):
         self.assertTrue(len(response_list), 2)
 
         response_message = multi_response.as_message()
-        self.assertEqual(response_message, json.dumps(response_list))
+        response = json.loads(response_message)[0]
+        self.assertEqual(response["uid"], "test_uid1")
+        self.assertEqual(response["method"], "test_method1")
+        self.assertEqual(response["error"], "test_error1")
+        self.assertEqual(response["body"], "test_body1")
+
+        response = json.loads(response_message)[1]
+        self.assertEqual(response["uid"], "test_uid2")
+        self.assertEqual(response["method"], "test_method2")
+        self.assertEqual(response["error"], "test_error2")
+        self.assertEqual(response["body"], "test_body2")
 
 
 if __name__ == '__main__':
