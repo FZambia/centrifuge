@@ -58,7 +58,7 @@ we must have a way to share current state between instances. For this purpose Ce
 utilizes Redis. To run Centrifuge using Redis you should run centrifuge with Redis Engine
 instead of default Memory Engine.
 
-First, install and run Redis.
+First, install and run Redis (it's recommended to use Redis of version 2.6.9 or greater).
 
 Now you can start several instances of Centrifuge. Let's start 2 instances.
 
