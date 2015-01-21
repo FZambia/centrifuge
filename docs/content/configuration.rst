@@ -45,6 +45,19 @@ configuration file. Example:
 
 Here I set custom ``sockjs_url`` option, list of all available options can be found in sockjs-tornado source code: `show on Github <https://github.com/mrjoes/sockjs-tornado/blob/master/sockjs/tornado/router.py#L14>`_
 
+Centrifuge runs a `tornado HTTPServer <http://www.tornadoweb.org/en/stable/httpserver.html#http-server>`_ under the hood. If you want to configure it you can do so via the ``tornado_settings``. Please note that the ``io_loop`` argument is not supported for now. Example:
+
+.. code-block:: javascript
+
+    {
+        "password": "admin",
+        "cookie_secret": "secret",
+        "api_secret": "secret",
+        "tornado_settings": {
+            "xheaders": true
+        }
+    }
+
 Centrifuge also allows to collect and export various metrics into Graphite.
 You can configure metric collecting and exporting behaviour using ``metrics``
 object in configuration JSON.

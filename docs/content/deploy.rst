@@ -77,6 +77,8 @@ Here is an example Nginx configuration to deploy Centrifuge.
             }
             location /socket {
                 proxy_buffering off;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Scheme $scheme;
                 proxy_pass http://centrifuge;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
@@ -84,6 +86,8 @@ Here is an example Nginx configuration to deploy Centrifuge.
             }
             location /connection/websocket {
                 proxy_buffering off;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Scheme $scheme;
                 proxy_pass http://centrifuge;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
@@ -91,6 +95,8 @@ Here is an example Nginx configuration to deploy Centrifuge.
             }
             location /connection {
                 proxy_buffering off;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Scheme $scheme;
                 proxy_pass http://centrifuge;
                 proxy_http_version 1.1;
                 proxy_set_header Upgrade $http_upgrade;
