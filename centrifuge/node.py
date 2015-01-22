@@ -167,7 +167,7 @@ def create_application_handlers(sockjs_settings):
     return handlers
 
 
-def main():
+def create_centrifuge_application():
 
     try:
         custom_settings = json.load(open(options.config, 'r'))
@@ -188,8 +188,6 @@ def main():
                 environment_var_name, option_name
             ))
             custom_settings[option_name] = environment_value
-
-    ioloop_instance = tornado.ioloop.IOLoop.instance()
 
     settings = dict(
         cookie_secret=custom_settings.get("cookie_secret", "bad secret"),
@@ -247,6 +245,7 @@ def main():
 
     app.initialize()
 
+    # TODO: this should be refactored
     max_channel_length = custom_settings.get('max_channel_length')
     if max_channel_length:
         app.MAX_CHANNEL_LENGTH = max_channel_length
@@ -281,16 +280,13 @@ def main():
 
     logger.info("Tornado port: {0}, address: {1}".format(options.port, options.address))
 
-    # finally, let's go
+    return app
+
+
+if __name__ == '__main__':
+    ioloop_instance = tornado.ioloop.IOLoop.instance()
+    create_centrifuge_application()
     try:
         ioloop_instance.start()
     except KeyboardInterrupt:
         logger.info('interrupted')
-    finally:
-        # cleaning
-        if hasattr(app.engine, 'clean'):
-            app.engine.clean()
-
-
-if __name__ == '__main__':
-    main()
