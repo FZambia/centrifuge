@@ -1,8 +1,8 @@
 v0.6.3
 ======
 
-* new command-line option `address` to specify the address to bind to [pull request](https://github.com/centrifugal/centrifuge/pull/57)
-* it's now possible to provide `tornado_settings` in configuration file to pass initialization parameters to Tornado's HTTPServer instance [pull request](https://github.com/centrifugal/centrifuge/pull/60) :
+* new command-line option `address` to specify the address to bind to ([pull request](https://github.com/centrifugal/centrifuge/pull/57))
+* it's now possible to provide `tornado_settings` in configuration file to pass initialization parameters to Tornado's HTTPServer instance ([pull request](https://github.com/centrifugal/centrifuge/pull/60)) :
 
 ```
 {
