@@ -220,9 +220,17 @@ def main():
 
     handlers = create_application_handlers(sockjs_settings)
 
+    # custom settings to configure the tornado HTTPServer
+    tornado_settings = custom_settings.get("tornado_settings", {})
+    logger.debug("tornado_settings: %s", tornado_settings)
+    if 'io_loop' in tornado_settings:
+        stop_running(
+            "The io_loop in tornado_settings is not supported for now."
+            )
+
     try:
         app = Application(handlers=handlers, **settings)
-        server = tornado.httpserver.HTTPServer(app)
+        server = tornado.httpserver.HTTPServer(app, **tornado_settings)
         server.listen(options.port, address=options.address)
     except Exception as e:
         return stop_running(str(e))
