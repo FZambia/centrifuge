@@ -282,11 +282,13 @@ def create_centrifuge_application():
 
     return app
 
-
-if __name__ == '__main__':
+def main():
     ioloop_instance = tornado.ioloop.IOLoop.instance()
     create_centrifuge_application()
     try:
         ioloop_instance.start()
     except KeyboardInterrupt:
         logger.info('interrupted')
+
+if __name__ == '__main__':
+    main()
