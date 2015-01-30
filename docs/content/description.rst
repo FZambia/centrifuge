@@ -6,15 +6,17 @@ Description
 Overview
 ~~~~~~~~
 
-Here I'll try to explain how Centrifuge actually works.
+In this chapter I'll try to explain how Centrifuge actually works.
 
 In a few words - clients from browsers connect to Centrifuge, after connecting clients
 subscribe on channels. And every message which was published into channel will be sent
 to all clients which are currently subscribed on this channel.
 
 When you start Centrifuge instance you start Tornado instance on a certain port number.
-That port number can be configured using command-line option ``--port`` . By default it is 8000.
-You can also specify the address to bind to with the ``--address`` option. For example you can specify ``localhost`` which is recommended if you want to keep centrifuge behind a proxy (e.g.: Nginx). The port and the address will eventually be used by Tornado's TCPServer.
+That port number can be configured using command-line option ``--port`` . By default ``8000``.
+You can also specify the address to bind to with the ``--address`` option. For example you
+can specify ``localhost`` which is recommended if you want to keep Centrifuge behind a
+proxy (e.g.: Nginx). The port and the address will eventually be used by Tornado's TCPServer.
 
 In general you should provide path to JSON configuration file when starting Centrifuge instance
 using ``--config`` option. You can start Centrifuge without configuration file but this is
@@ -41,21 +43,23 @@ than enough.
 Well, you started one instance of Centrifuge - clients from web browsers can start connecting
 to it.
 
-There are two endpoints for connections - ``/connection`` for SockJS and
-``/connection/websocket`` for pure Websocket connections. On browser side you now know the
-url to connect - for our simple case it is ``http://localhost:8000/connection`` in case of
-using SockJS library and ``ws://localhost:8000/connection/websocket`` in case of using
+There are two endpoints for connections:
+- ``/connection`` for SockJS connections
+- ``/connection/websocket`` for pure Websocket connections
+
+On browser side you now know the url to connect - for our simple case it is ``http://localhost:8000/connection``
+in case of using SockJS library and ``ws://localhost:8000/connection/websocket`` in case of using
 pure Websockets.
 
 To communicate with Centrifuge from browser you should use javascript client which comes
-with Centrifuge (find it `in repository <https://github.com/centrifugal/centrifuge/tree/master/javascript>`_) and provides simple API. Please, read a chapter about
-client API to get more information.
+with Centrifuge (find it `in its own repository <https://github.com/centrifugal/centrifuge-js>`_)
+and provides simple API. Please, read a `chapter <https://centrifuge.readthedocs.org/en/latest/content/client_api.html>`_ about client API to get more information.
 
 Sometimes you need to run more instances of Centrifuge and load balance clients between them.
 As was mentioned above when you start default instance of Centrifuge - you start it with
-Memory Engine. Centrifuge holds all state in memory. But to run several Centrifuge instances
-we must have a way to share current state between instances. For this purpose Centrifuge
-utilizes Redis. To run Centrifuge using Redis you should run centrifuge with Redis Engine
+Memory Engine. In this case Centrifuge holds all state in memory. But to run several Centrifuge
+instances we must provide a way to share current state between instances. For this purpose Centrifuge
+utilizes Redis. To run Centrifuge with Redis you should run Centrifuge with Redis Engine
 instead of default Memory Engine.
 
 First, install and run Redis (it's recommended to use Redis of version 2.6.9 or greater).
@@ -77,16 +81,16 @@ Explore available command line options specific for Redis engine using ``--help`
 
     CENTRIFUGE_ENGINE=redis centrifuge --help
 
-``CENTRIFUGE_ENGINE`` can be ``memory``, ``redis`` or pythonic path to custom engine
+``CENTRIFUGE_ENGINE`` can be ``memory``, ``redis`` or path to custom engine class
 like ``path.to.custom.Engine``
 
-Then open another terminal window and run second instance using another tornado port:
+Then open another terminal window and run second instance on another port:
 
 .. code-block:: bash
 
     CENTRIFUGE_ENGINE=redis centrifuge --port=8001
 
-Now two instances running and connected via Redis. Cool!
+Now two instances running and connected via Redis. Great!
 
 But what is an url to connect from browser - ``http://localhost:8000/connection`` or
 ``http://localhost:8001/connection``?
@@ -99,7 +103,6 @@ New client can connect to any of running instances. If client sends message we m
 send that message to other clients including those who connected to another instance
 at this moment. This is why we need Redis PUB/SUB here. All instances listen to special
 Redis channels and receive messages from those channels.
-
 
 In Centrifuge you can create projects and namespaces in projects. This information
 must be stored somewhere and shared between all running instances. To achieve this by

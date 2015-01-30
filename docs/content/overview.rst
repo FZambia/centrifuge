@@ -3,7 +3,7 @@ Overview
 
 .. _overview:
 
-Centrifuge is a simple server for real-time messaging in web applications.
+Centrifuge is a server for real-time messaging in web applications.
 
 In a few words: clients (users of your web application/site) connect to Centrifuge from browser,
 after connecting clients subscribe on channels. Every message which was published into that
@@ -11,12 +11,12 @@ channel will be delivered to all clients which are currently subscribed on that 
 
 To connect to Centrifuge from browser pure `Websockets <http://en.wikipedia.org/wiki/WebSocket>`_
 or `SockJS <https://github.com/sockjs/sockjs-client>`_) library can be used. So it works in both
-modern and old browsers (IE 7 supported). Centrifuge has `javascript client <https://github.com/centrifugal/centrifuge/tree/master/javascript>`_ with simple API.
+modern and old browsers (IE 7 supported). Centrifuge has `javascript client <https://github.com/centrifugal/centrifuge-js>`_ with simple API.
 
-Backend is built on top of `Tornado <http://www.tornadoweb.org/en/stable/>`_ - fast and mature
+Backend is built on top of `Tornado <https://github.com/tornadoweb/tornado>`_ - fast and mature
 asynchronous web server which can handle thousands of simultaneous connections.
 
-Centrifuge scales using `Redis <http://redis.io/>`_ PUB/SUB capabilities.
+Centrifuge scales using `Redis <http://redis.io/>`_ PUBLISH/SUBSCRIBE capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
 on Redis.
 

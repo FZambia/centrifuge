@@ -7,11 +7,6 @@ import os
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.append(os.path.abspath('_themes'))
 
-# -- General configuration -----------------------------------------------------
-
-# If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
-
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
@@ -27,24 +22,18 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The encoding of source files.
-#source_encoding = 'utf-8-sig'
-
 # The master toctree document.
 master_doc = 'index'
 
 # General information about the project.
 project = u'centrifuge'
-copyright = u'2014, <a href="https://www.facebook.com/emelin.alexander">Alexandr Emelin</a>'
 
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-#
+copyright = u'2015, <a href="https://www.facebook.com/emelin.alexander">Alexandr Emelin</a>'
+
 # The short X.Y version.
-version = '0.5.7'
+version = '0.6.3'
 # The full version, including alpha/beta/rc tags.
-release = '0.5.7'
+release = '0.6.3'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -52,10 +41,6 @@ exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'flask_theme_support.FlaskyStyle'
-
-# A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
-
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -88,7 +73,7 @@ htmlhelp_basename = 'centrifugedocs'
 epub_title = u'centrifuge'
 epub_author = u'Alexandr Emelin'
 epub_publisher = u'Alexandr Emelin'
-epub_copyright = u'2014, Alexandr Emelin'
+epub_copyright = u'2015, Alexandr Emelin'
 
 todo_include_todos = True
 
