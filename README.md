@@ -44,7 +44,7 @@ channel will be delivered to all clients which are currently subscribed on that 
 
 To connect to Centrifuge from browser pure [Websockets](http://en.wikipedia.org/wiki/WebSocket)
 or [SockJS](https://github.com/sockjs/sockjs-client) library can be used. So it works in both
-modern and old browsers (IE 7 supported). Centrifuge has [javascript client](https://github.com/centrifugal/centrifuge/tree/master/javascript) with simple API.
+modern and old browsers (IE 7 supported). Centrifuge has [javascript client](https://github.com/centrifugal/centrifuge-js/) with simple API.
 
 Backend is built on top of [Tornado](http://www.tornadoweb.org/en/stable/) - fast and mature
 asynchronous web server which can handle thousands of simultaneous connections.

@@ -11,11 +11,11 @@ Javascript client is very simple. Lets go through client API step by step.
 
 When you have Centrifuge instance running - it is time to communicate with it from browser.
 
-First, import javascript client into your web page:
+First, import javascript client into your web page, the simplest way is just include ``script`` tag:
 
 .. code-block:: html
 
-    <script src="https://rawgit.com/centrifugal/centrifuge/master/javascript/centrifuge.js"></script>
+    <script src="https://rawgit.com/centrifugal/centrifuge-js/master/centrifuge.js"></script>
 
 Javascript client built on top of Event Emitter written by `Oliver Caldwell <https://github.com/Wolfy87>`_.
 
@@ -45,7 +45,7 @@ it must be imported on your page before Centrifuge's javascript client:
 .. code-block:: html
 
     <script src="https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js" type="text/javascript"></script>
-    <script src="https://rawgit.com/centrifugal/centrifuge/master/javascript/centrifuge.js" type="text/javascript"></script>
+    <script src="https://rawgit.com/centrifugal/centrifuge-js/master/centrifuge.js" type="text/javascript"></script>
 
 
 In case of using SockJS additional configuration parameter can be used - ``protocols_whitelist``.
@@ -284,7 +284,7 @@ First, add ``centrifuge.dom.js`` on your page:
 
 .. code-block:: html
 
-    <script src="http://rawgit.com/centrifugal/centrifuge/master/javascript/centrifuge.dom.js"></script>
+    <script src="https://rawgit.com/centrifugal/centrifuge-js/master/plugins/centrifuge-dom/centrifuge.dom.js"></script>
 
 
 Note, that ``centrifuge.dom.js`` requires **jQuery**!
