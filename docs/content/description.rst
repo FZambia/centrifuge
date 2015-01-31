@@ -155,9 +155,9 @@ structure storage backends.
 Projects
 ~~~~~~~~
 
-When you have running Centrifuge's instance and want to create web application using it -
+When you have running Centrifuge instance and want to create web application using it -
 first you should do is to add your project into Centrifuge. It's very simple - just fill
-the form.
+the form in web interface.
 
 **project name** - unique project name, must be written using ascii letters, numbers, underscores or hyphens.
 
@@ -239,10 +239,10 @@ on channel (unsubscribes from channel)
 Channels
 ~~~~~~~~
 
-The central part of Centrifuge is channels. Channels is a route for messages. Clients subscribe on
+The central part of Centrifuge is channels. Channel is a route for messages. Clients subscribe on
 channels, messages are being published into channels, channels everywhere.
 
-Channel is just a string - `news`, `comments`, `red fox` are valid channel names.
+Channel is just a string - ``news``, ``comments`` are valid channel names.
 
 BUT! You should remember several things.
 
@@ -256,7 +256,7 @@ So if channel name is ``public:chat`` - then Centrifuge will search for namespac
 
 ``#`` is a separator to create private channels for users without sending POST request to
 your web application. For example if channel is ``news#user42`` then only user with id ``user42``
-cab subscribe on this channel.
+can subscribe on this channel.
 
 Moreover you can provide several user IDs in channel name separated by comma: ``dialog#user42,user43`` -
 in this case only ``user42`` and ``user43`` will be able to subscribe on this channel.
