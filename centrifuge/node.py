@@ -242,47 +242,15 @@ def create_centrifuge_application():
     logger.info("Storage class: {0}".format(storage_class_path))
     app.storage = storage_class(options)
 
-    # create references to application from SockJS handlers
+    # create reference to application from SockJS handlers
     AdminSocketHandler.application = app
+
+    # create reference to application from Client
     Client.application = app
 
     app.initialize()
 
-    # TODO: this should be refactored
-    max_channel_length = custom_settings.get('max_channel_length')
-    if max_channel_length:
-        app.MAX_CHANNEL_LENGTH = max_channel_length
-
-    admin_api_message_limit = custom_settings.get('admin_api_message_limit')
-    if admin_api_message_limit:
-        app.ADMIN_API_MESSAGE_LIMIT = admin_api_message_limit
-
-    client_api_message_limit = custom_settings.get('client_api_message_limit')
-    if client_api_message_limit:
-        app.CLIENT_API_MESSAGE_LIMIT = client_api_message_limit
-
-    owner_api_project_id = custom_settings.get('owner_api_project_id')
-    if owner_api_project_id:
-        app.OWNER_API_PROJECT_ID = owner_api_project_id
-
-    owner_api_project_param = custom_settings.get('owner_api_project_param')
-    if owner_api_project_param:
-        app.OWNER_API_PROJECT_PARAM = owner_api_project_param
-
-    connection_expire_check = custom_settings.get('connection_expire_check', True)
-    if connection_expire_check:
-        app.CONNECTION_EXPIRE_CHECK = connection_expire_check
-
-    connection_expire_collect_interval = custom_settings.get('connection_expire_collect_interval')
-    if connection_expire_collect_interval:
-        app.CONNECTION_EXPIRE_COLLECT_INTERVAL = connection_expire_collect_interval
-
-    connection_expire_check_interval = custom_settings.get('connection_expire_check_interval')
-    if connection_expire_check_interval:
-        app.CONNECTION_EXPIRE_CHECK_INTERVAL = connection_expire_check_interval
-
     logger.info("Tornado port: {0}, address: {1}".format(options.port, options.address))
-
     return app
 
 
