@@ -483,7 +483,7 @@ class Client(object):
         }
 
         if self.application.USER_SEPARATOR in channel:
-            users_allowed = channel.rsplit('#', 1)[1].split(',')
+            users_allowed = channel.rsplit(self.application.USER_SEPARATOR, 1)[1].split(',')
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
 

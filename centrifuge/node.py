@@ -189,6 +189,9 @@ def create_centrifuge_application():
             ))
             custom_settings[option_name] = environment_value
 
+    if os.environ.get("CENTRIFUGE_INSECURE") == "1":
+        custom_settings["insecure"] = True
+
     settings = dict(
         cookie_secret=custom_settings.get("cookie_secret", "bad secret"),
         login_url="/auth",
