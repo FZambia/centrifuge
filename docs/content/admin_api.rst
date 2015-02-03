@@ -246,6 +246,11 @@ If your backend Python powered and you don't want to install Cent, you can just 
 ``Client`` class from Cent source code (``cent.core.Client``) and use it as was shown
 above.
 
+Ruby
+~~~~
+
+`Oleg Bovykin <https://github.com/arrowcircle>`_ contributed an `implementation of Centrifuge API client for Ruby <https://github.com/centrifugal/centrifuge-ruby>`_.
+
 Java
 ~~~~
 
