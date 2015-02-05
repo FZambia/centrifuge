@@ -251,6 +251,9 @@ class Application(tornado.web.Application):
         if insecure:
             self.INSECURE = insecure
 
+        if self.INSECURE:
+            logger.warn("Centrifuge started in INSECURE mode")
+
     def init_structure(self):
         """
         Initialize structure manager using settings provided
