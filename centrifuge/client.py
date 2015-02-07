@@ -362,12 +362,14 @@ class Client(object):
     @staticmethod
     def validate_token(token, secret_key, project_id, user, timestamp, user_info):
         try:
-            client_token = auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info)
+            is_valid_token = auth.check_client_token(
+                token, secret_key, project_id, user, timestamp, user_info=user_info
+            )
         except Exception as err:
             logger.error(err)
             return "invalid connection parameters"
 
-        if token != client_token:
+        if not is_valid_token:
             return "invalid token"
 
         return None
