@@ -72,11 +72,11 @@ for dir_path, dir_names, file_names in os.walk(project_dir):
 
 install_requires = [
     'six>=1.3.0',
-    'tornado==4.0.2',
+    'tornado==4.1',
     'sockjs-tornado==1.0.1',
     'jsonschema==2.4.0',
     'toro==0.8',
-    'WTForms==2.0.1'
+    'WTForms==2.0.2'
 ]
 
 if platform.system() != "Windows":

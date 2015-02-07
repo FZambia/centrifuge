@@ -190,7 +190,7 @@ class Application(tornado.web.Application):
 
     @property
     def config(self):
-        return self.settings["config"]
+        return self.settings.get("config", {})
 
     def override_application_settings_from_config(self):
         config = self.config
