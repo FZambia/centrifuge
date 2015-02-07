@@ -12,6 +12,7 @@ from centrifuge.log import logger
 from centrifuge.response import Response, MultiResponse
 from centrifuge.client import Client
 from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
+from centrifuge.utils import json_decode
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -105,12 +106,24 @@ class ApiHandler(BaseHandler):
         if not self.request.body:
             raise tornado.web.HTTPError(400, log_message="empty request")
 
-        sign = self.get_argument('sign', None)
+        if self.request.headers.get("Content-Type", "").startswith("application/json"):
+            # handle JSON requests if corresponding Content-Type specified
+            try:
+                request_data = json_decode(self.request.body)
+            except ValueError:
+                raise tornado.web.HTTPError(400, log_message="malformed json")
+            if not isinstance(request_data, dict):
+                raise tornado.web.HTTPError(400, log_message="object expected")
+            sign = request_data.get("sign")
+            encoded_data = request_data.get("data")
+        else:
+            # handle application/x-www-form-urlencoded request
+            sign = self.get_argument('sign', None)
+            encoded_data = self.get_argument('data', None)
 
         if not sign:
             raise tornado.web.HTTPError(400, log_message="no data sign")
 
-        encoded_data = self.get_argument('data', None)
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no data")
 
@@ -122,7 +135,7 @@ class ApiHandler(BaseHandler):
 
         if is_owner_request:
             # use api secret key from configuration to check sign
-            secret = self.application.settings["config"].get("api_secret")
+            secret = self.application.config.get("api_secret")
             if not secret:
                 raise tornado.web.HTTPError(501, log_message="no api_secret in configuration file")
             project = None

@@ -171,7 +171,7 @@ class Client(object):
 
         func = getattr(self, 'handle_%s' % method, None)
 
-        if not func or not method in client_api_schema:
+        if not func or method not in client_api_schema:
             response.error = "unknown method %s" % method
             raise Return((response, response.error))
 
@@ -359,6 +359,27 @@ class Client(object):
         """
         raise Return(('pong', None))
 
+    @staticmethod
+    def validate_token(token, secret_key, project_id, user, timestamp, user_info):
+        try:
+            is_valid_token = auth.check_client_token(
+                token, secret_key, project_id, user, timestamp, user_info=user_info
+            )
+        except Exception as err:
+            logger.error(err)
+            return "invalid connection parameters"
+
+        if not is_valid_token:
+            return "invalid token"
+
+        return None
+
+    @staticmethod
+    def is_connection_must_be_checked(project, examined_at):
+        connection_check = project.get('connection_check', False)
+        now = time.time()
+        return connection_check and examined_at + project.get("connection_lifetime", 24*365*3600) < now
+
     @coroutine
     def handle_connect(self, params):
         """
@@ -384,14 +405,9 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        try:
-            client_token = auth.get_client_token(secret_key, project_id, user, timestamp, user_info=user_info)
-        except Exception as err:
-            logger.error(err)
-            raise Return((None, "invalid connection parameters"))
-
-        if token != client_token:
-            raise Return((None, "invalid token"))
+        error_msg = self.validate_token(token, secret_key, project_id, user, timestamp, user_info)
+        if error_msg:
+            raise Return((None, error_msg))
 
         if user_info is not None:
             try:
@@ -406,14 +422,10 @@ class Client(object):
         except ValueError:
             raise Return((None, "invalid timestamp"))
 
-        now = time.time()
-
         self.user = user
         self.examined_at = timestamp
 
-        connection_check = project.get('connection_check', False)
-
-        if connection_check and self.examined_at + project.get("connection_lifetime", 24*365*3600) < now:
+        if self.is_connection_must_be_checked(project, self.examined_at):
             # connection expired - this is a rare case when Centrifuge went offline
             # for a while or client turned on his computer from sleeping mode.
 
@@ -483,7 +495,7 @@ class Client(object):
         }
 
         if self.application.USER_SEPARATOR in channel:
-            users_allowed = channel.rsplit('#', 1)[1].split(',')
+            users_allowed = channel.rsplit(self.application.USER_SEPARATOR, 1)[1].split(',')
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
 

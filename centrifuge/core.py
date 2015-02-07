@@ -81,6 +81,10 @@ class Application(tornado.web.Application):
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
 
+    # when active no authentication required at all when connecting to Centrifuge,
+    # sending API commands - this is suitable for demonstration or personal usage
+    INSECURE = False
+
     LIMIT_EXCEEDED = 'limit exceeded'
 
     UNAUTHORIZED = 'unauthorized'
@@ -172,6 +176,10 @@ class Application(tornado.web.Application):
         # initialize tornado's application
         super(Application, self).__init__(*args, **kwargs)
 
+        # this Application has lots of default class-level
+        # attributes that can be updated using configuration file
+        self.override_application_settings_from_config()
+
     def initialize(self):
         self.init_callbacks()
         self.init_structure()
@@ -180,12 +188,78 @@ class Application(tornado.web.Application):
         self.init_connection_expire_check()
         self.init_metrics()
 
+    @property
+    def config(self):
+        return self.settings.get("config", {})
+
+    def override_application_settings_from_config(self):
+        config = self.config
+
+        user_separator = config.get('user_separator')
+        if user_separator:
+            self.USER_SEPARATOR = user_separator
+
+        namespace_separator = config.get('namespace_separator')
+        if namespace_separator:
+            self.NAMESPACE_SEPARATOR = namespace_separator
+
+        owner_api_project_id = config.get('owner_api_project_id')
+        if owner_api_project_id:
+            self.OWNER_API_PROJECT_ID = owner_api_project_id
+
+        owner_api_project_param = config.get('owner_api_project_param')
+        if owner_api_project_param:
+            self.OWNER_API_PROJECT_PARAM = owner_api_project_param
+
+        ping_interval = config.get('ping_interval')
+        if ping_interval:
+            self.PING_INTERVAL = ping_interval
+
+        ping_max_delay = config.get('ping_max_delay')
+        if ping_max_delay:
+            self.PING_MAX_DELAY = ping_max_delay
+
+        node_info_publish_interval = config.get('node_info_publish_interval')
+        if node_info_publish_interval:
+            self.NODE_INFO_PUBLISH_INTERVAL = node_info_publish_interval
+
+        max_channel_length = config.get('max_channel_length')
+        if max_channel_length:
+            self.MAX_CHANNEL_LENGTH = max_channel_length
+
+        admin_api_message_limit = config.get('admin_api_message_limit')
+        if admin_api_message_limit:
+            self.ADMIN_API_MESSAGE_LIMIT = admin_api_message_limit
+
+        client_api_message_limit = config.get('client_api_message_limit')
+        if client_api_message_limit:
+            self.CLIENT_API_MESSAGE_LIMIT = client_api_message_limit
+
+        connection_expire_check = config.get('connection_expire_check', True)
+        if connection_expire_check:
+            self.CONNECTION_EXPIRE_CHECK = connection_expire_check
+
+        connection_expire_collect_interval = config.get('connection_expire_collect_interval')
+        if connection_expire_collect_interval:
+            self.CONNECTION_EXPIRE_COLLECT_INTERVAL = connection_expire_collect_interval
+
+        connection_expire_check_interval = config.get('connection_expire_check_interval')
+        if connection_expire_check_interval:
+            self.CONNECTION_EXPIRE_CHECK_INTERVAL = connection_expire_check_interval
+
+        insecure = config.get('insecure')
+        if insecure:
+            self.INSECURE = insecure
+
+        if self.INSECURE:
+            logger.warn("Centrifuge started in INSECURE mode")
+
     def init_structure(self):
         """
         Initialize structure manager using settings provided
         in configuration file.
         """
-        custom_settings = self.settings['config']
+        config = self.config
         self.structure = Structure(self)
         self.structure.set_storage(self.storage)
 
@@ -197,7 +271,7 @@ class Application(tornado.web.Application):
             # network errors
             logger.info("Structure initialized")
             self.structure.update()
-            structure_update_interval = custom_settings.get('structure_update_interval', 60)
+            structure_update_interval = config.get('structure_update_interval', 60)
             logger.info(
                 "Periodic structure update interval: {0} seconds".format(
                     structure_update_interval
@@ -225,7 +299,7 @@ class Application(tornado.web.Application):
         """
         Fill custom callbacks with callable objects provided in config.
         """
-        config = self.settings['config']
+        config = self.config
 
         pre_publish_callbacks = config.get('pre_publish_callbacks', [])
         for callable_path in pre_publish_callbacks:
@@ -265,7 +339,7 @@ class Application(tornado.web.Application):
         Centrifuge which then will be exported into web interface, log or
         Graphite.
         """
-        config = self.settings['config']
+        config = self.config
         metrics_config = config.get('metrics', {})
 
         self.admin_metrics = metrics_config.get('admin', True)
