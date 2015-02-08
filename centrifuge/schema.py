@@ -183,6 +183,12 @@ client_api_schema = {
         "properties": {
             "channel": {
                 "type": "string"
+            },
+            "auth": {
+                "type": "string"
+            },
+            "info": {
+                "type": "string"
             }
         },
         "required": ["channel"]

@@ -38,6 +38,8 @@ def get_address():
 
 class Application(tornado.web.Application):
 
+    PRIVATE_CHANNEL_PREFIX = "$"
+
     USER_SEPARATOR = '#'
 
     NAMESPACE_SEPARATOR = ":"
@@ -194,6 +196,10 @@ class Application(tornado.web.Application):
 
     def override_application_settings_from_config(self):
         config = self.config
+
+        private_channel_prefix = config.get('private_channel_prefix')
+        if private_channel_prefix:
+            self.PRIVATE_CHANNEL_PREFIX = private_channel_prefix
 
         user_separator = config.get('user_separator')
         if user_separator:
@@ -701,6 +707,10 @@ class Application(tornado.web.Application):
         """
         Get namespace name from channel name
         """
+        if channel.startswith(self.PRIVATE_CHANNEL_PREFIX):
+            # cut private channel prefix from beginning
+            channel = channel[len(self.PRIVATE_CHANNEL_PREFIX)]
+
         if self.NAMESPACE_SEPARATOR in channel:
             # namespace:rest_of_channel
             namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]

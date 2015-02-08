@@ -1,4 +1,4 @@
-<script type="text/javascript" src="https://rawgit.com/centrifugal/centrifuge-js/master/centrifuge.js"></script>
+<script type="text/javascript" src="http://localhost:8000/static/centrifuge.js"></script>
 <script type="text/javascript">
     'use strict';
 
@@ -18,7 +18,7 @@
 
     $(function() {
 
-        var channel = "public:chat";
+        var channel = "$public:chat";
 
         var centrifuge = new Centrifuge({
             url: '{{protocol}}://{{centrifuge_address}}{{endpoint}}',
@@ -28,7 +28,14 @@
             timestamp: '{{auth_data["timestamp"]}}',
             info: '{% raw auth_data["info"] %}',
             //protocols_whitelist: ["xhr-polling"],
-            debug: true
+            debug: true,
+            authEndpoint: "/centrifuge/auth",
+            tokenEndpoint: "/centrifuge/token",
+            auth: {
+                headers: {
+                    "X-Csrf-Token": "csrf"
+                }
+            }
         });
 
         centrifuge.on('connect', function(){

@@ -7,7 +7,7 @@ import logging
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
-from cent.core import generate_token
+from cent.core import generate_token, authenticate
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -135,6 +135,38 @@ class AuthorizeHandler(tornado.web.RequestHandler):
         }))
 
 
+class CentrifugeAuthHandler(tornado.web.RequestHandler):
+    """
+    Allow all users to subscribe on channels they want.
+    """
+    def check_xsrf_cookie(self):
+        pass
+
+    def post(self):
+
+        client_id = self.get_argument("client_id")
+        channels = self.get_arguments("channels")
+
+        logging.info("{0} wants to subscribe on {1}".format(client_id, ", ".join(channels)))
+
+        to_return = {}
+
+        for channel in channels:
+            info = json.dumps({
+                'channel_data_example': 'you can add additional JSON data when authorizing'
+            })
+            to_return[channel] = {
+                "status": 200,
+                "auth": authenticate(options.secret_key, client_id, channel, info=info),
+                "info": info
+            }
+
+        # but here we allow to join any private channel and return additional
+        # JSON info specific for channel
+        self.set_header('Content-Type', 'application/json; charset="utf-8"')
+        self.write(json.dumps(to_return))
+
+
 def run():
     options.parse_command_line()
     app = tornado.web.Application(
@@ -144,6 +176,7 @@ def run():
             (r'/ws', WebsocketHandler),
             (r'/check', CheckHandler),
             (r'/authorize', AuthorizeHandler),
+            (r'/centrifuge/auth', CentrifugeAuthHandler)
         ],
         debug=True
     )
