@@ -2,7 +2,7 @@ html {
     overflow-y: scroll;
 }
 body, pre {
-    background: url('../img/bg.png');
+    background: url('../img/bg.png') black;
 }
 h4 {
     padding-top: 10px;
@@ -234,6 +234,7 @@ label {
 
 .intro {
     background: url("../img/intro-bg.jpg") no-repeat scroll center bottom / cover #000;
+    background-color: #000;
     color: #f5f5f5;
     display: table;
     height: 100%;
