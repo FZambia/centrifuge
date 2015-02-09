@@ -1,3 +1,18 @@
+v0.7.0
+======
+
+Some backwards incompatible changes here.
+
+* new Pusher-like private channel auth mechanism - see documentation.
+* support for `sha256` in signs and tokens HMACs
+* Tornado 4.1
+
+How to migrate:
+
+* update Cent client to latest version. If you don't use Cent then you should update your code.
+* if you are using old private channel subscription mechanism via POST request from Centrifuge then you should migrate using new one.
+* note that `user_info` kwarg renamed to `info` in Cent `generate_token` function
+
 v0.6.3
 ======
 

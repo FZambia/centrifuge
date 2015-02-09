@@ -7,7 +7,7 @@ import logging
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
-from cent.core import generate_token, authenticate
+from cent.core import generate_token, generate_channel_auth
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -110,31 +110,6 @@ class CheckHandler(tornado.web.RequestHandler):
         self.write(json.dumps(deactivated_users))
 
 
-class AuthorizeHandler(tornado.web.RequestHandler):
-    """
-    Allow all users to subscribe on channels they want.
-    """
-    def check_xsrf_cookie(self):
-        pass
-
-    def post(self):
-
-        user = self.get_argument("user")
-        channel = self.get_argument("channel")
-
-        logging.info("{0} wants to subscribe on {1} channel".format(user, channel))
-
-        # web application now has user and channel and must decide that
-        # user has permissions to subscribe on that channel
-        # if permission denied - then you can return non 200 HTTP response
-
-        # but here we allow to join any private channel and return additional
-        # JSON info specific for channel
-        self.write(json.dumps({
-            'channel_data_example': 'you can add additional JSON data when authorizing'
-        }))
-
-
 class CentrifugeAuthHandler(tornado.web.RequestHandler):
     """
     Allow all users to subscribe on channels they want.
@@ -153,11 +128,11 @@ class CentrifugeAuthHandler(tornado.web.RequestHandler):
 
         for channel in channels:
             info = json.dumps({
-                'channel_data_example': 'you can add additional JSON data when authorizing'
+                'channel_extra_info_example': 'you can add additional JSON data when authorizing'
             })
             to_return[channel] = {
                 "status": 200,
-                "auth": authenticate(options.secret_key, client_id, channel, info=info),
+                "auth": generate_channel_auth(options.secret_key, client_id, channel, info=info),
                 "info": info
             }
 
@@ -175,7 +150,6 @@ def run():
             (r'/sockjs', SockjsHandler),
             (r'/ws', WebsocketHandler),
             (r'/check', CheckHandler),
-            (r'/authorize', AuthorizeHandler),
             (r'/centrifuge/auth', CentrifugeAuthHandler)
         ],
         debug=True

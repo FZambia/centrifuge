@@ -4,7 +4,6 @@
 import six
 import uuid
 import time
-import random
 
 try:
     from urllib import urlencode
@@ -14,7 +13,6 @@ except ImportError:
     from urllib.parse import urlencode
 
 from tornado.ioloop import IOLoop, PeriodicCallback
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
 from tornado.gen import coroutine, Return, Task
 
 from jsonschema import validate, ValidationError
@@ -279,77 +277,6 @@ class Client(object):
         self.channel_user_info[channel] = info
 
     @coroutine
-    def authorize(self, auth_address, project, channel):
-        """
-        Send POST request to web application to ask it if current client
-        has a permission to subscribe on channel.
-        """
-        project_id = self.project_id
-
-        http_client = AsyncHTTPClient()
-        request = HTTPRequest(
-            auth_address,
-            method="POST",
-            body=urlencode({
-                'user': self.user,
-                'channel': channel
-            }),
-            request_timeout=1
-        )
-
-        max_auth_attempts = project.get('max_auth_attempts')
-        back_off_interval = project.get('back_off_interval')
-        back_off_max_timeout = project.get('back_off_max_timeout')
-
-        attempts = 0
-
-        while attempts < max_auth_attempts:
-
-            # get current timeout for project
-            current_attempts = self.application.back_off.setdefault(project_id, 0)
-
-            factor = random.randint(0, 2**current_attempts-1)
-            timeout = factor*back_off_interval
-
-            if timeout > back_off_max_timeout:
-                timeout = back_off_max_timeout
-
-            # wait before next authorization request attempt
-            yield sleep(float(timeout)/1000)
-
-            try:
-                response = yield http_client.fetch(request)
-            except HTTPError as err:
-                if err.code == 403:
-                    # access denied for this client
-                    raise Return((False, None))
-                else:
-                    # let it fail and try again after some timeout
-                    logger.info("{0} status code when fetching auth address {1}".format(
-                        err.code, auth_address
-                    ))
-            except Exception as err:
-                logger.error("error fetching auth address {0}".format(auth_address))
-                logger.exception(err)
-                raise Return((False, None))
-            else:
-                # reset back-off attempts
-                self.application.back_off[project_id] = 0
-
-                if response.code == 200:
-                    # auth successful
-                    self.update_channel_user_info(response.body, channel)
-                    raise Return((True, None))
-
-                else:
-                    # access denied for this client
-                    raise Return((False, None))
-            attempts += 1
-            self.application.back_off[project_id] += 1
-
-        raise Return((False, None))
-
-    @coroutine
     def handle_ping(self, params):
         """
         Some hosting platforms (for example Heroku) disconnect websocket
@@ -495,7 +422,7 @@ class Client(object):
         }
 
         if self.application.USER_SEPARATOR in channel:
-            users_allowed = channel.rsplit(self.application.USER_SEPARATOR, 1)[1].split(',')
+            users_allowed = self.application.get_allowed_users(channel)
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
 
@@ -509,21 +436,18 @@ class Client(object):
         if not anonymous and not self.user:
             raise Return((body, self.application.PERMISSION_DENIED))
 
-        is_private = namespace.get('is_private', False)
+        is_private = self.application.is_channel_private(channel)
 
         if is_private:
-            auth_address = namespace.get('auth_address', None)
-            if not auth_address:
-                auth_address = project.get('auth_address', None)
-            if not auth_address:
-                raise Return((body, 'no auth address found'))
-            is_authorized, error = yield self.authorize(
-                auth_address, project, channel
+            auth_sign = params.get("auth", "")
+            info = params.get("info", "{}")
+            is_authorized = auth.check_channel_auth(
+                auth_sign, project.get("secret_key"), self.uid, channel, info
             )
-            if error:
-                raise Return((body, self.application.INTERNAL_SERVER_ERROR))
             if not is_authorized:
-                raise Return((body, self.application.PERMISSION_DENIED))
+                raise Return((body, self.application.UNAUTHORIZED))
+
+            self.update_channel_user_info(info, channel)
 
         yield self.application.engine.add_subscription(
             project_id, channel, self

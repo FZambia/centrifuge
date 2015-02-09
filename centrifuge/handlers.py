@@ -157,8 +157,10 @@ class ApiHandler(BaseHandler):
         if not is_valid:
             raise tornado.web.HTTPError(401, log_message="unauthorized")
 
-        data = auth.decode_data(encoded_data)
-        if not data:
+        try:
+            data = json_decode(encoded_data)
+        except Exception as err:
+            logger.debug(err)
             raise tornado.web.HTTPError(400, log_message="malformed data")
 
         multi_response = MultiResponse()

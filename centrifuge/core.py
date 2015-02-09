@@ -719,6 +719,12 @@ class Application(tornado.web.Application):
 
         return namespace_name
 
+    def get_allowed_users(self, channel):
+        return channel.rsplit(self.USER_SEPARATOR, 1)[1].split(',')
+
+    def is_channel_private(self, channel):
+        return channel.startswith(self.PRIVATE_CHANNEL_PREFIX)
+
     @coroutine
     def get_namespace(self, project, channel):
 

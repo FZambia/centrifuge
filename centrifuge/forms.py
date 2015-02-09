@@ -13,15 +13,6 @@ NAME_PATTERN_DESCRIPTION = 'must consist of letters, numbers, underscores or hyp
 
 NAME_RE = re.compile(NAME_PATTERN)
 
-# how many times we are trying to authorize subscription by default
-DEFAULT_MAX_AUTH_ATTEMPTS = 5
-
-# milliseconds, increment for back-off
-DEFAULT_BACK_OFF_INTERVAL = 100
-
-# milliseconds, max timeout between auth attempts
-DEFAULT_BACK_OFF_MAX_TIMEOUT = 5000
-
 # how many messages keep in channel history by default
 DEFAULT_HISTORY_SIZE = 50
 
@@ -93,36 +84,6 @@ class ProjectMixin(object):
                     "check POST requests to your web application."
     )
 
-    max_auth_attempts = IntegerField(
-        label='maximum auth attempts',
-        validators=[
-            validators.NumberRange(min=1, max=100)
-        ],
-        default=DEFAULT_MAX_AUTH_ATTEMPTS,
-        description="maximum amount of POST requests from Centrifuge to your application "
-                    "during client's authorization"
-    )
-
-    back_off_interval = IntegerField(
-        label='back-off interval',
-        validators=[
-            validators.NumberRange(min=50, max=10000)
-        ],
-        default=DEFAULT_BACK_OFF_INTERVAL,
-        description="interval increment in milliseconds in authorization back-off mechanism. "
-                    "Please, keep it default until you know what you do"
-    )
-
-    back_off_max_timeout = IntegerField(
-        label='back-off max timeout',
-        validators=[
-            validators.NumberRange(min=50, max=120000)
-        ],
-        default=DEFAULT_BACK_OFF_MAX_TIMEOUT,
-        description="maximum interval in milliseconds between authorization requests. "
-                    "Please, keep it default until you know what you do"
-    )
-
 
 class NamespaceNameMixin(object):
 
@@ -138,8 +99,8 @@ class NamespaceNameMixin(object):
 class NamespaceMixin(object):
 
     BOOLEAN_FIELDS = [
-        'is_watching', 'is_private', 'publish',
-        'presence', 'history', 'join_leave', 'anonymous'
+        'is_watching', 'publish', 'presence',
+        'history', 'join_leave', 'anonymous'
     ]
 
     is_watching = BooleanField(
@@ -149,23 +110,6 @@ class NamespaceMixin(object):
         description="publish messages into admin channel "
                     "(messages will be visible in web interface). Turn it off "
                     "if you expect high load in channels."
-    )
-
-    is_private = BooleanField(
-        label='is private',
-        validators=[],
-        default=False,
-        description="authorize every subscription on channel using "
-                    "POST request to provided auth address (see below)"
-    )
-
-    auth_address = StringField(
-        label='auth url address',
-        validators=[
-            validators.URL(require_tld=False),
-            validators.Optional()
-        ],
-        description="url address to authorize clients sending POST request to it"
     )
 
     publish = BooleanField(
