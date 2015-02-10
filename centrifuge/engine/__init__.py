@@ -18,14 +18,14 @@ class BaseEngine(object):
 
     PREFIX = 'centrifuge'
 
-    # separator to join parts of channel name
-    PART_DELIMITER = "|"
-
     # channel for administrative web interface.
-    ADMIN_CHANNEL = '_admin'
+    ADMIN_CHANNEL = 'admin'
 
     # channel for sharing commands among all nodes.
-    CONTROL_CHANNEL = '_control'
+    CONTROL_CHANNEL = 'control'
+
+    # channel to listen API commands from
+    API_CHANNEL = 'api'
 
     # in seconds, how often connected clients must send presence info to state storage
     DEFAULT_PRESENCE_PING_INTERVAL = 25
@@ -47,21 +47,10 @@ class BaseEngine(object):
         self.config = self.application.settings.get("config", {})
         self.options = self.application.settings.get('options')
 
-        self.prefix = self.config.get(
-            'engine_prefix', self.PREFIX
-        )
-
-        self.admin_channel_name = self.config.get(
-            'engine_admin_channel_name', self.ADMIN_CHANNEL
-        )
-
-        self.control_channel_name = self.config.get(
-            'engine_control_channel_name', self.CONTROL_CHANNEL
-        )
-
-        self.part_delimiter = self.config.get(
-            'engine_part_delimiter', self.PART_DELIMITER
-        )
+        self.prefix = self.config.get('engine_prefix', self.PREFIX)
+        self.admin_channel_name = "{0}.{1}".format(self.prefix, self.ADMIN_CHANNEL)
+        self.control_channel_name = "{0}.{1}".format(self.prefix, self.CONTROL_CHANNEL)
+        self.api_channel_name = "{0}.{1}".format(self.prefix, self.API_CHANNEL)
 
         self.presence_ping_interval = self.config.get(
             'engine_presence_ping_interval',
@@ -88,7 +77,7 @@ class BaseEngine(object):
         """
         Create subscription name to catch messages from specific project and channel.
         """
-        return self.PART_DELIMITER.join([self.prefix, project_id, channel])
+        return ".".join([self.prefix, project_id, channel])
 
     @coroutine
     def publish_message(self, channel, body, method=DEFAULT_PUBLISH_METHOD):
