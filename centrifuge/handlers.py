@@ -41,64 +41,6 @@ class ApiHandler(BaseHandler):
         pass
 
     @coroutine
-    def process_object(self, obj, project, is_owner_request):
-
-        response = Response()
-
-        try:
-            validate(obj, req_schema)
-        except ValidationError as e:
-            response.error = str(e)
-            raise Return(response)
-
-        req_id = obj.get("uid", None)
-        method = obj.get("method")
-        params = obj.get("params")
-
-        response.uid = req_id
-        response.method = method
-
-        schema = server_api_schema
-
-        if is_owner_request and self.application.OWNER_API_PROJECT_PARAM in params:
-
-            project_id = params[self.application.OWNER_API_PROJECT_PARAM]
-
-            project, error = yield self.application.structure.get_project_by_id(
-                project_id
-            )
-            if error:
-                logger.error(error)
-                response.error = self.application.INTERNAL_SERVER_ERROR
-            if not project:
-                response.error = self.application.PROJECT_NOT_FOUND
-
-        try:
-            params.pop(self.application.OWNER_API_PROJECT_PARAM)
-        except KeyError:
-            pass
-
-        if not is_owner_request and method in owner_api_methods:
-            response.error = self.application.PERMISSION_DENIED
-
-        if not response.error:
-            if method not in schema:
-                response.error = self.application.METHOD_NOT_FOUND
-            else:
-                try:
-                    validate(params, schema[method])
-                except ValidationError as e:
-                    response.error = str(e)
-                else:
-                    result, error = yield self.application.process_call(
-                        project, method, params
-                    )
-                    response.body = result
-                    response.error = error
-
-        raise Return(response)
-
-    @coroutine
     def post(self, project_id):
         """
         Handle API HTTP requests.
@@ -163,27 +105,9 @@ class ApiHandler(BaseHandler):
             logger.debug(err)
             raise tornado.web.HTTPError(400, log_message="malformed data")
 
-        multi_response = MultiResponse()
-
-        if isinstance(data, dict):
-            # single object request
-            response = yield self.process_object(data, project, is_owner_request)
-            multi_response.add(response)
-        elif isinstance(data, list):
-            # multiple object request
-            if len(data) > self.application.ADMIN_API_MESSAGE_LIMIT:
-                raise tornado.web.HTTPError(
-                    400,
-                    log_message="admin API message limit exceeded (received {0} messages)".format(
-                        len(data)
-                    )
-                )
-
-            for obj in data:
-                response = yield self.process_object(obj, project, is_owner_request)
-                multi_response.add(response)
-        else:
-            raise tornado.web.HTTPError(400, log_message="data not a list or dictionary")
+        multi_response, error = yield self.application.process_api_data(project, data, is_owner_request)
+        if error:
+            raise tornado.web.HTTPError(400, log_message=error)
 
         if self.application.collector:
             self.application.collector.incr('api')

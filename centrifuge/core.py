@@ -20,11 +20,15 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     from urllib.parse import urlencode
 
+from jsonschema import validate, ValidationError
+
 from centrifuge import utils
 from centrifuge.structure import Structure
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.metrics import Collector, Exporter
+from centrifuge.response import Response, MultiResponse
+from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
 
 
 def get_address():
@@ -818,6 +822,85 @@ class Application(tornado.web.Application):
         """
         result, error = yield self.structure.update()
         raise Return((result, error))
+
+    @coroutine
+    def process_api_data(self, project, data, is_owner_request):
+        multi_response = MultiResponse()
+
+        if isinstance(data, dict):
+            # single object request
+            response = yield self.process_api_object(data, project, is_owner_request)
+            multi_response.add(response)
+        elif isinstance(data, list):
+            # multiple object request
+            if len(data) > self.ADMIN_API_MESSAGE_LIMIT:
+                raise Return((None, "admin API message limit exceeded (received {0} messages)".format(len(data))))
+
+            for obj in data:
+                response = yield self.process_api_object(obj, project, is_owner_request)
+                multi_response.add(response)
+        else:
+            raise Return((None, "data not an array or object"))
+
+        raise Return((multi_response, None))
+
+    @coroutine
+    def process_api_object(self, obj, project, is_owner_request):
+
+        response = Response()
+
+        try:
+            validate(obj, req_schema)
+        except ValidationError as e:
+            response.error = str(e)
+            raise Return(response)
+
+        req_id = obj.get("uid", None)
+        method = obj.get("method")
+        params = obj.get("params")
+
+        response.uid = req_id
+        response.method = method
+
+        schema = server_api_schema
+
+        if is_owner_request and self.OWNER_API_PROJECT_PARAM in params:
+
+            project_id = params[self.OWNER_API_PROJECT_PARAM]
+
+            project, error = yield self.structure.get_project_by_id(
+                project_id
+            )
+            if error:
+                logger.error(error)
+                response.error = self.INTERNAL_SERVER_ERROR
+            if not project:
+                response.error = self.PROJECT_NOT_FOUND
+
+        try:
+            params.pop(self.OWNER_API_PROJECT_PARAM)
+        except KeyError:
+            pass
+
+        if not is_owner_request and method in owner_api_methods:
+            response.error = self.PERMISSION_DENIED
+
+        if not response.error:
+            if method not in schema:
+                response.error = self.METHOD_NOT_FOUND
+            else:
+                try:
+                    validate(params, schema[method])
+                except ValidationError as e:
+                    response.error = str(e)
+                else:
+                    result, error = yield self.process_call(
+                        project, method, params
+                    )
+                    response.body = result
+                    response.error = error
+
+        raise Return(response)
 
     # noinspection PyCallingNonCallable
     @coroutine

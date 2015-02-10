@@ -1222,12 +1222,10 @@
 
         var self = this;
 
-        console.log(this._config.authEndpoint);
         AJAX.request(this._config.authEndpoint, "post", {
             "headers": this._config["auth"]["headers"],
             "data": data
         }).done(function(data) {
-            console.log(data);
             for (var i in channels) {
                 var channel = channels[i];
                 var channelResponse = data[channel];
