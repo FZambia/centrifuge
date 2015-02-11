@@ -1,10 +1,10 @@
-v0.7.0
-======
+Master branch - 0.7.0dev
+========================
 
 Some backwards incompatible changes here.
 
 * new Pusher-like private channel auth mechanism - see documentation.
-* support for `sha256` in signs and tokens HMACs
+* support for `sha256` in signs and tokens HMACs - sha256 is now used by default in new version of Cent.
 * Redis engine now can listen for API commands - Redis must be firewalled and only owner should use this as there is no secret key based sign check. Due to use of PUB/SUB for this you can only use commands for which you don't need response body or error - ex. `publish`, `unsubscribe`...
 * Tornado updated to version 4.1
 
@@ -38,10 +38,14 @@ to_send = {
 client.publish("centrifuge.api", json.dumps(to_send))
 ```
 
-Note again - you don't have response here. For example, it's absolutely useless to call `namespace_list`
-using this. `publish` is the most usable command in Centrifuge (btw at our work in Mail.Ru we only
+So you send JSON object with project ID as a value for `project` key and list of commands as a value for `data` key.
+
+Note again - you don't have response here. If you need to check response - you should use HTTP API.
+For example, it's absolutely useless to call `namespace_list` using this.
+
+`publish` is the most usable command in Centrifuge (btw at our work in Mail.Ru we only
 use `publish` method) so Redis API listener was invented with primary goal to reduce HTTP overhead
-when publishing quickly. This also can help using Centrifuge with other languages for which we don't
+when publishing quickly. This can also help using Centrifuge with other languages for which we don't
 have HTTP API client yet.
 
 
