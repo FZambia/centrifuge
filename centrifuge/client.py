@@ -174,7 +174,12 @@ class Client(object):
             raise Return((response, response.error))
 
         try:
-            validate(params, client_api_schema[method])
+            schema_name = method
+            if self.application.INSECURE:
+                # if Centrifuge run in insecure mode we use simplified connection
+                # schema to allow clients connect without timestamp and token
+                schema_name = "connect_insecure"
+            validate(params, client_api_schema[schema_name])
         except ValidationError as e:
             response.error = str(e)
             raise Return((response, response.error))
@@ -320,11 +325,15 @@ class Client(object):
         if self.is_authenticated:
             raise Return((self.uid, None))
 
-        token = params["token"]
-        user = params["user"]
         project_id = params["project"]
-        timestamp = params["timestamp"]
-        user_info = params.get("info")
+        user = params["user"]
+        info = params.get("info", "{}")
+
+        if not self.application.INSECURE:
+            token = params["token"]
+            timestamp = params["timestamp"]
+        else:
+            token = timestamp = None
 
         project, error = yield self.application.get_project(project_id)
         if error:
@@ -332,27 +341,35 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        error_msg = self.validate_token(token, secret_key, project_id, user, timestamp, user_info)
-        if error_msg:
-            raise Return((None, error_msg))
+        if not self.application.INSECURE:
+            error_msg = self.validate_token(
+                token, secret_key, project_id, user, timestamp, info
+            )
+            if error_msg:
+                raise Return((None, error_msg))
 
-        if user_info is not None:
+        if info:
             try:
-                user_info = json_decode(user_info)
+                info = json_decode(info)
             except Exception as err:
                 logger.error("malformed JSON data in user_info")
                 logger.error(err)
-                user_info = None
+                info = {}
+        else:
+            info = {}
 
-        try:
-            timestamp = int(timestamp)
-        except ValueError:
-            raise Return((None, "invalid timestamp"))
+        if not self.application.INSECURE:
+            try:
+                timestamp = int(timestamp)
+            except ValueError:
+                raise Return((None, "invalid timestamp"))
+        else:
+            timestamp = int(time.time())
 
         self.user = user
         self.examined_at = timestamp
 
-        if self.is_connection_must_be_checked(project, self.examined_at):
+        if not self.application.INSECURE and self.is_connection_must_be_checked(project, self.examined_at):
             # connection expired - this is a rare case when Centrifuge went offline
             # for a while or client turned on his computer from sleeping mode.
 
@@ -387,7 +404,7 @@ class Client(object):
         self.default_user_info = {
             'user_id': self.user,
             'client_id': self.uid,
-            'default_info': user_info,
+            'default_info': info,
             'channel_info': None
         }
         self.channels = {}

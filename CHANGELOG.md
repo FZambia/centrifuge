@@ -1,6 +1,8 @@
 Master branch - 0.7.0dev
 ========================
 
+TODO: check connection with info and without info
+
 Some backwards incompatible changes here.
 
 * new Pusher-like private channel auth mechanism - see documentation.

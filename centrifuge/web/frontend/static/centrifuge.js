@@ -706,6 +706,7 @@
             retry: 3000,
             info: null,
             debug: false,
+            insecure: false,
             server: null,
             protocols_whitelist: [
                 'websocket',
@@ -751,10 +752,6 @@
             throw 'Missing required configuration parameter \'url\' specifying the Centrifuge server URL';
         }
 
-        if (!this._config.token) {
-            throw 'Missing required configuration parameter \'token\' specifying the sign of authorization request';
-        }
-
         if (!this._config.project) {
             throw 'Missing required configuration parameter \'project\' specifying project ID in Centrifuge';
         }
@@ -764,7 +761,19 @@
         }
 
         if (!this._config.timestamp) {
-            throw 'Missing required configuration parameter \'timestamp\'';
+            if (!this._config.insecure) {
+                throw 'Missing required configuration parameter \'timestamp\'';
+            } else {
+                this._debug("token not found but this is OK for insecure mode");
+            }
+        }
+
+        if (!this._config.token) {
+            if (!this._config.insecure) {
+                throw 'Missing required configuration parameter \'token\' specifying the sign of authorization request';
+            } else {
+                this._debug("timestamp not found but this is OK for insecure mode");
+            }
         }
 
         this._config.url = stripSlash(this._config.url);
@@ -857,18 +866,15 @@
             var centrifugeMessage = {
                 'method': 'connect',
                 'params': {
-                    'token': self._config.token,
                     'user': self._config.user,
                     'project': self._config.project,
-                    'timestamp': self._config.timestamp
+                    'info': self._config.info
                 }
             };
 
-            if (self._config.info !== null) {
-                self._debug("connect using additional info");
-                centrifugeMessage['params']['info'] = self._config.info;
-            } else {
-                self._debug("connect without additional info");
+            if (!self._config.insecure) {
+                centrifugeMessage["params"]["timestamp"] = self._config.timestamp;
+                centrifugeMessage["params"]["token"] = self._config.token;
             }
             self.send(centrifugeMessage);
         };

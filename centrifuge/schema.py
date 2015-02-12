@@ -222,5 +222,20 @@ client_api_schema = {
             }
         },
         "required": ["token", "user", "project", "timestamp"]
+    },
+    "connect_insecure": {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "string"
+            },
+            "project": {
+                "type": "string"
+            },
+            "info": {
+                "type": "string"
+            }
+        },
+        "required": ["user", "project"]
     }
 }
