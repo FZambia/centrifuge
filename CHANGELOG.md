@@ -34,10 +34,19 @@ client = redis.Redis()
 
 to_send = {
     "project": "1d88332ec09e4ed3805fc1999379bcfd",
-    "data": [{"method": "publish", "params": {"channel": "test", "data": {}}}]
+    "data": [
+        {
+            "method": "publish",
+            "params": {"channel": "$public:chat", "data": {"input": "hello"}}
+        },
+        {
+            "method": "publish",
+            "params": {"channel": "events", "data": {"event": "message"}}
+        },
+    ]
 }
 
-client.publish("centrifuge.api", json.dumps(to_send))
+client.rpush("centrifuge.api", json.dumps(to_send))
 ```
 
 So you send JSON object with project ID as a value for `project` key and list of commands as a value for `data` key.

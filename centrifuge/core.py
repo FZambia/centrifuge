@@ -753,6 +753,7 @@ class Application(tornado.web.Application):
         """
         params['updated_at'] = time.time()
         self.nodes[params.get('uid')] = params
+        raise Return((True, None))
 
     @coroutine
     def handle_unsubscribe(self, params):

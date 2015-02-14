@@ -1202,6 +1202,7 @@
     centrifuge_proto.stopAuthBatching = function(callback) {
         // create request to authEndpoint with collected private channels
         // to ask if this client can subscribe on each channel
+        this._isAuthBatching = false;
         var authChannels = this._authChannels;
         this._authChannels = {};
         var channels = [];

@@ -24,9 +24,6 @@ class BaseEngine(object):
     # channel for sharing commands among all nodes.
     CONTROL_CHANNEL = 'control'
 
-    # channel to listen API commands from
-    API_CHANNEL = 'api'
-
     # in seconds, how often connected clients must send presence info to state storage
     DEFAULT_PRESENCE_PING_INTERVAL = 25
 
@@ -50,7 +47,6 @@ class BaseEngine(object):
         self.prefix = self.config.get('engine_prefix', self.PREFIX)
         self.admin_channel_name = "{0}.{1}".format(self.prefix, self.ADMIN_CHANNEL)
         self.control_channel_name = "{0}.{1}".format(self.prefix, self.CONTROL_CHANNEL)
-        self.api_channel_name = "{0}.{1}".format(self.prefix, self.API_CHANNEL)
 
         self.presence_ping_interval = self.config.get(
             'engine_presence_ping_interval',

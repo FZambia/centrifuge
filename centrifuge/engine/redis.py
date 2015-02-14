@@ -79,8 +79,12 @@ class Engine(BaseEngine):
 
     OK_RESPONSE = b'OK'
 
+    API_KEY = 'api'
+
     def __init__(self, *args, **kwargs):
         super(Engine, self).__init__(*args, **kwargs)
+
+        self.api_key = "{0}.{1}".format(self.prefix, self.API_KEY)
 
         if not self.options.redis_url:
             self.host = self.options.redis_host
@@ -111,7 +115,7 @@ class Engine(BaseEngine):
         logger.info("Redis engine at {0}:{1} (db {2})".format(self.host, self.port, self.db))
         if self.options.redis_api:
             logger.info(
-                "Redis API endpoint enabled through {0} channel".format(self.api_channel_name)
+                "Redis API endpoint enabled via RPUSH to {0} key".format(self.api_key)
             )
 
     def on_auth(self, res):
@@ -136,6 +140,13 @@ class Engine(BaseEngine):
                 continue
             self.subscriber.subscribe(subscription, callback=self.on_redis_message)
 
+    @coroutine
+    def process_api_messages(self):
+        while True:
+            message = yield Task(self.listener.blpop, self.api_key, 0)
+            if message:
+                yield self.on_api_message(message)
+
     def on_listener_select(self, res):
         if res != self.OK_RESPONSE:
             # error returned
@@ -143,7 +154,7 @@ class Engine(BaseEngine):
             self._need_reconnect = True
             return
 
-        self.listener.subscribe(self.api_channel_name, callback=self.on_api_message)
+        self.process_api_messages()
 
     def on_select(self, res):
         if res != self.OK_RESPONSE:
@@ -232,15 +243,8 @@ class Engine(BaseEngine):
         """
         Got message from Redis, dispatch it into right message handler.
         """
-        msg_type = redis_message[0]
-        if six.PY3:
-            msg_type = msg_type.decode()
-
-        if msg_type != 'message':
-            return
-
         try:
-            message = json_decode(redis_message[2])
+            message = json_decode(redis_message[1])
         except ValueError:
             logger.error("Redis API - malformed JSON")
             return
@@ -267,11 +271,9 @@ class Engine(BaseEngine):
             logger.error("Redis API - project not found")
             return
 
-        response, error = yield self.application.process_api_data(project, data, False)
+        _, error = yield self.application.process_api_data(project, data, False)
         if error:
             logger.error(error)
-
-        logger.debug(response.as_message())
 
     @coroutine
     def on_redis_message(self, redis_message):
