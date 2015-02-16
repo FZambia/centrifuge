@@ -1355,7 +1355,7 @@
     };
 
     centrifugeProto.refresh = function () {
-        this._getConnectParameters(function(credentials) {
+        this._getCredentials(function(credentials) {
             var centrifugeMessage = {
                 "method": "refresh",
                 "params": credentials
@@ -1364,7 +1364,7 @@
         });
     };
 
-    centrifugeProto._getConnectParameters = function(callback) {
+    centrifugeProto._getCredentials = function(callback) {
         // ask web app for connection parameters - project ID, user ID,
         // timestamp, info and token
         AJAX.request(this._config.credentialsEndpoint, "get", {}).done(function(credentials) {
