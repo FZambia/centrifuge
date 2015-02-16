@@ -236,15 +236,15 @@ class Client(object):
         subscribed to.
         """
         for channel, channel_info in six.iteritems(self.channels):
-            user_info = self.get_user_info(channel)
+            info = self.get_info(channel)
             if channel not in self.channels:
                 continue
             yield self.application.engine.add_presence(
-                self.project_id, channel, self.uid, user_info
+                self.project_id, channel, self.uid, info
             )
         raise Return((True, None))
 
-    def get_user_info(self, channel):
+    def get_info(self, channel):
         """
         Return channel specific user info.
         """
@@ -354,6 +354,8 @@ class Client(object):
             except ValueError:
                 raise Return((None, "invalid timestamp"))
         else:
+            # we are not interested in timestamp in case of insecure mode so just
+            # set it to current timestamp
             timestamp = int(time.time())
 
         self.user = user
@@ -462,10 +464,10 @@ class Client(object):
 
         self.channels[channel] = True
 
-        user_info = self.get_user_info(channel)
+        info = self.get_info(channel)
 
         yield self.application.engine.add_presence(
-            project_id, channel, self.uid, user_info
+            project_id, channel, self.uid, info
         )
 
         if namespace.get('join_leave', False):
@@ -549,12 +551,12 @@ class Client(object):
         if not namespace.get('publish', False):
             raise Return((body, self.application.PERMISSION_DENIED))
 
-        user_info = self.get_user_info(channel)
+        info = self.get_info(channel)
 
         result, error = yield self.application.process_publish(
             project,
             params,
-            client=user_info
+            client=info
         )
         body["status"] = result
         raise Return((body, error))
@@ -628,10 +630,10 @@ class Client(object):
         subscription_key = self.application.engine.get_subscription_key(
             self.project_id, channel
         )
-        user_info = self.get_user_info(channel)
+        info = self.get_info(channel)
         message = {
             "channel": channel,
-            "data": user_info
+            "data": info
         }
         self.application.engine.publish_message(
             subscription_key, message, method=message_method
