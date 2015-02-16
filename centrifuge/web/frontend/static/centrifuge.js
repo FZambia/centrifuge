@@ -720,7 +720,7 @@
                 'jsonp-polling'
             ],
             privateChannelPrefix: "$",
-            tokenEndpoint: "/centrifuge/token",
+            credentialsEndpoint: "/centrifuge/credentials",
             authEndpoint: "/centrifuge/auth",
             auth: {}
         };
@@ -731,15 +731,15 @@
 
     extend(Centrifuge, EventEmitter);
 
-    var centrifuge_proto = Centrifuge.prototype;
+    var centrifugeProto = Centrifuge.prototype;
 
-    centrifuge_proto._debug = function () {
+    centrifugeProto._debug = function () {
         if (this._config.debug === true) {
             log('debug', arguments);
         }
     };
 
-    centrifuge_proto._configure = function (configuration) {
+    centrifugeProto._configure = function (configuration) {
         this._debug('Configuring centrifuge object with', configuration);
 
         if (!configuration) {
@@ -787,30 +787,30 @@
         }
     };
 
-    centrifuge_proto._setStatus = function (newStatus) {
+    centrifugeProto._setStatus = function (newStatus) {
         if (this._status !== newStatus) {
             this._debug('Status', this._status, '->', newStatus);
             this._status = newStatus;
         }
     };
 
-    centrifuge_proto._isDisconnected = function () {
+    centrifugeProto._isDisconnected = function () {
         return this._isConnected() === false;
     };
 
-    centrifuge_proto._isConnected = function () {
+    centrifugeProto._isConnected = function () {
         return this._status === 'connected';
     };
 
-    centrifuge_proto._nextMessageId = function () {
+    centrifugeProto._nextMessageId = function () {
         return ++this._messageId;
     };
 
-    centrifuge_proto._clearSubscriptions = function () {
+    centrifugeProto._clearSubscriptions = function () {
         this._subscriptions = {};
     };
 
-    centrifuge_proto._send = function (messages) {
+    centrifugeProto._send = function (messages) {
         // We must be sure that the messages have a clientId.
         // This is not guaranteed since the handshake may take time to return
         // (and hence the clientId is not known yet) and the application
@@ -828,7 +828,7 @@
         }
     };
 
-    centrifuge_proto._connect = function (callback) {
+    centrifugeProto._connect = function (callback) {
 
         this._clientId = null;
 
@@ -903,7 +903,7 @@
         };
     };
 
-    centrifuge_proto._disconnect = function () {
+    centrifugeProto._disconnect = function () {
         this._clientId = null;
         this._setStatus('disconnected');
         this._subscriptions = {};
@@ -911,7 +911,7 @@
         this._transport.close();
     };
 
-    centrifuge_proto._getSubscription = function (channel) {
+    centrifugeProto._getSubscription = function (channel) {
         var subscription;
         subscription = this._subscriptions[channel];
         if (!subscription) {
@@ -920,7 +920,7 @@
         return subscription;
     };
 
-    centrifuge_proto._removeSubscription = function (channel) {
+    centrifugeProto._removeSubscription = function (channel) {
         try {
             delete this._subscriptions[channel];
         } catch (e) {
@@ -933,7 +933,7 @@
         }
     };
 
-    centrifuge_proto._connectResponse = function (message) {
+    centrifugeProto._connectResponse = function (message) {
         if (message.error === null) {
             this._clientId = message.body;
             this._setStatus('connected');
@@ -944,7 +944,7 @@
         }
     };
 
-    centrifuge_proto._disconnectResponse = function (message) {
+    centrifugeProto._disconnectResponse = function (message) {
         if (message.error === null) {
             this.disconnect();
             //this.trigger('disconnect', [message]);
@@ -955,7 +955,7 @@
         }
     };
 
-    centrifuge_proto._subscribeResponse = function (message) {
+    centrifugeProto._subscribeResponse = function (message) {
         if (message.error !== null) {
             this.trigger('error', [message]);
         }
@@ -977,7 +977,7 @@
         }
     };
 
-    centrifuge_proto._unsubscribeResponse = function (message) {
+    centrifugeProto._unsubscribeResponse = function (message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -990,7 +990,7 @@
         }
     };
 
-    centrifuge_proto._publishResponse = function (message) {
+    centrifugeProto._publishResponse = function (message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -1005,7 +1005,7 @@
         }
     };
 
-    centrifuge_proto._presenceResponse = function (message) {
+    centrifugeProto._presenceResponse = function (message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -1021,7 +1021,7 @@
         }
     };
 
-    centrifuge_proto._historyResponse = function (message) {
+    centrifugeProto._historyResponse = function (message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -1037,7 +1037,7 @@
         }
     };
 
-    centrifuge_proto._joinResponse = function(message) {
+    centrifugeProto._joinResponse = function(message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -1047,7 +1047,7 @@
         subscription.trigger('join', [body]);
     };
 
-    centrifuge_proto._leaveResponse = function(message) {
+    centrifugeProto._leaveResponse = function(message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -1057,7 +1057,7 @@
         subscription.trigger('leave', [body]);
     };
 
-    centrifuge_proto._messageResponse = function (message) {
+    centrifugeProto._messageResponse = function (message) {
         var body = message.body;
         var channel = body.channel;
         var subscription = this.getSubscription(channel);
@@ -1067,7 +1067,11 @@
         subscription.trigger('message', [body]);
     };
 
-    centrifuge_proto._dispatchMessage = function(message) {
+    centrifugeProto._expireResponse = function (message) {
+        this.refresh();
+    };
+
+    centrifugeProto._dispatchMessage = function(message) {
         if (message === undefined || message === null) {
             return;
         }
@@ -1108,6 +1112,9 @@
                 break;
             case 'ping':
                 break;
+            case 'expire':
+                this._expireResponse(message);
+                break;
             case 'message':
                 this._messageResponse(message);
                 break;
@@ -1116,7 +1123,7 @@
         }
     };
 
-    centrifuge_proto._receive = function (data) {
+    centrifugeProto._receive = function (data) {
         if (Object.prototype.toString.call(data) === Object.prototype.toString.call([])) {
             for (var i in data) {
                 if (data.hasOwnProperty(i)) {
@@ -1129,13 +1136,13 @@
         }
     };
 
-    centrifuge_proto._flush = function() {
+    centrifugeProto._flush = function() {
         var messages = this._messages.slice(0);
         this._messages = [];
         this._send(messages);
     };
 
-    centrifuge_proto._ping = function () {
+    centrifugeProto._ping = function () {
         var centrifugeMessage = {
             "method": "ping",
             "params": {}
@@ -1145,27 +1152,27 @@
 
     /* PUBLIC API */
 
-    centrifuge_proto.getClientId = function () {
+    centrifugeProto.getClientId = function () {
         return this._clientId;
     };
 
-    centrifuge_proto.isConnected = centrifuge_proto._isConnected;
+    centrifugeProto.isConnected = centrifugeProto._isConnected;
 
-    centrifuge_proto.isDisconnected = centrifuge_proto._isDisconnected;
+    centrifugeProto.isDisconnected = centrifugeProto._isDisconnected;
 
-    centrifuge_proto.configure = function (configuration) {
+    centrifugeProto.configure = function (configuration) {
         this._configure.call(this, configuration);
     };
 
-    centrifuge_proto.connect = centrifuge_proto._connect;
+    centrifugeProto.connect = centrifugeProto._connect;
 
-    centrifuge_proto.disconnect = centrifuge_proto._disconnect;
+    centrifugeProto.disconnect = centrifugeProto._disconnect;
 
-    centrifuge_proto.getSubscription = centrifuge_proto._getSubscription;
+    centrifugeProto.getSubscription = centrifugeProto._getSubscription;
 
-    centrifuge_proto.ping = centrifuge_proto._ping;
+    centrifugeProto.ping = centrifugeProto._ping;
 
-    centrifuge_proto.send = function (message) {
+    centrifugeProto.send = function (message) {
         if (this._isBatching === true) {
             this._messages.push(message);
         } else {
@@ -1173,13 +1180,13 @@
         }
     };
 
-    centrifuge_proto.startBatching = function () {
+    centrifugeProto.startBatching = function () {
         // start collecting messages without sending them to Centrifuge until flush
         // method called
         this._isBatching = true;
     };
 
-    centrifuge_proto.stopBatching = function(flush) {
+    centrifugeProto.stopBatching = function(flush) {
         // stop collecting messages
         flush = flush || false;
         this._isBatching = false;
@@ -1188,18 +1195,18 @@
         }
     };
 
-    centrifuge_proto.flush = function() {
+    centrifugeProto.flush = function() {
         // send batched messages to Centrifuge
         this._flush();
     };
 
-    centrifuge_proto.startAuthBatching = function() {
+    centrifugeProto.startAuthBatching = function() {
         // start collecting private channels to create bulk authentication
         // request to authEndpoint when stopAuthBatching will be called
         this._isAuthBatching = true;
     };
 
-    centrifuge_proto.stopAuthBatching = function(callback) {
+    centrifugeProto.stopAuthBatching = function(callback) {
         // create request to authEndpoint with collected private channels
         // to ask if this client can subscribe on each channel
         this._isAuthBatching = false;
@@ -1276,7 +1283,7 @@
 
     };
 
-    centrifuge_proto.subscribe = function (channel, callback) {
+    centrifugeProto.subscribe = function (channel, callback) {
 
         if (arguments.length < 1) {
             throw 'Illegal arguments number: required 1, got ' + arguments.length;
@@ -1300,7 +1307,7 @@
         }
     };
 
-    centrifuge_proto.unsubscribe = function (channel) {
+    centrifugeProto.unsubscribe = function (channel) {
         if (arguments.length < 1) {
             throw 'Illegal arguments number: required 1, got ' + arguments.length;
         }
@@ -1317,7 +1324,7 @@
         }
     };
 
-    centrifuge_proto.publish = function (channel, data, callback) {
+    centrifugeProto.publish = function (channel, data, callback) {
         var subscription = this.getSubscription(channel);
         if (subscription === null) {
             this._debug("subscription not found for channel " + channel);
@@ -1327,7 +1334,7 @@
         return subscription;
     };
 
-    centrifuge_proto.presence = function (channel, callback) {
+    centrifugeProto.presence = function (channel, callback) {
         var subscription = this.getSubscription(channel);
         if (subscription === null) {
             this._debug("subscription not found for channel " + channel);
@@ -1337,7 +1344,7 @@
         return subscription;
     };
 
-    centrifuge_proto.history = function (channel, callback) {
+    centrifugeProto.history = function (channel, callback) {
         var subscription = this.getSubscription(channel);
         if (subscription === null) {
             this._debug("subscription not found for channel " + channel);
@@ -1345,6 +1352,26 @@
         }
         subscription.history(callback);
         return subscription;
+    };
+
+    centrifugeProto.refresh = function () {
+        this._getConnectParameters(function(credentials) {
+            var centrifugeMessage = {
+                "method": "refresh",
+                "params": credentials
+            };
+            this.send(centrifugeMessage);
+        });
+    };
+
+    centrifugeProto._getConnectParameters = function(callback) {
+        // ask web app for connection parameters - project ID, user ID,
+        // timestamp, info and token
+        AJAX.request(this._config.credentialsEndpoint, "get", {}).done(function(credentials) {
+            callback(credentials);
+        }).fail(function(){
+            this._debug("error getting connect parameters");
+        });
     };
 
     function Subscription(centrifuge, channel) {
@@ -1359,17 +1386,17 @@
 
     extend(Subscription, EventEmitter);
 
-    var sub_proto = Subscription.prototype;
+    var subscriptionProto = Subscription.prototype;
 
-    sub_proto.getChannel = function () {
+    subscriptionProto.getChannel = function () {
         return this.channel;
     };
 
-    sub_proto.getCentrifuge = function () {
+    subscriptionProto.getCentrifuge = function () {
         return this._centrifuge;
     };
 
-    sub_proto.subscribe = function (callback) {
+    subscriptionProto.subscribe = function (callback) {
         /*
         If channel name does not start with privateChannelPrefix - then we
         can just send subscription message to Centrifuge. If channel name
@@ -1401,7 +1428,7 @@
         }
     };
 
-    sub_proto.unsubscribe = function () {
+    subscriptionProto.unsubscribe = function () {
         this._centrifuge._removeSubscription(this.channel);
         var centrifugeMessage = {
             "method": "unsubscribe",
@@ -1412,7 +1439,7 @@
         this._centrifuge.send(centrifugeMessage);
     };
 
-    sub_proto.publish = function (data, callback) {
+    subscriptionProto.publish = function (data, callback) {
         var centrifugeMessage = {
             "method": "publish",
             "params": {
@@ -1426,7 +1453,7 @@
         this._centrifuge.send(centrifugeMessage);
     };
 
-    sub_proto.presence = function (callback) {
+    subscriptionProto.presence = function (callback) {
         var centrifugeMessage = {
             "method": "presence",
             "params": {
@@ -1439,7 +1466,7 @@
         this._centrifuge.send(centrifugeMessage);
     };
 
-    sub_proto.history = function (callback) {
+    subscriptionProto.history = function (callback) {
         var centrifugeMessage = {
             "method": "history",
             "params": {
