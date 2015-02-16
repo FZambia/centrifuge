@@ -88,7 +88,7 @@ class Application(tornado.web.Application):
     METRICS_EXPORT_INTERVAL = 10
 
     # when active no authentication required at all when connecting to Centrifuge,
-    # sending API commands - this is suitable for demonstration or personal usage
+    # this simplified mode suitable for demonstration or personal usage
     INSECURE = False
 
     LIMIT_EXCEEDED = 'limit exceeded'
@@ -131,9 +131,6 @@ class Application(tornado.web.Application):
 
         # application engine
         self.engine = None
-
-        # initialize dict to keep back-off information for projects
-        self.back_off = {}
 
         # list of coroutines that must be done before message publishing
         self.pre_publish_callbacks = []

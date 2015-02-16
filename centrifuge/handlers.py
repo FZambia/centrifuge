@@ -5,13 +5,9 @@ import tornado.web
 from tornado.gen import coroutine, Return
 from sockjs.tornado import SockJSConnection
 
-from jsonschema import validate, ValidationError
-
 from centrifuge import auth
 from centrifuge.log import logger
-from centrifuge.response import Response, MultiResponse
 from centrifuge.client import Client
-from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
 from centrifuge.utils import json_decode
 
 
