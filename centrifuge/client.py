@@ -12,7 +12,7 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     from urllib.parse import urlencode
 
-from tornado.ioloop import PeriodicCallback
+from tornado.ioloop import PeriodicCallback, IOLoop
 from tornado.gen import coroutine, Return, sleep
 
 from jsonschema import validate, ValidationError
@@ -46,6 +46,7 @@ class Client(object):
         self.channels = None
         self.presence_ping_task = None
         self.connect_queue = None
+        self.trust_counter = 0
         logger.info("client created via {0} (uid: {1}, ip: {2})".format(
             self.sock.session.transport_name, self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -297,10 +298,9 @@ class Client(object):
         return None
 
     @staticmethod
-    def is_connection_must_be_checked(project, examined_at):
-        connection_check = project.get('connection_check', False)
+    def is_connection_expired(project, examined_at):
         now = time.time()
-        return connection_check and examined_at + project.get("connection_lifetime", 24*365*3600) < now
+        return examined_at + project.get("connection_lifetime", 24*365*3600) < now
 
     @coroutine
     def handle_connect(self, params):
@@ -359,39 +359,48 @@ class Client(object):
             timestamp = int(time.time())
 
         self.user = user
+        self.project_id = project_id
         self.examined_at = timestamp
 
-        if not self.application.INSECURE and self.is_connection_must_be_checked(project, self.examined_at):
-            # connection expired - this is a rare case when Centrifuge went offline
-            # for a while or client turned on his computer from sleeping mode.
+        if not self.application.INSECURE and project.get('connection_check', False):
+            now = time.time()
+            time_to_expire = self.examined_at + project.get("connection_lifetime", 3600) - now
+            if time_to_expire <= 0:
+                # connection expired - this is a rare case when Centrifuge went offline
+                # for a while or client turned on his computer from sleeping mode.
 
-            # put this client into the queue of connections waiting for
-            # permission to reconnect with expired credentials. To avoid waiting
-            # client must reconnect with actual credentials i.e. reload browser
-            # window.
+                # put this client into the queue of connections waiting for
+                # permission to reconnect with expired credentials. To avoid waiting
+                # client must reconnect with actual credentials i.e. reload browser
+                # window.
+                self.trust_counter += 1
+                if self.trust_counter >= project.get("connection_trust_limit", 3):
+                    yield self.close_sock()
+                    raise Return((None, self.application.UNAUTHORIZED))
 
-            if project_id not in self.application.expired_reconnections:
-                self.application.expired_reconnections[project_id] = []
-            self.application.expired_reconnections[project_id].append(self)
+                self.connect_queue = toro.Queue(maxsize=1)
+                # send expire message to the client and wait here
+                yield self.send_expire_message()
+                IOLoop.current().add_timeout(
+                    time.time() + project.get("connection_expire_interval", 10), self.expire
+                )
+                value = yield self.connect_queue.get()
+                if not value:
+                    yield self.close_sock()
+                    raise Return((None, self.application.UNAUTHORIZED))
+                else:
+                    self.connect_queue = None
 
-            if project_id not in self.application.expired_connections:
-                self.application.expired_connections[project_id] = {
-                    "users": set(),
-                    "checked_at": None
-                }
-            self.application.expired_connections[project_id]["users"].add(user)
-
-            self.connect_queue = toro.Queue(maxsize=1)
-            value = yield self.connect_queue.get()
-            if not value:
-                yield self.close_sock()
-                raise Return((None, self.application.UNAUTHORIZED))
-            else:
-                self.connect_queue = None
+            # connection not expired yet
+            now = time.time()
+            self.examined_at = now
+            self.trust_counter = 0
+            IOLoop.current().add_timeout(
+                now + project.get("connection_lifetime", 3600), self.expire
+            )
 
         # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
-        self.project_id = project_id
         self.token = token
         self.default_info = {
             'user_id': self.user,
@@ -409,6 +418,59 @@ class Client(object):
         self.application.add_connection(project_id, self.user, self.uid, self)
 
         raise Return((self.uid, None))
+
+    @coroutine
+    def expire(self):
+        project, error = yield self.application.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        if not project.get("connection_check", False):
+            raise Return((True, None))
+
+        time_to_expire = self.examined_at + project.get("connection_lifetime", 3600) - time.time()
+        if time_to_expire > 0:
+            raise Return((True, None))
+
+        self.trust_counter += 1
+        if self.trust_counter >= project.get("connection_trust_limit", 3):
+            yield self.close_sock()
+            raise Return((None, self.application.UNAUTHORIZED))
+
+        yield self.send_expire_message()
+
+        IOLoop.current().add_timeout(
+            time.time() + project.get("connection_expire_interval", 10), self.expire
+        )
+
+        raise Return((True, None))
+
+    @coroutine
+    def handle_refresh(self, params):
+        """
+        Handle request with refreshed connection credentials
+        """
+        if not self.uid or not self.project_id:
+            raise Return((False, None))
+
+        project, error = yield self.application.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        client = params.get("client", "")
+        if client != self.uid:
+            raise Return((None, self.application.UNAUTHORIZED))
+
+        auth_sign = params.get("auth", "")
+        is_authorized = auth.check_refresh_auth(
+            auth_sign, project.get("secret_key"), client
+        )
+        if not is_authorized:
+            raise Return((None, self.application.UNAUTHORIZED))
+
+        self.examined_at = int(time.time())
+
+        raise Return((True, None))
 
     @coroutine
     def handle_subscribe(self, params):
@@ -448,10 +510,13 @@ class Client(object):
         is_private = self.application.is_channel_private(channel)
 
         if is_private:
+            client = params.get("client", "")
+            if client != self.uid:
+                raise Return((body, self.application.UNAUTHORIZED))
             auth_sign = params.get("auth", "")
             info = params.get("info", "{}")
             is_authorized = auth.check_channel_auth(
-                auth_sign, project.get("secret_key"), self.uid, channel, info
+                auth_sign, project.get("secret_key"), client, channel, info
             )
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))
@@ -664,5 +729,15 @@ class Client(object):
             "reason": reason
         }
         response = Response(method="disconnect", body=message_body)
+        result, error = yield self.send(response.as_message())
+        raise Return((result, error))
+
+    @coroutine
+    def send_expire_message(self):
+        """
+
+        """
+        message_body = {}
+        response = Response(method="expire", body=message_body)
         result, error = yield self.send(response.as_message())
         raise Return((result, error))

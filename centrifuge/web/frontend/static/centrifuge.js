@@ -935,6 +935,9 @@
 
     centrifugeProto._connectResponse = function (message) {
         if (message.error === null) {
+            if (!message.body) {
+                return;
+            }
             this._clientId = message.body;
             this._setStatus('connected');
             this.trigger('connect', [message]);
@@ -1258,6 +1261,7 @@
                         "method": "subscribe",
                         "params": {
                             "channel": channel,
+                            "client": self.getClientId(),
                             "auth": channelResponse.auth,
                             "info": channelResponse.info
                         }

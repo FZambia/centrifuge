@@ -184,6 +184,9 @@ client_api_schema = {
             "channel": {
                 "type": "string"
             },
+            "client": {
+                "type": "string"
+            },
             "auth": {
                 "type": "string"
             },
