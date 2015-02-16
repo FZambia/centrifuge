@@ -12,8 +12,8 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     from urllib.parse import urlencode
 
-from tornado.ioloop import IOLoop, PeriodicCallback
-from tornado.gen import coroutine, Return, Task
+from tornado.ioloop import PeriodicCallback
+from tornado.gen import coroutine, Return, sleep
 
 from jsonschema import validate, ValidationError
 
@@ -24,16 +24,6 @@ from centrifuge.log import logger
 from centrifuge.schema import req_schema, client_api_schema
 
 import toro
-
-
-@coroutine
-def sleep(seconds):
-    """
-    Non-blocking sleep.
-    """
-    awake_at = time.time() + seconds
-    yield Task(IOLoop.instance().add_timeout, awake_at)
-    raise Return((True, None))
 
 
 class Client(object):
@@ -50,8 +40,8 @@ class Client(object):
         self.user = None
         self.token = None
         self.examined_at = None
-        self.channel_user_info = {}
-        self.default_user_info = {}
+        self.channel_info = {}
+        self.default_info = {}
         self.project_id = None
         self.channels = None
         self.presence_ping_task = None
@@ -100,8 +90,8 @@ class Client(object):
                         self.send_leave_message(channel_name)
 
         self.channels = None
-        self.channel_user_info = None
-        self.default_user_info = None
+        self.channel_info = None
+        self.default_info = None
         self.project_id = None
         self.is_authenticated = False
         self.sock = None
@@ -259,16 +249,16 @@ class Client(object):
         Return channel specific user info.
         """
         try:
-            channel_user_info = self.channel_user_info[channel]
+            channel_info = self.channel_info[channel]
         except KeyError:
-            channel_user_info = None
-        default_info = self.default_user_info.copy()
+            channel_info = None
+        default_info = self.default_info.copy()
         default_info.update({
-            'channel_info': channel_user_info
+            'channel_info': channel_info
         })
         return default_info
 
-    def update_channel_user_info(self, body, channel):
+    def update_channel_info(self, body, channel):
         """
         Try to extract channel specific user info from response body
         and keep it for channel.
@@ -279,7 +269,7 @@ class Client(object):
             logger.error(str(e))
             info = {}
 
-        self.channel_user_info[channel] = info
+        self.channel_info[channel] = info
 
     @coroutine
     def handle_ping(self, params):
@@ -401,7 +391,7 @@ class Client(object):
         self.is_authenticated = True
         self.project_id = project_id
         self.token = token
-        self.default_user_info = {
+        self.default_info = {
             'user_id': self.user,
             'client_id': self.uid,
             'default_info': info,
@@ -464,7 +454,7 @@ class Client(object):
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))
 
-            self.update_channel_user_info(info, channel)
+            self.update_channel_info(info, channel)
 
         yield self.application.engine.add_subscription(
             project_id, channel, self
