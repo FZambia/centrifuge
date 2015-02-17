@@ -89,27 +89,6 @@ class WebsocketHandler(tornado.web.RequestHandler):
         )
 
 
-class CheckHandler(tornado.web.RequestHandler):
-    """
-    Allow all users to subscribe on channels they want.
-    """
-    def check_xsrf_cookie(self):
-        pass
-
-    def post(self):
-
-        # the list of users connected to Centrifuge with expired connection
-        # web application must find deactivated users in this list
-        users_to_check = json.loads(self.get_argument("users"))
-        logging.info(users_to_check)
-
-        # list of deactivated users
-        deactivated_users = []
-
-        # send list of deactivated users as json
-        self.write(json.dumps(deactivated_users))
-
-
 class CentrifugeAuthHandler(tornado.web.RequestHandler):
     """
     Allow all users to subscribe on channels they want.
@@ -142,6 +121,28 @@ class CentrifugeAuthHandler(tornado.web.RequestHandler):
         self.write(json.dumps(to_return))
 
 
+class CentrifugeRefreshHandler(tornado.web.RequestHandler):
+    """
+    Allow all users to subscribe on channels they want.
+    """
+    def check_xsrf_cookie(self):
+        pass
+
+    def post(self):
+
+        client_id = self.get_argument("client_id")
+        timestamp = str(int(time.time()))
+
+        logging.info("{0} wants to refresh its connection".format(client_id))
+
+        to_return = {
+            "timestamp": timestamp,
+            "sign": generate_refresh_sign(options.secret_key, client_id, timestamp),
+        }
+        self.set_header('Content-Type', 'application/json; charset="utf-8"')
+        self.write(json.dumps(to_return))
+
+
 def run():
     options.parse_command_line()
     app = tornado.web.Application(
@@ -149,8 +150,8 @@ def run():
             (r'/', IndexHandler),
             (r'/sockjs', SockjsHandler),
             (r'/ws', WebsocketHandler),
-            (r'/check', CheckHandler),
-            (r'/centrifuge/auth', CentrifugeAuthHandler)
+            (r'/centrifuge/auth', CentrifugeAuthHandler),
+            (r'/centrifuge/refresh', CentrifugeRefreshHandler)
         ],
         debug=True
     )
