@@ -22,9 +22,6 @@ DEFAULT_HISTORY_EXPIRE = 3600  # 1 hour by default
 # seconds
 DEFAULT_CONNECTION_LIFETIME = 3600
 
-# seconds
-DEFAULT_CONNECTION_CHECK_INTERVAL = 10
-
 
 class ProjectMixin(object):
 
@@ -62,26 +59,6 @@ class ProjectMixin(object):
         default=DEFAULT_CONNECTION_LIFETIME,
         description="time interval in seconds for connection to expire. Keep it as large "
                     "as possible in your case."
-    )
-
-    connection_check_address = StringField(
-        label='connection check url address',
-        validators=[
-            validators.URL(require_tld=False),
-            validators.Optional()
-        ],
-        description="url address to check connections by periodically sending POST request "
-                    "to it with list of users with expired connections. "
-    )
-
-    connection_check_interval = IntegerField(
-        label='minimum connection check interval in seconds',
-        validators=[
-            validators.NumberRange(min=1)
-        ],
-        default=DEFAULT_CONNECTION_CHECK_INTERVAL,
-        description="minimum time interval in seconds between periodic connection "
-                    "check POST requests to your web application."
     )
 
 

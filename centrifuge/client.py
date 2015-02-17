@@ -39,7 +39,7 @@ class Client(object):
         self.is_authenticated = False
         self.user = None
         self.token = None
-        self.examined_at = None
+        self.timestamp = None
         self.channel_info = {}
         self.default_info = {}
         self.project_id = None
@@ -98,7 +98,7 @@ class Client(object):
         self.sock = None
         self.user = None
         self.token = None
-        self.examined_at = None
+        self.timestamp = None
         raise Return((True, None))
 
     @coroutine
@@ -360,11 +360,11 @@ class Client(object):
 
         self.user = user
         self.project_id = project_id
-        self.examined_at = timestamp
+        self.timestamp = timestamp
 
         if not self.application.INSECURE and project.get('connection_check', False):
             now = time.time()
-            time_to_expire = self.examined_at + project.get("connection_lifetime", 3600) - now
+            time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - now
             if time_to_expire <= 0:
                 # connection expired - this is a rare case when Centrifuge went offline
                 # for a while or client turned on his computer from sleeping mode.
@@ -374,7 +374,7 @@ class Client(object):
                 # client must reconnect with actual credentials i.e. reload browser
                 # window.
                 self.trust_counter += 1
-                if self.trust_counter >= project.get("connection_trust_limit", 3):
+                if self.trust_counter >= self.application.CONNECTION_TRUST_LIMIT:
                     yield self.close_sock()
                     raise Return((None, self.application.UNAUTHORIZED))
 
@@ -382,7 +382,7 @@ class Client(object):
                 # send expire message to the client and wait here
                 yield self.send_expire_message()
                 IOLoop.current().add_timeout(
-                    time.time() + project.get("connection_expire_interval", 10), self.expire
+                    time.time() + self.application.CONNECTION_EXPIRE_CALL_TIMEOUT, self.expire
                 )
                 value = yield self.connect_queue.get()
                 if not value:
@@ -391,13 +391,15 @@ class Client(object):
                 else:
                     self.connect_queue = None
 
-            # connection not expired yet
-            now = time.time()
-            self.examined_at = now
-            self.trust_counter = 0
-            IOLoop.current().add_timeout(
-                now + project.get("connection_lifetime", 3600), self.expire
-            )
+                self.timestamp = now
+                self.trust_counter = 0
+                IOLoop.current().add_timeout(
+                    time.time() + project.get("connection_lifetime", 3600), self.expire
+                )
+            else:
+                IOLoop.current().add_timeout(
+                    time.time() + time_to_expire, self.expire
+                )
 
         # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
@@ -428,19 +430,19 @@ class Client(object):
         if not project.get("connection_check", False):
             raise Return((True, None))
 
-        time_to_expire = self.examined_at + project.get("connection_lifetime", 3600) - time.time()
+        time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - time.time()
         if time_to_expire > 0:
             raise Return((True, None))
 
         self.trust_counter += 1
-        if self.trust_counter >= project.get("connection_trust_limit", 3):
+        if self.trust_counter >= self.application.CONNECTION_TRUST_LIMIT:
             yield self.close_sock()
             raise Return((None, self.application.UNAUTHORIZED))
 
         yield self.send_expire_message()
 
         IOLoop.current().add_timeout(
-            time.time() + project.get("connection_expire_interval", 10), self.expire
+            time.time() + self.application.CONNECTION_EXPIRE_CALL_TIMEOUT, self.expire
         )
 
         raise Return((True, None))
@@ -479,7 +481,7 @@ class Client(object):
         now = time.time()
         time_to_expire = timestamp + project.get("connection_lifetime", 3600) - now
         if time_to_expire > 0:
-            self.examined_at = timestamp
+            self.timestamp = timestamp
             self.trust_counter = 0
             if self.connect_queue:
                 # proceed connection request
