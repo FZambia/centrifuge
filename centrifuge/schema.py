@@ -187,12 +187,12 @@ client_api_schema = {
             "client": {
                 "type": "string"
             },
-            "auth": {
-                "type": "string"
-            },
             "info": {
                 "type": "string"
-            }
+            },
+            "sign": {
+                "type": "string"
+            },
         },
         "required": ["channel"]
     },
@@ -240,5 +240,20 @@ client_api_schema = {
             }
         },
         "required": ["user", "project"]
+    },
+    "refresh": {
+        "type": "object",
+        "properties": {
+            "client": {
+                "type": "string"
+            },
+            "timestamp": {
+                "type": "string"
+            },
+            "sign": {
+                "type": "string"
+            }
+        },
+        "required": ["client", "timestamp", "sign"]
     }
 }

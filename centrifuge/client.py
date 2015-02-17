@@ -448,7 +448,7 @@ class Client(object):
     @coroutine
     def handle_refresh(self, params):
         """
-        Handle request with refreshed connection credentials
+        Handle request with refreshed connection timestamp
         """
         if not self.uid or not self.project_id:
             raise Return((False, None))
@@ -456,19 +456,39 @@ class Client(object):
         project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
         client = params.get("client", "")
         if client != self.uid:
             raise Return((None, self.application.UNAUTHORIZED))
 
-        auth_sign = params.get("auth", "")
-        is_authorized = auth.check_refresh_auth(
-            auth_sign, project.get("secret_key"), client
+        timestamp = params.get("timestamp", "")
+        sign = params.get("sign", "")
+        is_authorized = auth.check_refresh_sign(
+            sign, project.get("secret_key"), client, timestamp
         )
         if not is_authorized:
             raise Return((None, self.application.UNAUTHORIZED))
 
-        self.examined_at = int(time.time())
+        try:
+            timestamp = int(timestamp)
+        except ValueError:
+            raise Return((None, "invalid timestamp"))
+
+        now = time.time()
+        time_to_expire = timestamp + project.get("connection_lifetime", 3600) - now
+        if time_to_expire > 0:
+            self.examined_at = timestamp
+            self.trust_counter = 0
+            if self.connect_queue:
+                # proceed connection request
+                yield client.connect_queue.put(True)
+            IOLoop.current().add_timeout(
+                now + time_to_expire, self.expire
+            )
+        else:
+            raise Return((None, self.application.UNAUTHORIZED))
 
         raise Return((True, None))
 
@@ -513,10 +533,10 @@ class Client(object):
             client = params.get("client", "")
             if client != self.uid:
                 raise Return((body, self.application.UNAUTHORIZED))
-            auth_sign = params.get("auth", "")
+            sign = params.get("sign", "")
             info = params.get("info", "{}")
-            is_authorized = auth.check_channel_auth(
-                auth_sign, project.get("secret_key"), client, channel, info
+            is_authorized = auth.check_channel_sign(
+                sign, project.get("secret_key"), client, channel, info
             )
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))

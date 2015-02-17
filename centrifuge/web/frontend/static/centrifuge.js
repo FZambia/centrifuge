@@ -720,9 +720,10 @@
                 'jsonp-polling'
             ],
             privateChannelPrefix: "$",
-            credentialsEndpoint: "/centrifuge/credentials",
+            refreshEndpoint: "/centrifuge/refresh",
             authEndpoint: "/centrifuge/auth",
-            auth: {}
+            authHeaders: {},
+            refreshHeaders: {}
         };
         if (options) {
             this.configure(options);
@@ -1240,7 +1241,7 @@
         var self = this;
 
         AJAX.request(this._config.authEndpoint, "post", {
-            "headers": this._config["auth"]["headers"],
+            "headers": this._config.authHeaders,
             "data": data
         }).done(function(data) {
             for (var i in channels) {
@@ -1262,8 +1263,8 @@
                         "params": {
                             "channel": channel,
                             "client": self.getClientId(),
-                            "auth": channelResponse.auth,
-                            "info": channelResponse.info
+                            "info": channelResponse.info,
+                            "sign": channelResponse.sign
                         }
                     };
                     self.send(centrifugeMessage);
@@ -1359,22 +1360,30 @@
     };
 
     centrifugeProto.refresh = function () {
-        this._getCredentials(function(credentials) {
-            var centrifugeMessage = {
-                "method": "refresh",
-                "params": credentials
-            };
-            this.send(centrifugeMessage);
-        });
-    };
-
-    centrifugeProto._getCredentials = function(callback) {
         // ask web app for connection parameters - project ID, user ID,
         // timestamp, info and token
-        AJAX.request(this._config.credentialsEndpoint, "get", {}).done(function(credentials) {
-            callback(credentials);
+
+        var data = {
+            "client_id": this.getClientId()
+        };
+
+        var self = this;
+
+        AJAX.request(this._config.refreshEndpoint, "post", {
+            "headers": this._config.refreshHeaders,
+            "data": data
+        }).done(function(data) {
+            var centrifugeMessage = {
+                "method": "refresh",
+                "params": {
+                    "client": self.getClientId(),
+                    "timestamp": data.timestamp,
+                    "sign": data.sign
+                }
+            };
+            self.send(centrifugeMessage);
         }).fail(function(){
-            this._debug("error getting connect parameters");
+            self._debug("error getting connect parameters");
         });
     };
 

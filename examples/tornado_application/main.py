@@ -132,7 +132,7 @@ class CentrifugeAuthHandler(tornado.web.RequestHandler):
             })
             to_return[channel] = {
                 "status": 200,
-                "auth": generate_channel_auth(options.secret_key, client_id, channel, info=info),
+                "sign": generate_channel_sign(options.secret_key, client_id, channel, info=info),
                 "info": info
             }
 
