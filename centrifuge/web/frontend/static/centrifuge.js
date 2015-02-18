@@ -702,6 +702,7 @@
         this._isBatching = false;
         this._isAuthBatching = false;
         this._authChannels = {};
+        this._refreshTimeout = null;
         this._config = {
             retry: 3000,
             info: null,
@@ -803,6 +804,10 @@
         return this._status === 'connected';
     };
 
+    centrifugeProto._isConnecting = function () {
+        return this._status === 'connecting';
+    };
+
     centrifugeProto._nextMessageId = function () {
         return ++this._messageId;
     };
@@ -830,6 +835,10 @@
     };
 
     centrifugeProto._connect = function (callback) {
+
+        if (this.isConnected()) {
+            return;
+        }
 
         this._clientId = null;
 
@@ -935,13 +944,27 @@
     };
 
     centrifugeProto._connectResponse = function (message) {
+        if (this.isConnected()) {
+            return;
+        }
         if (message.error === null) {
             if (!message.body) {
                 return;
             }
-            this._clientId = message.body;
+            var isExpired = message.body.expired;
+            if (isExpired) {
+                this.refresh();
+                return;
+            }
+            this._clientId = message.body.client;
             this._setStatus('connected');
             this.trigger('connect', [message]);
+            if (message.body.ttl !== null) {
+                var self = this;
+                self._refreshTimeout = window.setTimeout(function () {
+                    self.refresh.call(self);
+                }, message.body.ttl * 1000);
+            }
         } else {
             this.trigger('error', [message]);
             this.trigger('connect:error', [message]);
@@ -1069,8 +1092,13 @@
         subscription.trigger('message', [body]);
     };
 
-    centrifugeProto._expireResponse = function (message) {
-        this.refresh();
+    centrifugeProto._refreshResponse = function (message) {
+        if (message.body.ttl !== null) {
+            var self = this;
+            self._refreshTimeout = window.setTimeout(function () {
+                self.refresh.call(self);
+            }, message.body.ttl * 1000);
+        }
     };
 
     centrifugeProto._dispatchMessage = function(message) {
@@ -1114,8 +1142,8 @@
                 break;
             case 'ping':
                 break;
-            case 'expire':
-                this._expireResponse(message);
+            case 'refresh':
+                this._refreshResponse(message);
                 break;
             case 'message':
                 this._messageResponse(message);
@@ -1159,6 +1187,8 @@
     };
 
     centrifugeProto.isConnected = centrifugeProto._isConnected;
+
+    centrifugeProto.isConnecting = centrifugeProto._isConnecting;
 
     centrifugeProto.isDisconnected = centrifugeProto._isDisconnected;
 
@@ -1361,22 +1391,39 @@
         // ask web app for connection parameters - project ID, user ID,
         // timestamp, info and token
         var self = this;
-
+        this._debug('refresh');
         AJAX.request(this._config.refreshEndpoint, "post", {
             "headers": this._config.refreshHeaders,
             "data": {}
         }).done(function(data) {
-            var centrifugeMessage = {
-                "method": "refresh",
-                "params": {
-                    "timestamp": data.timestamp,
-                    "sign": data.sign
-                }
-            };
-            self.send(centrifugeMessage);
-        }).fail(function(){
+            self._config.user = data.user;
+            self._config.project = data.project;
+            self._config.timestamp = data.timestamp;
+            self._config.info = data.info;
+            self._config.token = data.token;
+            if (self._reconnect && self.isDisconnected()) {
+                self.connect();
+            } else {
+                var centrifugeMessage = {
+                    "method": "refresh",
+                    "params": {
+                        'user': self._config.user,
+                        'project': self._config.project,
+                        'timestamp': self._config.timestamp,
+                        'info': self._config.info,
+                        'token': self._config.token
+                    }
+                };
+                self.send(centrifugeMessage);
+            }
+        }).fail(function(xhr){
+            // 403 or 500 - does not matter - if connection check activated then Centrifuge
+            // will disconnect client eventually
+            self._debug(xhr);
             self._debug("error getting connect parameters");
-            self.disconnect();
+            window.setTimeout(function(){
+                self.refresh.call(self);
+            }, 3000);
         });
     };
 

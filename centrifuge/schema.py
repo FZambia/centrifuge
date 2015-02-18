@@ -244,16 +244,22 @@ client_api_schema = {
     "refresh": {
         "type": "object",
         "properties": {
-            "client": {
+            "token": {
+                "type": "string",
+            },
+            "user": {
+                "type": "string"
+            },
+            "project": {
                 "type": "string"
             },
             "timestamp": {
                 "type": "string"
             },
-            "sign": {
+            "info": {
                 "type": "string"
             }
         },
-        "required": ["client", "timestamp", "sign"]
+        "required": ["token", "user", "project", "timestamp"]
     }
 }

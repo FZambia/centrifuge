@@ -128,13 +128,19 @@ class CentrifugeRefreshHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
-        timestamp = str(int(time.time()))
+        #raise tornado.web.HTTPError(403)
+        logging.info("client wants to refresh its connection parameters")
 
-        logging.info("client wants to refresh its connection")
+        user = USER_ID
+        now = str(int(time.time()))
+        token = generate_token(options.secret_key, options.project_id, user, now, info=INFO)
 
         to_return = {
-            "timestamp": timestamp,
-            "sign": generate_refresh_sign(options.secret_key, timestamp),
+            'token': token,
+            'user': user,
+            'project': options.project_id,
+            'timestamp': now,
+            'info': INFO
         }
         self.set_header('Content-Type', 'application/json; charset="utf-8"')
         self.write(json.dumps(to_return))

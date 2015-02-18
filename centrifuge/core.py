@@ -74,10 +74,7 @@ class Application(tornado.web.Application):
     CLIENT_API_MESSAGE_LIMIT = 100
 
     #
-    CONNECTION_EXPIRE_CALL_TIMEOUT = 10
-
-    #
-    CONNECTION_TRUST_LIMIT = 3
+    EXPIRED_CONNECTION_CLOSE_PAUSE = 3
 
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
@@ -494,7 +491,7 @@ class Application(tornado.web.Application):
         """
         if channel.startswith(self.PRIVATE_CHANNEL_PREFIX):
             # cut private channel prefix from beginning
-            channel = channel[len(self.PRIVATE_CHANNEL_PREFIX)]
+            channel = channel[len(self.PRIVATE_CHANNEL_PREFIX):]
 
         if self.NAMESPACE_SEPARATOR in channel:
             # namespace:rest_of_channel

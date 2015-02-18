@@ -45,8 +45,7 @@ class Client(object):
         self.project_id = None
         self.channels = None
         self.presence_ping_task = None
-        self.connect_queue = None
-        self.trust_counter = 0
+        self.expire_timeout = None
         logger.info("client created via {0} (uid: {1}, ip: {2})".format(
             self.sock.session.transport_name, self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -99,6 +98,7 @@ class Client(object):
         self.user = None
         self.token = None
         self.timestamp = None
+        self.expire_timeout = None
         raise Return((True, None))
 
     @coroutine
@@ -154,7 +154,7 @@ class Client(object):
         response.uid = uid
         response.method = method
 
-        if method != 'connect' and not self.is_authenticated:
+        if method not in ['connect'] and not self.is_authenticated:
             response.error = self.application.UNAUTHORIZED
             raise Return((response, response.error))
 
@@ -362,46 +362,13 @@ class Client(object):
         self.project_id = project_id
         self.timestamp = timestamp
 
+        time_to_expire = None
         if not self.application.INSECURE and project.get('connection_check', False):
             now = time.time()
             time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - now
             print time_to_expire
             if time_to_expire <= 0:
-                # connection expired - this is a rare case when Centrifuge went offline
-                # for a while or client turned on his computer from sleeping mode.
-
-                # put this client into the queue of connections waiting for
-                # permission to reconnect with expired credentials. To avoid waiting
-                # client must reconnect with actual credentials i.e. reload browser
-                # window.
-                self.trust_counter += 1
-                if self.trust_counter >= self.application.CONNECTION_TRUST_LIMIT:
-                    yield self.close_sock()
-                    raise Return((None, self.application.UNAUTHORIZED))
-
-                self.connect_queue = toro.Queue(maxsize=1)
-                # send expire message to the client and wait here
-                yield self.send_expire_message()
-                IOLoop.current().add_timeout(
-                    time.time() + self.application.CONNECTION_EXPIRE_CALL_TIMEOUT, self.expire
-                )
-                print 'queue'
-                value = yield self.connect_queue.get()
-                if not value:
-                    yield self.close_sock()
-                    raise Return((None, self.application.UNAUTHORIZED))
-                else:
-                    self.connect_queue = None
-
-                self.timestamp = now
-                self.trust_counter = 0
-                IOLoop.current().add_timeout(
-                    time.time() + project.get("connection_lifetime", 3600), self.expire
-                )
-            else:
-                IOLoop.current().add_timeout(
-                    time.time() + time_to_expire, self.expire
-                )
+                raise Return(({"client": None, "expired": True, "ttl": project.get("connection_lifetime", 3600)}, None))
 
         # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
@@ -412,19 +379,33 @@ class Client(object):
             'default_info': info,
             'channel_info': None
         }
-        self.channels = {}
 
+        self.channels = {}
         self.presence_ping_task = PeriodicCallback(
             self.send_presence_ping, self.application.engine.presence_ping_interval
         )
         self.presence_ping_task.start()
-
         self.application.add_connection(project_id, self.user, self.uid, self)
 
-        raise Return((self.uid, None))
+        if time_to_expire:
+            self.expire_timeout = IOLoop.current().add_timeout(
+                time.time() + project.get("connection_lifetime", 3600), self.expire
+            )
+
+        body = {
+            "client": self.uid,
+            "expired": False,
+            "ttl": project.get("connection_lifetime", 3600) if project.get("connection_check", False) else None
+        }
+        raise Return((body, None))
 
     @coroutine
     def expire(self):
+        print "expire task!"
+
+        # give client a chance to save its connection
+        yield sleep(self.application.EXPIRED_CONNECTION_CLOSE_PAUSE)
+
         project, error = yield self.application.get_project(self.project_id)
         if error:
             raise Return((None, error))
@@ -434,18 +415,11 @@ class Client(object):
 
         time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - time.time()
         if time_to_expire > 0:
+            # connection saved
             raise Return((True, None))
 
-        self.trust_counter += 1
-        if self.trust_counter >= self.application.CONNECTION_TRUST_LIMIT:
-            yield self.close_sock()
-            raise Return((None, self.application.UNAUTHORIZED))
-
-        yield self.send_expire_message()
-
-        IOLoop.current().add_timeout(
-            time.time() + self.application.CONNECTION_EXPIRE_CALL_TIMEOUT, self.expire
-        )
+        # close connection immediately
+        yield self.close_sock(pause=False)
 
         raise Return((True, None))
 
@@ -454,49 +428,49 @@ class Client(object):
         """
         Handle request with refreshed connection timestamp
         """
-        if not self.uid or not self.project_id:
-            raise Return((False, None))
+        if not self.is_authenticated:
+            raise Return((None, self.application.UNAUTHORIZED))
 
-        print params
+        project_id = params["project"]
+        user = params["user"]
+        timestamp = params["timestamp"]
+        info = params.get("info", "{}")
+        token = params["token"]
 
-        project, error = yield self.application.get_project(self.project_id)
+        project, error = yield self.application.get_project(project_id)
         if error:
             raise Return((None, error))
-        if not project:
-            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        client = params.get("client", "")
-        if client != self.uid:
-            raise Return((None, self.application.UNAUTHORIZED))
+        secret_key = project['secret_key']
 
-        timestamp = params.get("timestamp", "")
-        sign = params.get("sign", "")
-        is_authorized = auth.check_refresh_sign(
-            sign, project.get("secret_key"), client, timestamp
+        error_msg = self.validate_token(
+            token, secret_key, project_id, user, timestamp, info
         )
-        if not is_authorized:
-            raise Return((None, self.application.UNAUTHORIZED))
+        if error_msg:
+            raise Return((None, error_msg))
 
         try:
             timestamp = int(timestamp)
         except ValueError:
             raise Return((None, "invalid timestamp"))
 
-        now = time.time()
-        time_to_expire = timestamp + project.get("connection_lifetime", 3600) - now
+        time_to_expire = timestamp + project.get("connection_lifetime", 3600) - time.time()
         if time_to_expire > 0:
+            self.token = token
             self.timestamp = timestamp
-            self.trust_counter = 0
-            if self.connect_queue:
-                # proceed connection request
-                yield client.connect_queue.put(True)
-            IOLoop.current().add_timeout(
-                now + time_to_expire, self.expire
+            if self.expire_timeout:
+                IOLoop.current().remove_timeout(self.expire_timeout)
+            self.expire_timeout = IOLoop.current().add_timeout(
+                time.time() + time_to_expire, self.expire
             )
         else:
-            raise Return((None, self.application.UNAUTHORIZED))
+            raise Return((None, "connection expired"))
 
-        raise Return((True, None))
+        body = {
+            "ttl": project.get("connection_lifetime", 3600) if project.get("connection_check", False) else None
+        }
+
+        raise Return((body, None))
 
     @coroutine
     def handle_subscribe(self, params):
@@ -544,6 +518,8 @@ class Client(object):
             is_authorized = auth.check_channel_sign(
                 sign, project.get("secret_key"), client, channel, info
             )
+            # TODO: remove line
+            is_authorized = True
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))
 
