@@ -365,6 +365,7 @@ class Client(object):
         if not self.application.INSECURE and project.get('connection_check', False):
             now = time.time()
             time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - now
+            print time_to_expire
             if time_to_expire <= 0:
                 # connection expired - this is a rare case when Centrifuge went offline
                 # for a while or client turned on his computer from sleeping mode.
@@ -384,6 +385,7 @@ class Client(object):
                 IOLoop.current().add_timeout(
                     time.time() + self.application.CONNECTION_EXPIRE_CALL_TIMEOUT, self.expire
                 )
+                print 'queue'
                 value = yield self.connect_queue.get()
                 if not value:
                     yield self.close_sock()
@@ -454,6 +456,8 @@ class Client(object):
         """
         if not self.uid or not self.project_id:
             raise Return((False, None))
+
+        print params
 
         project, error = yield self.application.get_project(self.project_id)
         if error:
@@ -759,6 +763,7 @@ class Client(object):
         """
 
         """
+        print "send expire"
         message_body = {}
         response = Response(method="expire", body=message_body)
         result, error = yield self.send(response.as_message())

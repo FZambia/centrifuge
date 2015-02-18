@@ -7,7 +7,7 @@ import logging
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
-from cent.core import generate_token, generate_channel_auth
+from cent.core import generate_token, generate_channel_sign, generate_refresh_sign
 
 
 logging.getLogger().setLevel(logging.DEBUG)
@@ -50,7 +50,7 @@ def get_auth_data():
 
     user = USER_ID
     now = str(int(time.time()))
-    token = generate_token(options.secret_key, options.project_id, user, now, user_info=INFO)
+    token = generate_token(options.secret_key, options.project_id, user, now, info=INFO)
 
     auth_data = {
         'token': token,
@@ -98,7 +98,7 @@ class CentrifugeAuthHandler(tornado.web.RequestHandler):
 
     def post(self):
 
-        client_id = self.get_argument("client_id")
+        client_id = self.get_argument("client")
         channels = self.get_arguments("channels")
 
         logging.info("{0} wants to subscribe on {1}".format(client_id, ", ".join(channels)))
@@ -110,7 +110,6 @@ class CentrifugeAuthHandler(tornado.web.RequestHandler):
                 'channel_extra_info_example': 'you can add additional JSON data when authorizing'
             })
             to_return[channel] = {
-                "status": 200,
                 "sign": generate_channel_sign(options.secret_key, client_id, channel, info=info),
                 "info": info
             }
@@ -129,15 +128,13 @@ class CentrifugeRefreshHandler(tornado.web.RequestHandler):
         pass
 
     def post(self):
-
-        client_id = self.get_argument("client_id")
         timestamp = str(int(time.time()))
 
-        logging.info("{0} wants to refresh its connection".format(client_id))
+        logging.info("client wants to refresh its connection")
 
         to_return = {
             "timestamp": timestamp,
-            "sign": generate_refresh_sign(options.secret_key, client_id, timestamp),
+            "sign": generate_refresh_sign(options.secret_key, timestamp),
         }
         self.set_header('Content-Type', 'application/json; charset="utf-8"')
         self.write(json.dumps(to_return))

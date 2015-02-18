@@ -951,8 +951,6 @@
     centrifugeProto._disconnectResponse = function (message) {
         if (message.error === null) {
             this.disconnect();
-            //this.trigger('disconnect', [message]);
-            //this.trigger('disconnect:success', [message]);
         } else {
             this.trigger('error', [message]);
             this.trigger('disconnect:error', [message.error]);
@@ -1234,7 +1232,7 @@
         }
 
         var data = {
-            "client_id": this.getClientId(),
+            "client": this.getClientId(),
             "channels": channels
         };
 
@@ -1362,21 +1360,15 @@
     centrifugeProto.refresh = function () {
         // ask web app for connection parameters - project ID, user ID,
         // timestamp, info and token
-
-        var data = {
-            "client_id": this.getClientId()
-        };
-
         var self = this;
 
         AJAX.request(this._config.refreshEndpoint, "post", {
             "headers": this._config.refreshHeaders,
-            "data": data
+            "data": {}
         }).done(function(data) {
             var centrifugeMessage = {
                 "method": "refresh",
                 "params": {
-                    "client": self.getClientId(),
                     "timestamp": data.timestamp,
                     "sign": data.sign
                 }
@@ -1384,6 +1376,7 @@
             self.send(centrifugeMessage);
         }).fail(function(){
             self._debug("error getting connect parameters");
+            self.disconnect();
         });
     };
 
