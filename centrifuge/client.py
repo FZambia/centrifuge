@@ -23,8 +23,6 @@ from centrifuge.response import Response, MultiResponse
 from centrifuge.log import logger
 from centrifuge.schema import req_schema, client_api_schema
 
-import toro
-
 
 class Client(object):
     """
@@ -38,7 +36,6 @@ class Client(object):
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
         self.user = None
-        self.token = None
         self.timestamp = None
         self.channel_info = {}
         self.default_info = {}
@@ -96,9 +93,9 @@ class Client(object):
         self.is_authenticated = False
         self.sock = None
         self.user = None
-        self.token = None
         self.timestamp = None
         self.expire_timeout = None
+        self.uid = None
         raise Return((True, None))
 
     @coroutine
@@ -297,11 +294,6 @@ class Client(object):
 
         return None
 
-    @staticmethod
-    def is_connection_expired(project, examined_at):
-        now = time.time()
-        return examined_at + project.get("connection_lifetime", 24*365*3600) < now
-
     @coroutine
     def handle_connect(self, params):
         """
@@ -366,13 +358,11 @@ class Client(object):
         if not self.application.INSECURE and project.get('connection_check', False):
             now = time.time()
             time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - now
-            print time_to_expire
             if time_to_expire <= 0:
                 raise Return(({"client": None, "expired": True, "ttl": project.get("connection_lifetime", 3600)}, None))
 
         # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
-        self.token = token
         self.default_info = {
             'user_id': self.user,
             'client_id': self.uid,
@@ -401,10 +391,9 @@ class Client(object):
 
     @coroutine
     def expire(self):
-        print "expire task!"
 
         # give client a chance to save its connection
-        yield sleep(self.application.EXPIRED_CONNECTION_CLOSE_PAUSE)
+        yield sleep(self.application.EXPIRED_CONNECTION_CLOSE_DELAY)
 
         project, error = yield self.application.get_project(self.project_id)
         if error:
@@ -456,7 +445,6 @@ class Client(object):
 
         time_to_expire = timestamp + project.get("connection_lifetime", 3600) - time.time()
         if time_to_expire > 0:
-            self.token = token
             self.timestamp = timestamp
             if self.expire_timeout:
                 IOLoop.current().remove_timeout(self.expire_timeout)
@@ -518,8 +506,6 @@ class Client(object):
             is_authorized = auth.check_channel_sign(
                 sign, project.get("secret_key"), client, channel, info
             )
-            # TODO: remove line
-            is_authorized = True
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))
 
@@ -726,21 +712,10 @@ class Client(object):
         Send disconnect message - after receiving it proper client
         must close connection and do not reconnect.
         """
-        reason = reason or "go away!"
+        reason = reason or "default"
         message_body = {
             "reason": reason
         }
         response = Response(method="disconnect", body=message_body)
-        result, error = yield self.send(response.as_message())
-        raise Return((result, error))
-
-    @coroutine
-    def send_expire_message(self):
-        """
-
-        """
-        print "send expire"
-        message_body = {}
-        response = Response(method="expire", body=message_body)
         result, error = yield self.send(response.as_message())
         raise Return((result, error))

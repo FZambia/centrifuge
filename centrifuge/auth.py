@@ -80,17 +80,3 @@ def check_channel_sign(provided_sign, secret_key, client_id, channel, channel_da
     sign.update(six.b(channel))
     sign.update(six.b(channel_data))
     return sign.hexdigest() == provided_sign
-
-
-def check_refresh_sign(provided_sign, secret_key, client_id, timestamp):
-    """
-    Create reference sign and compare it with sign provided
-    by client's refresh request
-    """
-    hash_algorithm = detect_hash_algorithm(provided_sign)
-    if not hash_algorithm:
-        return False
-    sign = hmac.new(six.b(str(secret_key)), digestmod=hash_algorithm)
-    sign.update(six.b(client_id))
-    sign.update(six.b(timestamp))
-    return sign.hexdigest() == provided_sign

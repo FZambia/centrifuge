@@ -6,6 +6,8 @@ TODO: check connection with info and without info
 Some backwards incompatible changes here.
 
 * new Pusher-like private channel auth mechanism - see documentation.
+* new connection check mechanism - see documentation
+* insecure mode to use Centrifuge as simple solution for real-time demos, personal presentations, testing ideas etc.
 * support for `sha256` in signs and tokens HMACs - sha256 is now used by default in new version of Cent.
 * Redis engine now can listen for API commands - Redis must be firewalled and only owner should use this as there is no secret key based sign check. Due to use of PUB/SUB for this you can only use commands for which you don't need response body or error - ex. `publish`, `unsubscribe`...
 * Tornado updated to version 4.1
@@ -14,6 +16,7 @@ How to migrate:
 
 * update Cent client to latest version. If you don't use Cent then you should update your code.
 * if you are using old private channel subscription mechanism via POST request from Centrifuge then you should migrate using new one.
+* if you are using connection check then you should adapt your code to use new mechanism
 * note that `user_info` kwarg renamed to `info` in Cent `generate_token` function
 
 How to publish via Redis engine API listener:

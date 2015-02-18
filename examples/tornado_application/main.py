@@ -7,7 +7,7 @@ import logging
 import tornado.ioloop
 import tornado.web
 from tornado.options import options, define
-from cent.core import generate_token, generate_channel_sign, generate_refresh_sign
+from cent.core import generate_token, generate_channel_sign
 
 
 logging.getLogger().setLevel(logging.DEBUG)

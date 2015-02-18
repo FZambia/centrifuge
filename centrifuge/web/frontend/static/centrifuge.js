@@ -959,9 +959,12 @@
             this._clientId = message.body.client;
             this._setStatus('connected');
             this.trigger('connect', [message]);
+            if (this._refreshTimeout) {
+                window.clearTimeout(this._refreshTimeout);
+            }
             if (message.body.ttl !== null) {
                 var self = this;
-                self._refreshTimeout = window.setTimeout(function () {
+                this._refreshTimeout = window.setTimeout(function() {
                     self.refresh.call(self);
                 }, message.body.ttl * 1000);
             }
@@ -1093,6 +1096,9 @@
     };
 
     centrifugeProto._refreshResponse = function (message) {
+        if (this._refreshTimeout) {
+            window.clearTimeout(this._refreshTimeout);
+        }
         if (message.body.ttl !== null) {
             var self = this;
             self._refreshTimeout = window.setTimeout(function () {
@@ -1421,7 +1427,10 @@
             // will disconnect client eventually
             self._debug(xhr);
             self._debug("error getting connect parameters");
-            window.setTimeout(function(){
+            if (self._refreshTimeout) {
+                window.clearTimeout(self._refreshTimeout);
+            }
+            self._refreshTimeout = window.setTimeout(function(){
                 self.refresh.call(self);
             }, 3000);
         });

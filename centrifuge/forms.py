@@ -16,10 +16,10 @@ NAME_RE = re.compile(NAME_PATTERN)
 # how many messages keep in channel history by default
 DEFAULT_HISTORY_SIZE = 50
 
-# how long in seconds we keep history in inactive channels (0 - forever until size is not exceeded)
+# in seconds how long we keep history in inactive channels (0 - forever until size is not exceeded)
 DEFAULT_HISTORY_EXPIRE = 3600  # 1 hour by default
 
-# seconds
+# in seconds
 DEFAULT_CONNECTION_LIFETIME = 3600
 
 

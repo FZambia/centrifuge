@@ -77,7 +77,6 @@ class ApiHandler(BaseHandler):
             if not secret:
                 raise tornado.web.HTTPError(501, log_message="no api_secret in configuration file")
             project = None
-
         else:
             project, error = yield self.application.structure.get_project_by_id(project_id)
             if error:

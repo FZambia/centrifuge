@@ -73,8 +73,9 @@ class Application(tornado.web.Application):
     # maximum number of messages in single client API request
     CLIENT_API_MESSAGE_LIMIT = 100
 
-    #
-    EXPIRED_CONNECTION_CLOSE_PAUSE = 3
+    # time in seconds to pause before closing expired connection
+    # to get client a chance to refresh connection
+    EXPIRED_CONNECTION_CLOSE_DELAY = 10
 
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
@@ -221,13 +222,9 @@ class Application(tornado.web.Application):
         if client_api_message_limit:
             self.CLIENT_API_MESSAGE_LIMIT = client_api_message_limit
 
-        connection_expire_call_timeout = config.get('connection_expire_call_timeout')
-        if connection_expire_call_timeout:
-            self.CONNECTION_EXPIRE_CALL_TIMEOUT = connection_expire_call_timeout
-
-        connection_trust_limit = config.get('connection_trust_limit')
-        if connection_trust_limit:
-            self.CONNECTION_TRUST_LIMIT = connection_trust_limit
+        expired_connection_close_delay = config.get('expired_connection_close_delay')
+        if expired_connection_close_delay:
+            self.EXPIRED_CONNECTION_CLOSE_DELAY = expired_connection_close_delay
 
         insecure = config.get('insecure')
         if insecure:
@@ -681,7 +678,6 @@ class Application(tornado.web.Application):
 
         raise Return(response)
 
-    # noinspection PyCallingNonCallable
     @coroutine
     def process_call(self, project, method, params):
         """
