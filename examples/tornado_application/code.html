@@ -1,4 +1,4 @@
-<script type="text/javascript" src="http://localhost:8000/static/centrifuge.js"></script>
+<script type="text/javascript" src="https://rawgit.com/centrifugal/centrifuge-js/master/src/centrifuge.js"></script>
 <script type="text/javascript">
     'use strict';
 
@@ -29,12 +29,10 @@
             info: '{% raw auth_data["info"] %}',
             //protocols_whitelist: ["xhr-polling"],
             debug: true,
+            refreshEndpoint: "/centrifuge/refresh",
             authEndpoint: "/centrifuge/auth",
-            tokenEndpoint: "/centrifuge/token",
-            auth: {
-                headers: {
-                    "X-Csrf-Token": "csrf"
-                }
+            authHeaders: {
+                "X-Csrf-Token": "csrf"
             }
         });
 
