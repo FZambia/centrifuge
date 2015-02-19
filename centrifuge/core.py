@@ -5,13 +5,11 @@ import six
 import uuid
 import time
 import socket
-import json
 from functools import partial
 
 import tornado.web
 import tornado.ioloop
 from tornado.gen import coroutine, Return
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest
 
 try:
     from urllib import urlencode
@@ -20,11 +18,15 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     from urllib.parse import urlencode
 
+from jsonschema import validate, ValidationError
+
 from centrifuge import utils
 from centrifuge.structure import Structure
 from centrifuge.log import logger
 from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.metrics import Collector, Exporter
+from centrifuge.response import Response, MultiResponse
+from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
 
 
 def get_address():
@@ -37,6 +39,8 @@ def get_address():
 
 
 class Application(tornado.web.Application):
+
+    PRIVATE_CHANNEL_PREFIX = "$"
 
     USER_SEPARATOR = '#'
 
@@ -69,20 +73,15 @@ class Application(tornado.web.Application):
     # maximum number of messages in single client API request
     CLIENT_API_MESSAGE_LIMIT = 100
 
-    # does application check expiring connections?
-    CONNECTION_EXPIRE_CHECK = True
-
-    # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_COLLECT_INTERVAL = 3
-
-    # how often in seconds this node should check expiring connections
-    CONNECTION_EXPIRE_CHECK_INTERVAL = 6
+    # time in seconds to pause before closing expired connection
+    # to get client a chance to refresh connection
+    EXPIRED_CONNECTION_CLOSE_DELAY = 10
 
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
 
     # when active no authentication required at all when connecting to Centrifuge,
-    # sending API commands - this is suitable for demonstration or personal usage
+    # this simplified mode suitable for demonstration or personal usage
     INSECURE = False
 
     LIMIT_EXCEEDED = 'limit exceeded'
@@ -126,9 +125,6 @@ class Application(tornado.web.Application):
         # application engine
         self.engine = None
 
-        # initialize dict to keep back-off information for projects
-        self.back_off = {}
-
         # list of coroutines that must be done before message publishing
         self.pre_publish_callbacks = []
 
@@ -137,18 +133,6 @@ class Application(tornado.web.Application):
 
         # time of last node info revision
         self.node_info_revision_time = time.time()
-
-        # periodic task to collect expired connections
-        self.periodic_connection_expire_collect = None
-
-        # periodic task to check expired connections
-        self.periodic_connection_expire_check = None
-
-        # dictionary to keep expired connections
-        self.expired_connections = {}
-
-        # dictionary to keep new connections with expired credentials until next connection check
-        self.expired_reconnections = {}
 
         self.address = get_address()
 
@@ -185,7 +169,6 @@ class Application(tornado.web.Application):
         self.init_structure()
         self.init_engine()
         self.init_ping()
-        self.init_connection_expire_check()
         self.init_metrics()
 
     @property
@@ -194,6 +177,10 @@ class Application(tornado.web.Application):
 
     def override_application_settings_from_config(self):
         config = self.config
+
+        private_channel_prefix = config.get('private_channel_prefix')
+        if private_channel_prefix:
+            self.PRIVATE_CHANNEL_PREFIX = private_channel_prefix
 
         user_separator = config.get('user_separator')
         if user_separator:
@@ -235,17 +222,9 @@ class Application(tornado.web.Application):
         if client_api_message_limit:
             self.CLIENT_API_MESSAGE_LIMIT = client_api_message_limit
 
-        connection_expire_check = config.get('connection_expire_check', True)
-        if connection_expire_check:
-            self.CONNECTION_EXPIRE_CHECK = connection_expire_check
-
-        connection_expire_collect_interval = config.get('connection_expire_collect_interval')
-        if connection_expire_collect_interval:
-            self.CONNECTION_EXPIRE_COLLECT_INTERVAL = connection_expire_collect_interval
-
-        connection_expire_check_interval = config.get('connection_expire_check_interval')
-        if connection_expire_check_interval:
-            self.CONNECTION_EXPIRE_CHECK_INTERVAL = connection_expire_check_interval
+        expired_connection_close_delay = config.get('expired_connection_close_delay')
+        if expired_connection_close_delay:
+            self.EXPIRED_CONNECTION_CLOSE_DELAY = expired_connection_close_delay
 
         insecure = config.get('insecure')
         if insecure:
@@ -310,28 +289,6 @@ class Application(tornado.web.Application):
         for callable_path in post_publish_callbacks:
             callback = utils.namedAny(callable_path)
             self.post_publish_callbacks.append(callback)
-
-    def init_connection_expire_check(self):
-        """
-        Initialize periodic connection expiration check task if enabled.
-        We periodically check the time of client connection expiration time
-        and ask web application about these clients - are they still active in
-        web application?
-        """
-
-        if not self.CONNECTION_EXPIRE_CHECK:
-            return
-
-        self.periodic_connection_expire_collect = tornado.ioloop.PeriodicCallback(
-            self.collect_expired_connections,
-            self.CONNECTION_EXPIRE_COLLECT_INTERVAL*1000
-        )
-        self.periodic_connection_expire_collect.start()
-
-        tornado.ioloop.IOLoop.instance().add_timeout(
-            time.time()+self.CONNECTION_EXPIRE_CHECK_INTERVAL,
-            self.check_expired_connections
-        )
 
     def init_metrics(self):
         """
@@ -461,178 +418,6 @@ class Application(tornado.web.Application):
             }
         })
 
-    @coroutine
-    def collect_expired_connections(self):
-        """
-        Find all expired connections in projects to check them later.
-        """
-        projects, error = yield self.structure.project_list()
-        if error:
-            logger.error(error)
-            raise Return((None, error))
-
-        for project in projects:
-
-            project_id = project['_id']
-            expired_connections, error = yield self.collect_project_expired_connections(project)
-            if error:
-                logger.error(error)
-                continue
-
-            if project_id not in self.expired_connections:
-                self.expired_connections[project_id] = {
-                    "users": set(),
-                    "checked_at": None
-                }
-
-            current_expired_connections = self.expired_connections[project_id]["users"]
-            self.expired_connections[project_id]["users"] = current_expired_connections | expired_connections
-
-        raise Return((True, None))
-
-    @coroutine
-    def collect_project_expired_connections(self, project):
-        """
-        Find users in project whose connections expired.
-        """
-        project_id = project.get("_id")
-        to_return = set()
-        now = time.time()
-        if not project.get('connection_check') or project_id not in self.connections:
-            raise Return((to_return, None))
-
-        for user, user_connections in six.iteritems(self.connections[project_id]):
-
-            if user == '':
-                # do not collect anonymous connections
-                continue
-
-            for uid, client in six.iteritems(user_connections):
-                if client.examined_at and client.examined_at + project.get("connection_lifetime", 24*365*3600) < now:
-                    to_return.add(user)
-
-        raise Return((to_return, None))
-
-    @coroutine
-    def check_expired_connections(self):
-        """
-        For each project ask web application about users whose connections expired.
-        Close connections of deactivated users and keep valid users' connections.
-        """
-        projects, error = yield self.structure.project_list()
-        if error:
-            raise Return((None, error))
-
-        checks = []
-        for project in projects:
-            if project.get('connection_check', False):
-                checks.append(self.check_project_expired_connections(project))
-
-        try:
-            # run all checks in parallel
-            yield checks
-        except Exception as err:
-            logger.error(err)
-
-        tornado.ioloop.IOLoop.instance().add_timeout(
-            time.time()+self.CONNECTION_EXPIRE_CHECK_INTERVAL,
-            self.check_expired_connections
-        )
-
-        raise Return((True, None))
-
-    @coroutine
-    def check_project_expired_connections(self, project):
-
-        now = time.time()
-        project_id = project['_id']
-
-        checked_at = self.expired_connections.get(project_id, {}).get("checked_at")
-        if checked_at and (now - checked_at < project.get("connection_check_interval", 60)):
-            raise Return((True, None))
-
-        users = self.expired_connections.get(project_id, {}).get("users", {}).copy()
-        if not users:
-            raise Return((True, None))
-
-        self.expired_connections[project_id]["users"] = set()
-
-        expired_reconnect_clients = self.expired_reconnections.get(project_id, [])[:]
-        self.expired_reconnections[project_id] = []
-
-        inactive_users, error = yield self.check_users(project, users)
-        if error:
-            raise Return((False, error))
-
-        self.expired_connections[project_id]["checked_at"] = now
-        now = time.time()
-
-        clients_to_disconnect = []
-
-        if isinstance(inactive_users, list):
-            # a list of inactive users received, iterate trough connections
-            # destroy inactive, update active.
-            if project_id in self.connections:
-                for user, user_connections in six.iteritems(self.connections[project_id]):
-                    for uid, client in six.iteritems(user_connections):
-                        if client.user in inactive_users:
-                            clients_to_disconnect.append(client)
-                        elif client.user in users:
-                            client.examined_at = now
-
-        for client in clients_to_disconnect:
-            yield client.send_disconnect_message("deactivated")
-            yield client.close_sock()
-
-        if isinstance(inactive_users, list):
-            # now deal with users waiting for reconnect with expired credentials
-            for client in expired_reconnect_clients:
-                is_valid = client.user not in inactive_users
-                if is_valid:
-                    client.examined_at = now
-                if client.connect_queue:
-                    yield client.connect_queue.put(is_valid)
-                else:
-                    yield client.close_sock()
-
-        raise Return((True, None))
-
-    @staticmethod
-    @coroutine
-    def check_users(project, users, timeout=5):
-
-        address = project.get("connection_check_address")
-        if not address:
-            logger.debug("no connection check address for project {0}".format(project['name']))
-            raise Return(())
-
-        http_client = AsyncHTTPClient()
-        request = HTTPRequest(
-            address,
-            method="POST",
-            body=urlencode({
-                'users': json.dumps(list(users))
-            }),
-            request_timeout=timeout
-        )
-
-        try:
-            response = yield http_client.fetch(request)
-        except Exception as err:
-            logger.error(err)
-            raise Return((None, None))
-        else:
-            if response.code != 200:
-                raise Return((None, None))
-
-            try:
-                content = [str(x) for x in json.loads(response.body)]
-            except Exception as err:
-                logger.error(err)
-                raise Return((None, err))
-
-            raise Return((content, None))
-
     def add_connection(self, project_id, user, uid, client):
         """
         Register new client's connection.
@@ -701,6 +486,10 @@ class Application(tornado.web.Application):
         """
         Get namespace name from channel name
         """
+        if channel.startswith(self.PRIVATE_CHANNEL_PREFIX):
+            # cut private channel prefix from beginning
+            channel = channel[len(self.PRIVATE_CHANNEL_PREFIX):]
+
         if self.NAMESPACE_SEPARATOR in channel:
             # namespace:rest_of_channel
             namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
@@ -708,6 +497,12 @@ class Application(tornado.web.Application):
             namespace_name = None
 
         return namespace_name
+
+    def get_allowed_users(self, channel):
+        return channel.rsplit(self.USER_SEPARATOR, 1)[1].split(',')
+
+    def is_channel_private(self, channel):
+        return channel.startswith(self.PRIVATE_CHANNEL_PREFIX)
 
     @coroutine
     def get_namespace(self, project, channel):
@@ -733,6 +528,7 @@ class Application(tornado.web.Application):
         """
         params['updated_at'] = time.time()
         self.nodes[params.get('uid')] = params
+        raise Return((True, None))
 
     @coroutine
     def handle_unsubscribe(self, params):
@@ -803,7 +599,85 @@ class Application(tornado.web.Application):
         result, error = yield self.structure.update()
         raise Return((result, error))
 
-    # noinspection PyCallingNonCallable
+    @coroutine
+    def process_api_data(self, project, data, is_owner_request):
+        multi_response = MultiResponse()
+
+        if isinstance(data, dict):
+            # single object request
+            response = yield self.process_api_object(data, project, is_owner_request)
+            multi_response.add(response)
+        elif isinstance(data, list):
+            # multiple object request
+            if len(data) > self.ADMIN_API_MESSAGE_LIMIT:
+                raise Return((None, "admin API message limit exceeded (received {0} messages)".format(len(data))))
+
+            for obj in data:
+                response = yield self.process_api_object(obj, project, is_owner_request)
+                multi_response.add(response)
+        else:
+            raise Return((None, "data not an array or object"))
+
+        raise Return((multi_response, None))
+
+    @coroutine
+    def process_api_object(self, obj, project, is_owner_request):
+
+        response = Response()
+
+        try:
+            validate(obj, req_schema)
+        except ValidationError as e:
+            response.error = str(e)
+            raise Return(response)
+
+        req_id = obj.get("uid", None)
+        method = obj.get("method")
+        params = obj.get("params")
+
+        response.uid = req_id
+        response.method = method
+
+        schema = server_api_schema
+
+        if is_owner_request and self.OWNER_API_PROJECT_PARAM in params:
+
+            project_id = params[self.OWNER_API_PROJECT_PARAM]
+
+            project, error = yield self.structure.get_project_by_id(
+                project_id
+            )
+            if error:
+                logger.error(error)
+                response.error = self.INTERNAL_SERVER_ERROR
+            if not project:
+                response.error = self.PROJECT_NOT_FOUND
+
+        try:
+            params.pop(self.OWNER_API_PROJECT_PARAM)
+        except KeyError:
+            pass
+
+        if not is_owner_request and method in owner_api_methods:
+            response.error = self.PERMISSION_DENIED
+
+        if not response.error:
+            if method not in schema:
+                response.error = self.METHOD_NOT_FOUND
+            else:
+                try:
+                    validate(params, schema[method])
+                except ValidationError as e:
+                    response.error = str(e)
+                else:
+                    result, error = yield self.process_call(
+                        project, method, params
+                    )
+                    response.body = result
+                    response.error = error
+
+        raise Return(response)
+
     @coroutine
     def process_call(self, project, method, params):
         """

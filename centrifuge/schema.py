@@ -183,7 +183,16 @@ client_api_schema = {
         "properties": {
             "channel": {
                 "type": "string"
-            }
+            },
+            "client": {
+                "type": "string"
+            },
+            "info": {
+                "type": "string"
+            },
+            "sign": {
+                "type": "string"
+            },
         },
         "required": ["channel"]
     },
@@ -197,6 +206,42 @@ client_api_schema = {
         "required": ["channel"]
     },
     "connect": {
+        "type": "object",
+        "properties": {
+            "token": {
+                "type": "string",
+            },
+            "user": {
+                "type": "string"
+            },
+            "project": {
+                "type": "string"
+            },
+            "timestamp": {
+                "type": "string"
+            },
+            "info": {
+                "type": "string"
+            }
+        },
+        "required": ["token", "user", "project", "timestamp"]
+    },
+    "connect_insecure": {
+        "type": "object",
+        "properties": {
+            "user": {
+                "type": "string"
+            },
+            "project": {
+                "type": "string"
+            },
+            "info": {
+                "type": "string"
+            }
+        },
+        "required": ["user", "project"]
+    },
+    "refresh": {
         "type": "object",
         "properties": {
             "token": {

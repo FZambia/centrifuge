@@ -42,6 +42,10 @@ define(
     "redis_url", default="", help="Redis URL", type=str
 )
 
+define(
+    "redis_api", default=False, help="enable Redis API listener", type=bool
+)
+
 
 range_func = six.moves.xrange
 
@@ -75,8 +79,12 @@ class Engine(BaseEngine):
 
     OK_RESPONSE = b'OK'
 
+    API_KEY = 'api'
+
     def __init__(self, *args, **kwargs):
         super(Engine, self).__init__(*args, **kwargs)
+
+        self.api_key = "{0}.{1}".format(self.prefix, self.API_KEY)
 
         if not self.options.redis_url:
             self.host = self.options.redis_host
@@ -97,12 +105,18 @@ class Engine(BaseEngine):
         self.subscriber = toredis.Client(io_loop=self.io_loop)
         self.publisher = toredis.Client(io_loop=self.io_loop)
         self.worker = toredis.Client(io_loop=self.io_loop)
+        if self.options.redis_api:
+            self.listener = toredis.Client(io_loop=self.io_loop)
 
         self.subscriptions = {}
 
     def initialize(self):
         self.connect()
         logger.info("Redis engine at {0}:{1} (db {2})".format(self.host, self.port, self.db))
+        if self.options.redis_api:
+            logger.info(
+                "Redis API endpoint enabled via RPUSH to {0} key".format(self.api_key)
+            )
 
     def on_auth(self, res):
         if res != self.OK_RESPONSE:
@@ -126,6 +140,22 @@ class Engine(BaseEngine):
                 continue
             self.subscriber.subscribe(subscription, callback=self.on_redis_message)
 
+    @coroutine
+    def process_api_messages(self):
+        while True:
+            message = yield Task(self.listener.blpop, self.api_key, 0)
+            if message:
+                yield self.on_api_message(message)
+
+    def on_listener_select(self, res):
+        if res != self.OK_RESPONSE:
+            # error returned
+            logger.error("select database failed: {0}".format(res))
+            self._need_reconnect = True
+            return
+
+        self.process_api_messages()
+
     def on_select(self, res):
         if res != self.OK_RESPONSE:
             logger.error("select database failed: {0}".format(res))
@@ -139,6 +169,8 @@ class Engine(BaseEngine):
             self.subscriber.connect(host=self.host, port=self.port)
             self.publisher.connect(host=self.host, port=self.port)
             self.worker.connect(host=self.host, port=self.port)
+            if self.options.redis_api:
+                self.listener.connect(host=self.host, port=self.port)
         except Exception as e:
             logger.error("error connecting to Redis server: %s" % (str(e)))
         else:
@@ -146,10 +178,14 @@ class Engine(BaseEngine):
                 self.subscriber.auth(self.password, callback=self.on_auth)
                 self.publisher.auth(self.password, callback=self.on_auth)
                 self.worker.auth(self.password, callback=self.on_auth)
+                if self.options.redis_api:
+                    self.listener.auth(self.password, callback=self.on_auth)
 
             self.subscriber.select(self.db, callback=self.on_subscriber_select)
             self.publisher.select(self.db, callback=self.on_select)
             self.worker.select(self.db, callback=self.on_select)
+            if self.options.redis_api:
+                self.listener.select(self.db, callback=self.on_listener_select)
 
         self.connection_check.stop()
         self.connection_check.start()
@@ -160,6 +196,9 @@ class Engine(BaseEngine):
             self.publisher.is_connected(),
             self.worker.is_connected()
         ]
+        if self.options.redis_api:
+            conn_statuses.append(self.listener.is_connected())
+
         connection_dropped = not all(conn_statuses)
         if connection_dropped or self._need_reconnect:
             logger.info('reconnecting to Redis')
@@ -198,6 +237,43 @@ class Engine(BaseEngine):
     def publish_admin_message(self, message):
         result = self._publish(self.admin_channel_name, json_encode(message))
         raise Return((result, None))
+
+    @coroutine
+    def on_api_message(self, redis_message):
+        """
+        Got message from Redis, dispatch it into right message handler.
+        """
+        try:
+            message = json_decode(redis_message[1])
+        except ValueError:
+            logger.error("Redis API - malformed JSON")
+            return
+
+        if not isinstance(message, dict):
+            logger.error("Redis API - object expected")
+            return
+
+        project_id = message.get("project")
+        if not project_id:
+            logger.error("Redis API - project required")
+            return
+
+        data = message.get("data")
+        if not data:
+            logger.error("Redis API - data required")
+
+        project, error = yield self.application.structure.get_project_by_id(project_id)
+        if error:
+            logger.error("Redis API - server error")
+            return
+
+        if not project:
+            logger.error("Redis API - project not found")
+            return
+
+        _, error = yield self.application.process_api_data(project, data, False)
+        if error:
+            logger.error(error)
 
     @coroutine
     def on_redis_message(self, redis_message):
@@ -305,13 +381,13 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     def get_presence_hash_key(self, project_id, channel):
-        return "%s:presence:hash:%s:%s" % (self.prefix, project_id, channel)
+        return "%s.presence.hash.%s.%s" % (self.prefix, project_id, channel)
 
     def get_presence_set_key(self, project_id, channel):
-        return "%s:presence:set:%s:%s" % (self.prefix, project_id, channel)
+        return "%s.presence.set.%s.%s" % (self.prefix, project_id, channel)
 
     def get_history_list_key(self, project_id, channel):
-        return "%s:history:list:%s:%s" % (self.prefix, project_id, channel)
+        return "%s.history.list.%s.%s" % (self.prefix, project_id, channel)
 
     @coroutine
     def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):

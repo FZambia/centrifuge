@@ -4,7 +4,6 @@
 import six
 import uuid
 import time
-import random
 
 try:
     from urllib import urlencode
@@ -13,9 +12,8 @@ except ImportError:
     # noinspection PyUnresolvedReferences
     from urllib.parse import urlencode
 
-from tornado.ioloop import IOLoop, PeriodicCallback
-from tornado.httpclient import AsyncHTTPClient, HTTPRequest, HTTPError
-from tornado.gen import coroutine, Return, Task
+from tornado.ioloop import PeriodicCallback, IOLoop
+from tornado.gen import coroutine, Return, sleep
 
 from jsonschema import validate, ValidationError
 
@@ -24,18 +22,6 @@ from centrifuge.utils import json_decode
 from centrifuge.response import Response, MultiResponse
 from centrifuge.log import logger
 from centrifuge.schema import req_schema, client_api_schema
-
-import toro
-
-
-@coroutine
-def sleep(seconds):
-    """
-    Non-blocking sleep.
-    """
-    awake_at = time.time() + seconds
-    yield Task(IOLoop.instance().add_timeout, awake_at)
-    raise Return((True, None))
 
 
 class Client(object):
@@ -50,14 +36,13 @@ class Client(object):
         self.uid = uuid.uuid4().hex
         self.is_authenticated = False
         self.user = None
-        self.token = None
-        self.examined_at = None
-        self.channel_user_info = {}
-        self.default_user_info = {}
+        self.timestamp = None
+        self.channel_info = {}
+        self.default_info = {}
         self.project_id = None
         self.channels = None
         self.presence_ping_task = None
-        self.connect_queue = None
+        self.expire_timeout = None
         logger.info("client created via {0} (uid: {1}, ip: {2})".format(
             self.sock.session.transport_name, self.uid, getattr(self.info, 'ip', '-')
         ))
@@ -102,14 +87,15 @@ class Client(object):
                         self.send_leave_message(channel_name)
 
         self.channels = None
-        self.channel_user_info = None
-        self.default_user_info = None
+        self.channel_info = None
+        self.default_info = None
         self.project_id = None
         self.is_authenticated = False
         self.sock = None
         self.user = None
-        self.token = None
-        self.examined_at = None
+        self.timestamp = None
+        self.expire_timeout = None
+        self.uid = None
         raise Return((True, None))
 
     @coroutine
@@ -165,7 +151,7 @@ class Client(object):
         response.uid = uid
         response.method = method
 
-        if method != 'connect' and not self.is_authenticated:
+        if method not in ['connect'] and not self.is_authenticated:
             response.error = self.application.UNAUTHORIZED
             raise Return((response, response.error))
 
@@ -176,7 +162,12 @@ class Client(object):
             raise Return((response, response.error))
 
         try:
-            validate(params, client_api_schema[method])
+            schema_name = method
+            if self.application.INSECURE:
+                # if Centrifuge run in insecure mode we use simplified connection
+                # schema to allow clients connect without timestamp and token
+                schema_name = "connect_insecure"
+            validate(params, client_api_schema[schema_name])
         except ValidationError as e:
             response.error = str(e)
             raise Return((response, response.error))
@@ -243,29 +234,29 @@ class Client(object):
         subscribed to.
         """
         for channel, channel_info in six.iteritems(self.channels):
-            user_info = self.get_user_info(channel)
+            info = self.get_info(channel)
             if channel not in self.channels:
                 continue
             yield self.application.engine.add_presence(
-                self.project_id, channel, self.uid, user_info
+                self.project_id, channel, self.uid, info
             )
         raise Return((True, None))
 
-    def get_user_info(self, channel):
+    def get_info(self, channel):
         """
         Return channel specific user info.
         """
         try:
-            channel_user_info = self.channel_user_info[channel]
+            channel_info = self.channel_info[channel]
         except KeyError:
-            channel_user_info = None
-        default_info = self.default_user_info.copy()
+            channel_info = None
+        default_info = self.default_info.copy()
         default_info.update({
-            'channel_info': channel_user_info
+            'channel_info': channel_info
         })
         return default_info
 
-    def update_channel_user_info(self, body, channel):
+    def update_channel_info(self, body, channel):
         """
         Try to extract channel specific user info from response body
         and keep it for channel.
@@ -276,78 +267,7 @@ class Client(object):
             logger.error(str(e))
             info = {}
 
-        self.channel_user_info[channel] = info
-
-    @coroutine
-    def authorize(self, auth_address, project, channel):
-        """
-        Send POST request to web application to ask it if current client
-        has a permission to subscribe on channel.
-        """
-        project_id = self.project_id
-
-        http_client = AsyncHTTPClient()
-        request = HTTPRequest(
-            auth_address,
-            method="POST",
-            body=urlencode({
-                'user': self.user,
-                'channel': channel
-            }),
-            request_timeout=1
-        )
-
-        max_auth_attempts = project.get('max_auth_attempts')
-        back_off_interval = project.get('back_off_interval')
-        back_off_max_timeout = project.get('back_off_max_timeout')
-
-        attempts = 0
-
-        while attempts < max_auth_attempts:
-
-            # get current timeout for project
-            current_attempts = self.application.back_off.setdefault(project_id, 0)
-
-            factor = random.randint(0, 2**current_attempts-1)
-            timeout = factor*back_off_interval
-
-            if timeout > back_off_max_timeout:
-                timeout = back_off_max_timeout
-
-            # wait before next authorization request attempt
-            yield sleep(float(timeout)/1000)
-
-            try:
-                response = yield http_client.fetch(request)
-            except HTTPError as err:
-                if err.code == 403:
-                    # access denied for this client
-                    raise Return((False, None))
-                else:
-                    # let it fail and try again after some timeout
-                    logger.info("{0} status code when fetching auth address {1}".format(
-                        err.code, auth_address
-                    ))
-            except Exception as err:
-                logger.error("error fetching auth address {0}".format(auth_address))
-                logger.exception(err)
-                raise Return((False, None))
-            else:
-                # reset back-off attempts
-                self.application.back_off[project_id] = 0
-
-                if response.code == 200:
-                    # auth successful
-                    self.update_channel_user_info(response.body, channel)
-                    raise Return((True, None))
-
-                else:
-                    # access denied for this client
-                    raise Return((False, None))
-            attempts += 1
-            self.application.back_off[project_id] += 1
-
-        raise Return((False, None))
+        self.channel_info[channel] = info
 
     @coroutine
     def handle_ping(self, params):
@@ -374,12 +294,6 @@ class Client(object):
 
         return None
 
-    @staticmethod
-    def is_connection_must_be_checked(project, examined_at):
-        connection_check = project.get('connection_check', False)
-        now = time.time()
-        return connection_check and examined_at + project.get("connection_lifetime", 24*365*3600) < now
-
     @coroutine
     def handle_connect(self, params):
         """
@@ -393,11 +307,15 @@ class Client(object):
         if self.is_authenticated:
             raise Return((self.uid, None))
 
-        token = params["token"]
-        user = params["user"]
         project_id = params["project"]
-        timestamp = params["timestamp"]
-        user_info = params.get("info")
+        user = params["user"]
+        info = params.get("info", "{}")
+
+        if not self.application.INSECURE:
+            token = params["token"]
+            timestamp = params["timestamp"]
+        else:
+            token = timestamp = None
 
         project, error = yield self.application.get_project(project_id)
         if error:
@@ -405,74 +323,142 @@ class Client(object):
 
         secret_key = project['secret_key']
 
-        error_msg = self.validate_token(token, secret_key, project_id, user, timestamp, user_info)
-        if error_msg:
-            raise Return((None, error_msg))
+        if not self.application.INSECURE:
+            error_msg = self.validate_token(
+                token, secret_key, project_id, user, timestamp, info
+            )
+            if error_msg:
+                raise Return((None, error_msg))
 
-        if user_info is not None:
+        if info:
             try:
-                user_info = json_decode(user_info)
+                info = json_decode(info)
             except Exception as err:
                 logger.error("malformed JSON data in user_info")
                 logger.error(err)
-                user_info = None
+                info = {}
+        else:
+            info = {}
+
+        if not self.application.INSECURE:
+            try:
+                timestamp = int(timestamp)
+            except ValueError:
+                raise Return((None, "invalid timestamp"))
+        else:
+            # we are not interested in timestamp in case of insecure mode so just
+            # set it to current timestamp
+            timestamp = int(time.time())
+
+        self.user = user
+        self.project_id = project_id
+        self.timestamp = timestamp
+
+        time_to_expire = None
+        if not self.application.INSECURE and project.get('connection_check', False):
+            now = time.time()
+            time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - now
+            if time_to_expire <= 0:
+                raise Return(({"client": None, "expired": True, "ttl": project.get("connection_lifetime", 3600)}, None))
+
+        # Welcome to Centrifuge dear Connection!
+        self.is_authenticated = True
+        self.default_info = {
+            'user_id': self.user,
+            'client_id': self.uid,
+            'default_info': info,
+            'channel_info': None
+        }
+
+        self.channels = {}
+        self.presence_ping_task = PeriodicCallback(
+            self.send_presence_ping, self.application.engine.presence_ping_interval
+        )
+        self.presence_ping_task.start()
+        self.application.add_connection(project_id, self.user, self.uid, self)
+
+        if time_to_expire:
+            self.expire_timeout = IOLoop.current().add_timeout(
+                time.time() + project.get("connection_lifetime", 3600), self.expire
+            )
+
+        body = {
+            "client": self.uid,
+            "expired": False,
+            "ttl": project.get("connection_lifetime", 3600) if project.get("connection_check", False) else None
+        }
+        raise Return((body, None))
+
+    @coroutine
+    def expire(self):
+
+        # give client a chance to save its connection
+        yield sleep(self.application.EXPIRED_CONNECTION_CLOSE_DELAY)
+
+        project, error = yield self.application.get_project(self.project_id)
+        if error:
+            raise Return((None, error))
+
+        if not project.get("connection_check", False):
+            raise Return((True, None))
+
+        time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - time.time()
+        if time_to_expire > 0:
+            # connection saved
+            raise Return((True, None))
+
+        # close connection immediately
+        yield self.close_sock(pause=False)
+
+        raise Return((True, None))
+
+    @coroutine
+    def handle_refresh(self, params):
+        """
+        Handle request with refreshed connection timestamp
+        """
+        if not self.is_authenticated:
+            raise Return((None, self.application.UNAUTHORIZED))
+
+        project_id = params["project"]
+        user = params["user"]
+        timestamp = params["timestamp"]
+        info = params.get("info", "{}")
+        token = params["token"]
+
+        project, error = yield self.application.get_project(project_id)
+        if error:
+            raise Return((None, error))
+
+        secret_key = project['secret_key']
+
+        error_msg = self.validate_token(
+            token, secret_key, project_id, user, timestamp, info
+        )
+        if error_msg:
+            raise Return((None, error_msg))
 
         try:
             timestamp = int(timestamp)
         except ValueError:
             raise Return((None, "invalid timestamp"))
 
-        self.user = user
-        self.examined_at = timestamp
+        time_to_expire = timestamp + project.get("connection_lifetime", 3600) - time.time()
+        if time_to_expire > 0:
+            self.timestamp = timestamp
+            if self.expire_timeout:
+                IOLoop.current().remove_timeout(self.expire_timeout)
+            self.expire_timeout = IOLoop.current().add_timeout(
+                time.time() + time_to_expire, self.expire
+            )
+        else:
+            raise Return((None, "connection expired"))
 
-        if self.is_connection_must_be_checked(project, self.examined_at):
-            # connection expired - this is a rare case when Centrifuge went offline
-            # for a while or client turned on his computer from sleeping mode.
-
-            # put this client into the queue of connections waiting for
-            # permission to reconnect with expired credentials. To avoid waiting
-            # client must reconnect with actual credentials i.e. reload browser
-            # window.
-
-            if project_id not in self.application.expired_reconnections:
-                self.application.expired_reconnections[project_id] = []
-            self.application.expired_reconnections[project_id].append(self)
-
-            if project_id not in self.application.expired_connections:
-                self.application.expired_connections[project_id] = {
-                    "users": set(),
-                    "checked_at": None
-                }
-            self.application.expired_connections[project_id]["users"].add(user)
-
-            self.connect_queue = toro.Queue(maxsize=1)
-            value = yield self.connect_queue.get()
-            if not value:
-                yield self.close_sock()
-                raise Return((None, self.application.UNAUTHORIZED))
-            else:
-                self.connect_queue = None
-
-        # Welcome to Centrifuge dear Connection!
-        self.is_authenticated = True
-        self.project_id = project_id
-        self.token = token
-        self.default_user_info = {
-            'user_id': self.user,
-            'client_id': self.uid,
-            'default_info': user_info,
-            'channel_info': None
+        body = {
+            "ttl": project.get("connection_lifetime", 3600) if project.get("connection_check", False) else None
         }
-        self.channels = {}
 
-        self.presence_ping_task = PeriodicCallback(
-            self.send_presence_ping, self.application.engine.presence_ping_interval
-        )
-        self.presence_ping_task.start()
-
-        self.application.add_connection(project_id, self.user, self.uid, self)
-
-        raise Return((self.uid, None))
+        raise Return((body, None))
 
     @coroutine
     def handle_subscribe(self, params):
@@ -495,7 +481,7 @@ class Client(object):
         }
 
         if self.application.USER_SEPARATOR in channel:
-            users_allowed = channel.rsplit(self.application.USER_SEPARATOR, 1)[1].split(',')
+            users_allowed = self.application.get_allowed_users(channel)
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
 
@@ -509,21 +495,21 @@ class Client(object):
         if not anonymous and not self.user:
             raise Return((body, self.application.PERMISSION_DENIED))
 
-        is_private = namespace.get('is_private', False)
+        is_private = self.application.is_channel_private(channel)
 
         if is_private:
-            auth_address = namespace.get('auth_address', None)
-            if not auth_address:
-                auth_address = project.get('auth_address', None)
-            if not auth_address:
-                raise Return((body, 'no auth address found'))
-            is_authorized, error = yield self.authorize(
-                auth_address, project, channel
+            client = params.get("client", "")
+            if client != self.uid:
+                raise Return((body, self.application.UNAUTHORIZED))
+            sign = params.get("sign", "")
+            info = params.get("info", "{}")
+            is_authorized = auth.check_channel_sign(
+                sign, project.get("secret_key"), client, channel, info
             )
-            if error:
-                raise Return((body, self.application.INTERNAL_SERVER_ERROR))
             if not is_authorized:
-                raise Return((body, self.application.PERMISSION_DENIED))
+                raise Return((body, self.application.UNAUTHORIZED))
+
+            self.update_channel_info(info, channel)
 
         yield self.application.engine.add_subscription(
             project_id, channel, self
@@ -531,10 +517,10 @@ class Client(object):
 
         self.channels[channel] = True
 
-        user_info = self.get_user_info(channel)
+        info = self.get_info(channel)
 
         yield self.application.engine.add_presence(
-            project_id, channel, self.uid, user_info
+            project_id, channel, self.uid, info
         )
 
         if namespace.get('join_leave', False):
@@ -618,12 +604,12 @@ class Client(object):
         if not namespace.get('publish', False):
             raise Return((body, self.application.PERMISSION_DENIED))
 
-        user_info = self.get_user_info(channel)
+        info = self.get_info(channel)
 
         result, error = yield self.application.process_publish(
             project,
             params,
-            client=user_info
+            client=info
         )
         body["status"] = result
         raise Return((body, error))
@@ -697,10 +683,10 @@ class Client(object):
         subscription_key = self.application.engine.get_subscription_key(
             self.project_id, channel
         )
-        user_info = self.get_user_info(channel)
+        info = self.get_info(channel)
         message = {
             "channel": channel,
-            "data": user_info
+            "data": info
         }
         self.application.engine.publish_message(
             subscription_key, message, method=message_method
@@ -726,7 +712,7 @@ class Client(object):
         Send disconnect message - after receiving it proper client
         must close connection and do not reconnect.
         """
-        reason = reason or "go away!"
+        reason = reason or "default"
         message_body = {
             "reason": reason
         }

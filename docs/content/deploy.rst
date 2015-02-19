@@ -121,6 +121,37 @@ localhost.
 So best solution would be using something like `nginx-sticky-module <http://code.google.com/p/nginx-sticky-module/>`_
 which uses a cookie to track the upstream server for making each client unique.
 
+Also you will probably want API calls spread over one or several Centrifuge instances, you
+can just create new custom upstream and use it for ``/api`` location:
+
+.. code-block:: bash
+
+        ...
+
+        upstream centrifuge-api {
+            server 127.0.0.1:8000;
+            server 127.0.0.1:8001;
+            server 127.0.0.1:8002;
+        }
+
+        server {
+
+            ...
+
+            location /api {
+                proxy_pass_header Server;
+                proxy_set_header Host $http_host;
+                proxy_redirect off;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Scheme $scheme;
+                proxy_pass http://centrifuge-api;
+            }
+
+            ...
+
+        }
+
+        ...
 
 Supervisord configuration example
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

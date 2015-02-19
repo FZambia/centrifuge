@@ -262,11 +262,6 @@ class Structure:
             "display_name": kwargs['display_name'],
             "connection_check": kwargs.get("connection_check", False),
             "connection_lifetime": kwargs.get('connection_lifetime', forms.DEFAULT_CONNECTION_LIFETIME),
-            "connection_check_interval": kwargs.get('connection_check_interval', forms.DEFAULT_CONNECTION_CHECK_INTERVAL),
-            "connection_check_address": kwargs.get('connection_check_address', ''),
-            "max_auth_attempts": kwargs.get('max_auth_attempts', forms.DEFAULT_MAX_AUTH_ATTEMPTS),
-            "back_off_interval": kwargs.get('back_off_interval', forms.DEFAULT_BACK_OFF_INTERVAL),
-            "back_off_max_timeout": kwargs.get('back_off_max_timeout', forms.DEFAULT_BACK_OFF_MAX_TIMEOUT),
             'publish': kwargs.get('publish', False),
             'is_watching': kwargs.get('is_watching', True),
             'anonymous': kwargs.get('anonymous', False),
@@ -274,8 +269,6 @@ class Structure:
             'history': kwargs.get('history', True),
             'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
             'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
-            'is_private': kwargs.get('is_private', False),
-            'auth_address': kwargs.get('auth_address', ''),
             'join_leave': kwargs.get('join_leave', True)
         }
 
@@ -296,11 +289,6 @@ class Structure:
             'display_name': kwargs['display_name'],
             "connection_check": kwargs.get("connection_check", False),
             "connection_lifetime": kwargs.get('connection_lifetime', forms.DEFAULT_CONNECTION_LIFETIME),
-            "connection_check_interval": kwargs.get('connection_check_interval', forms.DEFAULT_CONNECTION_CHECK_INTERVAL),
-            "connection_check_address": kwargs.get('connection_check_address', ''),
-            "max_auth_attempts": kwargs.get('max_auth_attempts', forms.DEFAULT_MAX_AUTH_ATTEMPTS),
-            "back_off_interval": kwargs.get('back_off_interval', forms.DEFAULT_BACK_OFF_INTERVAL),
-            "back_off_max_timeout": kwargs.get('back_off_max_timeout', forms.DEFAULT_BACK_OFF_MAX_TIMEOUT),
             'publish': kwargs.get('publish', False),
             'is_watching': kwargs.get('is_watching', True),
             'anonymous': kwargs.get('anonymous', False),
@@ -308,8 +296,6 @@ class Structure:
             'history': kwargs.get('history', True),
             'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
             'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
-            'is_private': kwargs.get('is_private', False),
-            'auth_address': kwargs.get('auth_address', ''),
             'join_leave': kwargs.get('join_leave', True)
         }
 
@@ -344,8 +330,6 @@ class Structure:
             'history': kwargs.get('history', True),
             'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
             'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
-            'is_private': kwargs.get('is_private', False),
-            'auth_address': kwargs.get('auth_address', ''),
             'join_leave': kwargs.get('join_leave', True)
         }
 
@@ -365,8 +349,6 @@ class Structure:
             'history': kwargs.get('history', True),
             'history_size': kwargs.get('history_size', forms.DEFAULT_HISTORY_SIZE),
             'history_expire': kwargs.get('history_expire', forms.DEFAULT_HISTORY_EXPIRE),
-            'is_private': kwargs.get('is_private', False),
-            'auth_address': kwargs.get('auth_address', ''),
             'join_leave': kwargs.get('join_leave', True)
         }
 
