@@ -172,3 +172,4 @@ LICENSE
 MIT
 
 [![Requirements Status](https://requires.io/github/centrifugal/centrifuge/requirements.png?branch=master)](https://requires.io/github/centrifugal/centrifuge/requirements/?branch=master)
+[![Build Status](https://travis-ci.org/centrifugal/centrifuge.svg?branch=master)](https://travis-ci.org/centrifugal/centrifuge)
