@@ -1,8 +1,6 @@
 Master branch - 0.7.0dev
 ========================
 
-TODO: check connection with info and without info
-
 Some backwards incompatible changes here.
 
 * new Pusher-like private channel auth mechanism - see documentation.
@@ -12,7 +10,8 @@ Some backwards incompatible changes here.
 * Redis engine now can listen for API commands - Redis must be firewalled and only owner should use this as there is no secret key based sign check. Due to use of PUB/SUB for this you can only use commands for which you don't need response body or error - ex. `publish`, `unsubscribe`...
 * Tornado updated to version 4.1
 
-How to migrate:
+How to migrate
+--------------
 
 * update Cent client to latest version. If you don't use Cent then you should update your code.
 * if you are using old private channel subscription mechanism via POST request from Centrifuge then you should migrate using new one.
@@ -20,13 +19,15 @@ How to migrate:
 * note that `user_info` kwarg renamed to `info` in Cent `generate_token` function
 * ``path`` option in File structure renamed into ``file`` to not overlap with ``path`` in Sqlite structure backend.
 
-How to start Centrifuge in insecure mode:
+How to start Centrifuge in insecure mode
+----------------------------------------
 
 ```
 CENTRIFUGE_INSECURE=1 centrifuge --logging=debug --debug --config=config.json
 ```
 
-How to publish via Redis engine API listener:
+How to publish via Redis engine API listener
+--------------------------------------------
 
 Start Centrifuge with Redis Engine and `--redis_api` option:
 
