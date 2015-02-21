@@ -78,7 +78,7 @@ $(ALL): $(SOURCES)
 	touch $(ALL)  # flag to indicate all setup steps were successful
 
 .PHONY: ci
-ci: check test tests
+ci: test tests
 
 # Development Installation ###################################################
 
