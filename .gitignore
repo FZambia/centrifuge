@@ -1,14 +1,36 @@
+# Temporary Python files
 *.pyc
+*.egg-info
+__pycache__
+.ipynb_checkpoints
+
+# Temporary OS files
+Icon*
+
+# Temporary virtualenv files
+.cache
+env
+
+# Testing and coverage results
 .coverage
+pyunit.xml
+
+# Build and release directories
+build
+dist
+
+# Sublime Text
+*.sublime-workspace
+
+# Eclipse
+.settings
+
+
 examples/django/application/local_settings.py
 config_dev.json
 centrifuge.db
-build/*
-centrifuge.egg-info/*
 node_modules/*
-dist/*
 *.rdb
 docs/_build/*
 javascript/node_modules/*
 .tox
-*.egg

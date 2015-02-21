@@ -130,7 +130,7 @@ Or:
 
 .. code-block:: bash
 
-    CENTRIFUGE_STORAGE=file centrifuge --port=8001 --path=/path/to/json/file/with/structure
+    CENTRIFUGE_STORAGE=file centrifuge --port=8001 --file=/path/to/json/file/with/structure
 
 Use structure from JSON file.
 

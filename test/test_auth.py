@@ -3,7 +3,7 @@ import json
 import time
 from unittest import TestCase, main
 
-from centrifuge.auth import get_client_token, check_sign
+from centrifuge.auth import get_client_token, check_sign, check_channel_sign
 
 
 class AuthTest(TestCase):
@@ -30,6 +30,13 @@ class AuthTest(TestCase):
             self.secret_key, self.project_id, self.user_id, str(now), user_info=self.user_info
         )
         self.assertTrue(token_no_info != token_with_info)
+
+    def test_channel_sign(self):
+        res = check_channel_sign('w', self.secret_key, 'test', 'channel', 'channel data')
+        self.assertEqual(res, False)
+
+        res = check_channel_sign('w'*64, self.secret_key, 'test', 'channel', 'channel data')
+        self.assertEqual(res, False)
 
 
 if __name__ == '__main__':

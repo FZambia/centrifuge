@@ -26,6 +26,7 @@ class Options(object):
     redis_password = ""
     redis_db = 0
     redis_url = ""
+    redis_api = False
 
 
 class BaseEngineTest(AsyncTestCase):
@@ -37,7 +38,7 @@ class BaseEngineTest(AsyncTestCase):
 
     def test_get_subscription_key(self):
         key = self.engine.get_subscription_key('project', 'channel')
-        self.assertEqual(key, "centrifuge|project|channel")
+        self.assertEqual(key, "centrifuge.project.channel")
 
 
 class MemoryEngineTest(AsyncTestCase):

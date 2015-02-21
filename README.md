@@ -154,14 +154,7 @@ Tests
 IMPORTANT! At moment tests require Redis running and clear database on every running. Be aware of this!
 
 ```bash
-pip install tox
-tox
-```
-
-or just
-
-```bash
-python setup.py test
+make test
 ```
 
 Contributing

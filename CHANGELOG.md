@@ -18,6 +18,7 @@ How to migrate:
 * if you are using old private channel subscription mechanism via POST request from Centrifuge then you should migrate using new one.
 * if you are using connection check then you should adapt your code to use new mechanism
 * note that `user_info` kwarg renamed to `info` in Cent `generate_token` function
+* ``path`` option in File structure renamed into ``file`` to not overlap with ``path`` in Sqlite structure backend.
 
 How to start Centrifuge in insecure mode:
 
