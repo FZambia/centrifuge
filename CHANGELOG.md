@@ -7,7 +7,7 @@ Some backwards incompatible changes here.
 
 * new Pusher-like private channel auth mechanism - see documentation.
 * new connection check mechanism - see documentation
-* insecure mode to use Centrifuge as simple solution for real-time demos, personal presentations, testing ideas etc.
+* insecure mode to use Centrifuge as simple solution for real-time demos, personal presentations, testing ideas etc. This mode allows to connect to Centrifuge without token, timestamp and user parameters. This mode turns on ``anonymous`` access option for all channels and turns on ``publish`` option for all channels. See demo.
 * support for `sha256` in signs and tokens HMACs - sha256 is now used by default in new version of Cent.
 * Redis engine now can listen for API commands - Redis must be firewalled and only owner should use this as there is no secret key based sign check. Due to use of PUB/SUB for this you can only use commands for which you don't need response body or error - ex. `publish`, `unsubscribe`...
 * Tornado updated to version 4.1
@@ -19,12 +19,18 @@ How to migrate:
 * if you are using connection check then you should adapt your code to use new mechanism
 * note that `user_info` kwarg renamed to `info` in Cent `generate_token` function
 
+How to start Centrifuge in insecure mode:
+
+```
+CENTRIFUGE_INSECURE=1 centrifuge --logging=debug --debug --config=config.json
+```
+
 How to publish via Redis engine API listener:
 
 Start Centrifuge with Redis Engine and `--redis_api` option:
 
 ```
-CENTRIFUGE_ENGINE=redis python centrifuge/node.py --logging=debug --config=config.json --redis_api
+CENTRIFUGE_ENGINE=redis centrifuge --logging=debug --config=config.json --redis_api
 ```
 
 Then use Redis client for your favorite language, ex. for Python:

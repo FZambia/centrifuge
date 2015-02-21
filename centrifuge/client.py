@@ -163,7 +163,7 @@ class Client(object):
 
         try:
             schema_name = method
-            if self.application.INSECURE:
+            if self.application.INSECURE and schema_name == 'connect':
                 # if Centrifuge run in insecure mode we use simplified connection
                 # schema to allow clients connect without timestamp and token
                 schema_name = "connect_insecure"
@@ -492,7 +492,7 @@ class Client(object):
         project_id = self.project_id
 
         anonymous = namespace.get('anonymous', False)
-        if not anonymous and not self.user:
+        if not anonymous and not self.user and not self.application.INSECURE:
             raise Return((body, self.application.PERMISSION_DENIED))
 
         is_private = self.application.is_channel_private(channel)
@@ -601,7 +601,7 @@ class Client(object):
         if error:
             raise Return((body, error))
 
-        if not namespace.get('publish', False):
+        if not namespace.get('publish', False) and not self.application.INSECURE:
             raise Return((body, self.application.PERMISSION_DENIED))
 
         info = self.get_info(channel)
