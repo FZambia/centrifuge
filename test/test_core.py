@@ -33,6 +33,23 @@ class CoreTest(TestCase):
         channel = 'namespace:channel#user1,user2'
         self.assertEqual(self.app.extract_namespace_name(channel), 'namespace')
 
+        channel = '$namespace:channel'
+        self.assertEqual(self.app.extract_namespace_name(channel), 'namespace')
+
+    def test_get_allowed_users(self):
+
+        channel = 'namespace:channel#2'
+        self.assertEqual(self.app.get_allowed_users(channel), ['2'])
+
+        channel = 'channel#1,34'
+        self.assertEqual(self.app.get_allowed_users(channel), ['1', '34'])
+
+    def test_is_channel_private(self):
+        channel = "channel"
+        self.assertEqual(self.app.is_channel_private(channel), False)
+
+        channel = "$channel"
+        self.assertEqual(self.app.is_channel_private(channel), True)
 
 if __name__ == '__main__':
     main()
