@@ -1,7 +1,7 @@
-Admin API
-=========
+Centrifuge API
+==============
 
-.. _admin_api:
+.. _api:
 
 Overview
 ~~~~~~~~

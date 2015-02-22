@@ -1,7 +1,7 @@
-Client API
-==========
+Centrifuge javascript client
+============================
 
-.. _client_api:
+.. _javascript_client:
 
 
 Simple javascript browser client
@@ -264,6 +264,30 @@ Finally if you don't want batching anymore call ``stopBatching()`` method:
 
 call ``stopBatching(true)`` to flush all messages and stop batching.
 
+
+Version 0.7.0 introduced new pusher-like private channel subscription mechanism. Now if
+channel name starts with ``$`` (by default) then subscription on this channel will be
+checked via AJAX POST request from javascript to your web application.
+
+You subscribe on private channel as usual:
+
+.. code-block:: javascript
+
+    centrifuge.subscribe('$private', function(message) {
+        // process message
+    });
+
+
+But in this case client will first check subscription via your backend sending POST request
+to ``/centrifuge/auth`` endpoint (by default). This request will contain ``client`` parameter
+which is your connection client ID and ``channels`` parameter - one or multiple private channels
+client wants to subscribe to. Your server should validate all this subscriptions and return
+properly signed responses.
+
+There are also two new public API methods which can help to subscribe to many private
+channels sending only one POST request to your web application backend: ``startAuthBatching``
+and ``stopAuthBatching``. When you ``startAuthBatching`` centrifuge js client will collect
+private subscriptions until ``stopAuthBatching`` call - and then send them all at once.
 
 
 Make it even more simple

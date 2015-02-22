@@ -5,9 +5,12 @@
    content/install
    content/description
    content/configuration
-   content/client_api
-   content/admin_api
    content/web_interface
+   content/api
+   content/javascript_client
+   content/tokens_and_signatures
+   content/insecure_mode
+   content/connection_check
    content/deploy
    content/contribute_and_license
 
