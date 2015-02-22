@@ -289,6 +289,8 @@ channels sending only one POST request to your web application backend: ``startA
 and ``stopAuthBatching``. When you ``startAuthBatching`` centrifuge js client will collect
 private subscriptions until ``stopAuthBatching`` call - and then send them all at once.
 
+Read more about private channels in special documentation chapter.
+
 
 Plugins
 ~~~~~~~
