@@ -6,8 +6,8 @@
    content/description
    content/configuration
    content/web_interface
-   content/api
-   content/javascript_client
+   content/server_api
+   content/client_api
    content/tokens_and_signatures
    content/insecure_mode
    content/connection_check
