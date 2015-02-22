@@ -194,10 +194,10 @@
                 if (typeof data["admin"] != 'undefined') {
                     handle_admin_message(data);
                 } else {
-                    var event_id = data['uid'];
-                    var channel = data['channel'];
-                    var event_data = data['data'];
-                    var project_id = data['project_id'];
+                    var event_id = data['message']['uid'];
+                    var channel = data['message']['channel'];
+                    var event_data = data['message']['data'];
+                    var project_id = data['project'];
                     project = get_project_by_id(project_id);
                     var active_tab_id = get_active_tab_id();
                     var tab = get_tab_for_project(project);

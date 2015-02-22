@@ -697,7 +697,7 @@ class Application(tornado.web.Application):
         """
         Publish event into PUB socket stream
         """
-        project_id = message['project_id']
+        project_id = project['_id']
         channel = message['channel']
 
         namespace, error = yield self.get_namespace(project, channel)
@@ -706,15 +706,15 @@ class Application(tornado.web.Application):
 
         if namespace.get('is_watching', False):
             # send to admin channel
-            self.engine.publish_admin_message(message)
+            self.engine.publish_admin_message({
+                "project": project_id,
+                "message": message
+            })
 
         # send to event channel
         subscription_key = self.engine.get_subscription_key(
             project_id, channel
         )
-
-        # no need in project id when sending message to clients
-        del message['project_id']
 
         self.engine.publish_message(subscription_key, message)
 
@@ -735,20 +735,23 @@ class Application(tornado.web.Application):
         """
         Prepare message before actual publishing.
         """
+        channel = params.get('channel')
+        if not channel:
+            raise Return((None, None))
+
         data = params.get('data', None)
 
         message = {
-            'project_id': project['_id'],
             'uid': uuid.uuid4().hex,
             'timestamp': int(time.time()),
             'client': client,
-            'channel': params.get('channel'),
+            'channel': channel,
             'data': data
         }
 
         for callback in self.pre_publish_callbacks:
             try:
-                message = yield callback(message)
+                message = yield callback(project["_id"], message)
             except Exception as err:
                 logger.exception(err)
             else:
@@ -781,7 +784,7 @@ class Application(tornado.web.Application):
 
         for callback in self.post_publish_callbacks:
             try:
-                yield callback(message)
+                yield callback(project["_id"], message)
             except Exception as err:
                 logger.exception(err)
 

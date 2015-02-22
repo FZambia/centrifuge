@@ -9,6 +9,8 @@ Some backwards incompatible changes here.
 * support for `sha256` in signs and tokens HMACs - sha256 is now used by default in new version of Cent.
 * Redis engine now can listen for API commands - Redis must be firewalled and only owner should use this as there is no secret key based sign check. Due to use of queue mechanism for this you can only use commands for which you don't need response body or error - ex. `publish`, `unsubscribe`...
 * Tornado updated to version 4.1
+* do not publish if channel name is empty string
+* `pre_publish_callbacks` and `post_publish_callbacks` now accept 2 arguments - `project_id` and `message`
 
 How to migrate
 --------------

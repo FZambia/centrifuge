@@ -294,13 +294,12 @@ class Engine(BaseEngine):
         if channel == self.control_channel_name:
             yield self.handle_control_message(json_decode(redis_message[2]))
         elif channel == self.admin_channel_name:
-            yield self.handle_admin_message(json_decode(redis_message[2]))
+            yield self.handle_admin_message(redis_message[2])
         else:
             yield self.handle_message(channel, redis_message[2])
 
     @coroutine
     def handle_admin_message(self, message):
-        message = json_encode(message)
         for uid, connection in six.iteritems(self.application.admin_connections):
             if uid not in self.application.admin_connections:
                 continue
