@@ -28,6 +28,6 @@ intersphinx_mapping = {
     'python': ('http://python.readthedocs.org/en/latest/', None),
 }
 
-html_theme = "sphinx_rtd_theme"
+html_theme = "centrifuge_sphinx_rtd_theme"
 html_theme_path = ["_themes", ]
 
