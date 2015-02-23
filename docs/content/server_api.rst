@@ -38,8 +38,42 @@ validate request.
 ``method`` is a name of action you want to do.
 ``params`` is an object with method arguments.
 
-There are lots of methods you can call. Some for managing project structure, some for managing
-channels.
+First lets see how to construct such request in Python. If Python is your language then you
+don't have to implement this yourself as ``Cent`` module exists. But this example here can
+be useful for someone who want to implement interaction with Centrifuge API in language for
+which we don't have API client yet.
+
+Lets imagine that you have a project with ID ``xfu23`` and secret key ``uutryx``. In web
+interface of Centrifuge you can find HTTP API url, if you run Centrifuge locally then it
+will be something like ``http://localhost:8000/api``
+
+So you should send POST request to ``http://localhost:8000/api/xfu23``.
+
+.. code-block:: python
+
+        from urllib2 import urlopen, Request
+        from cent.core import generate_api_sign
+        import json
+
+        req = Request("http://localhost:8000/api/xfu23")
+
+        commands = [
+            {
+                "method": "publish",
+                "params": {"channel": "docs", "data": {"json": True}}
+            }
+        ]
+        encoded_data = json.dumps(commands)
+        sign = generate_api_sign("uutryx", "xfu23", encoded_data)
+
+        data = urlencode({'sign': sign, 'data': encoded_data})
+        response = urlopen(req, data, timeout=5)
+
+
+See how to generate HMAC api sign in special chapter "Tokens and signatures"
+
+There are lots of commands you can call. Some for managing project structure, some
+for managing channels. Lets take a closer look on them.
 
 
 Methods for managing channels

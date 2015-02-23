@@ -48,7 +48,7 @@ class ProjectMixin(object):
         label='connection check',
         validators=[],
         default=False,
-        description="check expired connections sending POST request to web application"
+        description="check expired connections"
     )
 
     connection_lifetime = IntegerField(
@@ -135,9 +135,8 @@ class NamespaceMixin(object):
         ],
         default=DEFAULT_HISTORY_EXPIRE,
         description="time in seconds to keep history for inactive channels. 0 - "
-                    "do not expire at all - not recommended though as this can lead to"
-                    "memory leaks (as Centrifuge keeps all history in memory), default "
-                    "is 86400 seconds (24 hours)"
+                    "do not expire at all - not recommended though as this can lead to "
+                    "memory leaks (as Centrifuge keeps all history in memory)"
     )
 
     join_leave = BooleanField(
