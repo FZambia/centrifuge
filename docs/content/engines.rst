@@ -56,7 +56,7 @@ See available redis engine specific options using ``--help``:
 
 
 How to publish via Redis engine API listener? Start Centrifuge with Redis
-engine and `--redis_api` option:
+engine and ``--redis_api`` option:
 
 .. code-block:: bash
 
@@ -89,14 +89,14 @@ Then use Redis client for your favorite language, ex. for Python:
     client.rpush("centrifuge.api", json.dumps(to_send))
 
 
-So you send JSON object with project ID as a value for `project` key and list
-of commands as a value for `data` key.
+So you send JSON object with project ID as a value for ``project`` key and list
+of commands as a value for ``data`` key.
 
 Note again - you don't have response here. If you need to check response - you
-should use HTTP API. For example, it's absolutely useless to call `namespace_list`
+should use HTTP API. For example, it's absolutely useless to call ``namespace_list``
 using this.
 
-`publish` is the most usable command in Centrifuge so Redis API listener was
+``publish`` is the most usable command in Centrifuge so Redis API listener was
 invented with primary goal to reduce HTTP overhead when publishing quickly.
 This can also help using Centrifuge with other languages for which we don't
 have HTTP API client yet.

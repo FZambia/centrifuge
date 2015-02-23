@@ -19,49 +19,13 @@ from centrifuge.handlers import BaseHandler
 from centrifuge.forms import ProjectForm, NamespaceForm
 
 
-flash_messages = {
-    "project_create_success": "New project created",
-    "project_update_success": "Project settings updated",
-    "project_delete_success": "Project deleted",
-    "project_delete_error": "Project not deleted",
-    "project_secret_regenerate_success": "Project secret key regenerated",
-    "project_secret_regenerate_error": "Project secret key not modified",
-    "namespace_create_success": "New namespace created",
-    "namespace_update_success": "Namespace settings updated",
-    "namespace_delete_success": "Namespace deleted",
-    "namespace_delete_error": "Namespace not deleted",
-}
-
-
 class WebBaseHandler(BaseHandler):
-
-    FLASH_COOKIE_NAME = 'flash'
 
     def get_current_user(self):
         user = self.get_secure_cookie("user")
         if not user:
             return None
         return user
-
-    def get_flash_message(self):
-        """
-        Returns the flash message.
-        """
-        cookie = self.get_secure_cookie(self.FLASH_COOKIE_NAME)
-        if cookie:
-            self.clear_cookie(self.FLASH_COOKIE_NAME)
-            return json_decode(cookie)
-        return None
-
-    def set_flash_message(self, message, status='success'):
-        """
-        Stores a Flash object as a flash cookie under a given key.
-        """
-        flash = {
-            'message': message,
-            'status': status
-        }
-        self.set_secure_cookie(self.FLASH_COOKIE_NAME, json_encode(flash))
 
 
 class LogoutHandler(WebBaseHandler):
@@ -168,7 +132,6 @@ class ProjectCreateHandler(WebBaseHandler):
                 render_control=render_control, render_label=render_label
             )
         else:
-            self.set_flash_message(flash_messages["project_create_success"])
             self.redirect(self.reverse_url('main'))
 
 
@@ -213,9 +176,6 @@ class ProjectDetailHandler(WebBaseHandler):
             res, error = yield self.application.structure.regenerate_project_secret_key(self.project)
             if error:
                 raise tornado.web.HTTPError(500, log_message=str(error))
-            self.set_flash_message(flash_messages["project_secret_regenerate_success"])
-        else:
-            self.set_flash_message(flash_messages["project_secret_regenerate_error"], status="danger")
 
         self.redirect(self.reverse_url("project_detail", self.project['_id'], 'credentials'))
 
@@ -240,10 +200,8 @@ class ProjectDetailHandler(WebBaseHandler):
                 res, error = yield self.application.structure.project_delete(self.project)
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
-                self.set_flash_message(flash_messages["project_delete_success"])
                 self.redirect(self.reverse_url("main"))
             else:
-                self.set_flash_message(flash_messages["project_delete_error"], status="danger")
                 self.redirect(self.reverse_url("project_detail", self.project['_id'], "settings"))
 
         else:
@@ -262,7 +220,6 @@ class ProjectDetailHandler(WebBaseHandler):
                     form=error, render_control=render_control, render_label=render_label
                 )
             else:
-                self.set_flash_message(flash_messages["project_update_success"])
                 self.redirect(self.reverse_url("project_detail", self.project['_id'], "settings"))
 
     @coroutine
@@ -403,12 +360,10 @@ class NamespaceFormHandler(WebBaseHandler):
                 )
                 if error:
                     raise tornado.web.HTTPError(500, log_message=str(error))
-                self.set_flash_message(flash_messages["namespace_delete_success"])
                 self.redirect(
                     self.reverse_url("project_detail", self.project['_id'], 'namespaces')
                 )
             else:
-                self.set_flash_message(flash_messages["namespace_delete_error"], status="danger")
                 self.redirect(
                     self.reverse_url("namespace_edit", self.project['_id'], namespace_id)
                 )
@@ -440,8 +395,6 @@ class NamespaceFormHandler(WebBaseHandler):
                     render_control=render_control, render_label=render_label
                 )
             else:
-                flash_key = "namespace_update_success" if is_editing else "namespace_create_success"
-                self.set_flash_message(flash_messages[flash_key])
                 self.redirect(self.reverse_url("project_detail", self.project['_id'], 'namespaces'))
 
 
