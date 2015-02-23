@@ -6,6 +6,6 @@
 Centrifuge
 ==========
 
-Welcome to Centrifuge's documentation.
+Simple real-time messaging in web applications.
 
 .. include:: contents.rst.inc
