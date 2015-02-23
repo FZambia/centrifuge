@@ -1,5 +1,5 @@
-Centrifuge javascript client
-============================
+Javascript client
+=================
 
 .. _javascript_client:
 

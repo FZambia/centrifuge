@@ -1,5 +1,5 @@
-Centrifuge API
-==============
+Server API
+==========
 
 .. _api:
 
