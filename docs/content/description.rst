@@ -164,57 +164,15 @@ the form in web interface.
 **display name** - project's name in web interface.
 
 **connection check** - turn on connection check mechanism. When clients connect to Centrifuge
-they provide timestamp - the UNIX time when their token was created. Every connection in project has
-connection lifetime (see below). If connection check turned on - Centrifuge will periodically search
-for expired connections and ask your web application which of expired clients must be dropped.
-This mechanism is disabled by default because it needs extra endpoint to be written in your
-application (at ``connection check url address`` - see below).
-
-One more time: every connection has a time of expiration which is configurable via project settings.
-Centrifuge periodically searches for expired connections and sends POST request to your web app with
-list of user IDs whose connections expired. Your web app must filter this list  and return a list of
-deactivated users - Centrifuge immediately disconnects them. There is a possibility though that client
-will try to reconnect with his credentials right after he was disconnected. If his credentials already
-expired - his connection will be paused until next check request. If his credentials are not expired
-- connection will be accepted by Centrifuge. But when connection expire your web application will
-tell Centrifuge that this user is deactivated - so connection will be dropped forever. As you can see
-there is a little compromise in security model which you should be aware of - deactivated user can
-theoretically listen to channels until his connection expire. The time of connection expiration is
-configurable (see below).
+they provide timestamp - the UNIX time when their token was created. Every connection in
+project has connection lifetime (see below). This mechanism is disabled by default and
+requires extra endpoint to be implemented in your application.
 
 **connection lifetime in seconds** - this is a time interval in seconds for connection to expire.
 Keep it as large as possible in your case.
 
-**connection check url address** - Centrifuge will send a list of users whose connections expired to
-this address (POST request).
-
-**minimum connection check interval** - you can configure minimum interval between connection check POST requests to
-``connection check url address`` (in seconds)
-
-**max auth attempts** - amount of attempts Centrifuge will try to validate user's permissions
-sending POST request to ``auth address``
-
-**back off interval** - at the moment when Centrifuge restarts your web application can
-have lots of active connected clients. All those client will reconnect and Centrifuge will
-send authorization request to your web application's ``auth address``. For such cases Centrifuge
-has `exponential back-off <http://en.wikipedia.org/wiki/Exponential_backoff>`_ support to reduce
-load on your application. This is time of back of minimum interval in milliseconds.
-
-**back off max timeout** - maximum time in milliseconds for backoff timeout (time before client
-connects to Centrifuge and sending authorization request to ``auth address``).
-
 **is watching** - publish messages into admin channel (messages will be visible in web interface).
 Turn it off if you expect high load in channels.
-
-**is private** - authorize every subscription on channel using POST request to provided auth address (see below)
-
-**auth url address** - url for authorization purposes, when your web application's client
-joins to Centrifuge - you provide user id in connection parameters. Centrifuge sends POST
-request with user id and channel name on this URL address when client wants to subscribe on channel
-and then Centrifuge checks response code returned from your web application (200 means allow to subscribe
-on channel, 403 - access denied, other error HTTP codes result in further attempts to ask your web app
-about authorization after some timeout - see ``max_auth_attempts``). This can be rather expensive for web application so using # in channel name
-or using hard-to-guess channel names to restrict access to channels could be a better choice.
 
 **publish** - allow clients to publish messages in channels (your web application never receive those messages)
 
@@ -248,7 +206,7 @@ BUT! You should remember several things.
 
 First, channel name length is limited by 255 characters by default (can be changed via configuration file option ``max_channel_length``)
 
-Second, ``:`` and ``#`` symbols has a special role in channel names!
+Second, ``:`` and ``#`` and ``$`` symbols has a special role in channel names!
 
 ``:`` - is a separator for namespace (see what is namespace below).
 
@@ -260,6 +218,9 @@ can subscribe on this channel.
 
 Moreover you can provide several user IDs in channel name separated by comma: ``dialog#user42,user43`` -
 in this case only ``user42`` and ``user43`` will be able to subscribe on this channel.
+
+If channel starts with ``$`` (by default) then it's considered private. Read special
+chapter in docs about private channel subscriptions.
 
 
 Namespaces
@@ -283,8 +244,8 @@ name into channel name with ``:`` as separator:
 
 For example:
 
-``public:news``
+``news:messages``
 
-``private:news``
+``gossips:messages``
 
-Where ``public`` and ``private`` are namespace names.
+Where ``news`` and ``gossips`` are namespace names.

@@ -3,10 +3,10 @@ Master branch - 0.7.0dev
 
 Some backwards incompatible changes here.
 
-* new Pusher-like private channel auth mechanism - see documentation.
-* new connection check mechanism - see documentation
-* insecure mode to use Centrifuge as simple solution for real-time demos, personal presentations, testing ideas etc. This mode allows to connect to Centrifuge without token, timestamp and user parameters. This mode turns on ``anonymous`` access option for all channels and turns on ``publish`` option for all channels. See demo.
-* support for `sha256` in signs and tokens HMACs - sha256 is now used by default in new version of Cent.
+* new Pusher-like private channel auth mechanism - see [documentation](http://centrifuge.readthedocs.org/en/latest/content/private_channels.html).
+* new connection check mechanism - see [documentation](http://centrifuge.readthedocs.org/en/latest/content/connection_check.html)
+* insecure mode to use Centrifuge as simple solution for real-time demos, personal presentations, testing ideas etc. This mode allows to connect to Centrifuge without token, timestamp and user parameters. This mode turns on ``anonymous`` access option for all channels and turns on ``publish`` option for all channels. See [docs](http://centrifuge.readthedocs.org/en/latest/content/insecure_mode.html) and [example](https://github.com/centrifugal/centrifuge/tree/master/examples/insecure_mode).
+* support for `sha256` in signs and tokens HMACs - sha256 is now used by default in new version of Cent - read new [chapter](http://centrifuge.readthedocs.org/en/latest/content/tokens_and_signatures.html) about various signatures in Centrifuge.
 * Redis engine now can listen for API commands - Redis must be firewalled and only owner should use this as there is no secret key based sign check. Due to use of queue mechanism for this you can only use commands for which you don't need response body or error - ex. `publish`, `unsubscribe`...
 * Tornado updated to version 4.1
 * do not publish if channel name is empty string
