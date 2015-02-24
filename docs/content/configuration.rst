@@ -102,16 +102,17 @@ Command-line options
 
 Centrifuge has several command line arguments.
 
-``--config`` - path to configuration json file
+``--config`` - path to configuration json file, by default ``config.json``
 
-``--debug`` - run Centrifuge in debug mode:
+``--debug`` - run Centrifuge in Tornado debug mode - server will be reloaded when code changes.
 
-``--port`` - port to bind (default 8000)
+``--port`` - port to bind (default ``8000``)
+
+``--address`` - address to bind to
 
 ``--name`` - unique node name (optional) - will be used in web interface metric table or in graphite data path
 
-
-Some other command line options come with engine or structure storage backend -
+Some other command line options come with engine or structure storage backends -
 explore them using ``--help``, for example:
 
 .. code-block:: bash

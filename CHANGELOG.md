@@ -17,9 +17,11 @@ How to migrate
 
 * update Cent client to latest version (>=0.3.0). If you don't use Cent then you should update your code.
 * update javascript client to latest version (>=0.7.0).
+* update Adjacent (if you use it) to latest version (>=0.1.0)
 * if you are using old private channel subscription mechanism via POST request from Centrifuge then you should migrate using new one.
 * if you are using connection check then you should adapt your code to use new mechanism
 * note that `user_info` kwarg renamed to `info` in Cent `generate_token` function
+* note that `user_info` kwarg renamed to `info` in Adjacent `get_connection_parameters` function
 * ``path`` option in File structure renamed into ``file`` to not overlap with ``path`` in Sqlite structure backend.
 
 How to start Centrifuge in insecure mode
