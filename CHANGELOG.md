@@ -1,5 +1,5 @@
-Master branch - 0.7.0dev
-========================
+v0.7.0
+======
 
 Some backwards incompatible changes here.
 
