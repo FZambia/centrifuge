@@ -9,9 +9,11 @@ $( document ).ready(function() {
       $("[data-toggle='wy-nav-shift']").removeClass("shift");
       $("[data-toggle='rst-versions']").toggleClass("shift");
     });
+    /*
     $(document).on('click', "[data-toggle='rst-current-version']", function() {
       $("[data-toggle='rst-versions']").toggleClass("shift-up");
-    });  
+    });
+    */
     // Make tables responsive
     $("table.docutils:not(.field-list)").wrap("<div class='wy-table-responsive'></div>");
 });
