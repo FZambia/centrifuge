@@ -41,6 +41,10 @@ class ApiHandler(BaseHandler):
         """
         Handle API HTTP requests.
         """
+        timer = None
+        if self.application.collector:
+            timer = self.application.collector.get_timer('api_time')
+
         if not self.request.body:
             raise tornado.web.HTTPError(400, log_message="empty request")
 
@@ -106,6 +110,7 @@ class ApiHandler(BaseHandler):
 
         if self.application.collector:
             self.application.collector.incr('api')
+            timer.stop()
 
         self.json_response(multi_response.as_message())
 
