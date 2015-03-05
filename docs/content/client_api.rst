@@ -89,26 +89,11 @@ Also you can optionally provide extra parameter ``info`` when connecting to Cent
 
 ``info`` is an additional information about user connecting to Centrifuge. It must
 be valid JSON string. But to prevent client sending wrong ``info`` this JSON string
-must be used while generating token:
-
-.. code-block:: python
-
-    import hmac
-
-    def get_client_token(secret_key, project_id, user, timestamp, user_info=None):
-        sign = hmac.new(str(secret_key))
-        sign.update(project_id)
-        sign.update(user)
-        sign.update(timestamp)
-        if user_info is not None:
-            sign.update(user_info)
-        token = sign.hexdigest()
-        return token
-
+must be used while generating token.
 
 If you don't want to use ``info`` - you can omit this parameter while connecting
-to Centrifuge. But if you omit it then make sure that it does not affect token
-generation - i.e. in this case you need to generate token without ``sign.update(user_info)``.
+to Centrifuge. But if you omit it then make sure that it have not been used in token
+generation.
 
 If you are using Python - then you can use `generate_token` function from `cent` library to generate
 tokens for your users.
