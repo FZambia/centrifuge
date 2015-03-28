@@ -68,9 +68,7 @@ class MainHandler(WebBaseHandler):
         """
         user = self.current_user.decode()
 
-        projects, error = yield self.application.structure.project_list()
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
+        projects = self.application.structure
 
         config = self.application.settings.get('config', {})
         metrics_interval = config.get('metrics', {}).get('interval', self.application.METRICS_EXPORT_INTERVAL)*1000
@@ -85,7 +83,6 @@ class MainHandler(WebBaseHandler):
             'centrifuge_version': centrifuge.__version__,
             'node_count': len(self.application.nodes) + 1,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
-            'structure': getattr(self.application.structure.storage, 'NAME', 'unknown'),
             'node_name': self.application.name
         }
         self.render("main.html", **context)

@@ -51,15 +51,11 @@
             for (var index in options.projects) {
             	//noinspection JSUnfilteredForInLoop
                 var project = options.projects[index];
-
-                var project_id = project['_id'];
-
-                global_projects[project_id] = project;
-
+                var project_name = project['name'];
+                global_projects[project_name] = project;
             }
 
             global_projects[options.project_tab] = {
-                '_id': options.project_tab,
                 'name': options.project_tab
             };
 
@@ -90,20 +86,20 @@
                 return display_name;
             };
 
-            var get_active_tab_id = function() {
+            var get_active_tab_name = function() {
                 var active_tab = global_tabs.find('li.active').find('[data-toggle="tab"]');
-                return active_tab.attr('data-id');
+                return active_tab.attr('data-name');
             };
 
-			var get_project_by_id = function(project_id) {
-				if (!(project_id in global_projects)) {
+			var get_project_by_name = function(project_name) {
+				if (!(project_name in global_projects)) {
 					return null;
 				}
-				return global_projects[project_id];
+				return global_projects[project_name];
 			};
 
             var get_tab_for_project = function(project) {
-                return $('#tab-'+ project['_id']);
+                return $('#tab-'+ project['name']);
             };
 
             var get_content_for_project = function(project) {
@@ -115,8 +111,8 @@
             };
 
             var get_project_event_counter = function(project) {
-            	var project_id = project['_id'];
-                return $('#tab-' + project_id).find('.project-event-counter');
+            	var project_name = project['name'];
+                return $('#tab-' + project_name).find('.project-event-counter');
             };
 
             var get_project_event_counter_value = function(counter) {
@@ -197,9 +193,9 @@
                     var event_id = data['message']['uid'];
                     var channel = data['message']['channel'];
                     var event_data = data['message']['data'];
-                    var project_id = data['project'];
-                    project = get_project_by_id(project_id);
-                    var active_tab_id = get_active_tab_id();
+                    var project_name = data['project'];
+                    project = get_project_by_name(project_name);
+                    var active_tab_name = get_active_tab_name();
                     var tab = get_tab_for_project(project);
 
                     if (tab.length > 0) {
@@ -207,11 +203,11 @@
                         var container = get_content_for_project(project).find('.log');
                         render_event(container, project, event_id, channel, event_data);
                     } else {
-                        if (active_tab_id !== options.project_tab) {
+                        if (active_tab_name !== options.project_tab) {
                             highlight_tab(global_projects[options.project_tab], true);
                         }
                     }
-                    if (active_tab_id !== project_id) {
+                    if (active_tab_name !== project_name) {
                         incr_project_event_counter(project);
                         highlight_tab(project, true);
                     }
@@ -308,15 +304,15 @@
 
             var open_tab = function(project) {
                 clear_project_event_counter(project);
-                var current_tab = $('#tab-' + project['_id']);
+                var current_tab = $('#tab-' + project['name']);
                 if (current_tab.length) {
                     current_tab.tab('show');
                 }
             };
 
             global_content.on('click', '[data-tab-open]', function() {
-                var project_id = $(this).attr('data-tab-open');
-                var project = global_projects[project_id];
+                var project_name = $(this).attr('data-tab-open');
+                var project = global_projects[project_name];
                 open_tab(project);
                 highlight_tab(project, false);
                 return false;
@@ -351,11 +347,11 @@
             };
 
 			var route = function(tab) {
-				var project_id = tab.attr('data-id');
-                var project = get_project_by_id(project_id);
+				var project_name = tab.attr('data-name');
+                var project = get_project_by_name(project_name);
                 highlight_tab(project, false);
-                if (project['_id'] !== options.project_tab) {
-                    project_settings_button.attr('href', '/project/' + project['_id'] + '/credentials').show();
+                if (project['name'] !== options.project_tab) {
+                    project_settings_button.attr('href', '/project/' + project['name'] + '/credentials').show();
                 } else {
                     project_settings_button.hide();
                 }

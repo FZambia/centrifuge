@@ -30,14 +30,14 @@
 </script>
 
 <script type="text/x-jsrender" id="tab_pane_template">
-    <div class="tab-pane in active" id="{{!>name}}" data-id="{{!>_id}}">
+    <div class="tab-pane in active" id="{{!>name}}">
         <div class="log"></div>
     </div>
 </script>
 
 <script type="text/x-jsrender" id="tab_template">
     <li>
-        <a class="project-tab" href="#{{!>name}}" id="tab-{{!>_id}}" data-id="{{!>_id}}" data-name="{{!>name}}" data-tab-open="{{!>_id}}" data-toggle="tab">
+        <a class="project-tab" href="#{{!>name}}" id="tab-{{!>name}}" data-name="{{!>name}}" data-tab-open="{{!>name}}" data-toggle="tab">
             {{!>tab_text}}
             <span class="label label-success pull-right project-event-counter hidden">0</span>
         </a>
@@ -61,7 +61,7 @@
         <div class="col-lg-3">
             <ul class="nav nav-pills nav-stacked" id="tabs">
                 <li class="general-info-item">
-                    <a class="info-tab" href="#_info" id="tab-_info" data-id="_info" data-tab-open="_info" data-name="_info" data-toggle="tab">
+                    <a class="info-tab" href="#_info" id="tab-_info" data-tab-open="_info" data-name="_info" data-toggle="tab">
                         {{_("General information")}}
                         <span class="label label-success pull-right project-event-counter hidden">0</span>
                     </a>
@@ -97,11 +97,6 @@
                         <span class="text-muted stat-key">{{ _("HTTP API endpoint") }}:</span>
                         &nbsp;
                         <span class="stat-value" id="api-endpoint"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("Structure storage") }}:</span>
-                        &nbsp;
-                        <span class="stat-value">{{ structure }}</span>
                     </div>
                     <div class="stat-row">
                         <span class="text-muted stat-key">{{ _("Engine") }}:</span>
