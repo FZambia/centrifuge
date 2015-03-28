@@ -21,12 +21,10 @@ except ImportError:
 from jsonschema import validate, ValidationError
 
 from centrifuge import utils
-from centrifuge.structure import Structure
 from centrifuge.log import logger
-from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.metrics import Collector, Exporter
 from centrifuge.response import Response, MultiResponse
-from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
+from centrifuge.schema import req_schema, server_api_schema
 
 
 def get_address():
@@ -45,12 +43,6 @@ class Application(tornado.web.Application):
     USER_SEPARATOR = '#'
 
     NAMESPACE_SEPARATOR = ":"
-
-    # magic fake project ID for owner API purposes.
-    OWNER_API_PROJECT_ID = '_'
-
-    # magic project param name to allow owner make API operations within project
-    OWNER_API_PROJECT_PARAM = '_project'
 
     # in milliseconds, how often this application will send ping message
     PING_INTERVAL = 5000
@@ -116,11 +108,11 @@ class Application(tornado.web.Application):
         # dictionary to keep ping from nodes
         self.nodes = {}
 
-        # storage to use
-        self.storage = None
-
-        # application structure manager (projects, namespaces etc)
+        # application structure (projects, namespaces etc)
         self.structure = None
+
+        # application structure transformed to a dictionary to speed up lookups
+        self.structure_dict = None
 
         # application engine
         self.engine = None
@@ -190,14 +182,6 @@ class Application(tornado.web.Application):
         if namespace_separator:
             self.NAMESPACE_SEPARATOR = namespace_separator
 
-        owner_api_project_id = config.get('owner_api_project_id')
-        if owner_api_project_id:
-            self.OWNER_API_PROJECT_ID = owner_api_project_id
-
-        owner_api_project_param = config.get('owner_api_project_param')
-        if owner_api_project_param:
-            self.OWNER_API_PROJECT_PARAM = owner_api_project_param
-
         ping_interval = config.get('ping_interval')
         if ping_interval:
             self.PING_INTERVAL = ping_interval
@@ -235,38 +219,15 @@ class Application(tornado.web.Application):
 
     def init_structure(self):
         """
-        Initialize structure manager using settings provided
-        in configuration file.
+        Validate and initialize structure
         """
         config = self.config
-        self.structure = Structure(self)
-        self.structure.set_storage(self.storage)
-
-        def run_periodic_structure_update():
-            # update structure periodically from database. This is necessary to be sure
-            # that application has actual and correct structure information. Structure
-            # updates also triggered in real-time by message passing through control channel,
-            # but in rare cases those update messages can be lost because of some kind of
-            # network errors
-            logger.info("Structure initialized")
-            self.structure.update()
-            structure_update_interval = config.get('structure_update_interval', 60)
-            logger.info(
-                "Periodic structure update interval: {0} seconds".format(
-                    structure_update_interval
-                )
-            )
-            periodic_structure_update = tornado.ioloop.PeriodicCallback(
-                self.structure.update, structure_update_interval*1000
-            )
-            periodic_structure_update.start()
-
-        tornado.ioloop.IOLoop.instance().add_callback(
-            partial(
-                self.storage.connect,
-                run_periodic_structure_update
-            )
-        )
+        structure = config.get("structure")
+        if not structure:
+            raise Exception("structure required")
+        utils.validate_structure(structure)
+        self.structure = structure
+        self.structure_dict = utils.structure_to_dict(structure)
 
     def init_engine(self):
         """
@@ -596,16 +557,15 @@ class Application(tornado.web.Application):
         Update structure message received - structure changed and other
         node sent us a signal about update.
         """
-        result, error = yield self.structure.update()
-        raise Return((result, error))
+        pass
 
     @coroutine
-    def process_api_data(self, project, data, is_owner_request):
+    def process_api_data(self, project, data):
         multi_response = MultiResponse()
 
         if isinstance(data, dict):
             # single object request
-            response = yield self.process_api_object(data, project, is_owner_request)
+            response = yield self.process_api_object(data, project)
             multi_response.add(response)
         elif isinstance(data, list):
             # multiple object request
@@ -613,7 +573,7 @@ class Application(tornado.web.Application):
                 raise Return((None, "admin API message limit exceeded (received {0} messages)".format(len(data))))
 
             for obj in data:
-                response = yield self.process_api_object(obj, project, is_owner_request)
+                response = yield self.process_api_object(obj, project)
                 multi_response.add(response)
         else:
             raise Return((None, "data not an array or object"))
@@ -621,7 +581,7 @@ class Application(tornado.web.Application):
         raise Return((multi_response, None))
 
     @coroutine
-    def process_api_object(self, obj, project, is_owner_request):
+    def process_api_object(self, obj, project):
 
         response = Response()
 
@@ -631,50 +591,26 @@ class Application(tornado.web.Application):
             response.error = str(e)
             raise Return(response)
 
-        req_id = obj.get("uid", None)
         method = obj.get("method")
         params = obj.get("params")
 
-        response.uid = req_id
         response.method = method
 
         schema = server_api_schema
 
-        if is_owner_request and self.OWNER_API_PROJECT_PARAM in params:
-
-            project_id = params[self.OWNER_API_PROJECT_PARAM]
-
-            project, error = yield self.structure.get_project_by_id(
-                project_id
-            )
-            if error:
-                logger.error(error)
-                response.error = self.INTERNAL_SERVER_ERROR
-            if not project:
-                response.error = self.PROJECT_NOT_FOUND
-
-        try:
-            params.pop(self.OWNER_API_PROJECT_PARAM)
-        except KeyError:
-            pass
-
-        if not is_owner_request and method in owner_api_methods:
-            response.error = self.PERMISSION_DENIED
-
-        if not response.error:
-            if method not in schema:
-                response.error = self.METHOD_NOT_FOUND
+        if method not in schema:
+            response.error = self.METHOD_NOT_FOUND
+        else:
+            try:
+                validate(params, schema[method])
+            except ValidationError as e:
+                response.error = str(e)
             else:
-                try:
-                    validate(params, schema[method])
-                except ValidationError as e:
-                    response.error = str(e)
-                else:
-                    result, error = yield self.process_call(
-                        project, method, params
-                    )
-                    response.body = result
-                    response.error = error
+                result, error = yield self.process_call(
+                    project, method, params
+                )
+                response.body = result
+                response.error = error
 
         raise Return(response)
 
@@ -857,299 +793,3 @@ class Application(tornado.web.Application):
         if error:
             raise Return((result, self.INTERNAL_SERVER_ERROR))
         raise Return((result, None))
-
-    @coroutine
-    def process_dump_structure(self, project, params):
-
-        projects, error = yield self.structure.project_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        namespaces, error = yield self.structure.namespace_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        data = {
-            "projects": projects,
-            "namespaces": namespaces
-        }
-        raise Return((data, None))
-
-    @coroutine
-    def process_project_list(self, project, params):
-        projects, error = yield self.structure.project_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((projects, None))
-
-    @coroutine
-    def process_project_get(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        raise Return((project, None))
-
-    @coroutine
-    def process_project_by_name(self, project, params):
-        project, error = yield self.structure.get_project_by_name(
-            params.get("name")
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        raise Return((project, None))
-
-    @coroutine
-    def process_project_create(self, project, params, error_form=False):
-
-        form = ProjectForm(params)
-
-        if form.validate():
-            existing_project, error = yield self.structure.get_project_by_name(
-                form.name.data
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-            if existing_project:
-                form.name.errors.append(self.DUPLICATE_NAME)
-                if error_form:
-                    raise Return((None, form))
-                raise Return((None, form.errors))
-            else:
-                project, error = yield self.structure.project_create(
-                    **form.data
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                raise Return((project, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_project_edit(self, project, params, error_form=False, patch=True):
-        """
-        Edit project namespace.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        if "name" not in params:
-            params["name"] = project["name"]
-
-        boolean_patch_data = {}
-        if patch:
-            boolean_patch_data = utils.get_boolean_patch_data(ProjectForm.BOOLEAN_FIELDS, params)
-
-        form = ProjectForm(params)
-
-        if form.validate():
-
-            if "name" in params and params["name"] != project["name"]:
-
-                existing_project, error = yield self.structure.get_project_by_name(
-                    params["name"]
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                if existing_project:
-                    form.name.errors.append(self.DUPLICATE_NAME)
-                    if error_form:
-                        raise Return((None, form))
-                    raise Return((None, form.errors))
-
-            updated_project = project.copy()
-
-            if patch:
-                data = utils.make_patch_data(form, params)
-            else:
-                data = form.data.copy()
-
-            updated_project.update(data)
-            if patch:
-                updated_project.update(boolean_patch_data)
-            project, error = yield self.structure.project_edit(
-                project, **updated_project
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            raise Return((project, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_project_delete(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        result, error = yield self.structure.project_delete(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((True, None))
-
-    @coroutine
-    def process_regenerate_secret_key(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        result, error = yield self.structure.regenerate_project_secret_key(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((result, None))
-
-    @coroutine
-    def process_namespace_list(self, project, params):
-        """
-        Return a list of all namespaces for project.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        namespaces, error = yield self.structure.get_project_namespaces(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((namespaces, None))
-
-    @coroutine
-    def process_namespace_get(self, project, params):
-        """
-        Return a list of all namespaces for project.
-        """
-        namespace_id = params.get('_id')
-        namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
-
-    @coroutine
-    def process_namespace_by_name(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, params.get("name")
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
-
-    @coroutine
-    def process_namespace_create(self, project, params, error_form=False):
-        """
-        Create new namespace in project or update if already exists.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        form = NamespaceForm(params)
-
-        if form.validate():
-            existing_namespace, error = yield self.structure.get_namespace_by_name(
-                project, form.name.data
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-            if existing_namespace:
-                form.name.errors.append(self.DUPLICATE_NAME)
-                if error_form:
-                    raise Return((None, form))
-                raise Return((None, form.errors))
-            else:
-                namespace, error = yield self.structure.namespace_create(
-                    project, **form.data
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                raise Return((namespace, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_namespace_edit(self, project, params, error_form=False, patch=True):
-        """
-        Edit project namespace.
-        """
-        namespace, error = yield self.structure.get_namespace_by_id(
-            params.pop('_id')
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-
-        if not project:
-            project, error = yield self.get_project(
-                namespace['project_id']
-            )
-            if error:
-                raise Return((None, error))
-
-        if "name" not in params:
-            params["name"] = namespace["name"]
-
-        boolean_patch_data = {}
-        if patch:
-            boolean_patch_data = utils.get_boolean_patch_data(NamespaceForm.BOOLEAN_FIELDS, params)
-
-        form = NamespaceForm(params)
-
-        if form.validate():
-
-            if "name" in params and params["name"] != namespace["name"]:
-
-                existing_namespace, error = yield self.structure.get_namespace_by_name(
-                    project, params["name"]
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                if existing_namespace:
-                    form.name.errors.append(self.DUPLICATE_NAME)
-                    if error_form:
-                        raise Return((None, form))
-                    raise Return((None, form.errors))
-
-            updated_namespace = namespace.copy()
-            if patch:
-                data = utils.make_patch_data(form, params)
-            else:
-                data = form.data.copy()
-            updated_namespace.update(data)
-            if patch:
-                updated_namespace.update(boolean_patch_data)
-            namespace, error = yield self.structure.namespace_edit(
-                namespace, **updated_namespace
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            raise Return((namespace, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_namespace_delete(self, project, params):
-        """
-        Delete project namespace.
-        """
-        namespace_id = params["_id"]
-
-        existing_namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not existing_namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-
-        result, error = yield self.structure.namespace_delete(existing_namespace)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((True, None))

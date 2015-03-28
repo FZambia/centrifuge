@@ -48,17 +48,6 @@ else:
 engine_class = namedAny(engine_class_path)
 
 
-storage = os.environ.get('CENTRIFUGE_STORAGE')
-if not storage or storage == 'sqlite':
-    storage_class_path = 'centrifuge.structure.sqlite.Storage'
-elif storage == "file":
-    storage_class_path = 'centrifuge.structure.file.Storage'
-else:
-    storage_class_path = storage
-
-storage_class = namedAny(storage_class_path)
-
-
 tornado.options.parse_command_line()
 
 
@@ -87,11 +76,8 @@ from centrifuge.web.handlers import AuthHandler
 from centrifuge.web.handlers import LogoutHandler
 from centrifuge.web.handlers import AdminSocketHandler
 from centrifuge.web.handlers import Http404Handler
-from centrifuge.web.handlers import ProjectCreateHandler
-from centrifuge.web.handlers import NamespaceFormHandler
 from centrifuge.web.handlers import ProjectDetailHandler
 from centrifuge.web.handlers import StructureDumpHandler
-from centrifuge.web.handlers import StructureLoadHandler
 
 
 def stop_running(msg):
@@ -109,24 +95,9 @@ def create_application_handlers(sockjs_settings):
             r'/', MainHandler, name="main"
         ),
         tornado.web.url(
-            r'/project/create$',
-            ProjectCreateHandler,
-            name="project_create"
-        ),
-        tornado.web.url(
             r'/project/([^/]+)/([^/]+)$',
             ProjectDetailHandler,
             name="project_detail"
-        ),
-        tornado.web.url(
-            r'/project/([^/]+)/namespace/create$',
-            NamespaceFormHandler,
-            name="namespace_create"
-        ),
-        tornado.web.url(
-            r'/project/([^/]+)/namespace/edit/([^/]+)/',
-            NamespaceFormHandler,
-            name="namespace_edit"
         ),
         tornado.web.url(
             r'/api/([^/]+)$', ApiHandler, name="api"
@@ -139,9 +110,6 @@ def create_application_handlers(sockjs_settings):
         ),
         tornado.web.url(
             r'/dumps$', StructureDumpHandler, name="dump_structure"
-        ),
-        tornado.web.url(
-            r'/loads$', StructureLoadHandler, name="load_structure"
         )
     ]
 
@@ -238,9 +206,6 @@ def create_centrifuge_application():
 
     logger.info("Engine class: {0}".format(engine_class_path))
     app.engine = engine_class(app)
-
-    logger.info("Storage class: {0}".format(storage_class_path))
-    app.storage = storage_class(options)
 
     # create reference to application from SockJS handlers
     AdminSocketHandler.application = app

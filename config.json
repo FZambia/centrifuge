@@ -1,5 +1,46 @@
 {
-    "password": "123",
-    "cookie_secret": "secret",
-    "api_secret": "secret"
+  "password": "123",
+  "cookie_secret": "secret",
+  "api_secret": "secret",
+  "structure": [
+    {
+      "name": "map",
+      "display_name": "Map Demo",
+      "secret_key": "1ee93d4ac83e4ccf87d2bbd0e447275b",
+      "connection_check": false,
+      "watch": true,
+      "publish": false,
+      "anonymous": true,
+      "presence": true,
+      "history": true,
+      "history_size": 50,
+      "history_expire": 30,
+      "join_leave": true,
+      "namespaces": [
+        {
+          "name": "public",
+          "watch": true,
+          "publish": true,
+          "anonymous": false,
+          "presence": false,
+          "history": false,
+          "join_leave": false
+        }
+      ]
+    },
+    {
+      "name": "benchmark",
+      "display_name": "Benchmark",
+      "secret_key": "98834d4ac83e4ccf87d2bbd0e447275b",
+      "connection_check": true,
+      "connection_lifetime": 3600,
+      "watch": false,
+      "publish": true,
+      "anonymous": true,
+      "presence": true,
+      "history": false,
+      "join_leave": false,
+      "namespaces": []
+    }
+  ]
 }

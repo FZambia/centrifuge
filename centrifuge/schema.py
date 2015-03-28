@@ -4,9 +4,6 @@
 req_schema = {
     "type": "object",
     "properties": {
-        "id": {
-            "type": "string"
-        },
         "method": {
             "type": "string"
         },
@@ -16,10 +13,6 @@ req_schema = {
     },
     "required": ["method", "params"]
 }
-
-owner_api_methods = [
-    "project_list", "project_create", "dump_structure"
-]
 
 server_api_schema = {
     "publish": {
@@ -72,102 +65,6 @@ server_api_schema = {
             }
         },
         "required": ["user"]
-    },
-    "namespace_list": {
-        "type": "object",
-        "properties": {}
-    },
-    "namespace_by_name": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            },
-            "name": {
-                "type": "string"
-            }
-        },
-        "required": ["name"]
-    },
-    "namespace_get": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        },
-        "required": ["_id"]
-    },
-    "namespace_create": {
-        "type": "object",
-        "properties": {}
-    },
-    "namespace_edit": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        },
-        "required": ["_id"]
-    },
-    "namespace_delete": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        },
-        "required": ["_id"]
-    },
-    "project_list": {
-        "type": "object",
-        "properties": {}
-    },
-    "project_get": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        }
-    },
-    "project_by_name": {
-        "type": "object",
-        "properties": {
-            "name": {
-                "type": "string"
-            }
-        },
-        "required": ["name"]
-    },
-    "project_create": {
-        "type": "object",
-        "properties": {}
-    },
-    "project_edit": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        }
-    },
-    "project_delete": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        }
-    },
-    "regenerate_secret_key": {
-        "type": "object",
-        "properties": {}
-    },
-    "dump_structure": {
-        "type": "object",
-        "properties": {}
     }
 }
 
