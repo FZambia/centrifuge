@@ -86,7 +86,8 @@ class MainHandler(WebBaseHandler):
             'centrifuge_version': centrifuge.__version__,
             'node_count': len(self.application.nodes) + 1,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
-            'structure': getattr(self.application.structure.storage, 'NAME', 'unknown')
+            'structure': getattr(self.application.structure.storage, 'NAME', 'unknown'),
+            'node_name': self.application.name
         }
         self.render("main.html", **context)
 

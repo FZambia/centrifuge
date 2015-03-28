@@ -109,6 +109,11 @@
                         <span class="stat-value">{{ engine }}</span>
                     </div>
                     <div class="stat-row">
+                        <span class="text-muted stat-key">{{ _("Current node") }}:</span>
+                        &nbsp;
+                        <span class="stat-value" id="current-node">{{ node_name }}</span>
+                    </div>
+                    <div class="stat-row">
                         <span class="text-muted stat-key">{{ _("Nodes running") }}:</span>
                         &nbsp;
                         <span class="stat-value" id="node-count">{{ node_count }}</span>
