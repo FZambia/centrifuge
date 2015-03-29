@@ -1,18 +1,16 @@
 (function($) {
     $.extend({
-        centrifuge_main : function(custom_options) {
+        centrifuge_main : function() {
 
             var defaults = {
                 tab_prefix: "/tab_",
                 max_tab_text_length: 10,
                 max_events_amount: 50,
-                current_user: {},
                 project_tab: '_info',
-                projects: [],
                 socket_url: '/socket',
                 metrics_interval: 10000,
-                global_content_element: '#main-content',
                 global_tabs_element: '#tabs',
+                info_template_element: '#info_template',
                 transports: [
                     'websocket',
                     'xdr-streaming',
@@ -26,7 +24,10 @@
                 ]
             };
 
-            var options = $.extend(defaults, custom_options);
+            var options = $.extend(defaults, {});
+
+            var projects = [];
+            var global_projects = {};
 
             // sock js connection
             var connection = null;
@@ -41,23 +42,8 @@
                 }
             } catch(e) {}
 
-			// set all event handlers on this element
-            var global_content = $(options.global_content_element);
-
             var global_tabs = $(options.global_tabs_element);
-
-			var global_projects = {};
-
-            for (var index in options.projects) {
-            	//noinspection JSUnfilteredForInLoop
-                var project = options.projects[index];
-                var project_name = project['name'];
-                global_projects[project_name] = project;
-            }
-
-            global_projects[options.project_tab] = {
-                'name': options.project_tab
-            };
+            var global_info_template = $(options.info_template_element);
 
             // jsrender templates
             var event_template = $('#event_template');
@@ -65,9 +51,9 @@
             var tab_pane_template = $('#tab_pane_template');
             var node_info_row_template = $('#node_info_row_template');
 
-            var node_count = $('#node-count');
-            var node_info = $('#node-info');
-            var node_info_loader = $('#node-info-loader');
+            var node_count;
+            var node_info;
+            var node_info_loader;
             var node_timeouts = {};
 
             var project_settings_button = $('#project-settings');
@@ -194,7 +180,7 @@
                     var channel = data['message']['channel'];
                     var event_data = data['message']['data'];
                     var project_name = data['project'];
-                    project = get_project_by_name(project_name);
+                    var project = get_project_by_name(project_name);
                     var active_tab_name = get_active_tab_name();
                     var tab = get_tab_for_project(project);
 
@@ -302,97 +288,78 @@
                 global_tabs.append(tab_element);
             };
 
-            var open_tab = function(project) {
-                clear_project_event_counter(project);
-                var current_tab = $('#tab-' + project['name']);
-                if (current_tab.length) {
-                    current_tab.tab('show');
-                }
-            };
-
-            global_content.on('click', '[data-tab-open]', function() {
-                var project_name = $(this).attr('data-tab-open');
-                var project = global_projects[project_name];
-                open_tab(project);
-                highlight_tab(project, false);
-                return false;
-            });
-
-            global_content.on('click', '.namespace', function() {
-                var self = $(this);
-                var list_element = self.parents('li:first');
-                if (list_element.hasClass('active')) {
-                    list_element.removeClass('active');
-                } else {
-                    list_element.addClass('active');
-                }
-            });
-
-            var render_endpoints = function() {
-                var protocol = window.location.protocol;
-                var is_secure = false;
-                if (protocol === "https:") {
-                    is_secure = true;
-                }
-                var sockjs_endpoint_container = $("#sockjs-endpoint");
-                var websocket_endpoint_container = $('#websocket-endpoint');
-                var api_endpoint_container = $('#api-endpoint');
-
-                var sockjs_protocol = is_secure? "https://": "http://";
-                var websocket_protocol = is_secure? "wss://": "ws://";
-
-                sockjs_endpoint_container.text(sockjs_protocol + window.location.host + '/connection');
-                websocket_endpoint_container.text(websocket_protocol + window.location.host + '/connection/websocket');
-                api_endpoint_container.text(sockjs_protocol + window.location.host + '/api');
-            };
-
 			var route = function(tab) {
 				var project_name = tab.attr('data-name');
-                var project = get_project_by_name(project_name);
+                var project;
+                if (project_name === options.project_tab) {
+                    project = {"name": options.project_tab};
+                } else {
+                    project = get_project_by_name(project_name);
+                }
                 highlight_tab(project, false);
                 if (project['name'] !== options.project_tab) {
                     project_settings_button.attr('href', '/project/' + project['name'] + '/credentials').show();
+                    clear_project_event_counter(project);
                 } else {
                     project_settings_button.hide();
                 }
-                clear_project_event_counter(project);
 			};
 
             var initialize = function() {
 
                 create_socket_connection();
 
-                render_endpoints();
-
-                if (options.projects) {
-                    for (var index in options.projects) {
-                        //noinspection JSUnfilteredForInLoop
-                        var project = options.projects[index];
-                        create_tab(project);
+                $.get("/info/", {}, function(data) {
+                    projects = data.structure;
+                    global_projects = data.structure_dict;
+                    if (projects) {
+                        for (var index in projects) {
+                            //noinspection JSUnfilteredForInLoop
+                            var project = projects[index];
+                            create_tab(project);
+                        }
                     }
-                }
 
-                show_hashed_tab();
+                    var protocol = window.location.protocol;
+                    var is_secure = false;
+                    if (protocol === "https:") {
+                        is_secure = true;
+                    }
+                    var sockjs_protocol = is_secure? "https://": "http://";
+                    var websocket_protocol = is_secure? "wss://": "ws://";
+                    data["sockjs_endpoint"] = sockjs_protocol + window.location.host + '/connection';
+                    data["ws_endpoint"] = websocket_protocol + window.location.host + '/connection/websocket';
+                    data["api_endpoint"] = sockjs_protocol + window.location.host + '/api';
 
-                // Change hash for page-reload
-                global_tabs.on('shown.bs.tab', 'a', function (e) {
-                    window.location.hash = e.target.hash.replace("#", "#" + options.tab_prefix);
-                    var self = $(this);
-                    route(self);
-                });
+                    var info_html = global_info_template.render(data);
+                    $("#_info").append(info_html);
 
-				if (!window.location.hash) {
-					global_tabs.find('a:first').tab('show');
-				} else {
-					var hash = window.location.hash;
-					var project_name = hash.replace('#' + options.tab_prefix, '');
-					var project_tab = global_tabs.find('[data-name="'+ project_name +'"]');
-                    if (project_tab.length) {
-                        route(project_tab);
-                    } else {
+                    node_count = $('#node-count');
+                    node_info = $('#node-info');
+                    node_info_loader = $('#node-info-loader');
+                    
+                    show_hashed_tab();
+
+                    // Change hash for page-reload
+                    global_tabs.on('shown.bs.tab', 'a', function (e) {
+                        window.location.hash = e.target.hash.replace("#", "#" + options.tab_prefix);
+                        var self = $(this);
+                        route(self);
+                    });
+
+                    if (!window.location.hash) {
                         global_tabs.find('a:first').tab('show');
+                    } else {
+                        var hash = window.location.hash;
+                        var project_name = hash.replace('#' + options.tab_prefix, '');
+                        var project_tab = global_tabs.find('[data-name="'+ project_name +'"]');
+                        if (project_tab.length) {
+                            route(project_tab);
+                        } else {
+                            global_tabs.find('a:first').tab('show');
+                        }
                     }
-				}
+                }, "json");
 
             };
 

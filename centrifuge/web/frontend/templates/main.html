@@ -6,8 +6,7 @@
 <script type="text/javascript" src="{{ static_url('application/js/main.js') }}"></script>
 <script type="text/javascript">
     $(document).ready(function() {
-        var js_data = {% raw js_data %};
-        $.centrifuge_main(js_data);
+        $.centrifuge_main();
     });
 </script>
 {% end %}
@@ -56,83 +55,86 @@
     </tr>
 </script>
 
+<script type="text/x-jsrender" id="info_template">
+    <div class="stat-row">
+        <span class="text-muted stat-key">Version:</span>
+        &nbsp;
+        <span class="stat-value">{{!>centrifuge_version}}</span>
+    </div>
+    <div class="stat-row">
+        <span class="text-muted stat-key">SockJS endpoint:</span>
+        &nbsp;
+        <span class="stat-value" id="sockjs-endpoint">{{!>sockjs_endpoint}}</span>
+    </div>
+    <div class="stat-row">
+        <span class="text-muted stat-key">WebSocket endpoint:</span>
+        &nbsp;
+        <span class="stat-value" id="websocket-endpoint">{{!>ws_endpoint}}</span>
+    </div>
+    <div class="stat-row">
+        <span class="text-muted stat-key">HTTP API endpoint:</span>
+        &nbsp;
+        <span class="stat-value" id="api-endpoint">{{!>api_endpoint}}</span>
+    </div>
+    <div class="stat-row">
+        <span class="text-muted stat-key">Engine:</span>
+        &nbsp;
+        <span class="stat-value">{{!>engine}}</span>
+    </div>
+    <div class="stat-row">
+        <span class="text-muted stat-key">Current node:</span>
+        &nbsp;
+        <span class="stat-value" id="current-node">{{!>node_name}}</span>
+    </div>
+    <div class="stat-row">
+        <span class="text-muted stat-key">Nodes running:</span>
+        &nbsp;
+        <span class="stat-value" id="node-count">{{!>node_count}}</span>
+    </div>
+    <div class="node_info">
+        <table class="table table-bordered">
+            <thead class="cf">
+            <tr>
+                <th title="node name">Node name</th>
+                <th title="active channels">Channels</th>
+                <th title="connected clients">Clients</th>
+                <th title="unique clients">Unique</th>
+                <th title="messages per second">Msg/sec</th>
+                <th title="broadcast average time in milliseconds">Broadcast</th>
+                <th title="api calls">API calls</th>
+            </tr>
+            </thead>
+            <tbody id="node-info">
+                <tr id="node-info-loader">
+                    <td colspan="7">Waiting for information...</td>
+                <tr>
+            </tbody>
+        </table>
+    </div>
+</script>
+
 <div id="main-content">
     <div class="row">
         <div class="col-lg-3">
             <ul class="nav nav-pills nav-stacked" id="tabs">
                 <li class="general-info-item">
                     <a class="info-tab" href="#_info" id="tab-_info" data-tab-open="_info" data-name="_info" data-toggle="tab">
-                        {{_("General information")}}
-                        <span class="label label-success pull-right project-event-counter hidden">0</span>
+                        General information
                     </a>
                 </li>
             </ul>
         </div>
         <div class="col-lg-9">
-            <a href="#" class="btn btn-success" id="project-settings">{{_("project management")}}</a>
-            <span class="pull-right connected label label-success" title='{{ _("connected to Centrifuge") }}'>
-                {{ _("connected") }}
+            <a href="#" class="btn btn-success" id="project-settings">project management</a>
+            <span class="pull-right connected label label-success" style="display: none;" title='connected to Centrifuge'>
+                connected
             </span>
-            <span class="pull-right not-connected label label-danger" style="display: none;" title='{{ _("disconnected from Centrifuge") }}'>
-                {{ _("disconnected") }}
+            <span class="pull-right not-connected label label-danger" style="display: none;" title='disconnected from Centrifuge'>
+                disconnected
             </span>
             <div class="tab-content" id="tab-content">
                 <div class="tab-pane" id="_info">
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("Version") }}:</span>
-                        &nbsp;
-                        <span class="stat-value">{{ centrifuge_version }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("SockJS endpoint") }}:</span>
-                        &nbsp;
-                        <span class="stat-value" id="sockjs-endpoint"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("WebSocket endpoint") }}:</span>
-                        &nbsp;
-                        <span class="stat-value" id="websocket-endpoint"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("HTTP API endpoint") }}:</span>
-                        &nbsp;
-                        <span class="stat-value" id="api-endpoint"></span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("Engine") }}:</span>
-                        &nbsp;
-                        <span class="stat-value">{{ engine }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("Current node") }}:</span>
-                        &nbsp;
-                        <span class="stat-value" id="current-node">{{ node_name }}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="text-muted stat-key">{{ _("Nodes running") }}:</span>
-                        &nbsp;
-                        <span class="stat-value" id="node-count">{{ node_count }}</span>
-                    </div>
-                    <div class="node_info">
-                        <table class="table table-bordered">
-                            <thead class="cf">
-                            <tr>
-                                <th title="node name">Node name</th>
-                                <th title="active channels">Channels</th>
-                                <th title="connected clients">Clients</th>
-                                <th title="unique clients">Unique</th>
-                                <th title="messages per second">Msg/sec</th>
-                                <th title="broadcast average time in milliseconds">Broadcast</th>
-                                <th title="api calls">API calls</th>
-                            </tr>
-                            </thead>
-                            <tbody id="node-info">
-                                <tr id="node-info-loader">
-                                    <td colspan="7">{{ _("Waiting for information...") }}</td>
-                                <tr>
-                            </tbody>
-                        </table>
-                    </div>
+
                 </div>
             </div>
         </div>

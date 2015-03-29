@@ -66,30 +66,31 @@ class MainHandler(WebBaseHandler):
         """
         Render main template with additional data.
         """
-        user = self.current_user.decode()
+        self.render("main.html")
 
-        projects = self.application.structure
 
+def params_from_request(request):
+    return dict((k, ''.join([x.decode('utf-8') for x in v])) for k, v in six.iteritems(request.arguments))
+
+
+class InfoHandler(WebBaseHandler):
+
+    @tornado.web.authenticated
+    @coroutine
+    def get(self):
         config = self.application.settings.get('config', {})
         metrics_interval = config.get('metrics', {}).get('interval', self.application.METRICS_EXPORT_INTERVAL)*1000
-
         context = {
-            'js_data': tornado.escape.json_encode({
-                'current_user': user,
-                'socket_url': '/socket',
-                'projects': projects,
-                'metrics_interval': metrics_interval
-            }),
+            'structure':  self.application.structure,
+            'structure_dict': self.application.structure_dict,
+            'metrics_interval': metrics_interval,
             'centrifuge_version': centrifuge.__version__,
             'node_count': len(self.application.nodes) + 1,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
             'node_name': self.application.name
         }
-        self.render("main.html", **context)
-
-
-def params_from_request(request):
-    return dict((k, ''.join([x.decode('utf-8') for x in v])) for k, v in six.iteritems(request.arguments))
+        self.set_header("Content-Type", "application/json")
+        self.finish(json_encode(context))
 
 
 class ProjectDetailHandler(WebBaseHandler):

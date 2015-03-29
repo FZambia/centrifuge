@@ -72,6 +72,7 @@ from centrifuge.handlers import SockjsConnection
 from centrifuge.handlers import Client
 
 from centrifuge.web.handlers import MainHandler
+from centrifuge.web.handlers import InfoHandler
 from centrifuge.web.handlers import AuthHandler
 from centrifuge.web.handlers import LogoutHandler
 from centrifuge.web.handlers import AdminSocketHandler
@@ -93,6 +94,9 @@ def create_application_handlers(sockjs_settings):
     handlers = [
         tornado.web.url(
             r'/', MainHandler, name="main"
+        ),
+        tornado.web.url(
+            r'/info/', InfoHandler, name="info"
         ),
         tornado.web.url(
             r'/project/([^/]+)/([^/]+)$',
