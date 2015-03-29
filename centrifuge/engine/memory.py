@@ -114,9 +114,9 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     @coroutine
-    def add_subscription(self, project_id, channel, client):
+    def add_subscription(self, project_key, channel, client):
 
-        subscription_key = self.get_subscription_key(project_id, channel)
+        subscription_key = self.get_subscription_key(project_key, channel)
 
         if subscription_key not in self.subscriptions:
             self.subscriptions[subscription_key] = {}
@@ -126,9 +126,9 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     @coroutine
-    def remove_subscription(self, project_id, channel, client):
+    def remove_subscription(self, project_key, channel, client):
 
-        subscription_key = self.get_subscription_key(project_id, channel)
+        subscription_key = self.get_subscription_key(project_key, channel)
 
         try:
             del self.subscriptions[subscription_key][client.uid]
@@ -143,15 +143,15 @@ class Engine(BaseEngine):
 
         raise Return((True, None))
 
-    def get_presence_key(self, project_id, channel):
-        return "%s:presence:%s:%s" % (self.prefix, project_id, channel)
+    def get_presence_key(self, project_key, channel):
+        return "%s:presence:%s:%s" % (self.prefix, project_key, channel)
 
     @coroutine
-    def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
+    def add_presence(self, project_key, channel, uid, user_info, presence_timeout=None):
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
 
-        hash_key = self.get_presence_key(project_id, channel)
+        hash_key = self.get_presence_key(project_key, channel)
 
         if hash_key not in self.presence:
             self.presence[hash_key] = {}
@@ -164,8 +164,8 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     @coroutine
-    def remove_presence(self, project_id, channel, uid):
-        hash_key = self.get_presence_key(project_id, channel)
+    def remove_presence(self, project_key, channel, uid):
+        hash_key = self.get_presence_key(project_key, channel)
         try:
             del self.presence[hash_key][uid]
         except KeyError:
@@ -174,9 +174,9 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     @coroutine
-    def get_presence(self, project_id, channel):
+    def get_presence(self, project_key, channel):
         now = int(time.time())
-        hash_key = self.get_presence_key(project_id, channel)
+        hash_key = self.get_presence_key(project_key, channel)
         to_return = {}
         if hash_key in self.presence:
             keys_to_delete = []
@@ -201,13 +201,13 @@ class Engine(BaseEngine):
 
         raise Return((to_return, None))
 
-    def get_history_key(self, project_id, channel):
-        return "%s:history:%s:%s" % (self.prefix, project_id, channel)
+    def get_history_key(self, project_key, channel):
+        return "%s:history:%s:%s" % (self.prefix, project_key, channel)
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None, history_expire=0):
+    def add_history_message(self, project_key, channel, message, history_size, history_expire):
 
-        history_key = self.get_history_key(project_id, channel)
+        history_key = self.get_history_key(project_key, channel)
 
         if history_expire:
             expire_at = int(time.time()) + history_expire
@@ -219,16 +219,14 @@ class Engine(BaseEngine):
         if history_key not in self.history:
             self.history[history_key] = []
 
-        history_size = history_size or self.history_size
-
         self.history[history_key].insert(0, message)
         self.history[history_key] = self.history[history_key][:history_size]
 
         raise Return((True, None))
 
     @coroutine
-    def get_history(self, project_id, channel):
-        history_key = self.get_history_key(project_id, channel)
+    def get_history(self, project_key, channel):
+        history_key = self.get_history_key(project_key, channel)
 
         now = int(time.time())
 

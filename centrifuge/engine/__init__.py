@@ -32,7 +32,7 @@ class BaseEngine(object):
     DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
     # how many messages keep in history for channel by default
-    DEFAULT_HISTORY_SIZE = 20
+    DEFAULT_HISTORY_SIZE = 50
 
     DEFAULT_PUBLISH_METHOD = 'message'
 
@@ -56,11 +56,6 @@ class BaseEngine(object):
         self.presence_timeout = self.config.get(
             "engine_presence_expire_interval",
             self.DEFAULT_PRESENCE_EXPIRE_INTERVAL
-        )
-
-        self.history_size = self.config.get(
-            "engine_history_size",
-            self.DEFAULT_HISTORY_SIZE
         )
 
     def initialize(self):
@@ -137,7 +132,7 @@ class BaseEngine(object):
         raise Return((None, None))
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size, history_expire):
         """
         Add new history message for channel, trim history if needed.
         """

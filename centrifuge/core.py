@@ -72,6 +72,17 @@ class Application(tornado.web.Application):
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
 
+    # how many messages keep in channel history by default
+    DEFAULT_HISTORY_SIZE = 50
+
+    # in seconds how long we keep history in inactive channels
+    # (0 - forever until size is not exceeded)
+    # 1 hour by default
+    DEFAULT_HISTORY_EXPIRE = 3600
+
+    # default client connection lifetime in seconds
+    DEFAULT_CONNECTION_LIFETIME = 3600
+
     # when active no authentication required at all when connecting to Centrifuge,
     # this simplified mode suitable for demonstration or personal usage
     INSECURE = False
@@ -379,38 +390,38 @@ class Application(tornado.web.Application):
             }
         })
 
-    def add_connection(self, project_id, user, uid, client):
+    def add_connection(self, project_key, user, uid, client):
         """
         Register new client's connection.
         """
-        if project_id not in self.connections:
-            self.connections[project_id] = {}
-        if user not in self.connections[project_id]:
-            self.connections[project_id][user] = {}
+        if project_key not in self.connections:
+            self.connections[project_key] = {}
+        if user not in self.connections[project_key]:
+            self.connections[project_key][user] = {}
 
-        self.connections[project_id][user][uid] = client
+        self.connections[project_key][user][uid] = client
 
-    def remove_connection(self, project_id, user, uid):
+    def remove_connection(self, project_key, user, uid):
         """
         Remove client's connection
         """
         try:
-            del self.connections[project_id][user][uid]
+            del self.connections[project_key][user][uid]
         except KeyError:
             pass
 
-        if project_id in self.connections and user in self.connections[project_id]:
+        if project_key in self.connections and user in self.connections[project_key]:
             # clean connections
-            if self.connections[project_id][user]:
+            if self.connections[project_key][user]:
                 return
             try:
-                del self.connections[project_id][user]
+                del self.connections[project_key][user]
             except KeyError:
                 pass
-            if self.connections[project_id]:
+            if self.connections[project_key]:
                 return
             try:
-                del self.connections[project_id]
+                del self.connections[project_key]
             except KeyError:
                 pass
 
@@ -429,19 +440,13 @@ class Application(tornado.web.Application):
         except KeyError:
             pass
 
-    @coroutine
-    def get_project(self, project_id):
+    def get_project(self, project_name):
         """
         Project settings can change during client's connection.
         Every time we need project - we must extract actual
         project data from structure.
         """
-        project, error = yield self.structure.get_project_by_id(project_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        raise Return((project, None))
+        return self.structure_dict.get(project_name)
 
     def extract_namespace_name(self, channel):
         """
@@ -465,22 +470,16 @@ class Application(tornado.web.Application):
     def is_channel_private(self, channel):
         return channel.startswith(self.PRIVATE_CHANNEL_PREFIX)
 
-    @coroutine
     def get_namespace(self, project, channel):
 
         namespace_name = self.extract_namespace_name(channel)
 
         if not namespace_name:
+            # no namespace in channel name - use project options
+            # as namespace options
             raise Return((project, None))
 
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
+        return project.get("namespaces", {}).get(namespace_name)
 
     @coroutine
     def handle_ping(self, params):
@@ -500,10 +499,10 @@ class Application(tornado.web.Application):
         user = params.get("user")
         channel = params.get("channel", None)
 
-        project_id = project['_id']
+        project_name = project['name']
 
         # try to find user's connection
-        user_connections = self.connections.get(project_id, {}).get(user, {})
+        user_connections = self.connections.get(project_name, {}).get(user, {})
         if not user_connections:
             raise Return((True, None))
 
@@ -533,10 +532,10 @@ class Application(tornado.web.Application):
         user = params.get("user")
         reason = params.get("reason", None)
 
-        project_id = project['_id']
+        project_name = project['name']
 
         # try to find user's connection
-        user_connections = self.connections.get(project_id, {}).get(user, {})
+        user_connections = self.connections.get(project_name, {}).get(user, {})
         if not user_connections:
             raise Return((True, None))
 
@@ -633,30 +632,30 @@ class Application(tornado.web.Application):
         """
         Publish event into PUB socket stream
         """
-        project_id = project['_id']
+        project_name = project['name']
         channel = message['channel']
 
-        namespace, error = yield self.get_namespace(project, channel)
-        if error:
-            raise Return((False, error))
+        namespace = self.get_namespace(project, channel)
+        if not namespace:
+            raise Return((False, self.NAMESPACE_NOT_FOUND))
 
         if namespace.get('is_watching', False):
             # send to admin channel
             self.engine.publish_admin_message({
-                "project": project_id,
+                "project": project_name,
                 "message": message
             })
 
         # send to event channel
         subscription_key = self.engine.get_subscription_key(
-            project_id, channel
+            project_name, channel
         )
 
         self.engine.publish_message(subscription_key, message)
 
         if namespace.get('history', False):
             yield self.engine.add_history_message(
-                project_id, channel, message,
+                project_name, channel, message,
                 history_size=namespace.get('history_size'),
                 history_expire=namespace.get('history_expire', 0)
             )
@@ -687,7 +686,7 @@ class Application(tornado.web.Application):
 
         for callback in self.pre_publish_callbacks:
             try:
-                message = yield callback(project["_id"], message)
+                message = yield callback(project["name"], message)
             except Exception as err:
                 logger.exception(err)
             else:
@@ -720,7 +719,7 @@ class Application(tornado.web.Application):
 
         for callback in self.post_publish_callbacks:
             try:
-                yield callback(project["_id"], message)
+                yield callback(project["name"], message)
             except Exception as err:
                 logger.exception(err)
 
@@ -731,9 +730,9 @@ class Application(tornado.web.Application):
         """
         Return a list of last messages sent into channel.
         """
-        project_id = project['_id']
+        project_name = project['name']
         channel = params.get("channel")
-        data, error = yield self.engine.get_history(project_id, channel)
+        data, error = yield self.engine.get_history(project_name, channel)
         if error:
             raise Return((data, self.INTERNAL_SERVER_ERROR))
         raise Return((data, None))
@@ -743,9 +742,9 @@ class Application(tornado.web.Application):
         """
         Return current presence information for channel.
         """
-        project_id = project['_id']
+        project_name = project['name']
         channel = params.get("channel")
-        data, error = yield self.engine.get_presence(project_id, channel)
+        data, error = yield self.engine.get_presence(project_name, channel)
         if error:
             raise Return((data, self.INTERNAL_SERVER_ERROR))
         raise Return((data, None))

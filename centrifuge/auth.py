@@ -22,31 +22,31 @@ def detect_hash_algorithm(hash_string):
     return None
 
 
-def check_sign(secret_key, project_id, encoded_data, auth_sign):
+def check_sign(secret_key, project_name, encoded_data, auth_sign):
     """
     Check that data from client was properly signed.
     To do it create an HMAC with md5 hashing algorithm (python's default)
-    based on secret key, project ID and encoded data and compare result
+    based on secret key, project name and encoded data and compare result
     with sign provided.
     """
     hash_algorithm = detect_hash_algorithm(auth_sign)
     if not hash_algorithm:
         return False
     sign = hmac.new(six.b(str(secret_key)), digestmod=hash_algorithm)
-    sign.update(six.b(project_id))
+    sign.update(six.b(project_name))
     sign.update(six.b(encoded_data))
     return sign.hexdigest() == auth_sign
 
 
-def get_client_token(secret_key, project_id, user, timestamp, user_info=None, hash_algorithm=None):
+def get_client_token(secret_key, project_name, user, timestamp, user_info=None, hash_algorithm=None):
     """
     When client from browser connects to Centrifuge he must send his
-    user ID, ID of project and optionally user_info JSON string.
+    user ID, name of project and optionally user_info JSON string.
     To validate that data we use HMAC to build token.
     """
     hash_algorithm = hash_algorithm or sha256
     sign = hmac.new(six.b(str(secret_key)), digestmod=hash_algorithm)
-    sign.update(six.b(project_id))
+    sign.update(six.b(project_name))
     sign.update(six.b(user))
     sign.update(six.b(timestamp))
     if user_info is not None:
@@ -55,7 +55,7 @@ def get_client_token(secret_key, project_id, user, timestamp, user_info=None, ha
     return token
 
 
-def check_client_token(token, secret_key, project_id, user, timestamp, user_info=None):
+def check_client_token(token, secret_key, project_name, user, timestamp, user_info=None):
     """
     Create reference token based on connection parameters and
     compare it with token provided by client
@@ -63,7 +63,7 @@ def check_client_token(token, secret_key, project_id, user, timestamp, user_info
     hash_algorithm = detect_hash_algorithm(token)
     if not hash_algorithm:
         return False
-    client_token = get_client_token(secret_key, project_id, user, timestamp, user_info, hash_algorithm=hash_algorithm)
+    client_token = get_client_token(secret_key, project_name, user, timestamp, user_info, hash_algorithm=hash_algorithm)
     return token == client_token
 
 

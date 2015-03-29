@@ -348,9 +348,9 @@ class Engine(BaseEngine):
         self.subscriber.unsubscribe(subscription_key)
 
     @coroutine
-    def add_subscription(self, project_id, channel, client):
+    def add_subscription(self, project_key, channel, client):
 
-        subscription_key = self.get_subscription_key(project_id, channel)
+        subscription_key = self.get_subscription_key(project_key, channel)
         self.subscribe_key(subscription_key)
 
         if subscription_key not in self.subscriptions:
@@ -361,9 +361,9 @@ class Engine(BaseEngine):
         raise Return((True, None))
 
     @coroutine
-    def remove_subscription(self, project_id, channel, client):
+    def remove_subscription(self, project_key, channel, client):
 
-        subscription_key = self.get_subscription_key(project_id, channel)
+        subscription_key = self.get_subscription_key(project_key, channel)
 
         try:
             del self.subscriptions[subscription_key][client.uid]
@@ -379,21 +379,21 @@ class Engine(BaseEngine):
 
         raise Return((True, None))
 
-    def get_presence_hash_key(self, project_id, channel):
-        return "%s.presence.hash.%s.%s" % (self.prefix, project_id, channel)
+    def get_presence_hash_key(self, project_key, channel):
+        return "%s.presence.hash.%s.%s" % (self.prefix, project_key, channel)
 
-    def get_presence_set_key(self, project_id, channel):
-        return "%s.presence.set.%s.%s" % (self.prefix, project_id, channel)
+    def get_presence_set_key(self, project_key, channel):
+        return "%s.presence.set.%s.%s" % (self.prefix, project_key, channel)
 
-    def get_history_list_key(self, project_id, channel):
-        return "%s.history.list.%s.%s" % (self.prefix, project_id, channel)
+    def get_history_list_key(self, project_key, channel):
+        return "%s.history.list.%s.%s" % (self.prefix, project_key, channel)
 
     @coroutine
-    def add_presence(self, project_id, channel, uid, user_info, presence_timeout=None):
+    def add_presence(self, project_key, channel, uid, user_info, presence_timeout=None):
         now = int(time.time())
         expire_at = now + (presence_timeout or self.presence_timeout)
-        hash_key = self.get_presence_hash_key(project_id, channel)
-        set_key = self.get_presence_set_key(project_id, channel)
+        hash_key = self.get_presence_hash_key(project_key, channel)
+        set_key = self.get_presence_set_key(project_key, channel)
         try:
             pipeline = self.worker.pipeline()
             pipeline.multi()
@@ -407,9 +407,9 @@ class Engine(BaseEngine):
             raise Return((True, None))
 
     @coroutine
-    def remove_presence(self, project_id, channel, uid):
-        hash_key = self.get_presence_hash_key(project_id, channel)
-        set_key = self.get_presence_set_key(project_id, channel)
+    def remove_presence(self, project_key, channel, uid):
+        hash_key = self.get_presence_hash_key(project_key, channel)
+        set_key = self.get_presence_set_key(project_key, channel)
         try:
             pipeline = self.worker.pipeline()
             pipeline.hdel(hash_key, uid)
@@ -421,10 +421,10 @@ class Engine(BaseEngine):
             raise Return((True, None))
 
     @coroutine
-    def get_presence(self, project_id, channel):
+    def get_presence(self, project_key, channel):
         now = int(time.time())
-        hash_key = self.get_presence_hash_key(project_id, channel)
-        set_key = self.get_presence_set_key(project_id, channel)
+        hash_key = self.get_presence_hash_key(project_key, channel)
+        set_key = self.get_presence_set_key(project_key, channel)
         try:
             expired_keys = yield Task(self.worker.zrangebyscore, set_key, 0, now)
             if expired_keys:
@@ -439,9 +439,8 @@ class Engine(BaseEngine):
             raise Return((dict_from_list(data), None))
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None, history_expire=0):
-        history_size = history_size or self.history_size
-        history_list_key = self.get_history_list_key(project_id, channel)
+    def add_history_message(self, project_key, channel, message, history_size, history_expire):
+        history_list_key = self.get_history_list_key(project_key, channel)
         try:
             pipeline = self.worker.pipeline()
             pipeline.lpush(history_list_key, json_encode(message))
@@ -457,8 +456,8 @@ class Engine(BaseEngine):
             raise Return((True, None))
 
     @coroutine
-    def get_history(self, project_id, channel):
-        history_list_key = self.get_history_list_key(project_id, channel)
+    def get_history(self, project_key, channel):
+        history_list_key = self.get_history_list_key(project_key, channel)
         try:
             data = yield Task(self.worker.lrange, history_list_key, 0, -1)
         except StreamClosedError as e:
