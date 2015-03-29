@@ -477,7 +477,7 @@ class Application(tornado.web.Application):
         if not namespace_name:
             # no namespace in channel name - use project options
             # as namespace options
-            raise Return((project, None))
+            return project
 
         return project.get("namespaces", {}).get(namespace_name)
 
@@ -639,7 +639,7 @@ class Application(tornado.web.Application):
         if not namespace:
             raise Return((False, self.NAMESPACE_NOT_FOUND))
 
-        if namespace.get('is_watching', False):
+        if namespace.get('watch', False):
             # send to admin channel
             self.engine.publish_admin_message({
                 "project": project_name,
@@ -656,8 +656,8 @@ class Application(tornado.web.Application):
         if namespace.get('history', False):
             yield self.engine.add_history_message(
                 project_name, channel, message,
-                history_size=namespace.get('history_size'),
-                history_expire=namespace.get('history_expire', 0)
+                history_size=namespace.get('history_size', self.DEFAULT_HISTORY_SIZE),
+                history_expire=namespace.get('history_expire', self.DEFAULT_HISTORY_EXPIRE)
             )
 
         if self.collector:
@@ -714,6 +714,7 @@ class Application(tornado.web.Application):
         result, error = yield self.publish_message(
             project, message
         )
+
         if error:
             raise Return((False, error))
 
