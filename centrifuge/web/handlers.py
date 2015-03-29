@@ -95,8 +95,8 @@ def params_from_request(request):
 class ProjectDetailHandler(WebBaseHandler):
 
     @coroutine
-    def get_project(self, project_id):
-        project, error = yield self.application.structure.get_project_by_id(project_id)
+    def get_project(self, project_name):
+        project = self.application.structure_dict.get(project_name)
         if not project:
             raise tornado.web.HTTPError(404)
         raise Return((project, None))

@@ -6,10 +6,8 @@
     <div class="row">
         <div class="col-lg-3">
             <ul class="nav nav-pills nav-stacked" id="tabs">
-                <li class="{% block tab_credentials %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'credentials')}}">{{_("Credentials")}}</a></li>
-                <li class="{% block tab_settings %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'settings')}}">{{_("Settings")}}</a></li>
-                <li class="{% block tab_namespaces %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'namespaces')}}">{{_("Namespaces")}}</a></li>
-                <li class="{% block tab_actions %}{% end %}"><a href="{{reverse_url("project_detail", project['_id'], 'actions')}}">{{_("Actions")}}</a></li>
+                <li class="{% block tab_credentials %}{% end %}"><a href="{{reverse_url("project_detail", project['name'], 'credentials')}}">{{_("Credentials")}}</a></li>
+                <li class="{% block tab_actions %}{% end %}"><a href="{{reverse_url("project_detail", project['name'], 'actions')}}">{{_("Actions")}}</a></li>
             </ul>
         </div>
         <div class="col-lg-9">
