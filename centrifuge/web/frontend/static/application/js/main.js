@@ -29,6 +29,21 @@
             var projects = [];
             var global_projects = {};
 
+            // jsrender templates
+            var event_template = $('#event_template');
+            var tab_template = $('#tab_template');
+            var tab_pane_template = $('#tab_pane_template');
+            var node_info_row_template = $('#node_info_row_template');
+
+            var node_count;
+            var node_info;
+            var node_info_loader;
+            var node_timeouts = {};
+
+            var global_tabs = $(options.global_tabs_element);
+            var global_info_template = $(options.info_template_element);
+            var project_settings_button = $('#project-settings');
+
             // sock js connection
             var connection = null;
 
@@ -41,22 +56,6 @@
                     });
                 }
             } catch(e) {}
-
-            var global_tabs = $(options.global_tabs_element);
-            var global_info_template = $(options.info_template_element);
-
-            // jsrender templates
-            var event_template = $('#event_template');
-            var tab_template = $('#tab_template');
-            var tab_pane_template = $('#tab_pane_template');
-            var node_info_row_template = $('#node_info_row_template');
-
-            var node_count;
-            var node_info;
-            var node_info_loader;
-            var node_timeouts = {};
-
-            var project_settings_button = $('#project-settings');
 
             var show_hashed_tab = function() {
                 var hash = document.location.hash;
@@ -337,7 +336,7 @@
                     node_count = $('#node-count');
                     node_info = $('#node-info');
                     node_info_loader = $('#node-info-loader');
-                    
+
                     show_hashed_tab();
 
                     // Change hash for page-reload
