@@ -21,65 +21,59 @@ from centrifuge.handlers import BaseHandler
 class WebBaseHandler(BaseHandler):
 
     def get_current_user(self):
-        user = self.get_secure_cookie("user")
-        if not user:
-            return None
-        return user
-
-
-class LogoutHandler(WebBaseHandler):
-
-    def get(self):
-        self.clear_cookie("user")
-        self.redirect(self.reverse_url("main"))
-
-
-class AuthHandler(WebBaseHandler):
-
-    def authorize(self):
-        self.set_secure_cookie("user", "authorized")
-        next_url = self.get_argument("next", None)
-        if next_url:
-            self.redirect(next_url)
-        else:
-            self.redirect(self.reverse_url("main"))
-
-    def get(self):
         if not self.opts.get("password"):
-            self.authorize()
-        else:
-            self.render('index.html')
+            return "authorized"
+        auth_header = self.request.headers.get(
+            "Authorization", "").split(" ")[-1]
+        return decode_signed_value(
+            self.application.settings['cookie_secret'],
+            'user',
+            auth_header
+        )
 
-    def post(self):
-        password = self.get_argument("password", None)
-        if password and password == self.opts.get("password"):
-            self.authorize()
-        else:
-            self.render('index.html')
+
+class Http404Handler(WebBaseHandler):
+
+    def get(self):
+        self.render("http404.html")
 
 
 class MainHandler(WebBaseHandler):
 
-    @tornado.web.authenticated
-    @coroutine
     def get(self):
-        """
-        Render main template with additional data.
-        """
         self.render("main.html")
 
 
+class AuthHandler(BaseHandler):
+
+    def post(self):
+        password = self.get_argument("password", None)
+        if password and password == self.opts.get("password"):
+            token = self.create_signed_value("token", "authorized")
+            self.set_header("Content-Type", "application/json")
+            self.finish(json_encode({
+                "token": token
+            }))
+        else:
+            raise tornado.web.HTTPError(400)
+
+
 def params_from_request(request):
-    return dict((k, ''.join([x.decode('utf-8') for x in v])) for k, v in six.iteritems(request.arguments))
+    return dict(
+        (
+            k,
+            ''.join([x.decode('utf-8') for x in v])
+        ) for k, v in six.iteritems(request.arguments)
+    )
 
 
 class InfoHandler(WebBaseHandler):
 
     @tornado.web.authenticated
-    @coroutine
     def get(self):
         config = self.application.settings.get('config', {})
-        metrics_interval = config.get('metrics', {}).get('interval', self.application.METRICS_EXPORT_INTERVAL)*1000
+        metrics_interval = config.get('metrics', {}).get(
+            'interval', self.application.METRICS_EXPORT_INTERVAL)*1000
         context = {
             'structure':  self.application.structure,
             'structure_dict': self.application.structure_dict,
@@ -91,6 +85,18 @@ class InfoHandler(WebBaseHandler):
         }
         self.set_header("Content-Type", "application/json")
         self.finish(json_encode(context))
+
+
+class ActionHandler(WebBaseHandler):
+
+    @tornado.web.authenticated
+    def post(self):
+        result, error = {}, None
+        self.set_header("Content-Type", "application/json")
+        self.finish(json_encode({
+            "body": result,
+            "error": error
+        }))
 
 
 class ProjectDetailHandler(WebBaseHandler):
@@ -201,18 +207,3 @@ class AdminSocketHandler(SockJSConnection):
     def on_close(self):
         self.unsubscribe()
 
-
-class Http404Handler(WebBaseHandler):
-
-    def get(self):
-        self.render("http404.html")
-
-
-class StructureDumpHandler(WebBaseHandler):
-
-    @tornado.web.authenticated
-    @coroutine
-    def get(self):
-        data = self.application.structure
-        self.set_header("Content-Type", "application/json")
-        self.finish(json_encode(data))

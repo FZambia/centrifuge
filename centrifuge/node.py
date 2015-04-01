@@ -74,11 +74,10 @@ from centrifuge.handlers import Client
 from centrifuge.web.handlers import MainHandler
 from centrifuge.web.handlers import InfoHandler
 from centrifuge.web.handlers import AuthHandler
-from centrifuge.web.handlers import LogoutHandler
 from centrifuge.web.handlers import AdminSocketHandler
 from centrifuge.web.handlers import Http404Handler
 from centrifuge.web.handlers import ProjectDetailHandler
-from centrifuge.web.handlers import StructureDumpHandler
+from centrifuge.web.handlers import ActionHandler
 
 
 def stop_running(msg):
@@ -99,6 +98,9 @@ def create_application_handlers(sockjs_settings):
             r'/info/', InfoHandler, name="info"
         ),
         tornado.web.url(
+            r'/action/', ActionHandler, name="action"
+        ),
+        tornado.web.url(
             r'/project/([^/]+)/([^/]+)$',
             ProjectDetailHandler,
             name="project_detail"
@@ -108,9 +110,6 @@ def create_application_handlers(sockjs_settings):
         ),
         tornado.web.url(
             r'/auth$', AuthHandler, name="auth"
-        ),
-        tornado.web.url(
-            r'/logout$', LogoutHandler, name="logout"
         ),
         tornado.web.url(
             r'/dumps$', StructureDumpHandler, name="dump_structure"
