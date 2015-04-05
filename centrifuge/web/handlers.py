@@ -3,6 +3,7 @@
 
 import six
 import uuid
+import functools
 import tornado.web
 import tornado.escape
 import tornado.auth
@@ -18,6 +19,20 @@ from centrifuge.utils import json_encode, json_decode
 from centrifuge.handlers import BaseHandler
 
 
+def authenticated(method):
+    """
+    Decorate methods with this to require that the user be logged in.
+    As we serve single page app we use our own authenticated decorator
+    to just return 401 response code
+    """
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self.current_user:
+            raise tornado.web.HTTPError(401)
+        return method(self, *args, **kwargs)
+    return wrapper
+
+
 class WebBaseHandler(BaseHandler):
 
     def get_current_user(self):
@@ -27,21 +42,9 @@ class WebBaseHandler(BaseHandler):
             "Authorization", "").split(" ")[-1]
         return decode_signed_value(
             self.application.settings['cookie_secret'],
-            'user',
+            'token',
             auth_header
         )
-
-
-class Http404Handler(WebBaseHandler):
-
-    def get(self):
-        self.render("http404.html")
-
-
-class MainHandler(WebBaseHandler):
-
-    def get(self):
-        self.render("main.html")
 
 
 class AuthHandler(BaseHandler):
@@ -69,7 +72,7 @@ def params_from_request(request):
 
 class InfoHandler(WebBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated
     def get(self):
         config = self.application.settings.get('config', {})
         metrics_interval = config.get('metrics', {}).get(
@@ -78,7 +81,7 @@ class InfoHandler(WebBaseHandler):
             'structure':  self.application.structure,
             'structure_dict': self.application.structure_dict,
             'metrics_interval': metrics_interval,
-            'centrifuge_version': centrifuge.__version__,
+            'version': centrifuge.__version__,
             'node_count': len(self.application.nodes) + 1,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
             'node_name': self.application.name
@@ -89,7 +92,7 @@ class InfoHandler(WebBaseHandler):
 
 class ActionHandler(WebBaseHandler):
 
-    @tornado.web.authenticated
+    @authenticated
     def post(self):
         result, error = {}, None
         self.set_header("Content-Type", "application/json")
@@ -143,7 +146,7 @@ class ProjectDetailHandler(WebBaseHandler):
             "error": error
         }))
 
-    @tornado.web.authenticated
+    @authenticated
     @coroutine
     def get(self, project_name, section):
 
@@ -164,7 +167,7 @@ class ProjectDetailHandler(WebBaseHandler):
 
         self.render(template_name, **data)
 
-    @tornado.web.authenticated
+    @authenticated
     @coroutine
     def post(self, project_name, section):
         self.project, error = yield self.get_project(
