@@ -380,9 +380,8 @@ class Application(tornado.web.Application):
         Publish information about current node into admin channel
         """
         self.engine.publish_admin_message({
-            "admin": True,
-            "type": "node",
-            "data": {
+            "method": "node",
+            "body": {
                 "uid": self.uid,
                 "nodes": len(self.nodes) + 1,
                 "name": self.name,
@@ -642,8 +641,11 @@ class Application(tornado.web.Application):
         if namespace.get('watch', False):
             # send to admin channel
             self.engine.publish_admin_message({
-                "project": project_name,
-                "message": message
+                "method": "message",
+                "body": {
+                    "project": project_name,
+                    "message": message
+                }
             })
 
         # send to event channel
