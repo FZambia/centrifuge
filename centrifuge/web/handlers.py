@@ -189,32 +189,64 @@ class AdminWebSocketHandler(WebSocketHandler):
     def subscribe(self):
         self.uid = uuid.uuid4().hex
         self.application.add_admin_connection(self.uid, self)
-        logger.info('admin connected')
+        logger.debug('admin subscribed')
 
     def unsubscribe(self):
         if not self.uid:
             return
         self.application.remove_admin_connection(self.uid)
-        logger.info('admin disconnected')
+        logger.debug('admin unsubscribed')
 
     def open(self):
-        try:
-            value = "123"
-        except (KeyError, AttributeError):
-            self.close()
-        else:
-            user = "1" #= decode_signed_value(
-            #    self.application.settings['cookie_secret'], 'token', value
-            #)
-            if user:
-                self.subscribe()
-            else:
-                self.close()
+        logger.info('admin connected')
 
     def on_message(self, message):
-        pass
+        """
+        The only method supported at moment - auth - used to
+        authorize websocket connection.
+        """
+        try:
+            data = json_decode(message)
+        except ValueError:
+            self.close()
+            return
+
+        try:
+            method = data["method"]
+            params = data["params"]
+        except (TypeError, KeyError):
+            self.close()
+            return
+
+        if method == "auth":
+            try:
+                token = params["token"]
+            except (KeyError, TypeError):
+                self.close()
+                return
+            else:
+                user = decode_signed_value(
+                    self.application.settings['cookie_secret'], 'token', token
+                )
+                if user:
+                    self.subscribe()
+                    self.send(json_encode({
+                        "method": "auth",
+                        "body": True
+                    }))
+                else:
+                    self.send(json_encode({
+                        "method": "auth",
+                        "body": False
+                    }))
+                    self.close()
+                    return
+        else:
+            self.close()
+            return
 
     def on_close(self):
         self.unsubscribe()
+        logger.info("admin disconnected")
 
     send = WebSocketHandler.write_message
