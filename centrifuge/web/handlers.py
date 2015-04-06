@@ -11,7 +11,7 @@ import tornado.httpclient
 import tornado.gen
 from tornado.gen import coroutine, Return
 from tornado.web import decode_signed_value
-from sockjs.tornado import SockJSConnection
+from tornado.websocket import WebSocketHandler
 
 import centrifuge
 from centrifuge.log import logger
@@ -179,7 +179,11 @@ class ProjectDetailHandler(WebBaseHandler):
             raise tornado.web.HTTPError(404)
 
 
-class AdminSocketHandler(SockJSConnection):
+class AdminWebSocketHandler(WebSocketHandler):
+
+    def __init__(self, *args, **kwargs):
+        super(AdminWebSocketHandler, self).__init__(*args, **kwargs)
+        self.uid = None
 
     @coroutine
     def subscribe(self):
@@ -188,25 +192,29 @@ class AdminSocketHandler(SockJSConnection):
         logger.info('admin connected')
 
     def unsubscribe(self):
-        if not hasattr(self, 'uid'):
+        if not self.uid:
             return
         self.application.remove_admin_connection(self.uid)
         logger.info('admin disconnected')
 
-    def on_open(self, info):
+    def open(self):
         try:
-            value = info.cookies['user'].value
+            value = "123"
         except (KeyError, AttributeError):
             self.close()
         else:
-            user = decode_signed_value(
-                self.application.settings['cookie_secret'], 'user', value
-            )
+            user = "1" #= decode_signed_value(
+            #    self.application.settings['cookie_secret'], 'token', value
+            #)
             if user:
                 self.subscribe()
             else:
                 self.close()
 
+    def on_message(self, message):
+        pass
+
     def on_close(self):
         self.unsubscribe()
 
+    send = WebSocketHandler.write_message

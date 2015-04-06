@@ -76,7 +76,7 @@ from centrifuge.handlers import Client
 
 from centrifuge.web.handlers import InfoHandler
 from centrifuge.web.handlers import AuthHandler
-from centrifuge.web.handlers import AdminSocketHandler
+from centrifuge.web.handlers import AdminWebSocketHandler
 from centrifuge.web.handlers import ActionHandler
 
 
@@ -97,6 +97,10 @@ def create_application_handlers(sockjs_settings):
         tornado.web.url(r'/auth/$', AuthHandler, name="auth")
     ]
 
+    handlers.append(
+        (r'/socket', AdminWebSocketHandler),
+    )
+
     if options.web:
         logger.info("serving web application from {0}".format(os.path.abspath(options.web)))
         handlers.append(
@@ -106,12 +110,6 @@ def create_application_handlers(sockjs_settings):
                 {"path": options.web, "default_filename": "index.html"}
             )
         )
-
-    # create SockJS route for admin connections
-    admin_sock_router = SockJSRouter(
-        AdminSocketHandler, '/socket', user_settings=sockjs_settings
-    )
-    handlers = admin_sock_router.urls + handlers
 
     # create SockJS route for client connections
     client_sock_router = SockJSRouter(
@@ -192,9 +190,6 @@ def create_centrifuge_application():
 
     logger.info("Engine class: {0}".format(engine_class_path))
     app.engine = engine_class(app)
-
-    # create reference to application from SockJS handlers
-    AdminSocketHandler.application = app
 
     # create reference to application from Client
     Client.application = app
