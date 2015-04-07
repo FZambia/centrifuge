@@ -5,6 +5,7 @@ from __future__ import with_statement
 import sys
 import six
 import re
+from copy import deepcopy
 
 try:
     import ujson
@@ -24,7 +25,7 @@ def structure_to_dict(structure):
     to speed up lookups
     """
     to_return = {}
-    for project in structure:
+    for project in deepcopy(structure):
         new_namespaces = {}
         namespaces = project.get("namespaces", [])[:]
         for namespace in namespaces:

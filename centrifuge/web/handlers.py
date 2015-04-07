@@ -79,7 +79,6 @@ class InfoHandler(WebBaseHandler):
             'interval', self.application.METRICS_EXPORT_INTERVAL)*1000
         context = {
             'structure':  self.application.structure,
-            'structure_dict': self.application.structure_dict,
             'metrics_interval': metrics_interval,
             'version': centrifuge.__version__,
             'node_count': len(self.application.nodes) + 1,

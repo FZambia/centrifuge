@@ -1,11 +1,9 @@
 {
   "password": "123",
   "cookie_secret": "secret",
-  "api_secret": "secret",
   "structure": [
     {
       "name": "map",
-      "display_name": "Map Demo",
       "secret_key": "1ee93d4ac83e4ccf87d2bbd0e447275b",
       "connection_check": false,
       "watch": true,
@@ -30,7 +28,6 @@
     },
     {
       "name": "benchmark",
-      "display_name": "Benchmark",
       "secret_key": "98834d4ac83e4ccf87d2bbd0e447275b",
       "connection_check": true,
       "connection_lifetime": 3600,
