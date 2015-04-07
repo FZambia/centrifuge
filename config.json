@@ -3,41 +3,177 @@
   "cookie_secret": "secret",
   "structure": [
     {
-      "name": "map",
-      "secret_key": "1ee93d4ac83e4ccf87d2bbd0e447275b",
-      "connection_check": false,
-      "watch": true,
-      "publish": false,
-      "anonymous": true,
       "presence": true,
-      "history": true,
-      "history_size": 50,
-      "history_expire": 30,
+      "secret_key": "8f9a4902de664fc894fe6e0435a6bdca",
+      "anonymous": false,
+      "connection_check": false,
+      "connection_lifetime": 3600,
+      "name": "ZORG",
       "join_leave": true,
+      "history_size": 50,
+      "publish": false,
+      "history": false,
       "namespaces": [
         {
-          "name": "public",
-          "watch": true,
-          "publish": true,
+          "name": "rur",
+          "join_leave": true,
+          "history_size": 50,
           "anonymous": false,
-          "presence": false,
+          "presence": true,
           "history": false,
-          "join_leave": false
+          "publish": false,
+          "watch": true,
+          "history_lifetime": 3600
         }
-      ]
+      ],
+      "watch": true
     },
     {
-      "name": "benchmark",
-      "secret_key": "98834d4ac83e4ccf87d2bbd0e447275b",
+      "presence": true,
+      "secret_key": "03c4f86326704e0e9fc9a778205dbf9f",
+      "anonymous": false,
       "connection_check": true,
       "connection_lifetime": 3600,
-      "watch": false,
-      "publish": true,
-      "anonymous": true,
-      "presence": true,
+      "name": "sound",
+      "join_leave": true,
+      "history_size": 50,
+      "publish": false,
       "history": false,
+      "namespaces": [],
+      "watch": true
+    },
+    {
+      "presence": true,
+      "secret_key": "de31387b5702474a991cb93fa4e3b176",
+      "anonymous": false,
+      "connection_check": true,
+      "connection_lifetime": 3600,
+      "name": "playground",
+      "join_leave": true,
+      "history_size": 50,
+      "publish": false,
+      "history": true,
+      "namespaces": [
+        {
+          "name": "test",
+          "presence": true,
+          "join_leave": true,
+          "history_size": 50,
+          "anonymous": false,
+          "history": false,
+          "publish": false,
+          "watch": true,
+          "history_lifetime": 3600
+        },
+        {
+          "name": "adsf",
+          "presence": true,
+          "join_leave": true,
+          "history_size": 50,
+          "anonymous": false,
+          "history": false,
+          "publish": false,
+          "watch": true,
+          "history_lifetime": 3600
+        }
+      ],
+      "watch": true
+    },
+    {
+      "name": "Chat",
+      "presence": true,
+      "join_leave": true,
+      "history_size": 50,
+      "secret_key": "0539e0fa33a3422f9ac071809c1a5d80",
+      "anonymous": false,
+      "connection_check": false,
+      "publish": false,
+      "history": false,
+      "connection_lifetime": 3600,
+      "namespaces": [],
+      "watch": true
+    },
+    {
+      "name": "json",
+      "presence": true,
       "join_leave": false,
-      "namespaces": []
+      "history_size": 50,
+      "secret_key": "125e1bac22ac4606afb262fc17aa2ae0",
+      "anonymous": true,
+      "connection_check": false,
+      "publish": false,
+      "history": true,
+      "connection_lifetime": 3600,
+      "namespaces": [],
+      "watch": true
+    },
+    {
+      "name": "Edimia",
+      "presence": true,
+      "join_leave": true,
+      "history_size": 50,
+      "secret_key": "ab36682986ad424186018a0fd3df2644",
+      "anonymous": false,
+      "connection_check": false,
+      "publish": false,
+      "history": false,
+      "connection_lifetime": 3600,
+      "namespaces": [],
+      "watch": true
+    },
+    {
+      "name": "test-proj",
+      "presence": true,
+      "join_leave": true,
+      "history_size": 50,
+      "secret_key": "01a4865d403e451bbaee9048930417ba",
+      "anonymous": false,
+      "connection_check": false,
+      "publish": true,
+      "history": false,
+      "connection_lifetime": 3600,
+      "namespaces": [],
+      "watch": true
+    },
+    {
+      "presence": true,
+      "secret_key": "d69ab639fd2d4761939a04d3b9ad44c3",
+      "anonymous": false,
+      "connection_check": false,
+      "connection_lifetime": 3600,
+      "name": "John",
+      "join_leave": true,
+      "history_size": 50,
+      "publish": false,
+      "history": false,
+      "namespaces": [
+        {
+          "name": "james",
+          "presence": true,
+          "join_leave": true,
+          "history_size": 50,
+          "anonymous": false,
+          "history": false,
+          "publish": false,
+          "watch": true,
+          "history_lifetime": 3600
+        }
+      ],
+      "watch": true
+    },
+    {
+      "presence": true,
+      "secret_key": "78e841b51ab74e2889308c80ba785983",
+      "anonymous": false,
+      "connection_check": false,
+      "connection_lifetime": 3600,
+      "name": "testo",
+      "join_leave": true,
+      "history_size": 50,
+      "publish": false,
+      "history": false,
+      "namespaces": [],
+      "watch": true
     }
   ]
 }

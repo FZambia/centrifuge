@@ -205,12 +205,12 @@ class Engine(BaseEngine):
         return "%s:history:%s:%s" % (self.prefix, project_key, channel)
 
     @coroutine
-    def add_history_message(self, project_key, channel, message, history_size, history_expire):
+    def add_history_message(self, project_key, channel, message, history_size, history_lifetime):
 
         history_key = self.get_history_key(project_key, channel)
 
-        if history_expire:
-            expire_at = int(time.time()) + history_expire
+        if history_lifetime:
+            expire_at = int(time.time()) + history_lifetime
             self.history_expire_at[history_key] = expire_at
             heapq.heappush(self.history_expire_heap, (expire_at, history_key))
         elif history_key in self.history_expire_at:

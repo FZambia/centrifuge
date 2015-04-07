@@ -132,7 +132,7 @@ class BaseEngine(object):
         raise Return((None, None))
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size, history_expire):
+    def add_history_message(self, project_id, channel, message, history_size, history_lifetime):
         """
         Add new history message for channel, trim history if needed.
         """

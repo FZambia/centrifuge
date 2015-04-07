@@ -78,7 +78,7 @@ class Application(tornado.web.Application):
     # in seconds how long we keep history in inactive channels
     # (0 - forever until size is not exceeded)
     # 1 hour by default
-    DEFAULT_HISTORY_EXPIRE = 3600
+    DEFAULT_HISTORY_LIFETIME = 3600
 
     # default client connection lifetime in seconds
     DEFAULT_CONNECTION_LIFETIME = 3600
@@ -659,7 +659,7 @@ class Application(tornado.web.Application):
             yield self.engine.add_history_message(
                 project_name, channel, message,
                 history_size=namespace.get('history_size', self.DEFAULT_HISTORY_SIZE),
-                history_expire=namespace.get('history_expire', self.DEFAULT_HISTORY_EXPIRE)
+                history_lifetime=namespace.get('history_lifetime', self.DEFAULT_HISTORY_LIFETIME)
             )
 
         if self.collector:
