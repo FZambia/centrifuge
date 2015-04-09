@@ -9,7 +9,7 @@ import tornado.escape
 import tornado.auth
 import tornado.httpclient
 import tornado.gen
-from tornado.gen import coroutine, Return
+from tornado.gen import coroutine
 from tornado.web import decode_signed_value
 from tornado.websocket import WebSocketHandler
 
@@ -92,43 +92,13 @@ class InfoHandler(WebBaseHandler):
 class ActionHandler(WebBaseHandler):
 
     @authenticated
+    @coroutine
     def post(self):
         result, error = {}, None
-        self.set_header("Content-Type", "application/json")
-        self.finish(json_encode({
-            "body": result,
-            "error": error
-        }))
-
-
-class ProjectDetailHandler(WebBaseHandler):
-
-    @coroutine
-    def get_project(self, project_name):
-        project = self.application.structure_dict.get(project_name)
-        if not project:
-            raise tornado.web.HTTPError(404)
-        raise Return((project, None))
-
-    @coroutine
-    def get_credentials(self):
-        data = {
-            'user': self.current_user,
-            'project': self.project,
-        }
-        raise Return((data, None))
-
-    @coroutine
-    def get_actions(self):
-        data, error = yield self.get_credentials()
-        raise Return((data, None))
-
-    @coroutine
-    def post_actions(self):
         params = params_from_request(self.request)
+        project = params.pop('project')
         method = params.pop('method')
-        params.pop('_xsrf')
-        data = params.get('data', None)
+        data = params.get('data')
         if data is not None:
             try:
                 data = json_decode(data)
@@ -137,45 +107,17 @@ class ProjectDetailHandler(WebBaseHandler):
             else:
                 params["data"] = data
 
-        result, error = yield self.application.process_call(self.project, method, params)
+        project = self.application.get_project(project)
+        if not project:
+            error = self.application.PROJECT_NOT_FOUND
+        else:
+            result, error = yield self.application.process_call(project, method, params)
 
         self.set_header("Content-Type", "application/json")
         self.finish(json_encode({
             "body": result,
             "error": error
         }))
-
-    @authenticated
-    @coroutine
-    def get(self, project_name, section):
-
-        self.project, error = yield self.get_project(project_name)
-
-        if section == 'credentials':
-            template_name = 'project/detail_credentials.html'
-            func = self.get_credentials
-
-        elif section == 'actions':
-            template_name = 'project/detail_actions.html'
-            func = self.get_actions
-
-        else:
-            raise tornado.web.HTTPError(404)
-
-        data, error = yield func()
-
-        self.render(template_name, **data)
-
-    @authenticated
-    @coroutine
-    def post(self, project_name, section):
-        self.project, error = yield self.get_project(
-            project_name
-        )
-        if section == 'actions':
-            yield self.post_actions()
-        else:
-            raise tornado.web.HTTPError(404)
 
 
 class AdminWebSocketHandler(WebSocketHandler):
