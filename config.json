@@ -12,7 +12,7 @@
       "join_leave": true,
       "history_size": 50,
       "publish": false,
-      "history": false,
+      "history": true,
       "namespaces": [
         {
           "name": "rur",

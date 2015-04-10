@@ -29,7 +29,7 @@ from centrifuge.schema import req_schema, server_api_schema
 
 def get_address():
     try:
-        address = socket.gethostbyname(socket.gethostname())
+        address = socket.gethostname()
     except Exception as err:
         logger.warning(err)
         address = "?"
