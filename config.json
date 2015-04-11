@@ -5,27 +5,10 @@
     {
       "name": "development",
       "secret_key": "secret",
-      "connection_check": false,
-      "connection_lifetime": 3600,
-      "watch": true,
-      "publish": false,
-      "anonymous": false,
-      "presence": true,
-      "join_leave": true,
-      "history": true,
-      "history_size": 50,
-      "history_lifetime": 300,
       "namespaces": [
         {
           "name": "publish",
-          "watch": true,
-          "publish": true,
-          "presence": true,
-          "join_leave": true,
-          "anonymous": false,
-          "history": true,
-          "history_size": 50,
-          "history_lifetime": 300
+          "publish": true
         }
       ]
     }
