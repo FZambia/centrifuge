@@ -1,97 +1,33 @@
 {
-  "password": "123",
-  "cookie_secret": "secret",
+  "password": "password",
+  "cookie_secret": "cookie_secret",
   "structure": [
     {
-      "presence": true,
-      "secret_key": "8f9a4902de664fc894fe6e0435a6bdca",
-      "anonymous": false,
+      "name": "development",
+      "secret_key": "secret",
       "connection_check": false,
       "connection_lifetime": 3600,
-      "name": "ZORG",
-      "join_leave": true,
-      "history_size": 50,
+      "watch": true,
       "publish": false,
+      "anonymous": false,
+      "presence": true,
+      "join_leave": true,
       "history": true,
+      "history_size": 50,
+      "history_lifetime": 300,
       "namespaces": [
         {
-          "name": "rur",
-          "join_leave": true,
-          "history_size": 50,
-          "anonymous": false,
-          "presence": true,
-          "history": false,
-          "publish": false,
+          "name": "publish",
           "watch": true,
-          "history_lifetime": 3600
+          "publish": true,
+          "presence": true,
+          "join_leave": true,
+          "anonymous": false,
+          "history": true,
+          "history_size": 50,
+          "history_lifetime": 300
         }
-      ],
-      "watch": true
-    },
-    {
-      "presence": true,
-      "secret_key": "03c4f86326704e0e9fc9a778205dbf9f",
-      "anonymous": false,
-      "connection_check": true,
-      "connection_lifetime": 3600,
-      "name": "sound",
-      "join_leave": true,
-      "history_size": 50,
-      "publish": false,
-      "history": false,
-      "namespaces": [],
-      "watch": true
-    },
-    {
-      "presence": true,
-      "secret_key": "de31387b5702474a991cb93fa4e3b176",
-      "anonymous": false,
-      "connection_check": true,
-      "connection_lifetime": 3600,
-      "name": "playground",
-      "join_leave": true,
-      "history_size": 50,
-      "publish": false,
-      "history": true,
-      "namespaces": [
-        {
-          "name": "test",
-          "presence": true,
-          "join_leave": true,
-          "history_size": 50,
-          "anonymous": false,
-          "history": false,
-          "publish": false,
-          "watch": true,
-          "history_lifetime": 3600
-        },
-        {
-          "name": "adsf",
-          "presence": true,
-          "join_leave": true,
-          "history_size": 50,
-          "anonymous": false,
-          "history": false,
-          "publish": false,
-          "watch": true,
-          "history_lifetime": 3600
-        }
-      ],
-      "watch": true
-    },
-    {
-      "name": "Chat",
-      "presence": true,
-      "join_leave": true,
-      "history_size": 50,
-      "secret_key": "0539e0fa33a3422f9ac071809c1a5d80",
-      "anonymous": false,
-      "connection_check": false,
-      "publish": false,
-      "history": false,
-      "connection_lifetime": 3600,
-      "namespaces": [],
-      "watch": true
+      ]
     }
   ]
 }
