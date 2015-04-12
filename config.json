@@ -4,7 +4,7 @@
   "structure": [
     {
       "name": "development",
-      "secret_key": "secret",
+      "secret": "secret",
       "namespaces": [
         {
           "name": "publish",

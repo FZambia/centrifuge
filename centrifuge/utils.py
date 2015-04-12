@@ -4,8 +4,6 @@
 from __future__ import with_statement
 import sys
 import six
-import re
-from copy import deepcopy
 
 try:
     import ujson
@@ -13,70 +11,6 @@ try:
     json_decode = ujson.loads
 except ImportError:
     from tornado.escape import json_encode, json_decode
-
-
-# regex pattern to match project and namespace names
-NAME_PATTERN = re.compile(r'^[-a-zA-Z0-9_]{2,}$')
-
-
-def structure_to_dict(structure):
-    """
-    Transform provided and already validated structure to dictionary
-    to speed up lookups
-    """
-    to_return = {}
-    for project in deepcopy(structure):
-        new_namespaces = {}
-        namespaces = project.get("namespaces", [])[:]
-        for namespace in namespaces:
-            new_namespaces[namespace["name"]] = namespace
-        project["namespaces"] = new_namespaces
-        to_return[project["name"]] = project
-    return to_return
-
-
-def validate_structure(structure):
-    """
-    Naive structure configuration check
-    TODO: refactor using jsonschema
-    """
-    project_required_keys = ["name", "secret_key"]
-    namespace_required_keys = ["name"]
-    if not isinstance(structure, list):
-        raise Exception("structure must be array of projects")
-    project_names = []
-    project_names_append = project_names.append
-    for obj in structure:
-        namespace_names = []
-        namespace_names_append = namespace_names.append
-        if not isinstance(obj, dict):
-            raise Exception("structure - project must be object")
-        for key in project_required_keys:
-            if not obj.get(key):
-                raise Exception("structure - %s required for project" % key)
-        name = obj.get("name")
-        if not NAME_PATTERN.match(name):
-            raise Exception("structure - invalid name for project: %s" % name)
-        if name in project_names:
-            raise Exception("project name must be unique")
-        project_names_append(name)
-        namespaces = obj.get("namespaces", [])
-        if not isinstance(namespaces, list):
-            raise Exception("structure - project namespaces must be array")
-        for namespace in namespaces:
-            if not isinstance(namespace, dict):
-                raise Exception("structure - namespace must be object")
-            for key in namespace_required_keys:
-                if not namespace.get(key):
-                    raise Exception("structure - %s required for namespace" % key)
-            name = namespace.get("name")
-            if not NAME_PATTERN.match(name):
-                raise Exception("structure - invalid name for namespace: %s" % name)
-            if name in namespace_names:
-                raise Exception("namespace name must be unique")
-            namespace_names_append(name)
-
-    return None
 
 
 if six.PY3:

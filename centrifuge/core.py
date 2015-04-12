@@ -25,6 +25,7 @@ from centrifuge.log import logger
 from centrifuge.metrics import Collector, Exporter
 from centrifuge.response import Response, MultiResponse
 from centrifuge.schema import req_schema, server_api_schema
+from centrifuge.structure import validate_structure, structure_to_dict
 
 
 def get_address():
@@ -236,9 +237,9 @@ class Application(tornado.web.Application):
         structure = config.get("structure")
         if not structure:
             raise Exception("structure required")
-        utils.validate_structure(structure)
+        validate_structure(structure)
         self.structure = structure
-        self.structure_dict = utils.structure_to_dict(structure)
+        self.structure_dict = structure_to_dict(structure)
 
     def init_engine(self):
         """

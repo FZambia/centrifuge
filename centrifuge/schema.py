@@ -1,6 +1,77 @@
 # coding: utf-8
 # Copyright (c) Alexandr Emelin. MIT license.
 
+_channel_options_properties = {
+    "watch": {
+        "type": "boolean"
+    },
+    "publish": {
+        "type": "boolean"
+    },
+    "anonymous": {
+        "type": "boolean"
+    },
+    "presence": {
+        "type": "boolean"
+    },
+    "join_leave": {
+        "type": "boolean"
+    },
+    "history": {
+        "type": "boolean"
+    },
+    "history_size": {
+        "type": "integer",
+        "minimum": 0
+    },
+    "history_lifetime": {
+        "type": "integer",
+        "minimum": 0
+    }
+}
+
+_project_properties = {
+    "name": {
+        "type": "string",
+        "pattern": r'^[-a-zA-Z0-9_]{2,}$'
+    },
+    "secret": {
+        "type": "string"
+    },
+    "connection_check": {
+        "type": "boolean"
+    },
+    "connection_lifetime": {
+        "type": "integer",
+        "minimum": 0
+    },
+    "namespaces": {
+        "type": "array"
+    }
+}
+
+_project_properties.update(_channel_options_properties)
+
+_namespace_properties = {
+    "name": {
+        "type": "string"
+    }
+}
+
+_namespace_properties.update(_channel_options_properties)
+
+project_schema = {
+    "type": "object",
+    "properties": _project_properties,
+    "required": ["name", "secret"]
+}
+
+namespace_schema = {
+    "type": "object",
+    "properties": _namespace_properties,
+    "required": ["name"]
+}
+
 req_schema = {
     "type": "object",
     "properties": {

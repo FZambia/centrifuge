@@ -280,10 +280,10 @@ class Client(object):
         raise Return(('pong', None))
 
     @staticmethod
-    def validate_token(token, secret_key, project_name, user, timestamp, user_info):
+    def validate_token(token, secret, project_name, user, timestamp, user_info):
         try:
             is_valid_token = auth.check_client_token(
-                token, secret_key, project_name, user, timestamp, user_info=user_info
+                token, secret, project_name, user, timestamp, user_info=user_info
             )
         except Exception as err:
             logger.error(err)
@@ -321,11 +321,11 @@ class Client(object):
         if not project:
             raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        secret_key = project['secret_key']
+        secret = project['secret']
 
         if not self.application.INSECURE:
             error_msg = self.validate_token(
-                token, secret_key, project_name, user, timestamp, info
+                token, secret, project_name, user, timestamp, info
             )
             if error_msg:
                 raise Return((None, error_msg))
@@ -434,10 +434,10 @@ class Client(object):
         if not project:
             raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        secret_key = project['secret_key']
+        secret = project['secret']
 
         error_msg = self.validate_token(
-            token, secret_key, project_name, user, timestamp, info
+            token, secret, project_name, user, timestamp, info
         )
         if error_msg:
             raise Return((None, error_msg))
@@ -509,7 +509,7 @@ class Client(object):
             sign = params.get("sign", "")
             info = params.get("info", "{}")
             is_authorized = auth.check_channel_sign(
-                sign, project.get("secret_key"), client, channel, info
+                sign, project["secret"], client, channel, info
             )
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))

@@ -75,8 +75,8 @@ class ApiHandler(BaseHandler):
         if not project:
             raise tornado.web.HTTPError(404, log_message="project not found")
 
-        # use project secret key to validate sign
-        secret = project['secret_key']
+        # use project secret to validate sign
+        secret = project['secret']
 
         is_valid = auth.check_sign(
             secret, project_id, encoded_data, sign
