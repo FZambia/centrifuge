@@ -1,3 +1,13 @@
+Master branch
+=============
+
+Centrifuge 0.8.0 is currently under development. Some highlights:
+
+* no more structure backends - all structure must be set in configuration file. As it changes in rare cases it's not a good idea to keep it in a separate database. There are some thoughts to support remote configuration storages in future versions.
+* rewritten web interface. Based on ReactJS - in its own repo
+* simplified project structure settings - some of them renamed, some completely removed - I'll provide client-side pure js converter for structure on JSFiddle (if you want to try it now - http://jsfiddle.net/FZambia/17h5p75r/ - but it still a work in progress).
+* particularly project name will be used as key for API instead of project ID. Project ID not needed anymore.
+
 v0.7.0
 ======
 
