@@ -365,8 +365,8 @@ class Client(object):
         # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
         self.default_info = {
-            'user_id': self.user,
-            'client_id': self.uid,
+            'user': self.user,
+            'client': self.uid,
             'default_info': info,
             'channel_info': None
         }
@@ -421,9 +421,6 @@ class Client(object):
         """
         Handle request with refreshed connection timestamp
         """
-        if not self.is_authenticated:
-            raise Return((None, self.application.UNAUTHORIZED))
-
         project_name = params["project"]
         user = params["user"]
         timestamp = params["timestamp"]
