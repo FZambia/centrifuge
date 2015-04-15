@@ -335,9 +335,17 @@ class Engine(BaseEngine):
     def handle_message(self, channel, message_data):
         if channel not in self.subscriptions:
             raise Return((True, None))
+
+        timer = None
+        if self.application.collector:
+            timer = self.application.collector.get_timer('broadcast')
+
         for uid, client in six.iteritems(self.subscriptions[channel]):
             if channel in self.subscriptions and uid in self.subscriptions[channel]:
                 yield client.send(message_data)
+
+        if timer:
+            timer.stop()
 
     def subscribe_key(self, subscription_key):
         self.subscriber.subscribe(
