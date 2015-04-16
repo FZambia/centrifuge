@@ -44,7 +44,7 @@ class Engine(BaseEngine):
         logger.info("Memory engine initialized")
 
     @coroutine
-    def publish_message(self, channel, body, method=BaseEngine.DEFAULT_PUBLISH_METHOD):
+    def publish_message(self, channel, body, method="message"):
         yield self.handle_message(channel, method, body)
         raise Return((True, None))
 

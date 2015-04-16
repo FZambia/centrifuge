@@ -79,12 +79,10 @@ class Engine(BaseEngine):
 
     OK_RESPONSE = b'OK'
 
-    API_KEY = 'api'
-
     def __init__(self, *args, **kwargs):
         super(Engine, self).__init__(*args, **kwargs)
 
-        self.api_key = "{0}.{1}".format(self.prefix, self.API_KEY)
+        self.api_key = "{0}.{1}".format(self.prefix, "api")
 
         if not self.options.redis_url:
             self.host = self.options.redis_host
@@ -216,12 +214,11 @@ class Engine(BaseEngine):
             return True
 
     @coroutine
-    def publish_message(self, channel, body, method=BaseEngine.DEFAULT_PUBLISH_METHOD):
+    def publish_message(self, channel, body, method="message"):
         """
         Publish message into channel of stream.
         """
         response = Response()
-        method = method or self.DEFAULT_PUBLISH_METHOD
         response.method = method
         response.body = body
         to_publish = response.as_message()

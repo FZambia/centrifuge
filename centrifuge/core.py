@@ -135,9 +135,6 @@ class Application(tornado.web.Application):
         # list of coroutines that must be done after message publishing
         self.post_publish_callbacks = []
 
-        # time of last node info revision
-        self.node_info_revision_time = time.time()
-
         self.address = get_address()
 
         # count of messages published since last node info revision
