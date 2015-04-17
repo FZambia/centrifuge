@@ -41,9 +41,11 @@ class Application(tornado.web.Application):
 
     PRIVATE_CHANNEL_PREFIX = "$"
 
-    USER_SEPARATOR = '#'
+    NAMESPACE_CHANNEL_BOUNDARY = ":"
 
-    NAMESPACE_SEPARATOR = ":"
+    USER_CHANNEL_BOUNDARY = "#"
+
+    USER_CHANNEL_SEPARATOR = ','
 
     # in milliseconds, how often this application will send ping message
     PING_INTERVAL = 5000
@@ -183,13 +185,13 @@ class Application(tornado.web.Application):
         if private_channel_prefix:
             self.PRIVATE_CHANNEL_PREFIX = private_channel_prefix
 
-        user_separator = config.get('user_separator')
-        if user_separator:
-            self.USER_SEPARATOR = user_separator
+        user_channel_boundary = config.get('user_channel_boundary')
+        if user_channel_boundary:
+            self.USER_CHANNEL_BOUNDARY = user_channel_boundary
 
-        namespace_separator = config.get('namespace_separator')
-        if namespace_separator:
-            self.NAMESPACE_SEPARATOR = namespace_separator
+        namespace_channel_boundary = config.get('namespace_channel_boundary')
+        if namespace_channel_boundary:
+            self.NAMESPACE_CHANNEL_BOUNDARY = namespace_channel_boundary
 
         ping_interval = config.get('ping_interval')
         if ping_interval:
@@ -453,16 +455,16 @@ class Application(tornado.web.Application):
             # cut private channel prefix from beginning
             channel = channel[len(self.PRIVATE_CHANNEL_PREFIX):]
 
-        if self.NAMESPACE_SEPARATOR in channel:
+        if self.NAMESPACE_CHANNEL_BOUNDARY in channel:
             # namespace:rest_of_channel
-            namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
+            namespace_name = channel.split(self.NAMESPACE_CHANNEL_BOUNDARY, 1)[0]
         else:
             namespace_name = None
 
         return namespace_name
 
     def get_allowed_users(self, channel):
-        return channel.rsplit(self.USER_SEPARATOR, 1)[1].split(',')
+        return channel.rsplit(self.USER_CHANNEL_BOUNDARY, 1)[1].split(self.USER_CHANNEL_SEPARATOR)
 
     def is_channel_private(self, channel):
         return channel.startswith(self.PRIVATE_CHANNEL_PREFIX)

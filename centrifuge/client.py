@@ -482,7 +482,7 @@ class Client(object):
             "channel": channel,
         }
 
-        if self.application.USER_SEPARATOR in channel:
+        if self.application.USER_CHANNEL_BOUNDARY in channel:
             users_allowed = self.application.get_allowed_users(channel)
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
