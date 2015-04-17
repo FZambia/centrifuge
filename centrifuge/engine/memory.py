@@ -33,7 +33,6 @@ class Engine(BaseEngine):
         self.history_expire_at = {}
         self.history_expire_heap = []
         self.presence = {}
-        self.deactivated = {}
         self.history_expire_task = PeriodicCallback(
             self.check_history_expire,
             self.HISTORY_EXPIRE_TASK_INTERVAL
