@@ -1,6 +1,8 @@
 CENTRIFUGE
 ==========
 
+Simple real-time messaging in web applications. [Demo instance on Heroku](https://centrifuge-demo.herokuapp.com) - password `demo`.
+
 # Note!
 
 Centrifuge 0.8.0 [is under active development](https://github.com/centrifugal/centrifuge/tree/0.8.0) at moment. There are lots of changes, including backwards incompatible. Some highlights:
@@ -8,9 +10,6 @@ Centrifuge 0.8.0 [is under active development](https://github.com/centrifugal/ce
 * new ReactJS based admin web interface in its [own repo](https://github.com/centrifugal/centrifuge-web) - so the way to deploy Centrifuge will change to satisfy this fact.
 * structure backends removed - now project and namespaces must be set in configuration file. Old structure can be migrated to new one using [client-side converter on JSFiddle] (be aware of the fact that more changes can appear before final release). Do get current structure use go to `/dumps` URL in admin web interface
 * Lots of other fixes will be reflected in changelog for 0.8.0
-
-
-Simple real-time messaging in web applications. [Demo instance on Heroku](https://centrifuge-demo.herokuapp.com) - password `demo`.
 
 Quick start
 -----------
