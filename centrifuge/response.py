@@ -6,8 +6,7 @@ from centrifuge.utils import json_encode
 
 class Response(object):
 
-    def __init__(self, uid=None, method=None, error=None, body=None):
-        self.uid = uid
+    def __init__(self, method=None, error=None, body=None):
         self.method = method
         self.error = error
         self.body = body
@@ -17,7 +16,6 @@ class Response(object):
 
     def as_dict(self):
         return {
-            'uid': self.uid,
             'method': self.method,
             'error': self.error,
             'body': self.body

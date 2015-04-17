@@ -21,17 +21,16 @@ except ImportError:
 from jsonschema import validate, ValidationError
 
 from centrifuge import utils
-from centrifuge.structure import Structure
 from centrifuge.log import logger
-from centrifuge.forms import NamespaceForm, ProjectForm
 from centrifuge.metrics import Collector, Exporter
 from centrifuge.response import Response, MultiResponse
-from centrifuge.schema import req_schema, server_api_schema, owner_api_methods
+from centrifuge.schema import req_schema, server_api_schema
+from centrifuge.structure import validate_structure, structure_to_dict
 
 
 def get_address():
     try:
-        address = socket.gethostbyname(socket.gethostname())
+        address = socket.gethostname()
     except Exception as err:
         logger.warning(err)
         address = "?"
@@ -42,15 +41,11 @@ class Application(tornado.web.Application):
 
     PRIVATE_CHANNEL_PREFIX = "$"
 
-    USER_SEPARATOR = '#'
+    NAMESPACE_CHANNEL_BOUNDARY = ":"
 
-    NAMESPACE_SEPARATOR = ":"
+    USER_CHANNEL_BOUNDARY = "#"
 
-    # magic fake project ID for owner API purposes.
-    OWNER_API_PROJECT_ID = '_'
-
-    # magic project param name to allow owner make API operations within project
-    OWNER_API_PROJECT_PARAM = '_project'
+    USER_CHANNEL_SEPARATOR = ','
 
     # in milliseconds, how often this application will send ping message
     PING_INTERVAL = 5000
@@ -79,6 +74,18 @@ class Application(tornado.web.Application):
 
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
+
+    # how many messages keep in channel history by default
+    # 0 - do not keep history at all
+    DEFAULT_HISTORY_SIZE = 0
+
+    # in seconds how long we keep history in inactive channels
+    # (0 - do not expire at all - but old messages will be removed when size exceeded)
+    # 1 hour by default
+    DEFAULT_HISTORY_LIFETIME = 0
+
+    # default client connection lifetime in seconds
+    DEFAULT_CONNECTION_LIFETIME = 0
 
     # when active no authentication required at all when connecting to Centrifuge,
     # this simplified mode suitable for demonstration or personal usage
@@ -116,11 +123,11 @@ class Application(tornado.web.Application):
         # dictionary to keep ping from nodes
         self.nodes = {}
 
-        # storage to use
-        self.storage = None
-
-        # application structure manager (projects, namespaces etc)
+        # application structure (projects, namespaces etc)
         self.structure = None
+
+        # application structure transformed to a dictionary to speed up lookups
+        self.structure_dict = None
 
         # application engine
         self.engine = None
@@ -130,9 +137,6 @@ class Application(tornado.web.Application):
 
         # list of coroutines that must be done after message publishing
         self.post_publish_callbacks = []
-
-        # time of last node info revision
-        self.node_info_revision_time = time.time()
 
         self.address = get_address()
 
@@ -182,21 +186,13 @@ class Application(tornado.web.Application):
         if private_channel_prefix:
             self.PRIVATE_CHANNEL_PREFIX = private_channel_prefix
 
-        user_separator = config.get('user_separator')
-        if user_separator:
-            self.USER_SEPARATOR = user_separator
+        user_channel_boundary = config.get('user_channel_boundary')
+        if user_channel_boundary:
+            self.USER_CHANNEL_BOUNDARY = user_channel_boundary
 
-        namespace_separator = config.get('namespace_separator')
-        if namespace_separator:
-            self.NAMESPACE_SEPARATOR = namespace_separator
-
-        owner_api_project_id = config.get('owner_api_project_id')
-        if owner_api_project_id:
-            self.OWNER_API_PROJECT_ID = owner_api_project_id
-
-        owner_api_project_param = config.get('owner_api_project_param')
-        if owner_api_project_param:
-            self.OWNER_API_PROJECT_PARAM = owner_api_project_param
+        namespace_channel_boundary = config.get('namespace_channel_boundary')
+        if namespace_channel_boundary:
+            self.NAMESPACE_CHANNEL_BOUNDARY = namespace_channel_boundary
 
         ping_interval = config.get('ping_interval')
         if ping_interval:
@@ -235,38 +231,15 @@ class Application(tornado.web.Application):
 
     def init_structure(self):
         """
-        Initialize structure manager using settings provided
-        in configuration file.
+        Validate and initialize structure
         """
         config = self.config
-        self.structure = Structure(self)
-        self.structure.set_storage(self.storage)
-
-        def run_periodic_structure_update():
-            # update structure periodically from database. This is necessary to be sure
-            # that application has actual and correct structure information. Structure
-            # updates also triggered in real-time by message passing through control channel,
-            # but in rare cases those update messages can be lost because of some kind of
-            # network errors
-            logger.info("Structure initialized")
-            self.structure.update()
-            structure_update_interval = config.get('structure_update_interval', 60)
-            logger.info(
-                "Periodic structure update interval: {0} seconds".format(
-                    structure_update_interval
-                )
-            )
-            periodic_structure_update = tornado.ioloop.PeriodicCallback(
-                self.structure.update, structure_update_interval*1000
-            )
-            periodic_structure_update.start()
-
-        tornado.ioloop.IOLoop.instance().add_callback(
-            partial(
-                self.storage.connect,
-                run_periodic_structure_update
-            )
-        )
+        structure = config.get("structure")
+        if not structure:
+            raise Exception("structure required")
+        validate_structure(structure)
+        self.structure = structure
+        self.structure_dict = structure_to_dict(structure)
 
     def init_engine(self):
         """
@@ -408,9 +381,8 @@ class Application(tornado.web.Application):
         Publish information about current node into admin channel
         """
         self.engine.publish_admin_message({
-            "admin": True,
-            "type": "node",
-            "data": {
+            "method": "node",
+            "body": {
                 "uid": self.uid,
                 "nodes": len(self.nodes) + 1,
                 "name": self.name,
@@ -418,38 +390,38 @@ class Application(tornado.web.Application):
             }
         })
 
-    def add_connection(self, project_id, user, uid, client):
+    def add_connection(self, project_key, user, uid, client):
         """
         Register new client's connection.
         """
-        if project_id not in self.connections:
-            self.connections[project_id] = {}
-        if user not in self.connections[project_id]:
-            self.connections[project_id][user] = {}
+        if project_key not in self.connections:
+            self.connections[project_key] = {}
+        if user not in self.connections[project_key]:
+            self.connections[project_key][user] = {}
 
-        self.connections[project_id][user][uid] = client
+        self.connections[project_key][user][uid] = client
 
-    def remove_connection(self, project_id, user, uid):
+    def remove_connection(self, project_key, user, uid):
         """
         Remove client's connection
         """
         try:
-            del self.connections[project_id][user][uid]
+            del self.connections[project_key][user][uid]
         except KeyError:
             pass
 
-        if project_id in self.connections and user in self.connections[project_id]:
+        if project_key in self.connections and user in self.connections[project_key]:
             # clean connections
-            if self.connections[project_id][user]:
+            if self.connections[project_key][user]:
                 return
             try:
-                del self.connections[project_id][user]
+                del self.connections[project_key][user]
             except KeyError:
                 pass
-            if self.connections[project_id]:
+            if self.connections[project_key]:
                 return
             try:
-                del self.connections[project_id]
+                del self.connections[project_key]
             except KeyError:
                 pass
 
@@ -468,19 +440,13 @@ class Application(tornado.web.Application):
         except KeyError:
             pass
 
-    @coroutine
-    def get_project(self, project_id):
+    def get_project(self, project_name):
         """
         Project settings can change during client's connection.
         Every time we need project - we must extract actual
         project data from structure.
         """
-        project, error = yield self.structure.get_project_by_id(project_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        raise Return((project, None))
+        return self.structure_dict.get(project_name)
 
     def extract_namespace_name(self, channel):
         """
@@ -490,36 +456,30 @@ class Application(tornado.web.Application):
             # cut private channel prefix from beginning
             channel = channel[len(self.PRIVATE_CHANNEL_PREFIX):]
 
-        if self.NAMESPACE_SEPARATOR in channel:
+        if self.NAMESPACE_CHANNEL_BOUNDARY in channel:
             # namespace:rest_of_channel
-            namespace_name = channel.split(self.NAMESPACE_SEPARATOR, 1)[0]
+            namespace_name = channel.split(self.NAMESPACE_CHANNEL_BOUNDARY, 1)[0]
         else:
             namespace_name = None
 
         return namespace_name
 
     def get_allowed_users(self, channel):
-        return channel.rsplit(self.USER_SEPARATOR, 1)[1].split(',')
+        return channel.rsplit(self.USER_CHANNEL_BOUNDARY, 1)[1].split(self.USER_CHANNEL_SEPARATOR)
 
     def is_channel_private(self, channel):
         return channel.startswith(self.PRIVATE_CHANNEL_PREFIX)
 
-    @coroutine
     def get_namespace(self, project, channel):
 
         namespace_name = self.extract_namespace_name(channel)
 
         if not namespace_name:
-            raise Return((project, None))
+            # no namespace in channel name - use project options
+            # as namespace options
+            return project
 
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, namespace_name
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
+        return project.get("namespaces", {}).get(namespace_name)
 
     @coroutine
     def handle_ping(self, params):
@@ -539,10 +499,10 @@ class Application(tornado.web.Application):
         user = params.get("user")
         channel = params.get("channel", None)
 
-        project_id = project['_id']
+        project_name = project['name']
 
         # try to find user's connection
-        user_connections = self.connections.get(project_id, {}).get(user, {})
+        user_connections = self.connections.get(project_name, {}).get(user, {})
         if not user_connections:
             raise Return((True, None))
 
@@ -572,10 +532,10 @@ class Application(tornado.web.Application):
         user = params.get("user")
         reason = params.get("reason", None)
 
-        project_id = project['_id']
+        project_name = project['name']
 
         # try to find user's connection
-        user_connections = self.connections.get(project_id, {}).get(user, {})
+        user_connections = self.connections.get(project_name, {}).get(user, {})
         if not user_connections:
             raise Return((True, None))
 
@@ -596,16 +556,15 @@ class Application(tornado.web.Application):
         Update structure message received - structure changed and other
         node sent us a signal about update.
         """
-        result, error = yield self.structure.update()
-        raise Return((result, error))
+        pass
 
     @coroutine
-    def process_api_data(self, project, data, is_owner_request):
+    def process_api_data(self, project, data):
         multi_response = MultiResponse()
 
         if isinstance(data, dict):
             # single object request
-            response = yield self.process_api_object(data, project, is_owner_request)
+            response = yield self.process_api_object(data, project)
             multi_response.add(response)
         elif isinstance(data, list):
             # multiple object request
@@ -613,7 +572,7 @@ class Application(tornado.web.Application):
                 raise Return((None, "admin API message limit exceeded (received {0} messages)".format(len(data))))
 
             for obj in data:
-                response = yield self.process_api_object(obj, project, is_owner_request)
+                response = yield self.process_api_object(obj, project)
                 multi_response.add(response)
         else:
             raise Return((None, "data not an array or object"))
@@ -621,7 +580,7 @@ class Application(tornado.web.Application):
         raise Return((multi_response, None))
 
     @coroutine
-    def process_api_object(self, obj, project, is_owner_request):
+    def process_api_object(self, obj, project):
 
         response = Response()
 
@@ -631,50 +590,26 @@ class Application(tornado.web.Application):
             response.error = str(e)
             raise Return(response)
 
-        req_id = obj.get("uid", None)
         method = obj.get("method")
         params = obj.get("params")
 
-        response.uid = req_id
         response.method = method
 
         schema = server_api_schema
 
-        if is_owner_request and self.OWNER_API_PROJECT_PARAM in params:
-
-            project_id = params[self.OWNER_API_PROJECT_PARAM]
-
-            project, error = yield self.structure.get_project_by_id(
-                project_id
-            )
-            if error:
-                logger.error(error)
-                response.error = self.INTERNAL_SERVER_ERROR
-            if not project:
-                response.error = self.PROJECT_NOT_FOUND
-
-        try:
-            params.pop(self.OWNER_API_PROJECT_PARAM)
-        except KeyError:
-            pass
-
-        if not is_owner_request and method in owner_api_methods:
-            response.error = self.PERMISSION_DENIED
-
-        if not response.error:
-            if method not in schema:
-                response.error = self.METHOD_NOT_FOUND
+        if method not in schema:
+            response.error = self.METHOD_NOT_FOUND
+        else:
+            try:
+                validate(params, schema[method])
+            except ValidationError as e:
+                response.error = str(e)
             else:
-                try:
-                    validate(params, schema[method])
-                except ValidationError as e:
-                    response.error = str(e)
-                else:
-                    result, error = yield self.process_call(
-                        project, method, params
-                    )
-                    response.body = result
-                    response.error = error
+                result, error = yield self.process_call(
+                    project, method, params
+                )
+                response.body = result
+                response.error = error
 
         raise Return(response)
 
@@ -697,32 +632,36 @@ class Application(tornado.web.Application):
         """
         Publish event into PUB socket stream
         """
-        project_id = project['_id']
+        project_name = project['name']
         channel = message['channel']
 
-        namespace, error = yield self.get_namespace(project, channel)
-        if error:
-            raise Return((False, error))
+        namespace = self.get_namespace(project, channel)
+        if not namespace:
+            raise Return((False, self.NAMESPACE_NOT_FOUND))
 
-        if namespace.get('is_watching', False):
+        if namespace.get('watch', False):
             # send to admin channel
             self.engine.publish_admin_message({
-                "project": project_id,
-                "message": message
+                "method": "message",
+                "body": {
+                    "project": project_name,
+                    "message": message
+                }
             })
 
         # send to event channel
         subscription_key = self.engine.get_subscription_key(
-            project_id, channel
+            project_name, channel
         )
 
         self.engine.publish_message(subscription_key, message)
 
-        if namespace.get('history', False):
+        history_size = namespace.get('history_size', self.DEFAULT_HISTORY_SIZE)
+        if history_size > 0:
             yield self.engine.add_history_message(
-                project_id, channel, message,
-                history_size=namespace.get('history_size'),
-                history_expire=namespace.get('history_expire', 0)
+                project_name, channel, message,
+                history_size=history_size,
+                history_lifetime=namespace.get('history_lifetime', self.DEFAULT_HISTORY_LIFETIME)
             )
 
         if self.collector:
@@ -731,7 +670,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, params, client):
+    def prepare_message(self, project, params, info):
         """
         Prepare message before actual publishing.
         """
@@ -744,14 +683,14 @@ class Application(tornado.web.Application):
         message = {
             'uid': uuid.uuid4().hex,
             'timestamp': int(time.time()),
-            'client': client,
+            'info': info,
             'channel': channel,
             'data': data
         }
 
         for callback in self.pre_publish_callbacks:
             try:
-                message = yield callback(project["_id"], message)
+                message = yield callback(project["name"], message)
             except Exception as err:
                 logger.exception(err)
             else:
@@ -761,12 +700,12 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, client=None):
+    def process_publish(self, project, params, info=None):
         """
         Publish message into appropriate channel.
         """
         message, error = yield self.prepare_message(
-            project, params, client
+            project, params, info
         )
         if error:
             raise Return((False, self.INTERNAL_SERVER_ERROR))
@@ -779,12 +718,13 @@ class Application(tornado.web.Application):
         result, error = yield self.publish_message(
             project, message
         )
+
         if error:
             raise Return((False, error))
 
         for callback in self.post_publish_callbacks:
             try:
-                yield callback(project["_id"], message)
+                yield callback(project["name"], message)
             except Exception as err:
                 logger.exception(err)
 
@@ -795,9 +735,9 @@ class Application(tornado.web.Application):
         """
         Return a list of last messages sent into channel.
         """
-        project_id = project['_id']
+        project_name = project['name']
         channel = params.get("channel")
-        data, error = yield self.engine.get_history(project_id, channel)
+        data, error = yield self.engine.get_history(project_name, channel)
         if error:
             raise Return((data, self.INTERNAL_SERVER_ERROR))
         raise Return((data, None))
@@ -807,9 +747,9 @@ class Application(tornado.web.Application):
         """
         Return current presence information for channel.
         """
-        project_id = project['_id']
+        project_name = project['name']
         channel = params.get("channel")
-        data, error = yield self.engine.get_presence(project_id, channel)
+        data, error = yield self.engine.get_presence(project_name, channel)
         if error:
             raise Return((data, self.INTERNAL_SERVER_ERROR))
         raise Return((data, None))
@@ -857,299 +797,3 @@ class Application(tornado.web.Application):
         if error:
             raise Return((result, self.INTERNAL_SERVER_ERROR))
         raise Return((result, None))
-
-    @coroutine
-    def process_dump_structure(self, project, params):
-
-        projects, error = yield self.structure.project_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        namespaces, error = yield self.structure.namespace_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        data = {
-            "projects": projects,
-            "namespaces": namespaces
-        }
-        raise Return((data, None))
-
-    @coroutine
-    def process_project_list(self, project, params):
-        projects, error = yield self.structure.project_list()
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((projects, None))
-
-    @coroutine
-    def process_project_get(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        raise Return((project, None))
-
-    @coroutine
-    def process_project_by_name(self, project, params):
-        project, error = yield self.structure.get_project_by_name(
-            params.get("name")
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        raise Return((project, None))
-
-    @coroutine
-    def process_project_create(self, project, params, error_form=False):
-
-        form = ProjectForm(params)
-
-        if form.validate():
-            existing_project, error = yield self.structure.get_project_by_name(
-                form.name.data
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-            if existing_project:
-                form.name.errors.append(self.DUPLICATE_NAME)
-                if error_form:
-                    raise Return((None, form))
-                raise Return((None, form.errors))
-            else:
-                project, error = yield self.structure.project_create(
-                    **form.data
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                raise Return((project, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_project_edit(self, project, params, error_form=False, patch=True):
-        """
-        Edit project namespace.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        if "name" not in params:
-            params["name"] = project["name"]
-
-        boolean_patch_data = {}
-        if patch:
-            boolean_patch_data = utils.get_boolean_patch_data(ProjectForm.BOOLEAN_FIELDS, params)
-
-        form = ProjectForm(params)
-
-        if form.validate():
-
-            if "name" in params and params["name"] != project["name"]:
-
-                existing_project, error = yield self.structure.get_project_by_name(
-                    params["name"]
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                if existing_project:
-                    form.name.errors.append(self.DUPLICATE_NAME)
-                    if error_form:
-                        raise Return((None, form))
-                    raise Return((None, form.errors))
-
-            updated_project = project.copy()
-
-            if patch:
-                data = utils.make_patch_data(form, params)
-            else:
-                data = form.data.copy()
-
-            updated_project.update(data)
-            if patch:
-                updated_project.update(boolean_patch_data)
-            project, error = yield self.structure.project_edit(
-                project, **updated_project
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            raise Return((project, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_project_delete(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        result, error = yield self.structure.project_delete(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((True, None))
-
-    @coroutine
-    def process_regenerate_secret_key(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        result, error = yield self.structure.regenerate_project_secret_key(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((result, None))
-
-    @coroutine
-    def process_namespace_list(self, project, params):
-        """
-        Return a list of all namespaces for project.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-        namespaces, error = yield self.structure.get_project_namespaces(project)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((namespaces, None))
-
-    @coroutine
-    def process_namespace_get(self, project, params):
-        """
-        Return a list of all namespaces for project.
-        """
-        namespace_id = params.get('_id')
-        namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
-
-    @coroutine
-    def process_namespace_by_name(self, project, params):
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        namespace, error = yield self.structure.get_namespace_by_name(
-            project, params.get("name")
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-        raise Return((namespace, None))
-
-    @coroutine
-    def process_namespace_create(self, project, params, error_form=False):
-        """
-        Create new namespace in project or update if already exists.
-        """
-        if not project:
-            raise Return((None, self.PROJECT_NOT_FOUND))
-
-        form = NamespaceForm(params)
-
-        if form.validate():
-            existing_namespace, error = yield self.structure.get_namespace_by_name(
-                project, form.name.data
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-            if existing_namespace:
-                form.name.errors.append(self.DUPLICATE_NAME)
-                if error_form:
-                    raise Return((None, form))
-                raise Return((None, form.errors))
-            else:
-                namespace, error = yield self.structure.namespace_create(
-                    project, **form.data
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                raise Return((namespace, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_namespace_edit(self, project, params, error_form=False, patch=True):
-        """
-        Edit project namespace.
-        """
-        namespace, error = yield self.structure.get_namespace_by_id(
-            params.pop('_id')
-        )
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-
-        if not namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-
-        if not project:
-            project, error = yield self.get_project(
-                namespace['project_id']
-            )
-            if error:
-                raise Return((None, error))
-
-        if "name" not in params:
-            params["name"] = namespace["name"]
-
-        boolean_patch_data = {}
-        if patch:
-            boolean_patch_data = utils.get_boolean_patch_data(NamespaceForm.BOOLEAN_FIELDS, params)
-
-        form = NamespaceForm(params)
-
-        if form.validate():
-
-            if "name" in params and params["name"] != namespace["name"]:
-
-                existing_namespace, error = yield self.structure.get_namespace_by_name(
-                    project, params["name"]
-                )
-                if error:
-                    raise Return((None, self.INTERNAL_SERVER_ERROR))
-                if existing_namespace:
-                    form.name.errors.append(self.DUPLICATE_NAME)
-                    if error_form:
-                        raise Return((None, form))
-                    raise Return((None, form.errors))
-
-            updated_namespace = namespace.copy()
-            if patch:
-                data = utils.make_patch_data(form, params)
-            else:
-                data = form.data.copy()
-            updated_namespace.update(data)
-            if patch:
-                updated_namespace.update(boolean_patch_data)
-            namespace, error = yield self.structure.namespace_edit(
-                namespace, **updated_namespace
-            )
-            if error:
-                raise Return((None, self.INTERNAL_SERVER_ERROR))
-            raise Return((namespace, None))
-        else:
-            if error_form:
-                raise Return((None, form))
-            raise Return((None, form.errors))
-
-    @coroutine
-    def process_namespace_delete(self, project, params):
-        """
-        Delete project namespace.
-        """
-        namespace_id = params["_id"]
-
-        existing_namespace, error = yield self.structure.get_namespace_by_id(namespace_id)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        if not existing_namespace:
-            raise Return((None, self.NAMESPACE_NOT_FOUND))
-
-        result, error = yield self.structure.namespace_delete(existing_namespace)
-        if error:
-            raise Return((None, self.INTERNAL_SERVER_ERROR))
-        raise Return((True, None))

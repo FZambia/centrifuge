@@ -21,23 +21,20 @@ define(
     help="centrifuge address without url scheme", type=str
 )
 define(
-    "project_id", default='', help="project id", type=str
+    "project_key", default='', help="project key", type=str
 )
 define(
-    "secret_key", default='', help="project secret key", type=str
+    "project_secret", default='', help="project secret key", type=str
 )
 
 
 # let it be your application's user ID
 USER_ID = '2694'
 
-INFO = json.dumps(None)
-
-# uncomment this to send some additional default info
-#INFO = json.dumps({
-#    'first_name': 'Alexandr',
-#    'last_name': 'Emelin'
-#})
+INFO = json.dumps({
+    'first_name': 'Alexandr',
+    'last_name': 'Emelin'
+})
 
 
 class IndexHandler(tornado.web.RequestHandler):
@@ -50,12 +47,12 @@ def get_auth_data():
 
     user = USER_ID
     now = str(int(time.time()))
-    token = generate_token(options.secret_key, options.project_id, user, now, info=INFO)
+    token = generate_token(options.project_secret, options.project_key, user, now, info=INFO)
 
     auth_data = {
         'token': token,
         'user': user,
-        'project': options.project_id,
+        'project': options.project_key,
         'timestamp': now,
         'info': INFO
     }
@@ -110,7 +107,7 @@ class CentrifugeAuthHandler(tornado.web.RequestHandler):
                 'channel_extra_info_example': 'you can add additional JSON data when authorizing'
             })
             to_return[channel] = {
-                "sign": generate_channel_sign(options.secret_key, client_id, channel, info=info),
+                "sign": generate_channel_sign(options.project_secret, client_id, channel, info=info),
                 "info": info
             }
 
@@ -133,12 +130,12 @@ class CentrifugeRefreshHandler(tornado.web.RequestHandler):
 
         user = USER_ID
         now = str(int(time.time()))
-        token = generate_token(options.secret_key, options.project_id, user, now, info=INFO)
+        token = generate_token(options.project_secret, options.project_key, user, now, info=INFO)
 
         to_return = {
             'token': token,
             'user': user,
-            'project': options.project_id,
+            'project': options.project_key,
             'timestamp': now,
             'info': INFO
         }

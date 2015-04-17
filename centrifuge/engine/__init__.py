@@ -16,7 +16,7 @@ class BaseEngine(object):
     channel history.
     """
 
-    PREFIX = 'centrifuge'
+    CHANNEL_PREFIX = 'centrifuge'
 
     # channel for administrative web interface.
     ADMIN_CHANNEL = 'admin'
@@ -31,11 +31,6 @@ class BaseEngine(object):
     # receiving presence ping
     DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
-    # how many messages keep in history for channel by default
-    DEFAULT_HISTORY_SIZE = 20
-
-    DEFAULT_PUBLISH_METHOD = 'message'
-
     NAME = 'Base engine'
 
     def __init__(self, application, io_loop=None):
@@ -44,23 +39,18 @@ class BaseEngine(object):
         self.config = self.application.settings.get("config", {})
         self.options = self.application.settings.get('options')
 
-        self.prefix = self.config.get('engine_prefix', self.PREFIX)
-        self.admin_channel_name = "{0}.{1}".format(self.prefix, self.ADMIN_CHANNEL)
-        self.control_channel_name = "{0}.{1}".format(self.prefix, self.CONTROL_CHANNEL)
+        self.prefix = self.config.get('channel_prefix', self.CHANNEL_PREFIX)
+        self.admin_channel_name = "{0}.{1}".format(self.prefix, "admin")
+        self.control_channel_name = "{0}.{1}".format(self.prefix, "control")
 
         self.presence_ping_interval = self.config.get(
-            'engine_presence_ping_interval',
+            'presence_ping_interval',
             self.DEFAULT_PRESENCE_PING_INTERVAL
         )*1000
 
         self.presence_timeout = self.config.get(
-            "engine_presence_expire_interval",
+            "presence_expire_interval",
             self.DEFAULT_PRESENCE_EXPIRE_INTERVAL
-        )
-
-        self.history_size = self.config.get(
-            "engine_history_size",
-            self.DEFAULT_HISTORY_SIZE
         )
 
     def initialize(self):
@@ -76,7 +66,7 @@ class BaseEngine(object):
         return ".".join([self.prefix, project_id, channel])
 
     @coroutine
-    def publish_message(self, channel, body, method=DEFAULT_PUBLISH_METHOD):
+    def publish_message(self, channel, body, method="message"):
         """
         Send message with body into channel with specified method.
         """
@@ -137,7 +127,7 @@ class BaseEngine(object):
         raise Return((None, None))
 
     @coroutine
-    def add_history_message(self, project_id, channel, message, history_size=None):
+    def add_history_message(self, project_id, channel, message, history_size, history_lifetime):
         """
         Add new history message for channel, trim history if needed.
         """

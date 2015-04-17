@@ -39,7 +39,7 @@ class Client(object):
         self.timestamp = None
         self.channel_info = {}
         self.default_info = {}
-        self.project_id = None
+        self.project_name = None
         self.channels = None
         self.presence_ping_task = None
         self.expire_timeout = None
@@ -62,25 +62,25 @@ class Client(object):
         if self.presence_ping_task:
             self.presence_ping_task.stop()
 
-        project_id = self.project_id
+        project_name = self.project_name
 
-        if project_id:
+        if project_name:
             self.application.remove_connection(
-                project_id, self.user, self.uid
+                project_name, self.user, self.uid
             )
 
-        if project_id and self.channels is not None:
+        if project_name and self.channels is not None:
             channels = self.channels.copy()
             for channel_name, channel_info in six.iteritems(channels):
                 yield self.application.engine.remove_presence(
-                    project_id, channel_name, self.uid
+                    project_name, channel_name, self.uid
                 )
                 self.application.engine.remove_subscription(
-                    project_id, channel_name, self
+                    project_name, channel_name, self
                 )
-                project, error = yield self.application.get_project(project_id)
-                if not error and project:
-                    namespace, error = yield self.application.get_namespace(
+                project = self.application.get_project(project_name)
+                if project:
+                    namespace = self.application.get_namespace(
                         project, channel_name
                     )
                     if namespace and namespace.get("join_leave", False):
@@ -89,7 +89,7 @@ class Client(object):
         self.channels = None
         self.channel_info = None
         self.default_info = None
-        self.project_id = None
+        self.project_name = None
         self.is_authenticated = False
         self.sock = None
         self.user = None
@@ -238,7 +238,7 @@ class Client(object):
             if channel not in self.channels:
                 continue
             yield self.application.engine.add_presence(
-                self.project_id, channel, self.uid, info
+                self.project_name, channel, self.uid, info
             )
         raise Return((True, None))
 
@@ -280,10 +280,10 @@ class Client(object):
         raise Return(('pong', None))
 
     @staticmethod
-    def validate_token(token, secret_key, project_id, user, timestamp, user_info):
+    def validate_token(token, secret, project_name, user, timestamp, user_info):
         try:
             is_valid_token = auth.check_client_token(
-                token, secret_key, project_id, user, timestamp, user_info=user_info
+                token, secret, project_name, user, timestamp, user_info=user_info
             )
         except Exception as err:
             logger.error(err)
@@ -307,7 +307,7 @@ class Client(object):
         if self.is_authenticated:
             raise Return((self.uid, None))
 
-        project_id = params["project"]
+        project_name = params["project"]
         user = params["user"]
         info = params.get("info", "{}")
 
@@ -317,15 +317,15 @@ class Client(object):
         else:
             token = timestamp = None
 
-        project, error = yield self.application.get_project(project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        secret_key = project['secret_key']
+        secret = project['secret']
 
         if not self.application.INSECURE:
             error_msg = self.validate_token(
-                token, secret_key, project_id, user, timestamp, info
+                token, secret, project_name, user, timestamp, info
             )
             if error_msg:
                 raise Return((None, error_msg))
@@ -351,21 +351,22 @@ class Client(object):
             timestamp = int(time.time())
 
         self.user = user
-        self.project_id = project_id
+        self.project_name = project_name
         self.timestamp = timestamp
 
         time_to_expire = None
-        if not self.application.INSECURE and project.get('connection_check', False):
+        if not self.application.INSECURE and project.get('connection_lifetime', 0) > 0:
             now = time.time()
-            time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - now
+            conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+            time_to_expire = self.timestamp + conn_lifetime - now
             if time_to_expire <= 0:
-                raise Return(({"client": None, "expired": True, "ttl": project.get("connection_lifetime", 3600)}, None))
+                raise Return(({"client": None, "expired": True, "ttl": conn_lifetime}, None))
 
         # Welcome to Centrifuge dear Connection!
         self.is_authenticated = True
         self.default_info = {
-            'user_id': self.user,
-            'client_id': self.uid,
+            'user': self.user,
+            'client': self.uid,
             'default_info': info,
             'channel_info': None
         }
@@ -375,17 +376,19 @@ class Client(object):
             self.send_presence_ping, self.application.engine.presence_ping_interval
         )
         self.presence_ping_task.start()
-        self.application.add_connection(project_id, self.user, self.uid, self)
+        self.application.add_connection(project_name, self.user, self.uid, self)
+
+        conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
 
         if time_to_expire:
             self.expire_timeout = IOLoop.current().add_timeout(
-                time.time() + project.get("connection_lifetime", 3600), self.expire
+                time.time() + conn_lifetime, self.expire
             )
 
         body = {
             "client": self.uid,
             "expired": False,
-            "ttl": project.get("connection_lifetime", 3600) if project.get("connection_check", False) else None
+            "ttl": conn_lifetime if project.get("connection_lifetime", 0) > 0 else None
         }
         raise Return((body, None))
 
@@ -395,14 +398,15 @@ class Client(object):
         # give client a chance to save its connection
         yield sleep(self.application.EXPIRED_CONNECTION_CLOSE_DELAY)
 
-        project, error = yield self.application.get_project(self.project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(self.project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        if not project.get("connection_check", False):
+        if not project.get("connection_lifetime", 0) > 0:
             raise Return((True, None))
 
-        time_to_expire = self.timestamp + project.get("connection_lifetime", 3600) - time.time()
+        conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+        time_to_expire = self.timestamp + conn_lifetime - time.time()
         if time_to_expire > 0:
             # connection saved
             raise Return((True, None))
@@ -417,23 +421,20 @@ class Client(object):
         """
         Handle request with refreshed connection timestamp
         """
-        if not self.is_authenticated:
-            raise Return((None, self.application.UNAUTHORIZED))
-
-        project_id = params["project"]
+        project_name = params["project"]
         user = params["user"]
         timestamp = params["timestamp"]
         info = params.get("info", "{}")
         token = params["token"]
 
-        project, error = yield self.application.get_project(project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        secret_key = project['secret_key']
+        secret = project['secret']
 
         error_msg = self.validate_token(
-            token, secret_key, project_id, user, timestamp, info
+            token, secret, project_name, user, timestamp, info
         )
         if error_msg:
             raise Return((None, error_msg))
@@ -443,7 +444,8 @@ class Client(object):
         except ValueError:
             raise Return((None, "invalid timestamp"))
 
-        time_to_expire = timestamp + project.get("connection_lifetime", 3600) - time.time()
+        conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+        time_to_expire = timestamp + conn_lifetime - time.time()
         if time_to_expire > 0:
             self.timestamp = timestamp
             if self.expire_timeout:
@@ -455,7 +457,7 @@ class Client(object):
             raise Return((None, "connection expired"))
 
         body = {
-            "ttl": project.get("connection_lifetime", 3600) if project.get("connection_check", False) else None
+            "ttl": conn_lifetime if project.get("connection_lifetime", 0) > 0 else None
         }
 
         raise Return((body, None))
@@ -465,9 +467,9 @@ class Client(object):
         """
         Subscribe client on channel.
         """
-        project, error = yield self.application.get_project(self.project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(self.project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
         channel = params.get('channel')
         if not channel:
@@ -480,7 +482,7 @@ class Client(object):
             "channel": channel,
         }
 
-        if self.application.USER_SEPARATOR in channel:
+        if self.application.USER_CHANNEL_BOUNDARY in channel:
             users_allowed = self.application.get_allowed_users(channel)
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
@@ -489,7 +491,7 @@ class Client(object):
         if error:
             raise Return((body, error))
 
-        project_id = self.project_id
+        project_name = self.project_name
 
         anonymous = namespace.get('anonymous', False)
         if not anonymous and not self.user and not self.application.INSECURE:
@@ -504,7 +506,7 @@ class Client(object):
             sign = params.get("sign", "")
             info = params.get("info", "{}")
             is_authorized = auth.check_channel_sign(
-                sign, project.get("secret_key"), client, channel, info
+                sign, project["secret"], client, channel, info
             )
             if not is_authorized:
                 raise Return((body, self.application.UNAUTHORIZED))
@@ -512,7 +514,7 @@ class Client(object):
             self.update_channel_info(info, channel)
 
         yield self.application.engine.add_subscription(
-            project_id, channel, self
+            project_name, channel, self
         )
 
         self.channels[channel] = True
@@ -520,7 +522,7 @@ class Client(object):
         info = self.get_info(channel)
 
         yield self.application.engine.add_presence(
-            project_id, channel, self.uid, info
+            project_name, channel, self.uid, info
         )
 
         if namespace.get('join_leave', False):
@@ -533,9 +535,9 @@ class Client(object):
         """
         Unsubscribe client from channel.
         """
-        project, error = yield self.application.get_project(self.project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(self.project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
         channel = params.get('channel')
 
@@ -550,10 +552,10 @@ class Client(object):
         if error:
             raise Return((body, error))
 
-        project_id = self.project_id
+        project_name = self.project_name
 
         yield self.application.engine.remove_subscription(
-            project_id, channel, self
+            project_name, channel, self
         )
 
         try:
@@ -562,7 +564,7 @@ class Client(object):
             pass
 
         yield self.application.engine.remove_presence(
-            project_id, channel, self.uid
+            project_name, channel, self.uid
         )
 
         if namespace.get('join_leave', False):
@@ -584,9 +586,9 @@ class Client(object):
         """
         Publish message into channel.
         """
-        project, error = yield self.application.get_project(self.project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(self.project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
         channel = params.get('channel')
 
@@ -609,7 +611,7 @@ class Client(object):
         result, error = yield self.application.process_publish(
             project,
             params,
-            client=info
+            info=info
         )
         body["status"] = result
         raise Return((body, error))
@@ -619,9 +621,9 @@ class Client(object):
         """
         Get presence information for channel.
         """
-        project, error = yield self.application.get_project(self.project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(self.project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
         channel = params.get('channel')
 
@@ -650,9 +652,9 @@ class Client(object):
         """
         Get message history for channel.
         """
-        project, error = yield self.application.get_project(self.project_id)
-        if error:
-            raise Return((None, error))
+        project = self.application.get_project(self.project_name)
+        if not project:
+            raise Return((None, self.application.PROJECT_NOT_FOUND))
 
         channel = params.get('channel')
 
@@ -681,7 +683,7 @@ class Client(object):
         Generate and send message about join or leave event.
         """
         subscription_key = self.application.engine.get_subscription_key(
-            self.project_id, channel
+            self.project_name, channel
         )
         info = self.get_info(channel)
         message = {

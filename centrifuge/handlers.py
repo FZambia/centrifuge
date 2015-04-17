@@ -69,27 +69,14 @@ class ApiHandler(BaseHandler):
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no data")
 
-        is_owner_request = False
+        project, error = yield self.application.structure.get_project_by_id(project_id)
+        if error:
+            raise tornado.web.HTTPError(500, log_message=str(error))
+        if not project:
+            raise tornado.web.HTTPError(404, log_message="project not found")
 
-        if project_id == self.application.OWNER_API_PROJECT_ID:
-            # API request aims to be from superuser
-            is_owner_request = True
-
-        if is_owner_request:
-            # use api secret key from configuration to check sign
-            secret = self.application.config.get("api_secret")
-            if not secret:
-                raise tornado.web.HTTPError(501, log_message="no api_secret in configuration file")
-            project = None
-        else:
-            project, error = yield self.application.structure.get_project_by_id(project_id)
-            if error:
-                raise tornado.web.HTTPError(500, log_message=str(error))
-            if not project:
-                raise tornado.web.HTTPError(404, log_message="project not found")
-
-            # use project secret key to validate sign
-            secret = project['secret_key']
+        # use project secret to validate sign
+        secret = project['secret']
 
         is_valid = auth.check_sign(
             secret, project_id, encoded_data, sign
@@ -104,7 +91,7 @@ class ApiHandler(BaseHandler):
             logger.debug(err)
             raise tornado.web.HTTPError(400, log_message="malformed data")
 
-        multi_response, error = yield self.application.process_api_data(project, data, is_owner_request)
+        multi_response, error = yield self.application.process_api_data(project, data)
         if error:
             raise tornado.web.HTTPError(400, log_message=error)
 

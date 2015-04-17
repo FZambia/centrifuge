@@ -4,8 +4,6 @@
 from __future__ import with_statement
 import sys
 import six
-import weakref
-from wtforms import Form as WTForm
 
 try:
     import ujson
@@ -13,76 +11,6 @@ try:
     json_decode = ujson.loads
 except ImportError:
     from tornado.escape import json_encode, json_decode
-
-
-class Form(WTForm):
-    """
-    WTForms wrapper for Tornado.
-    """
-
-    def __init__(self, formdata=None, obj=None, prefix='', **kwargs):
-        super(Form, self).__init__(
-            MultiDictWrapper(formdata), obj=obj, prefix=prefix, **kwargs
-        )
-
-
-class MultiDictWrapper(object):
-    """
-    Wrapper class to provide form values to wtforms.Form
-
-    This class is tightly coupled to a request handler, and more importantly
-    one of our BaseHandlers which has a 'context'. At least if you want to use
-    the save/load functionality.
-
-    Some of this more difficult that it otherwise seems like it should be because of nature
-    of how tornado handles it's form input.
-    """
-    def __init__(self, handler):
-        # We keep a weakref to prevent circular references
-        # This object is tightly coupled to the handler...
-        # which certainly isn't nice, but it's the
-        # way it's gonna have to be for now.
-        if handler and isinstance(handler, dict):
-            self.handler = handler
-        elif handler:
-            self.handler = weakref.ref(handler)
-        else:
-            self.handler = None
-
-    @property
-    def _arguments(self):
-        if not self.handler:
-            return {}
-        if isinstance(self.handler, dict):
-            to_return = {}
-            for key, value in six.iteritems(self.handler):
-                to_return.setdefault(key, []).append(value)
-            return to_return
-        return self.handler().request.arguments
-
-    def __iter__(self):
-        return iter(self._arguments)
-
-    def __len__(self):
-        return len(self._arguments)
-
-    def __contains__(self, name):
-        # We use request.arguments because get_arguments always returns a
-        # value regardless of the existence of the key.
-        return name in self._arguments
-
-    def getlist(self, name):
-        # get_arguments by default strips whitespace from the input data,
-        # so we pass strip=False to stop that in case we need to validate
-        # on whitespace.
-        if isinstance(self.handler, dict):
-            return self._arguments.get(name, [])
-        return self.handler().get_arguments(name, strip=False)
-
-    def __getitem__(self, name):
-        if isinstance(self.handler, dict):
-            return self.handler.get(name)
-        return self.handler().get_argument(name)
 
 
 if six.PY3:
@@ -252,27 +180,3 @@ except ImportError:
         __import__(name)
         return sys.modules[name]
 
-
-def make_patch_data(form, params):
-    """
-    Return a dictionary with keys which present in request params and in form data
-    """
-    data = form.data.copy()
-    keys_to_delete = list(set(data.keys()) - set(params.keys()))
-    for key in keys_to_delete:
-        del data[key]
-    return data
-
-
-def get_boolean_patch_data(boolean_fields, params):
-    """
-    Used as work around HTML form behaviour for checkbox (boolean) fields - when
-    boolean field must be set as False then it must not be in request params.
-    Here we construct dictionary with keys which present in request params and must
-    be interpreted as False. This is necessary as Centrifuge uses partial updates in API.
-    """
-    boolean_patch_data = {}
-    for field in boolean_fields:
-        if field in params and not bool(params[field]):
-            boolean_patch_data[field] = False
-    return boolean_patch_data
