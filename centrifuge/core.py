@@ -670,7 +670,7 @@ class Application(tornado.web.Application):
         raise Return((True, None))
 
     @coroutine
-    def prepare_message(self, project, params, client):
+    def prepare_message(self, project, params, info):
         """
         Prepare message before actual publishing.
         """
@@ -683,7 +683,7 @@ class Application(tornado.web.Application):
         message = {
             'uid': uuid.uuid4().hex,
             'timestamp': int(time.time()),
-            'client': client,
+            'info': info,
             'channel': channel,
             'data': data
         }
@@ -700,12 +700,12 @@ class Application(tornado.web.Application):
         raise Return((message, None))
 
     @coroutine
-    def process_publish(self, project, params, client=None):
+    def process_publish(self, project, params, info=None):
         """
         Publish message into appropriate channel.
         """
         message, error = yield self.prepare_message(
-            project, params, client
+            project, params, info
         )
         if error:
             raise Return((False, self.INTERNAL_SERVER_ERROR))

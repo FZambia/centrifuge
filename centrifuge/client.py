@@ -611,7 +611,7 @@ class Client(object):
         result, error = yield self.application.process_publish(
             project,
             params,
-            client=info
+            info=info
         )
         body["status"] = result
         raise Return((body, error))
