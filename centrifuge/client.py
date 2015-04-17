@@ -355,7 +355,7 @@ class Client(object):
         self.timestamp = timestamp
 
         time_to_expire = None
-        if not self.application.INSECURE and project.get('connection_check', False):
+        if not self.application.INSECURE and project.get('connection_lifetime', 0) > 0:
             now = time.time()
             conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
             time_to_expire = self.timestamp + conn_lifetime - now
@@ -388,7 +388,7 @@ class Client(object):
         body = {
             "client": self.uid,
             "expired": False,
-            "ttl": conn_lifetime if project.get("connection_check", False) else None
+            "ttl": conn_lifetime if project.get("connection_lifetime", 0) > 0 else None
         }
         raise Return((body, None))
 
@@ -402,7 +402,7 @@ class Client(object):
         if not project:
             raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        if not project.get("connection_check", False):
+        if not project.get("connection_lifetime", 0) > 0:
             raise Return((True, None))
 
         conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
@@ -457,7 +457,7 @@ class Client(object):
             raise Return((None, "connection expired"))
 
         body = {
-            "ttl": conn_lifetime if project.get("connection_check", False) else None
+            "ttl": conn_lifetime if project.get("connection_lifetime", 0) > 0 else None
         }
 
         raise Return((body, None))

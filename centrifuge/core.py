@@ -79,7 +79,7 @@ class Application(tornado.web.Application):
     DEFAULT_HISTORY_SIZE = 50
 
     # in seconds how long we keep history in inactive channels
-    # (0 - forever until size is not exceeded)
+    # (0 - do not expire at all - but old messages will be removed when size exceeded)
     # 1 hour by default
     DEFAULT_HISTORY_LIFETIME = 3600
 

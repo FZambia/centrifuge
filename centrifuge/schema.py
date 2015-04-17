@@ -38,9 +38,6 @@ _project_properties = {
     "secret": {
         "type": "string"
     },
-    "connection_check": {
-        "type": "boolean"
-    },
     "connection_lifetime": {
         "type": "integer",
         "minimum": 0
