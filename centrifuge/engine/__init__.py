@@ -31,9 +31,6 @@ class BaseEngine(object):
     # receiving presence ping
     DEFAULT_PRESENCE_EXPIRE_INTERVAL = 60
 
-    # how many messages keep in history for channel by default
-    DEFAULT_HISTORY_SIZE = 0
-
     NAME = 'Base engine'
 
     def __init__(self, application, io_loop=None):

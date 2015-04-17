@@ -17,9 +17,6 @@ _channel_options_properties = {
     "join_leave": {
         "type": "boolean"
     },
-    "history": {
-        "type": "boolean"
-    },
     "history_size": {
         "type": "integer",
         "minimum": 0

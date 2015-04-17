@@ -76,15 +76,16 @@ class Application(tornado.web.Application):
     METRICS_EXPORT_INTERVAL = 10
 
     # how many messages keep in channel history by default
-    DEFAULT_HISTORY_SIZE = 50
+    # 0 - do not keep history at all
+    DEFAULT_HISTORY_SIZE = 0
 
     # in seconds how long we keep history in inactive channels
     # (0 - do not expire at all - but old messages will be removed when size exceeded)
     # 1 hour by default
-    DEFAULT_HISTORY_LIFETIME = 3600
+    DEFAULT_HISTORY_LIFETIME = 0
 
     # default client connection lifetime in seconds
-    DEFAULT_CONNECTION_LIFETIME = 3600
+    DEFAULT_CONNECTION_LIFETIME = 0
 
     # when active no authentication required at all when connecting to Centrifuge,
     # this simplified mode suitable for demonstration or personal usage
@@ -655,10 +656,11 @@ class Application(tornado.web.Application):
 
         self.engine.publish_message(subscription_key, message)
 
-        if namespace.get('history', False):
+        history_size = namespace.get('history_size', self.DEFAULT_HISTORY_SIZE)
+        if history_size > 0:
             yield self.engine.add_history_message(
                 project_name, channel, message,
-                history_size=namespace.get('history_size', self.DEFAULT_HISTORY_SIZE),
+                history_size=history_size,
                 history_lifetime=namespace.get('history_lifetime', self.DEFAULT_HISTORY_LIFETIME)
             )
 
