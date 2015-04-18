@@ -42,8 +42,8 @@
 
             var subscription = centrifuge.subscribe(channel, function(message) {
                 var client_id;
-                if (message["client"] !== null){
-                    client_id = message["client"]["client_id"];
+                if (message["info"] !== null){
+                    client_id = message["info"]["client"];
                 } else {
                     client_id = null;
                 }

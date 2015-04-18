@@ -487,9 +487,9 @@ class Client(object):
             if self.user not in users_allowed:
                 raise Return((body, self.application.PERMISSION_DENIED))
 
-        namespace, error = yield self.application.get_namespace(project, channel)
-        if error:
-            raise Return((body, error))
+        namespace = self.application.get_namespace(project, channel)
+        if not namespace:
+            raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
         project_name = self.project_name
 
@@ -548,9 +548,9 @@ class Client(object):
             "channel": channel,
         }
 
-        namespace, error = yield self.application.get_namespace(project, channel)
-        if error:
-            raise Return((body, error))
+        namespace = self.application.get_namespace(project, channel)
+        if not namespace:
+            raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
         project_name = self.project_name
 
@@ -599,9 +599,9 @@ class Client(object):
 
         self.check_channel_permission(channel)
 
-        namespace, error = yield self.application.get_namespace(project, channel)
-        if error:
-            raise Return((body, error))
+        namespace = self.application.get_namespace(project, channel)
+        if not namespace:
+            raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
         if not namespace.get('publish', False) and not self.application.INSECURE:
             raise Return((body, self.application.PERMISSION_DENIED))
@@ -633,9 +633,9 @@ class Client(object):
 
         self.check_channel_permission(channel)
 
-        namespace, error = yield self.application.get_namespace(project, channel)
-        if error:
-            raise Return((body, error))
+        namespace = self.application.get_namespace(project, channel)
+        if not namespace:
+            raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
         if not namespace.get('presence', False):
             raise Return((body, self.application.NOT_AVAILABLE))
@@ -664,9 +664,9 @@ class Client(object):
 
         self.check_channel_permission(channel)
 
-        namespace, error = yield self.application.get_namespace(project, channel)
-        if error:
-            raise Return((body, error))
+        namespace = self.application.get_namespace(project, channel)
+        if not namespace:
+            raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
         if not namespace.get('history', False):
             raise Return((body, self.application.NOT_AVAILABLE))

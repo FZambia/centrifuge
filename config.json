@@ -7,8 +7,10 @@
       "secret": "secret",
       "namespaces": [
         {
-          "name": "publish",
-          "publish": true
+          "name": "public",
+          "publish": true,
+          "presence": true,
+          "join_leave": true
         }
       ]
     }
