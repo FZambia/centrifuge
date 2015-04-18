@@ -37,7 +37,7 @@ class ApiHandler(BaseHandler):
         pass
 
     @coroutine
-    def post(self, project_id):
+    def post(self, project_key):
         """
         Handle API HTTP requests.
         """
@@ -69,9 +69,7 @@ class ApiHandler(BaseHandler):
         if not encoded_data:
             raise tornado.web.HTTPError(400, log_message="no data")
 
-        project, error = yield self.application.structure.get_project_by_id(project_id)
-        if error:
-            raise tornado.web.HTTPError(500, log_message=str(error))
+        project = self.application.get_project(project_key)
         if not project:
             raise tornado.web.HTTPError(404, log_message="project not found")
 
@@ -79,7 +77,7 @@ class ApiHandler(BaseHandler):
         secret = project['secret']
 
         is_valid = auth.check_sign(
-            secret, project_id, encoded_data, sign
+            secret, project_key, encoded_data, sign
         )
 
         if not is_valid:

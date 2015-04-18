@@ -250,8 +250,8 @@ class Engine(BaseEngine):
             logger.error("Redis API - object expected")
             return
 
-        project_id = message.get("project")
-        if not project_id:
+        project_key = message.get("project")
+        if not project_key:
             logger.error("Redis API - project required")
             return
 
@@ -259,11 +259,7 @@ class Engine(BaseEngine):
         if not data:
             logger.error("Redis API - data required")
 
-        project, error = yield self.application.structure.get_project_by_id(project_id)
-        if error:
-            logger.error("Redis API - server error")
-            return
-
+        project = self.application.get_project(project_key)
         if not project:
             logger.error("Redis API - project not found")
             return
