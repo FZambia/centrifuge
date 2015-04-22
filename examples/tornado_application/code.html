@@ -64,11 +64,11 @@
 
             subscription.on('join', function(message) {
                 console.log(message);
-                draw_message('Someone joined channel ' + message.channel + ' (uid ' + message.data["client_id"] + ')');
+                draw_message('Someone joined channel ' + message.channel + ' (uid ' + message.data["client"] + ')');
             });
 
             subscription.on('leave', function(message) {
-                draw_message('Someone left channel ' + message.channel + ' (uid ' + message.data["client_id"] + ')');
+                draw_message('Someone left channel ' + message.channel + ' (uid ' + message.data["client"] + ')');
             })
 
         });

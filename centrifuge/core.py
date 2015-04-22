@@ -194,7 +194,7 @@ class Application(tornado.web.Application):
         if namespace_channel_boundary:
             self.NAMESPACE_CHANNEL_BOUNDARY = namespace_channel_boundary
 
-        ping_interval = config.get('ping_interval')
+        ping_interval = config.get('node_ping_interval')
         if ping_interval:
             self.PING_INTERVAL = ping_interval
 
@@ -739,8 +739,8 @@ class Application(tornado.web.Application):
         channel = params.get("channel")
         data, error = yield self.engine.get_history(project_name, channel)
         if error:
-            raise Return((data, self.INTERNAL_SERVER_ERROR))
-        raise Return((data, None))
+            raise Return(({"channel": channel}, self.INTERNAL_SERVER_ERROR))
+        raise Return(({"channel": channel, "data": data}, None))
 
     @coroutine
     def process_presence(self, project, params):
@@ -751,8 +751,8 @@ class Application(tornado.web.Application):
         channel = params.get("channel")
         data, error = yield self.engine.get_presence(project_name, channel)
         if error:
-            raise Return((data, self.INTERNAL_SERVER_ERROR))
-        raise Return((data, None))
+            raise Return(({"channel": channel}, self.INTERNAL_SERVER_ERROR))
+        raise Return(({"channel": channel, "data": data}, None))
 
     @coroutine
     def process_unsubscribe(self, project, params):
