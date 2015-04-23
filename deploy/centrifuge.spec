@@ -35,15 +35,17 @@ fi
 %build
 
 mkdir -p %{name}
-cp -r %{source} %{name}/src
-rm -rf %{name}/src/.git*
-rm -rf %{name}/src/.idea*
+rsync -avrz --exclude 'env' --exclude '.git*' --exclude '.idea*'  %{source} %{name}/src
 
-virtualenv --distribute %{name}/env
-%{name}/env/bin/easy_install -U distribute
-%{name}/env/bin/pip install -r %{name}/src/requirements.txt --upgrade
-%{name}/env/bin/pip install supervisor
-virtualenv --relocatable %{name}/env
+if [ -d %{source}/env ]; then
+    cp -r %{source}/env %{name}/env
+else
+    virtualenv --distribute %{name}/env
+    %{name}/env/bin/easy_install -U distribute
+    %{name}/env/bin/pip install -r %{name}/src/requirements.txt --upgrade
+    %{name}/env/bin/pip install supervisor
+    virtualenv --relocatable %{name}/env
+fi
 
 # remove pyc
 find %{name}/ -type f -name "*.py[co]" -delete
