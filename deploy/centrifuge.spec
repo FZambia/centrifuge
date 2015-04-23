@@ -35,7 +35,7 @@ fi
 %build
 
 mkdir -p %{name}
-rsync -avrz --exclude 'env' --exclude '.git*' --exclude '.idea*'  %{source}/../ %{name}/src
+rsync -avrz --exclude 'env' --exclude '.git*' --exclude '.idea*'  %{source}/ %{name}/src
 
 if [ -d %{source}/env ]; then
     cp -r %{source}/env %{name}/env
