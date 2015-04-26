@@ -6,16 +6,17 @@ import (
     "log"
     "time"
     "os"
-    "crypto/md5"
+    "crypto/sha256"
     "crypto/hmac"
     "strconv"
 )
 
-func generate_token(secret_key, project_id, user_id string, timestamp string) string {
-    token := hmac.New(md5.New, []byte(secret_key))
-    token.Write([]byte(project_id))
+func generate_token(secret_key, project_key, user_id string, timestamp string) string {
+    token := hmac.New(sha256.New, []byte(secret_key))
+    token.Write([]byte(project_key))
     token.Write([]byte(user_id))
     token.Write([]byte(timestamp))
+    token.Write([]byte("{}"))
     hex := fmt.Sprintf("%02x", token.Sum(nil))
     return hex
 }
@@ -126,7 +127,7 @@ func main() {
 
     origin := "http://localhost:8000/"
     url := os.Args[1]
-    project_id := os.Args[2]
+    project_key := os.Args[2]
     project_secret := os.Args[3]
     timestamp := strconv.FormatInt(time.Now().Unix(), 10)
     fmt.Println(timestamp)
@@ -140,9 +141,9 @@ func main() {
 
     messages_received := 0
 
-    token := generate_token(project_secret, project_id, "test", timestamp)
+    token := generate_token(project_secret, project_key, "test", timestamp)
 
-    connect_message := fmt.Sprintf("{\"params\": {\"project\": \"%s\", \"timestamp\": \"%s\", \"token\": \"%s\", \"user\": \"test\"}, \"method\": \"connect\"}", project_id, timestamp, token)
+    connect_message := fmt.Sprintf("{\"params\": {\"project\": \"%s\", \"timestamp\": \"%s\", \"token\": \"%s\", \"user\": \"test\"}, \"method\": \"connect\"}", project_key, timestamp, token)
     subscribe_message := "{\"params\": {\"channel\": \"test\"}, \"method\": \"subscribe\"}"
     publish_message := "{\"params\": {\"data\": {\"input\": \"I am benchmarking Centrifuge at moment\"}, \"channel\": \"test\"}, \"method\": \"publish\"}"
 

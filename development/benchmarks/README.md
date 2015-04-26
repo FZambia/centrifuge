@@ -11,7 +11,7 @@ Scalability benchmark
 Command used to run benchmark:
 
 ```bash
-go run benchmark.go ws://localhost:8080/connection/websocket PROJECT_ID SECRET_KEY 4000 200 50
+go run benchmark.go ws://localhost:8080/connection/websocket PROJECT_KEY PROJECT_SECRET 4000 200 50
 ```
 
 Nginx was used as load balancer and websocket proxy.
