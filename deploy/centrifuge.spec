@@ -1,6 +1,6 @@
 %define __prefix /opt
 %define __spec_install_post /usr/lib/rpm/brp-compress || :
-%define __descr Real-time messaging server
+%define __descr Real-time messaging in web applications
 
 Name: centrifuge
 Summary: %{__descr}
@@ -8,9 +8,9 @@ Version: %{version}
 Release: %{release}
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
-BuildRequires: python rpm-build redhat-rpm-config postgresql-devel
+BuildRequires: python rpm-build redhat-rpm-config
 Requires: python
-License: BSD
+License: MIT
 
 
 %description
@@ -35,18 +35,17 @@ fi
 %build
 
 mkdir -p %{name}
-cp -r %{source} %{name}/src
-rm -rf %{name}/src/.git*
-rm -rf %{name}/src/.idea*
+rsync -avrz --exclude 'env' --exclude '.git*' --exclude '.idea*'  %{source}/ %{name}/src
 
-# copy actual javascript files into Centrifuge static folder
-cp -r %{name}/src/javascript/* %{name}/src/centrifuge/web/frontend/static/
-
-virtualenv --distribute %{name}/env
-%{name}/env/bin/easy_install -U distribute
-%{name}/env/bin/pip install -r %{name}/src/requirements.txt --upgrade
-%{name}/env/bin/pip install supervisor
-virtualenv --relocatable %{name}/env
+if [ -d %{source}/env ]; then
+    cp -r %{source}/env %{name}/env
+else
+    virtualenv --distribute %{name}/env
+    %{name}/env/bin/easy_install -U distribute
+    %{name}/env/bin/pip install -r %{name}/src/requirements.txt --upgrade
+    %{name}/env/bin/pip install supervisor
+    virtualenv --relocatable %{name}/env
+fi
 
 # remove pyc
 find %{name}/ -type f -name "*.py[co]" -delete
@@ -80,7 +79,6 @@ mkdir -p %{buildroot}%{_sysconfdir}/%{name}
 # folders
 mkdir -p %{buildroot}/var/log/%{name}
 mkdir -p %{buildroot}/var/run/%{name}
-mkdir -p %{buildroot}/var/db/%{name}
 
 
 %post
@@ -115,4 +113,3 @@ rm -rf %{buildroot}
 %defattr(-,%{name},%{name})
 /var/log/%{name}/
 /var/run/%{name}/
-/var/db/%{name}/

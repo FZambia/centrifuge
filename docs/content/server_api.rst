@@ -143,55 +143,6 @@ you want to send into channel. **It must be valid JSON**.
     }
 
 
-Now let's see on API which allow you to change project structure.
-
-Methods for managing structure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-There are lots of them. But in most cases you won't need them as Centrifuge has web
-interface to help with managing structure.
-
-**project_get** - get information about project options
-
-**project_by_name** - get project options by project name.  pass "name" in params
-
-**project_edit** - edit project options
-
-**project_delete** - completely delete project
-
-**regenerate_secret_key** - regenerate secret key for project (be careful with this)
-
-**namespace_list** - get all project namespaces.
-
-**namespace_create** - create new namespace.
-
-**namespace_get** - get namespace by its ``_id``
-
-**namespace_edit** - edit namespace by its ``_id``
-
-**namespace_delete** - delete namespace by its ``_id``
-
-
-Methods above available for project administrators using project secret key.
-
-But Centrifuge has another level of permissions which allows to run every
-command above and also these:
-
-**project_list** - get all projects
-
-**project_create** - create new project
-
-**dump_structure** - get all current structure.
-
-
-You can access these methods using ``_`` (by default) for Project ID and
-``api_secret`` from configuration file instead of project secret key (see
-``[superuser]`` section in ``Cent`` description below). But using
-this kind of API you need to provide project ID where necessary including
-``_project`` (by default) key into params (which value is a project ID).
-
-
-
 Cent
 ~~~~
 
@@ -212,20 +163,11 @@ Here is an example of config file's content:
 
 .. code-block:: bash
 
-    [superuser]
-    address = http://localhost:8000/api
-    project_id = _
-    secret_key = secret_key_from_configuration_file
-    timeout = 5
-
     [football]
     address = http://localhost:8000/api
-    project_id = 51b229f778b83c2eced3a76b
-    secret_key = 994021f2dc354d7893d88b90d430498e
+    key = PROJECT_KEY
+    secret = 994021f2dc354d7893d88b90d430498e
     timeout = 5
-
-
-Project ID and Secret Key can be found on project's settings page in administrator's web interface.
 
 
 The most obvious case of using Cent is broadcasting events into channels.
@@ -247,7 +189,7 @@ If request was successful you'll get something like this in response:
 
 .. code-block:: bash
 
-    {'error': None, 'body': True, 'uid': None, 'method': 'publish'}
+    {'error': None, 'body': True, 'method': 'publish'}
 
 
 In case of any error you will get its description.
@@ -259,7 +201,7 @@ Cent contains Client class to send messages to Centrifuge from your python-power
 
     from cent.core import Client
 
-    client = Client("http://localhost:8000/api", "project_id", "project_secret_key")
+    client = Client("http://localhost:8000/api", "project_key", "project_secret")
     client.add(
         "publish", 
         {

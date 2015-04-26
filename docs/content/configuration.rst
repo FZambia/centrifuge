@@ -15,8 +15,7 @@ Here is minimal configuration file required:
 
     {
         "password": "admin",
-        "cookie_secret": "secret",
-        "api_secret": "secret"
+        "cookie_secret": "secret"
     }
 
 
@@ -26,8 +25,6 @@ Description:
 
 - **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret.
 
-- **api_secret** - administrator's API secret key.
-
 There is also a possibility to override default SockJS-Tornado settings using Centrifuge
 configuration file. Example:
 
@@ -36,7 +33,6 @@ configuration file. Example:
     {
         "password": "admin",
         "cookie_secret": "secret",
-        "api_secret": "secret",
         "sockjs_settings": {
             "sockjs_url": "https://centrifuge.example.com/static/libs/sockjs/sockjs-0.3.4.min.js"
         }
@@ -52,7 +48,6 @@ Centrifuge runs a `tornado HTTPServer <http://www.tornadoweb.org/en/stable/https
     {
         "password": "admin",
         "cookie_secret": "secret",
-        "api_secret": "secret",
         "tornado_settings": {
             "xheaders": true
         }
@@ -70,7 +65,6 @@ providing prefix, host and port to send metrics via UDP.
     {
         "password": "admin",
         "cookie_secret": "secret",
-        "api_secret": "secret",
         "metrics": {
             "admin": true,
             "log": true,
@@ -112,18 +106,13 @@ Centrifuge has several command line arguments.
 
 ``--name`` - unique node name (optional) - will be used in web interface metric table or in graphite data path
 
-Some other command line options come with engine or structure storage backends -
-explore them using ``--help``, for example:
+Some other command line options come with engine - explore them using ``--help``, for example:
 
 .. code-block:: bash
 
     CENTRIFUGE_ENGINE=redis centrifuge --help
 
-or
 
-.. code-block:: bash
-
-    CENTRIFUGE_STRUCTURE=sqlite centrifuge --help
 
 
 

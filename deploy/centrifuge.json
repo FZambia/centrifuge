@@ -1,5 +1,18 @@
 {
-    "password": "password",
-    "cookie_secret": "secret",
-    "api_secret": "secret"
+  "password": "configure_me",
+  "cookie_secret": "configure_me",
+  "structure": [
+    {
+      "name": "configure_me",
+      "secret": "configure_me",
+      "namespaces": [
+        {
+          "name": "public",
+          "publish": true,
+          "presence": true,
+          "join_leave": true
+        }
+      ]
+    }
+  ]
 }
