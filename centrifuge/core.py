@@ -53,9 +53,6 @@ class Application(tornado.web.Application):
     # in seconds
     PING_MAX_DELAY = 10
 
-    # in milliseconds, how often node will send its info into admin channel
-    NODE_INFO_PUBLISH_INTERVAL = 10000
-
     # in milliseconds, how often application will remove stale ping information
     PING_REVIEW_INTERVAL = 10000
 
@@ -201,10 +198,6 @@ class Application(tornado.web.Application):
         ping_max_delay = config.get('ping_max_delay')
         if ping_max_delay:
             self.PING_MAX_DELAY = ping_max_delay
-
-        node_info_publish_interval = config.get('node_info_publish_interval')
-        if node_info_publish_interval:
-            self.NODE_INFO_PUBLISH_INTERVAL = node_info_publish_interval
 
         max_channel_length = config.get('max_channel_length')
         if max_channel_length:
