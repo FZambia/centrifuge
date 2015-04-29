@@ -40,11 +40,10 @@ Now you can run centrifuge:
 
 .. code-block:: bash
 
-    centrifuge
+    centrifuge --config=config.json
 
 
-Custom options can be set using command-line arguments and configuration JSON file. Note, that in
-production you always need configuration file (read about this more in next chapters).
+Custom options can be set using command-line arguments and configuration JSON file.
 
 Go to http://localhost:8000/ and make sure that it is running.
 

@@ -58,15 +58,6 @@ Here is an example Nginx configuration to deploy Centrifuge.
             listen 8081;
             server_name localhost;
 
-            location /static/ {
-                root /var/www/different/python/centrifuge/src/src/centrifuge/frontend;
-            }
-            location = /favicon.ico {
-                rewrite (.*) /static/favicon.ico;
-            }
-            location = /robots.txt {
-                rewrite (.*) /static/robots.txt;
-            }
             location / {
                 proxy_pass_header Server;
                 proxy_set_header Host $http_host;
@@ -76,15 +67,6 @@ Here is an example Nginx configuration to deploy Centrifuge.
                 proxy_pass http://centrifuge;
             }
             location /socket {
-                proxy_buffering off;
-                proxy_set_header X-Real-IP $remote_addr;
-                proxy_set_header X-Scheme $scheme;
-                proxy_pass http://centrifuge;
-                proxy_http_version 1.1;
-                proxy_set_header Upgrade $http_upgrade;
-                proxy_set_header Connection $connection_upgrade;
-            }
-            location /connection/websocket {
                 proxy_buffering off;
                 proxy_set_header X-Real-IP $remote_addr;
                 proxy_set_header X-Scheme $scheme;
@@ -168,9 +150,9 @@ centrifuge.conf (put it into ``/etc/supervisor/conf.d/centrifuge.conf``)
 
     [program:centrifuge]
     process_name = %(process_num)s
-    environment=PYTHONPATH="/opt/centrifuge/src",CENTRIFUGE_STORAGE="sqlite"
+    environment=PYTHONPATH="/opt/centrifuge/src"
     directory = /opt/centrifuge/src
-    command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge/centrifuge-%(process_num)s.log --config=/etc/centrifuge/centrifuge.json --port=%(process_num)s --path=/var/db/centrifuge/centrifuge.sqlite
+    command = /opt/centrifuge/env/bin/python /opt/centrifuge/src/centrifuge/node.py --log_file_prefix=/var/log/centrifuge/centrifuge-%(process_num)s.log --config=/etc/centrifuge/centrifuge.json --port=%(process_num)s
     numprocs = 1
     numprocs_start = 8000
     user = centrifuge
