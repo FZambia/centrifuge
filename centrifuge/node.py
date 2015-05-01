@@ -94,12 +94,9 @@ def create_application_handlers(sockjs_settings):
         tornado.web.url(r'/api/([^/]+)/?$', ApiHandler, name="api"),
         tornado.web.url(r'/info/$', InfoHandler, name="info"),
         tornado.web.url(r'/action/$', ActionHandler, name="action"),
-        tornado.web.url(r'/auth/$', AuthHandler, name="auth")
-    ]
-
-    handlers.append(
+        tornado.web.url(r'/auth/$', AuthHandler, name="auth"),
         (r'/socket', AdminWebSocketHandler),
-    )
+    ]
 
     if options.web:
         logger.info("serving web application from {0}".format(os.path.abspath(options.web)))
@@ -125,11 +122,7 @@ def create_centrifuge_application():
     try:
         custom_settings = json.load(open(options.config, 'r'))
     except IOError:
-        logger.warning(
-            "No configuration file found. "
-            "In production make sure security settings provided"
-        )
-        custom_settings = {}
+        return stop_running("No configuration file found.")
 
     # override security related options using environment variable
     # value if exists

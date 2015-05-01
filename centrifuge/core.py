@@ -25,7 +25,7 @@ from centrifuge.log import logger
 from centrifuge.metrics import Collector, Exporter
 from centrifuge.response import Response, MultiResponse
 from centrifuge.schema import req_schema, server_api_schema
-from centrifuge.structure import validate_structure, structure_to_dict
+from centrifuge.structure import validate_and_prepare_structure, structure_to_dict
 
 
 def get_address():
@@ -71,18 +71,6 @@ class Application(tornado.web.Application):
 
     # default metrics export interval in seconds
     METRICS_EXPORT_INTERVAL = 10
-
-    # how many messages keep in channel history by default
-    # 0 - do not keep history at all
-    DEFAULT_HISTORY_SIZE = 0
-
-    # in seconds how long we keep history in inactive channels
-    # (0 - do not expire at all - but old messages will be removed when size exceeded)
-    # 1 hour by default
-    DEFAULT_HISTORY_LIFETIME = 0
-
-    # default client connection lifetime in seconds
-    DEFAULT_CONNECTION_LIFETIME = 0
 
     # when active no authentication required at all when connecting to Centrifuge,
     # this simplified mode suitable for demonstration or personal usage
@@ -230,7 +218,7 @@ class Application(tornado.web.Application):
         structure = config.get("structure")
         if not structure:
             raise Exception("structure required")
-        validate_structure(structure)
+        validate_and_prepare_structure(structure)
         self.structure = structure
         self.structure_dict = structure_to_dict(structure)
 
@@ -632,7 +620,7 @@ class Application(tornado.web.Application):
         if not namespace:
             raise Return((False, self.NAMESPACE_NOT_FOUND))
 
-        if namespace.get('watch', False):
+        if namespace['watch']:
             # send to admin channel
             self.engine.publish_admin_message({
                 "method": "message",
@@ -649,12 +637,12 @@ class Application(tornado.web.Application):
 
         self.engine.publish_message(subscription_key, message)
 
-        history_size = namespace.get('history_size', self.DEFAULT_HISTORY_SIZE)
+        history_size = namespace['history_size']
         if history_size > 0:
             yield self.engine.add_history_message(
                 project_name, channel, message,
                 history_size=history_size,
-                history_lifetime=namespace.get('history_lifetime', self.DEFAULT_HISTORY_LIFETIME)
+                history_lifetime=namespace['history_lifetime']
             )
 
         if self.collector:

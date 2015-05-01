@@ -22,9 +22,14 @@ def structure_to_dict(structure):
     return to_return
 
 
-def validate_structure(structure):
+def set_default_value(obj, key, default_value):
+    if key not in obj:
+        obj[key] = default_value
+
+
+def validate_and_prepare_structure(structure):
     """
-    Validate structure configuration
+    Validate and prepare structure configuration
     """
     if not structure:
         raise ValidationError(
@@ -49,7 +54,17 @@ def validate_structure(structure):
             raise ValidationError("project name must be unique")
         project_names_append(name)
 
-        if "namespaces" not in project:
+        set_default_value(project, "connection_lifetime", 0)
+        set_default_value(project, "watch", False)
+        set_default_value(project, "anonymous", False)
+        set_default_value(project, "publish", False)
+        set_default_value(project, "join_leave", False)
+        set_default_value(project, "presence", False)
+        set_default_value(project, "history_size", 0)
+        set_default_value(project, "history_lifetime", 0)
+        set_default_value(project, "namespaces", [])
+
+        if not project["namespaces"]:
             continue
 
         namespaces = project["namespaces"]
@@ -64,3 +79,11 @@ def validate_structure(structure):
             if name in namespace_names:
                 raise ValidationError("namespace name must be unique for project")
             namespace_names_append(name)
+
+            set_default_value(namespace, "watch", False)
+            set_default_value(namespace, "anonymous", False)
+            set_default_value(namespace, "publish", False)
+            set_default_value(namespace, "join_leave", False)
+            set_default_value(namespace, "presence", False)
+            set_default_value(namespace, "history_size", 0)
+            set_default_value(namespace, "history_lifetime", 0)

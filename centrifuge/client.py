@@ -83,7 +83,7 @@ class Client(object):
                     namespace = self.application.get_namespace(
                         project, channel_name
                     )
-                    if namespace and namespace.get("join_leave", False):
+                    if namespace and namespace["join_leave"]:
                         self.send_leave_message(channel_name)
 
         self.channels = None
@@ -355,9 +355,9 @@ class Client(object):
         self.timestamp = timestamp
 
         time_to_expire = None
-        if not self.application.INSECURE and project.get('connection_lifetime', 0) > 0:
+        if not self.application.INSECURE and project['connection_lifetime'] > 0:
             now = time.time()
-            conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+            conn_lifetime = project["connection_lifetime"]
             time_to_expire = self.timestamp + conn_lifetime - now
             if time_to_expire <= 0:
                 raise Return(({"client": None, "expired": True, "ttl": conn_lifetime}, None))
@@ -378,7 +378,7 @@ class Client(object):
         self.presence_ping_task.start()
         self.application.add_connection(project_name, self.user, self.uid, self)
 
-        conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+        conn_lifetime = project["connection_lifetime"]
 
         if time_to_expire:
             self.expire_timeout = IOLoop.current().add_timeout(
@@ -388,7 +388,7 @@ class Client(object):
         body = {
             "client": self.uid,
             "expired": False,
-            "ttl": conn_lifetime if project.get("connection_lifetime", 0) > 0 else None
+            "ttl": conn_lifetime if project["connection_lifetime"] > 0 else None
         }
         raise Return((body, None))
 
@@ -402,10 +402,10 @@ class Client(object):
         if not project:
             raise Return((None, self.application.PROJECT_NOT_FOUND))
 
-        if not project.get("connection_lifetime", 0) > 0:
+        if not project["connection_lifetime"] > 0:
             raise Return((True, None))
 
-        conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+        conn_lifetime = project["connection_lifetime"]
         time_to_expire = self.timestamp + conn_lifetime - time.time()
         if time_to_expire > 0:
             # connection saved
@@ -444,7 +444,7 @@ class Client(object):
         except ValueError:
             raise Return((None, "invalid timestamp"))
 
-        conn_lifetime = project.get("connection_lifetime", self.application.DEFAULT_CONNECTION_LIFETIME)
+        conn_lifetime = project["connection_lifetime"]
         time_to_expire = timestamp + conn_lifetime - time.time()
         if time_to_expire > 0:
             self.timestamp = timestamp
@@ -457,7 +457,7 @@ class Client(object):
             raise Return((None, "connection expired"))
 
         body = {
-            "ttl": conn_lifetime if project.get("connection_lifetime", 0) > 0 else None
+            "ttl": conn_lifetime if project["connection_lifetime"] > 0 else None
         }
 
         raise Return((body, None))
@@ -493,7 +493,7 @@ class Client(object):
 
         project_name = self.project_name
 
-        anonymous = namespace.get('anonymous', False)
+        anonymous = namespace['anonymous']
         if not anonymous and not self.user and not self.application.INSECURE:
             raise Return((body, self.application.PERMISSION_DENIED))
 
@@ -525,7 +525,7 @@ class Client(object):
             project_name, channel, self.uid, info
         )
 
-        if namespace.get('join_leave', False):
+        if namespace['join_leave']:
             self.send_join_message(channel)
 
         raise Return((body, None))
@@ -567,7 +567,7 @@ class Client(object):
             project_name, channel, self.uid
         )
 
-        if namespace.get('join_leave', False):
+        if namespace['join_leave']:
             self.send_leave_message(channel)
 
         raise Return((body, None))
@@ -603,7 +603,7 @@ class Client(object):
         if not namespace:
             raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
-        if not namespace.get('publish', False) and not self.application.INSECURE:
+        if not namespace['publish'] and not self.application.INSECURE:
             raise Return((body, self.application.PERMISSION_DENIED))
 
         info = self.get_info(channel)
@@ -637,7 +637,7 @@ class Client(object):
         if not namespace:
             raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
-        if not namespace.get('presence', False):
+        if not namespace['presence']:
             raise Return((body, self.application.NOT_AVAILABLE))
 
         data, error = yield self.application.process_presence(
@@ -668,7 +668,7 @@ class Client(object):
         if not namespace:
             raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
-        if not namespace.get('history', False):
+        if namespace['history_size'] <= 0:
             raise Return((body, self.application.NOT_AVAILABLE))
 
         data, error = yield self.application.process_history(
