@@ -19,19 +19,19 @@ Memory engine:
 
 .. code-block:: bash
 
-    CENTRIFUGE_ENGINE=memory centrifuge
+    CENTRIFUGE_ENGINE=memory centrifuge --config=config.json
 
 Redis engine:
 
 .. code-block:: bash
 
-    CENTRIFUGE_ENGINE=redis centrifuge
+    CENTRIFUGE_ENGINE=redis centrifuge --config=config.json
 
 Redis engine using path to class:
 
 .. code-block:: bash
 
-    CENTRIFUGE_ENGINE="centrifuge.engine.redis.Engine" centrifuge
+    CENTRIFUGE_ENGINE="centrifuge.engine.redis.Engine" centrifuge --config=config.json
 
 
 Memory engine

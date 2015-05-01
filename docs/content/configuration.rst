@@ -14,8 +14,15 @@ Here is minimal configuration file required:
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret"
+      "password": "password",
+      "cookie_secret": "cookie_secret",
+      "structure": [
+        {
+          "name": "development",
+          "secret": "secret",
+          "namespaces": []
+        }
+      ]
     }
 
 
@@ -24,6 +31,8 @@ Description:
 - **password** - administrator's web interface password.
 
 - **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret.
+
+- **structure** - array of projects
 
 There is also a possibility to override default SockJS-Tornado settings using Centrifuge
 configuration file. Example:
@@ -105,6 +114,8 @@ Centrifuge has several command line arguments.
 ``--address`` - address to bind to
 
 ``--name`` - unique node name (optional) - will be used in web interface metric table or in graphite data path
+
+``--web`` - optional path to serve Centrifuge web interface application
 
 Some other command line options come with engine - explore them using ``--help``, for example:
 

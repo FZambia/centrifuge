@@ -14,15 +14,15 @@ can live forever. This means that even if you banned this user in your web appli
 he will be able to read messages from channels he already subscribed to. It's not
 desirable in some cases.
 
-Project settings has two special options: ``connection_check`` and ``connection_lifetime``.
-Connection check is turned off by default so if you need it you must turn it on in
-project settings.
+Project has special option: ``connection_lifetime``. Connection lifetime is 0 by default
+and this value means that connection check mechanism is off.
 
-Connection lifetime is a time in seconds how long connection will be valid after successful
-connect. When connection lifetime expires Centrifuge will send a signal to javascript client
-and it will make an AJAX POST request to your web application. By default this request goes
-to ``/centrifuge/refresh`` url endpoint. You can change it using javascript option
-``refreshEndpoint``. In response your server must return JSON with connection credentials:
+When connection lifetime is set to value greater than 0 then this is a time in seconds how
+long connection will be valid after successful connect. When connection lifetime expires
+Centrifuge will send a signal to javascript client and it will make an AJAX POST request to
+your web application. By default this request goes to ``/centrifuge/refresh`` url endpoint.
+You can change it using javascript option ``refreshEndpoint``. In response your server must
+return JSON with connection credentials:
 
 .. code-block:: python
 
@@ -40,4 +40,4 @@ Just with current timestamp. Centrifuge javascript client will then send them to
 Centrifuge and connection will be refreshed for a connection lifetime period.
 
 If you don't want to refresh connection for this user - just return 403 Forbidden
-on refresh request.
+on refresh request to your web application backend.

@@ -14,6 +14,6 @@
    content/insecure_mode
    content/connection_check
    content/deploy
-   content/contribute_and_license
+   content/license
 
 

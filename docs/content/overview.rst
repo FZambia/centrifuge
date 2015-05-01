@@ -23,11 +23,6 @@ on Redis.
 Centrifuge comes with administrative web interface to manage project/namespace
 structure and monitor important messages in real-time.
 
-Persistent data (projects, namespaces) by default stored in `SQLite <http://www.sqlite.org/>`_ database.
-When running Centrifuge instance processes on different machines `MongoDB <http://www.mongodb.org/>`_
-or `PostgreSQL <http://www.postgresql.org/>`_ backends can be used instead of SQLite. There is an option
-to write all these settings in JSON file and go without any dependency on database.
-
 
 .. image:: img/main.png
     :width: 650 px
