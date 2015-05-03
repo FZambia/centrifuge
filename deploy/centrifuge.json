@@ -5,14 +5,7 @@
     {
       "name": "configure_me",
       "secret": "configure_me",
-      "namespaces": [
-        {
-          "name": "public",
-          "publish": true,
-          "presence": true,
-          "join_leave": true
-        }
-      ]
+      "namespaces": []
     }
   ]
 }

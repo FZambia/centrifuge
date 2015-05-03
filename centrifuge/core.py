@@ -105,7 +105,7 @@ class Application(tornado.web.Application):
         # dictionary to keep client's connections
         self.connections = {}
 
-        # dictionary to keep ping from nodes
+        # dictionary to keep node state and stats
         self.nodes = {}
 
         # application structure (projects, namespaces etc)
@@ -152,6 +152,8 @@ class Application(tornado.web.Application):
         # this Application has lots of default class-level
         # attributes that can be updated using configuration file
         self.override_application_settings_from_config()
+
+        self.started = int(time.time())
 
     def initialize(self):
         self.init_callbacks()
@@ -253,11 +255,10 @@ class Application(tornado.web.Application):
         config = self.config
         metrics_config = config.get('metrics', {})
 
-        self.admin_metrics = metrics_config.get('admin', True)
         self.log_metrics = metrics_config.get('log', False)
         self.graphite_metrics = metrics_config.get('graphite', False)
 
-        if not self.log_metrics and not self.admin_metrics and not self.graphite_metrics:
+        if not self.log_metrics and not self.graphite_metrics:
             return
 
         self.collector = Collector()
@@ -292,9 +293,6 @@ class Application(tornado.web.Application):
 
         metrics = self.collector.get()
 
-        if self.admin_metrics:
-            self.publish_node_info(metrics)
-
         if self.log_metrics:
             logger.info(metrics)
 
@@ -307,8 +305,29 @@ class Application(tornado.web.Application):
             return self.settings['options'].name
         return self.address.replace(".", "_") + '_' + str(self.settings['options'].port)
 
-    def send_ping(self, ping_message):
-        self.engine.publish_control_message(ping_message)
+    @coroutine
+    def send_ping(self, publish=True):
+
+        params = {
+            'uid': self.uid,
+            'name': self.name,
+            'clients': self.get_clients_count(),
+            'unique': self.get_unique_clients_count(),
+            'channels': self.get_channels_count(),
+            'started': self.started
+        }
+
+        yield self.handle_ping(params)
+
+        if not publish:
+            return
+
+        message = {
+            'app_id': self.uid,
+            'method': 'ping',
+            'params': params
+        }
+        self.engine.publish_control_message(message)
 
     def review_ping(self):
         """
@@ -317,8 +336,8 @@ class Application(tornado.web.Application):
         now = time.time()
         outdated = []
         for node, params in self.nodes.items():
-            updated_at = params["updated_at"]
-            if now - updated_at > self.PING_MAX_DELAY:
+            updated = params["updated"]
+            if now - updated > self.PING_MAX_DELAY:
                 outdated.append(node)
         for node in outdated:
             try:
@@ -330,46 +349,33 @@ class Application(tornado.web.Application):
         """
         Start periodic tasks for sending ping and reviewing ping.
         """
-        message = {
-            'app_id': self.uid,
-            'method': 'ping',
-            'params': {
-                'uid': self.uid,
-                'name': self.name
-            }
-        }
-        send_ping = partial(self.engine.publish_control_message, message)
-        ping = tornado.ioloop.PeriodicCallback(send_ping, self.PING_INTERVAL)
+        ping = tornado.ioloop.PeriodicCallback(self.send_ping, self.PING_INTERVAL)
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, ping.start
         )
+        self.send_ping(publish=False)
 
         review_ping = tornado.ioloop.PeriodicCallback(self.review_ping, self.PING_REVIEW_INTERVAL)
         tornado.ioloop.IOLoop.instance().add_timeout(
             self.PING_INTERVAL, review_ping.start
         )
 
+    def get_clients_count(self):
+        return sum(len(v) for v in six.itervalues(self.engine.subscriptions))
+
+    def get_unique_clients_count(self):
+        return sum(len(v) for v in six.itervalues(self.connections))
+
+    def get_channels_count(self):
+        return len(self.engine.subscriptions)
+
     def get_node_gauges(self):
         gauges = {
-            'channels': len(self.engine.subscriptions),
-            'clients': sum(len(v) for v in six.itervalues(self.engine.subscriptions)),
-            'unique_clients': sum(len(v) for v in six.itervalues(self.connections)),
+            'channels': self.get_channels_count(),
+            'clients': self.get_clients_count(),
+            'unique_clients': self.get_unique_clients_count(),
         }
         return gauges
-
-    def publish_node_info(self, metrics):
-        """
-        Publish information about current node into admin channel
-        """
-        self.engine.publish_admin_message({
-            "method": "node",
-            "body": {
-                "uid": self.uid,
-                "nodes": len(self.nodes) + 1,
-                "name": self.name,
-                "metrics": metrics
-            }
-        })
 
     def add_connection(self, project_key, user, uid, client):
         """
@@ -467,7 +473,7 @@ class Application(tornado.web.Application):
         """
         Ping message received.
         """
-        params['updated_at'] = time.time()
+        params['updated'] = time.time()
         self.nodes[params.get('uid')] = params
         raise Return((True, None))
 

@@ -81,7 +81,7 @@ class InfoHandler(WebBaseHandler):
             'structure':  self.application.structure,
             'metrics_interval': metrics_interval,
             'version': centrifuge.__version__,
-            'node_count': len(self.application.nodes) + 1,
+            'nodes': self.application.nodes,
             'engine': getattr(self.application.engine, 'NAME', 'unknown'),
             'node_name': self.application.name
         }
