@@ -29,7 +29,6 @@ When using insecure mode you can create client connection in this way:
     var centrifuge = new Centrifuge({
         "url": url,
         "project": project,
-        "debug": true,
         "insecure": true
     });
 

@@ -12,7 +12,7 @@ In a few words - clients from browsers connect to Centrifuge, after connecting c
 subscribe on channels. And every message which was published into channel will be sent
 to all clients which are currently subscribed on this channel.
 
-When you start Centrifuge instance you start Tornado instance on a certain port number.
+When you start Centrifuge instance you start Tornado on a certain port number.
 That port number can be configured using command-line option ``--port`` . By default ``8000``.
 You can also specify the address to bind to with the ``--address`` option. For example you
 can specify ``localhost`` which is recommended if you want to keep Centrifuge behind a
@@ -28,11 +28,11 @@ So the final command to start one instance of Centrifuge will be
     centrifuge --config=config.json
 
 
-You can run more instances of Centrifuge using Redis engine. But for most cases one instance is more
-than enough.
+You can scale and run more instances of Centrifuge on multiple machines using Redis engine.
+But for most cases one instance is more than enough.
 
-Well, you started one instance of Centrifuge - clients from web browsers can start connecting
-to it.
+Well, when you started one instance of Centrifuge - clients from web browsers can start
+connecting to it.
 
 There are two endpoints for connections:
 - ``/connection`` for SockJS connections
@@ -88,7 +88,7 @@ But what is an url to connect from browser - ``http://localhost:8000/connection`
 
 None of them, because Centrifuge must be kept behind proper load balancer such as Nginx.
 Nginx must be configured in a way to balance client connections from browser between our
-two instances. You can find Nginx configuration example in repo.
+two instances. You can find Nginx configuration example in documentation or repo.
 
 New client can connect to any of running instances. If client sends message we must
 send that message to other clients including those who connected to another instance
@@ -99,17 +99,47 @@ Redis channels and receive messages from those channels.
 Projects
 ~~~~~~~~
 
-When you have running Centrifuge instance and want to create web application using it -
-first you should do is to add your project into Centrifuge. It's very simple - just fill
-the form in web interface.
+When you have Centrifuge instance and want to create web application using it -
+first you should do is to add your project into Centrifuge configuration file into
+**structure** array. **structure** is generally an array of projects in Centrifuge.
+
+.. code-block::javascript
+
+    {
+      "password": "password",
+      "cookie_secret": "cookie_secret",
+      "structure": [
+        {
+          "name": "development",
+          "secret": "secret",
+          "namespaces": [
+            {
+              "name": "public",
+              "publish": true,
+              "watch": true,
+              "presence": true,
+              "join_leave": true,
+              "history_size": 10,
+              "history_lifetime": 30
+            }
+          ]
+        }
+      ]
+    }
+
+
+
 
 **name** - unique project name, must be written using ascii letters, numbers, underscores or hyphens.
+
+**secret** - project secret key, used to sign API requests, create client tokens. Only Centrifuge
+and your web application backend must know the value of this secret. Make it unique and strong enough.
 
 **connection_lifetime** - this is a time interval in seconds for connection to expire.
 Keep it as large as possible in your case. When clients connect to Centrifuge
 they provide timestamp - the UNIX time when their token was created. Every connection in
-project has connection lifetime (see below). This mechanism is disabled by default and
-requires extra endpoint to be implemented in your application.
+project has connection lifetime (see below). This mechanism is disabled by default
+(connection_lifetime=0) and requires extra endpoint to be implemented in your application.
 
 **watch** - publish messages into admin channel (messages will be visible in web interface).
 Turn it off if you expect high load in channels.
@@ -120,17 +150,18 @@ Turn it off if you expect high load in channels.
 
 **presence** - enable/disable presence information
 
-**join_leave messages** - enable/disable sending join(leave) messages when client subscribes
+**join_leave** - enable/disable sending join(leave) messages when client subscribes
 on channel (unsubscribes from channel)
 
 **history_size** - Centrifuge keeps all history in memory. In process memory in case of using Memory Engine
 and in Redis (which also in-memory store) in case of using Redis Engine. So it's very important to limit
-maximum amount of messages in channel history. This setting is exactly for this.
+maximum amount of messages in channel history. This setting is exactly for this. By default history
+size is 0 - this means that channels will have no history messages at all.
 
 **history_lifetime** - as all history is storing in memory it is also very important to get rid of old history
 data for unused (inactive for a long time) channels. This is interval in seconds to keep history for channel
-after last publishing into it. If you set this setting to 0 - history will never expire but it is not
-recommended due to design of Centrifuge.
+after last publishing into it. If you leave this setting to 0 - history will never expire but it is not
+recommended due to design of Centrifuge - as it will lead to memory leaks.
 
 
 Channels

@@ -168,9 +168,6 @@ If you are not a Centos 6 user you can find a lot of useful things there, which 
 Heroku
 ~~~~~~
 
-Centrifuge can be deployed on Heroku. There is an example in Centrifuge repo - simple chat
-on JSFiddle using Centrifuge hosted on Heroku.
+Centrifuge can be deployed on Heroku.
 
 The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/centrifugal/heroku-centrifuge
-
-The final result is available here: `centrifuge.herokuapp.com <https://centrifuge.herokuapp.com/>`_ (password = ``password``)

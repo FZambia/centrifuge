@@ -43,7 +43,7 @@ configuration file. Example:
         "password": "admin",
         "cookie_secret": "secret",
         "sockjs_settings": {
-            "sockjs_url": "https://centrifuge.example.com/static/libs/sockjs/sockjs-0.3.4.min.js"
+            "sockjs_url": "https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"
         }
     }
 
@@ -75,7 +75,6 @@ providing prefix, host and port to send metrics via UDP.
         "password": "admin",
         "cookie_secret": "secret",
         "metrics": {
-            "admin": true,
             "log": true,
             "graphite": true,
             "graphite_host": "carbon.hostedgraphite.com",
@@ -85,8 +84,7 @@ providing prefix, host and port to send metrics via UDP.
         }
     }
 
-Metrics will be aggregated in a 30 seconds interval and then will be sent into log, into
-admin channel and into Graphite.
+Metrics will be aggregated in a 30 seconds interval and then will be sent into log and into Graphite.
 
 At moment Centrifuge collects for each node:
 
@@ -115,7 +113,7 @@ Centrifuge has several command line arguments.
 
 ``--name`` - unique node name (optional) - will be used in web interface metric table or in graphite data path
 
-``--web`` - optional path to serve Centrifuge web interface application
+``--web`` - optional path to serve Centrifuge web interface single-page application
 
 Some other command line options come with engine - explore them using ``--help``, for example:
 
