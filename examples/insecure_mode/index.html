@@ -24,7 +24,7 @@
     <script type="text/javascript">
         $(function() {
             var url = "ws://localhost:8000/connection/websocket";
-            var project = "8cb7fb4237a04b0096ace07abd296a86";
+            var project = "development";
 
             var log = $('#log');
             var nickname = $('#nickname');
@@ -66,14 +66,14 @@
             });
 
             var subscribe = function() {
-                var subscription = centrifuge.subscribe('jsfiddle-chat', function(message) {
+                var subscription = centrifuge.subscribe('insecure-chat', function(message) {
                     if (message.data) {
                         add_message(message.data["input"], message.data["nick"]);
                     }
                 });
 
                 subscription.on('ready', function() {
-                    add_message("subscribed on channel jsfiddle-chat");
+                    add_message("subscribed on channel insecure-chat");
                     subscription.presence(function(message) {
                         var count = 0;
                         for (var key in message.data){
@@ -113,7 +113,7 @@
                         "nick": nick,
                         "input": input.val()
                     };
-                    centrifuge.publish("jsfiddle-chat", data);
+                    centrifuge.publish("insecure-chat", data);
                     input.val('');
                 }
             });
