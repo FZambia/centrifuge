@@ -17,8 +17,8 @@ pip install -r requirements.txt
 
 ```python
 CENTRIFUGE_ADDRESS = 'http://localhost:8000'
-CENTRIFUGE_PROJECT_ID = '1d88332ec09e4ed3805fc1999379bcfd'
-CENTRIFUGE_PROJECT_SECRET = '1ee93d4ac83e4ccf87d2bbd0e447275b'
+CENTRIFUGE_PROJECT_ID = 'development'
+CENTRIFUGE_PROJECT_SECRET = 'secret'
 CENTRIFUGE_TIMEOUT = 5
 ```
 
@@ -56,8 +56,8 @@ The contents of my `~/.centrc` file in this case:
 ```bash
 [map]
 address = http://localhost:8000/api
-project_id = 1d88332ec09e4ed3805fc1999379bcfd
-secret_key = 1ee93d4ac83e4ccf87d2bbd0e447275b
+key = development
+secret = secret
 ```
 
 After this all connected clients will see new event on map.
