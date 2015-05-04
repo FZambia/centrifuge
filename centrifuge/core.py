@@ -644,11 +644,12 @@ class Application(tornado.web.Application):
         self.engine.publish_message(subscription_key, message)
 
         history_size = namespace['history_size']
-        if history_size > 0:
+        history_lifetime = namespace['history_lifetime']
+        if history_size > 0 and history_lifetime > 0:
             yield self.engine.add_history_message(
                 project_name, channel, message,
                 history_size=history_size,
-                history_lifetime=namespace['history_lifetime']
+                history_lifetime=history_lifetime
             )
 
         if self.collector:

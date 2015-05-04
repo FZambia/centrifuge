@@ -160,8 +160,9 @@ size is 0 - this means that channels will have no history messages at all.
 
 **history_lifetime** - as all history is storing in memory it is also very important to get rid of old history
 data for unused (inactive for a long time) channels. This is interval in seconds to keep history for channel
-after last publishing into it. If you leave this setting to 0 - history will never expire but it is not
-recommended due to design of Centrifuge - as it will lead to memory leaks.
+after last publishing into it. By default history lifetime is 0 - this means that channels will have no history
+messages at all. So to get history messages you should wisely configure both **history_size** and **history_lifetime**
+options.
 
 
 Channels

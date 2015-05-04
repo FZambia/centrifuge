@@ -208,12 +208,9 @@ class Engine(BaseEngine):
 
         history_key = self.get_history_key(project_key, channel)
 
-        if history_lifetime:
-            expire_at = int(time.time()) + history_lifetime
-            self.history_expire_at[history_key] = expire_at
-            heapq.heappush(self.history_expire_heap, (expire_at, history_key))
-        elif history_key in self.history_expire_at:
-            del self.history_expire_at[history_key]
+        expire_at = int(time.time()) + history_lifetime
+        self.history_expire_at[history_key] = expire_at
+        heapq.heappush(self.history_expire_heap, (expire_at, history_key))
 
         if history_key not in self.history:
             self.history[history_key] = []
