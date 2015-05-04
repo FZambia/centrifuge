@@ -668,7 +668,7 @@ class Client(object):
         if not namespace:
             raise Return((body, self.application.NAMESPACE_NOT_FOUND))
 
-        if namespace['history_size'] <= 0:
+        if namespace['history_size'] <= 0 or namespace['history_lifetime'] <= 0:
             raise Return((body, self.application.NOT_AVAILABLE))
 
         data, error = yield self.application.process_history(
