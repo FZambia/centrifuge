@@ -144,7 +144,7 @@ class MemoryEngineTest(AsyncTestCase):
     @gen_test
     def test_history(self):
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_1
+            self.project_id, self.channel, self.message_1, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -156,7 +156,7 @@ class MemoryEngineTest(AsyncTestCase):
         self.assertEqual(len(result), 1)
 
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_2
+            self.project_id, self.channel, self.message_2, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -168,7 +168,7 @@ class MemoryEngineTest(AsyncTestCase):
         self.assertEqual(len(result), 2)
 
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_3
+            self.project_id, self.channel, self.message_3, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -182,7 +182,7 @@ class MemoryEngineTest(AsyncTestCase):
     @gen_test
     def test_history_expire(self):
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_1, history_expire=1
+            self.project_id, self.channel, self.message_1, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -294,7 +294,7 @@ class RedisEngineTest(AsyncTestCase):
         self.assertEqual(result, b"OK")
 
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_1
+            self.project_id, self.channel, self.message_1, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -306,7 +306,7 @@ class RedisEngineTest(AsyncTestCase):
         self.assertEqual(len(result), 1)
 
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_2
+            self.project_id, self.channel, self.message_2, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -318,7 +318,7 @@ class RedisEngineTest(AsyncTestCase):
         self.assertEqual(len(result), 2)
 
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_3
+            self.project_id, self.channel, self.message_3, history_size=2, history_lifetime=1
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)
@@ -335,7 +335,7 @@ class RedisEngineTest(AsyncTestCase):
         self.assertEqual(result, b"OK")
 
         result, error = yield self.engine.add_history_message(
-            self.project_id, self.channel, self.message_1, history_expire=1
+            self.project_id, self.channel, self.message_1, history_lifetime=1, history_size=2
         )
         self.assertEqual(error, None)
         self.assertEqual(result, True)

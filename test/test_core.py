@@ -19,7 +19,7 @@ class CoreTest(TestCase):
 
     def test_get_address(self):
         mock = Mock(return_value='x')
-        socket.gethostbyname = mock
+        socket.gethostname = mock
         self.assertEqual(get_address(), 'x')
 
     def test_extracting_namespace(self):
