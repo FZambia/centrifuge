@@ -20,9 +20,9 @@ version won't be supported (only bug fixes) - all new changes will be in Centrif
 
 # How to migrate:
 
-## migrate structure
+## migrate project structure
 
-You should migrate your current structure into configuration file under key "structure" - you can
+You should migrate your current structure into configuration file under key "projects" - you can
 dump all current structure using `/dumps` endpoint in old web interface and then use converter on
 [JSFiddle](http://jsfiddle.net/FZambia/17h5p75r/)
 
@@ -32,7 +32,7 @@ Your new configuration file should look something like this:
 {
   "password": "password",
   "cookie_secret": "cookie_secret",
-  "structure": [
+  "projects": [
     {
       "name": "development",
       "secret": "secret",

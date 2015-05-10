@@ -1,7 +1,7 @@
 # coding: utf-8
 from __future__ import print_function
 from unittest import TestCase, main
-from centrifuge.structure import validate_and_prepare_structure
+from centrifuge.structure import validate_and_prepare_project_structure
 
 
 class StructureTest(TestCase):

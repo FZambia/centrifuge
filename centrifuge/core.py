@@ -25,7 +25,7 @@ from centrifuge.log import logger
 from centrifuge.metrics import Collector, Exporter
 from centrifuge.response import Response, MultiResponse
 from centrifuge.schema import req_schema, server_api_schema
-from centrifuge.structure import validate_and_prepare_structure, structure_to_dict
+from centrifuge.structure import validate_and_prepare_project_structure, structure_to_dict
 
 
 def get_address():
@@ -217,12 +217,12 @@ class Application(tornado.web.Application):
         Validate and initialize structure
         """
         config = self.config
-        structure = config.get("structure")
-        if not structure:
-            raise Exception("structure required")
-        validate_and_prepare_structure(structure)
-        self.structure = structure
-        self.structure_dict = structure_to_dict(structure)
+        projects = config.get("projects")
+        if not projects:
+            raise Exception("projects required")
+        validate_and_prepare_project_structure(projects)
+        self.structure = projects
+        self.structure_dict = structure_to_dict(projects)
 
     def init_engine(self):
         """
@@ -727,8 +727,8 @@ class Application(tornado.web.Application):
         channel = params.get("channel")
         data, error = yield self.engine.get_history(project_name, channel)
         if error:
-            raise Return(({"channel": channel}, self.INTERNAL_SERVER_ERROR))
-        raise Return(({"channel": channel, "data": data}, None))
+            raise Return(([], self.INTERNAL_SERVER_ERROR))
+        raise Return((data, None))
 
     @coroutine
     def process_presence(self, project, params):
@@ -739,8 +739,8 @@ class Application(tornado.web.Application):
         channel = params.get("channel")
         data, error = yield self.engine.get_presence(project_name, channel)
         if error:
-            raise Return(({"channel": channel}, self.INTERNAL_SERVER_ERROR))
-        raise Return(({"channel": channel, "data": data}, None))
+            raise Return(({}, self.INTERNAL_SERVER_ERROR))
+        raise Return((data, None))
 
     @coroutine
     def process_unsubscribe(self, project, params):

@@ -27,22 +27,22 @@ def set_default_value(obj, key, default_value):
         obj[key] = default_value
 
 
-def validate_and_prepare_structure(structure):
+def validate_and_prepare_project_structure(projects):
     """
     Validate and prepare structure configuration
     """
-    if not structure:
+    if not projects:
         raise ValidationError(
             "Since Centrifuge 0.8.0 structure must be set in configuration file"
         )
 
-    if not isinstance(structure, list):
+    if not isinstance(projects, list):
         raise ValidationError("structure must be array of projects")
 
     project_names = []
     project_names_append = project_names.append
 
-    for project in structure:
+    for project in projects:
 
         validate(project, project_schema)
 
