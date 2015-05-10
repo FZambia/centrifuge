@@ -7,7 +7,7 @@ structure management to configuration file. You don't need SQLite, MongoDB or Po
 Changes opened a way for rewriting Centrifuge in Go - [Centrifugo](https://github.com/centrifugal/centrifugo) - it's
 still a work in progress, but already has pre-release available. It will be almost a drop-in replacement
 for Centrifuge 0.8.0 (with some small differences in command-line argument names for logging). Python
-version won't be supported - all new changes will be in Centrifugo.
+version won't be supported (only bug fixes) - all new changes will be in Centrifugo.
 
 * no more structure backends - all structure must be set in configuration file.
 * new web interface. In its [own repo](https://github.com/centrifugal/centrifuge-web). This is ReactJS based single-page application.
