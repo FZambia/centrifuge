@@ -28,7 +28,7 @@ class StructureTest(TestCase):
             }
           ]
         }
-        validate_and_prepare_structure(config["structure"])
+        validate_and_prepare_project_structure(config["structure"])
 
 
 if __name__ == '__main__':
