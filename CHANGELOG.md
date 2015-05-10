@@ -1,12 +1,77 @@
-Master branch
-=============
+v0.8.0
+======
 
-Centrifuge 0.8.0 is currently under development. Some highlights:
+This is a massive release with lots of changes - the goal was to get rid of structure backends to move all
+structure management to configuration file. You don't need SQLite, MongoDB or PostgreSQL anymore.
 
-* no more structure backends - all structure must be set in configuration file. As it changes in rare cases it's not a good idea to keep it in a separate database. There are some thoughts to support remote configuration storages in future versions.
-* rewritten web interface. Based on ReactJS - in its own repo
-* simplified project structure settings - some of them renamed, some completely removed - I'll provide client-side pure js converter for structure on JSFiddle (if you want to try it now - http://jsfiddle.net/FZambia/17h5p75r/ - but it still a work in progress).
-* particularly project name will be used as key for API instead of project ID. Project ID not needed anymore.
+Changes opened a way for rewriting Centrifuge in Go - [Centrifugo](https://github.com/centrifugal/centrifugo) - it's
+still a work in progress, but already has pre-release available. It will be almost a drop-in replacement
+for Centrifuge 0.8.0 (with some small differences in command-line argument names for logging). Python
+version won't be supported - all new changes will be in Centrifugo.
+
+* no more structure backends - all structure must be set in configuration file.
+* new web interface. In its [own repo](https://github.com/centrifugal/centrifuge-web). This is ReactJS based single-page application.
+* simplified structure settings - some of them renamed, some completely removed - you can use client-side (pure js) converter for structure [on JSFiddle](http://jsfiddle.net/FZambia/17h5p75r/). See documentation for more information about option names and meanings.
+* project name will be used as key for API instead of project ID. Project ID not needed anymore.
+* use of hostname for node name instead of ip address.
+* `md5` support for token and signs generation removed. Now only `sha256` algorithm supported.
+* `client_id` and `user_id` renamed to `client` and `user` in `default_info`
+* `client` renamed to `info` in published message meta information.
+
+# How to migrate:
+
+## migrate structure
+
+You should migrate your current structure into configuration file under key "structure" - you can
+dump all current structure using `/dumps` endpoint in old web interface and then use converter on
+[JSFiddle](http://jsfiddle.net/FZambia/17h5p75r/)
+
+Your new configuration file should look something like this:
+
+```javascript
+{
+  "password": "password",
+  "cookie_secret": "cookie_secret",
+  "structure": [
+    {
+      "name": "development",
+      "secret": "secret",
+      "connection_lifetime": 0,
+      "namespaces": [
+        {
+          "name": "public",
+          "publish": true,
+          "watch": true,
+          "presence": true,
+          "anonymous": true,
+          "join_leave": true,
+          "history_size": 10,
+          "history_lifetime": 30
+        }
+      ]
+    }
+  ]
+}
+```
+
+## use new web interface
+
+you should use [new web interface](https://github.com/centrifugal/centrifuge-web) with new Centrifuge - you can serve it with Nginx or using
+Tornado static server providing path to web application in ``--web`` option when running Centrifuge:
+
+```
+centrifuge --config=config.json --web=/path/to/web/interface/app
+```
+
+## update libraries
+
+update to new versions:
+
+* Centrifuge javascript client
+* Cent
+* Adjacent
+
+If you have any feedback about this release - feel free to write me an email.
 
 v0.7.0
 ======
