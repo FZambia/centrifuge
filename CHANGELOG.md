@@ -7,9 +7,14 @@ structure management to configuration file. You don't need SQLite, MongoDB or Po
 Changes opened a way for rewriting Centrifuge in Go - [Centrifugo](https://github.com/centrifugal/centrifugo) - it's
 still a work in progress, but already has pre-release available. It will be almost a drop-in replacement
 for Centrifuge 0.8.0 (with some small differences in command-line argument names for logging). Python
-version won't be supported (only bug fixes) - all new changes will be in Centrifugo.
+version won't be supported (only bug fixes) - all new changes will be in Centrifugo. I am very sorry
+if you don't like all these global changes - but I personally think that moving Centrifuge to Go is
+right decision. It will be more fast, more robust, will run on several cores, will be much more simple
+to deploy.
 
-* no more structure backends - all structure must be set in configuration file.
+So the changes are:
+
+* no more structure backends - all project structure must be set in configuration file under "projects" key.
 * new web interface. In its [own repo](https://github.com/centrifugal/centrifuge-web). This is ReactJS based single-page application.
 * simplified structure settings - some of them renamed, some completely removed - you can use client-side (pure js) converter for structure [on JSFiddle](http://jsfiddle.net/FZambia/17h5p75r/). See documentation for more information about option names and meanings.
 * project name will be used as key for API instead of project ID. Project ID not needed anymore.
@@ -17,6 +22,10 @@ version won't be supported (only bug fixes) - all new changes will be in Centrif
 * `md5` support for token and signs generation removed. Now only `sha256` algorithm supported.
 * `client_id` and `user_id` renamed to `client` and `user` in `default_info`
 * `client` renamed to `info` in published message meta information.
+
+Also I work on [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) – it covers
+Centrifug**o** as server implementation but can be useful to read as Centrifuge 0.8.0 works mostly
+the same way.
 
 # How to migrate:
 
@@ -56,8 +65,8 @@ Your new configuration file should look something like this:
 
 ## use new web interface
 
-you should use [new web interface](https://github.com/centrifugal/centrifuge-web) with new Centrifuge - you can serve it with Nginx or using
-Tornado static server providing path to web application in ``--web`` option when running Centrifuge:
+Centrifuge 0.8.0 have no built-in web interface. You should use [new web interface](https://github.com/centrifugal/centrifuge-web) - it can be served with Nginx or using
+Tornado static server when path to web application provided via ``--web`` command-line option:
 
 ```
 centrifuge --config=config.json --web=/path/to/web/interface/app
