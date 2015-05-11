@@ -101,14 +101,12 @@ Projects
 
 When you have Centrifuge instance and want to create web application using it -
 first you should do is to add your project into Centrifuge configuration file into
-**structure** array. **structure** is generally an array of projects in Centrifuge.
+**projects** array. **projects** is an array of projects in Centrifuge.
 
 .. code-block::javascript
 
     {
-      "password": "password",
-      "cookie_secret": "cookie_secret",
-      "structure": [
+      "projects": [
         {
           "name": "development",
           "secret": "secret",

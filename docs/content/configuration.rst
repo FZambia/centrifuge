@@ -14,9 +14,7 @@ Here is minimal configuration file required:
 .. code-block:: javascript
 
     {
-      "password": "password",
-      "cookie_secret": "cookie_secret",
-      "structure": [
+      "projects": [
         {
           "name": "development",
           "secret": "secret",
@@ -28,11 +26,7 @@ Here is minimal configuration file required:
 
 Description:
 
-- **password** - administrator's web interface password.
-
-- **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret.
-
-- **structure** - array of projects
+- **projects** - array of registered projects
 
 There is also a possibility to override default SockJS-Tornado settings using Centrifuge
 configuration file. Example:
@@ -40,8 +34,7 @@ configuration file. Example:
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
+        ...,
         "sockjs_settings": {
             "sockjs_url": "https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"
         }
@@ -55,8 +48,7 @@ Centrifuge runs a `tornado HTTPServer <http://www.tornadoweb.org/en/stable/https
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
+        ...,
         "tornado_settings": {
             "xheaders": true
         }
@@ -72,8 +64,7 @@ providing prefix, host and port to send metrics via UDP.
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
+        ...,
         "metrics": {
             "log": true,
             "graphite": true,

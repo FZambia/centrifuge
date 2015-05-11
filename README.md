@@ -53,14 +53,6 @@ Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
 on Redis.
 
-Centrifuge comes with administrative web interface to manage project/namespace
-structure and monitor important messages in real-time.
-
-Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
-When running Centrifuge instance processes on different machines [MongoDB](https://github.com/centrifugal/centrifuge-mongodb)
-or [PostgreSQL](https://github.com/centrifugal/centrifuge-postgresql) backends can be used instead of SQLite. There is an option
-to hard-code all these settings in JSON file and go without any dependency on database.
-
 There are tons of examples in internet about how to add real-time events on your site. But very few
 of them provide complete, scalable, full-featured, ready to deploy solution. Centrifuge aims to be
 such a solution with simplicity in mind.
@@ -73,7 +65,7 @@ Main features
 * SockJS and pure Websockets connection endpoints
 * Simple javascript client
 * Presence information, message history, join/leave events for channels
-* Web interface to manage your projects
+* Admin web interface
 * Flexible channel settings via namespaces
 * Language agnostic - you can go with Centrifuge even if your site built in Perl, PHP, Ruby etc.
 * Easily integrates with existing web site.

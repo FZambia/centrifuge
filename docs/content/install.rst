@@ -43,9 +43,7 @@ Now you can run centrifuge:
     centrifuge --config=config.json
 
 
-Custom options can be set using command-line arguments and configuration JSON file.
-
-Go to http://localhost:8000/ and make sure that it is running.
+We will talk about configuration file later in documentation.
 
 Btw, you can speed up Centrifuge using 'ujson' module. As Centrifuge works a lot
 with JSON data - you can install `ujson` module to improve performance significantly.

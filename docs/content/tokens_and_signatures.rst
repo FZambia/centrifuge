@@ -31,11 +31,11 @@ Let's look at Python code for this:
     import hmac
     from hashlib import sha256
 
-    def generate_token(secret_key, project_id, user_id, timestamp, info=None):
+    def generate_token(secret_key, project_key, user_id, timestamp, info=None):
         if info is None:
             info = json.dumps({})
         sign = hmac.new(six.b(str(secret_key)), digestmod=sha256)
-        sign.update(six.b(project_id))
+        sign.update(six.b(project_key))
         sign.update(six.b(user_id))
         sign.update(six.b(timestamp))
         sign.update(six.b(info))
@@ -44,7 +44,7 @@ Let's look at Python code for this:
 
 
 We initialize HMAC with project secret key and ``sha256`` digest mode and then update
-it with project_id, user_id, timestamp and info. Info is an optional arguments and if
+it with project_key, user_id, timestamp and info. Info is an optional arguments and if
 no info provided it defaults to empty object.
 
 
@@ -107,9 +107,9 @@ Again, Python code for this:
     import hmac
     from hashlib import sha256
 
-    def generate_api_sign(self, secret_key, project_id, encoded_data):
+    def generate_api_sign(self, secret_key, project_key, encoded_data):
         sign = hmac.new(six.b(str(secret_key)), digestmod=sha256)
-        sign.update(six.b(project_id))
+        sign.update(six.b(project_key))
         sign.update(encoded_data)
         return sign.hexdigest()
 

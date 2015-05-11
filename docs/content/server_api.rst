@@ -43,11 +43,11 @@ don't have to implement this yourself as ``Cent`` module exists. But this exampl
 be useful for someone who want to implement interaction with Centrifuge API in language for
 which we don't have API client yet.
 
-Lets imagine that you have a project with ID ``xfu23`` and secret key ``uutryx``. In web
+Lets imagine that you have a project with name ``development`` and secret key ``uutryx``. In web
 interface of Centrifuge you can find HTTP API url, if you run Centrifuge locally then it
 will be something like ``http://localhost:8000/api``
 
-So you should send POST request to ``http://localhost:8000/api/xfu23``.
+So you should send POST request to ``http://localhost:8000/api/development``.
 
 .. code-block:: python
 
@@ -55,7 +55,7 @@ So you should send POST request to ``http://localhost:8000/api/xfu23``.
         from cent.core import generate_api_sign
         import json
 
-        req = Request("http://localhost:8000/api/xfu23")
+        req = Request("http://localhost:8000/api/development")
 
         commands = [
             {
@@ -64,7 +64,7 @@ So you should send POST request to ``http://localhost:8000/api/xfu23``.
             }
         ]
         encoded_data = json.dumps(commands)
-        sign = generate_api_sign("uutryx", "xfu23", encoded_data)
+        sign = generate_api_sign("uutryx", "development", encoded_data)
 
         data = urlencode({'sign': sign, 'data': encoded_data})
         response = urlopen(req, data, timeout=5)
@@ -234,7 +234,7 @@ There is an implementation of Centrifuge API client written by `Markus Coetzee <
 The source code is available `here <https://github.com/mcoetzee/centrifuge-publisher>`_
 
 PHP
-~~~~
+~~~
 
 There is an implementation of Centrifuge API client written by `Dmitriy Soldatenko <https://github.com/sl4mmer>`_.
 The source code is available `here <https://github.com/sl4mmer/phpcent>`_

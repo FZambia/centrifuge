@@ -89,7 +89,7 @@ Then use Redis client for your favorite language, ex. for Python:
     client.rpush("centrifuge.api", json.dumps(to_send))
 
 
-So you send JSON object with project ID as a value for ``project`` key and list
+So you send JSON object with project name as a value for ``project`` key and list
 of commands as a value for ``data`` key.
 
 Note again - you don't have response here. If you need to check response - you
