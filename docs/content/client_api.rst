@@ -38,13 +38,13 @@ it must be imported on your page before Centrifuge's javascript client:
 
 .. code-block:: html
 
-    <script src="https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/sockjs/1.0/sockjs.min.js" type="text/javascript"></script>
     <script src="https://rawgit.com/centrifugal/centrifuge-js/master/centrifuge.js" type="text/javascript"></script>
 
 
-In case of using SockJS additional configuration parameter can be used - ``protocols_whitelist``.
+In case of using SockJS additional configuration parameter can be used - `transports`.
 It defines allowed transports and by default equals ['websocket', 'xdr-streaming', 'xhr-streaming',
-'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling',
+'eventsource', 'iframe-eventsource', 'iframe-htmlfile', 'xdr-polling', 'xhr-polling', 'iframe-xhr-polling',
 'jsonp-polling'].
 
 **project** is project key from Centrifuge. Every project in Centrifuge has unique name (key).

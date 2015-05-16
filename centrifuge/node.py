@@ -162,7 +162,7 @@ def create_centrifuge_application():
         # if no explicit SockJS url provided in configuration file
         # then we use jsdelivr CDN instead of default cdn.sockjs.org
         # this can be fixed directly in SockJS-Tornado soon
-        sockjs_settings["sockjs_url"] = "https://cdn.jsdelivr.net/sockjs/0.3/sockjs.min.js"
+        sockjs_settings["sockjs_url"] = "https://cdn.jsdelivr.net/sockjs/1.0/sockjs.min.js"
 
     handlers = create_application_handlers(sockjs_settings)
 

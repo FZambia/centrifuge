@@ -22,6 +22,7 @@ So the changes are:
 * `md5` support for token and signs generation removed. Now only `sha256` algorithm supported.
 * `client_id` and `user_id` renamed to `client` and `user` in `default_info`
 * `client` renamed to `info` in published message meta information.
+* SockJS 1.0 instead of 0.3.4
 
 Also I work on [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) – it covers
 Centrifug**o** as server implementation but can be useful to read as Centrifuge 0.8.0 works mostly

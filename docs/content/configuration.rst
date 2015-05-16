@@ -36,7 +36,7 @@ configuration file. Example:
     {
         ...,
         "sockjs_settings": {
-            "sockjs_url": "https://cdn.jsdelivr.net/sockjs/0.3.4/sockjs.min.js"
+            "sockjs_url": "https://cdn.jsdelivr.net/sockjs/1.0/sockjs.min.js"
         }
     }
 
