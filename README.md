@@ -1,39 +1,10 @@
 CENTRIFUGE
 ==========
 
-Simple real-time messaging in web applications. [Demo instance on Heroku](https://centrifuge-demo.herokuapp.com) - password `demo`.
+**Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo. Version
+0.8.0 is the last release of Centrifuge with new features. Also, please, see [new documentation](http://fzambia.gitbooks.io/centrifugal/content/)**
 
-Quick start
------------
-```bash
-pip install centrifuge
-centrifuge
-```
-
-Go to [http://localhost:8000](http://localhost:8000) - this is an administrative interface of Centrifuge node you just started. More about installation and configuration in [documentation](https://centrifuge.readthedocs.org/en/latest/).
-
-Alternatively you can quickly install Centrifuge on Heroku (administrative password will be `password`):
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/centrifugal/heroku-centrifuge)
-
-You can also run Centrifuge in a Docker container by running:
-```bash
-docker build -t centrifuge
-docker run -it -p 8000:8000 centrifuge
-```
-
-If you want to contribute into Centrifuge - some steps below to help you configure development environment:
-```
-mkdir centrifuge
-cd centrifuge
-virtualenv env
-. env/bin/activate
-git clone https://github.com/centrifugal/centrifuge.git src/
-cd src
-pip install -r requirements.txt
-export PYTHONPATH=.
-python centrifuge/node.py
-```
+Simple real-time messaging in web applications.
 
 Overview
 --------
@@ -134,12 +105,6 @@ centrifuge.connect();
 
 For more information about javascript client API see [documentation chapter](https://centrifuge.readthedocs.org/en/latest/content/client_api.html)
 
-Admin web interface
--------------------
-
-![admin_web_interface](https://raw.github.com/centrifugal/centrifuge/master/docs/content/img/centrifuge.gif "admin web interface")
-
-
 Tests
 -----
 
@@ -148,15 +113,6 @@ IMPORTANT! At moment tests require Redis running and clear database on every run
 ```bash
 make test
 ```
-
-Contributing
-------------
-
-Pull requests are welcome! But, please, follow next principles:
-
-* keep things simple
-* pep8 friendly
-* python 2.6, 2.7, 3.3 and 3.4 compatible
 
 LICENSE
 -------

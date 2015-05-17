@@ -164,10 +164,3 @@ Centos 6
 `In repository <https://github.com/centrifugal/centrifuge/tree/master/deploy>`_  you can find everything to build rpm for Centos 6.
 
 If you are not a Centos 6 user you can find a lot of useful things there, which were successfully tested in production environment.
-
-Heroku
-~~~~~~
-
-Centrifuge can be deployed on Heroku.
-
-The recipe of deploying Centrifuge on Heroku can be found here: https://github.com/centrifugal/heroku-centrifuge
