@@ -5,7 +5,7 @@ Web interface
 
 
 Centrifuge has with administrative web interface. It's a ReactJS based single-page application.
-You can find it in its `own repo <https://github.com/centrifugal/centrifuge-web>`_.
+You can find it in its `own repo <https://github.com/centrifugal/web>`_.
 
 It allows to view projects, namespaces, publish JSON messages into channels etc.
 
