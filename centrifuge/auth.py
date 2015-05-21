@@ -19,7 +19,7 @@ def check_sign(secret, project_name, encoded_data, auth_sign):
     return sign.hexdigest() == auth_sign
 
 
-def get_client_token(secret, project_name, user, timestamp, user_info=None):
+def get_client_token(secret, project_name, user, timestamp, user_info=""):
     """
     When client from browser connects to Centrifuge he must send his
     user ID, name of project and optionally user_info JSON string.
@@ -29,13 +29,12 @@ def get_client_token(secret, project_name, user, timestamp, user_info=None):
     sign.update(six.b(project_name))
     sign.update(six.b(user))
     sign.update(six.b(timestamp))
-    if user_info is not None:
-        sign.update(six.b(user_info))
+    sign.update(six.b(user_info))
     token = sign.hexdigest()
     return token
 
 
-def check_client_token(token, secret, project_name, user, timestamp, user_info=None):
+def check_client_token(token, secret, project_name, user, timestamp, user_info=""):
     """
     Create reference token based on connection parameters and
     compare it with token provided by client

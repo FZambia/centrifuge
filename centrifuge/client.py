@@ -309,7 +309,7 @@ class Client(object):
 
         project_name = params["project"]
         user = params["user"]
-        info = params.get("info", "{}")
+        info = params.get("info", "")
 
         if not self.application.INSECURE:
             token = params["token"]
@@ -424,7 +424,7 @@ class Client(object):
         project_name = params["project"]
         user = params["user"]
         timestamp = params["timestamp"]
-        info = params.get("info", "{}")
+        info = params.get("info", "")
         token = params["token"]
 
         project = self.application.get_project(project_name)
@@ -504,7 +504,7 @@ class Client(object):
             if client != self.uid:
                 raise Return((body, self.application.UNAUTHORIZED))
             sign = params.get("sign", "")
-            info = params.get("info", "{}")
+            info = params.get("info", "")
             is_authorized = auth.check_channel_sign(
                 sign, project["secret"], client, channel, info
             )
