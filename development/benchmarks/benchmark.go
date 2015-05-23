@@ -16,7 +16,6 @@ func generate_token(secret_key, project_key, user_id string, timestamp string) s
     token.Write([]byte(project_key))
     token.Write([]byte(user_id))
     token.Write([]byte(timestamp))
-    token.Write([]byte("{}"))
     hex := fmt.Sprintf("%02x", token.Sum(nil))
     return hex
 }

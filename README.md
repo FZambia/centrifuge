@@ -2,7 +2,8 @@ CENTRIFUGE
 ==========
 
 **Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo. Version
-0.8.0 is the last release of Centrifuge with new features. Also, please, see [new documentation](http://fzambia.gitbooks.io/centrifugal/content/)**
+0.8.0 is the last release of Centrifuge with new features. Also, please, see [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) for
+the entire Centrifugal stack.**
 
 Simple real-time messaging in web applications.
 
