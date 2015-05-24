@@ -37,13 +37,11 @@ class FakeEngine(Engine):
 
 class FakeApplication(Application):
 
-    @coroutine
-    def get_project(self, project_id):
-        raise Return(({'_id': 'test', 'name': 'test'}, None))
+    def get_project(self, project_key):
+        return {'name': 'test'}
 
-    @coroutine
     def get_namespace(self, project, params):
-        raise Return(({'_id': 'test', 'name': 'test'}, None))
+        return {'name': 'test', 'anonymous': True, 'join_leave': True}
 
 
 class FakePeriodic(object):
@@ -66,7 +64,7 @@ class ClientTest(AsyncTestCase):
         super(ClientTest, self).setUp()
         self.client = TestClient(FakeSock(), {})
         self.client.is_authenticated = True
-        self.client.project_id = "test_project"
+        self.client.project_name = "test"
         self.client.uid = "test_uid"
         self.client.user = "test_user"
         self.client.channels = {}
@@ -99,7 +97,7 @@ class ClientTest(AsyncTestCase):
 
         subs = self.client.application.engine.subscriptions
         subscription = self.client.application.engine.get_subscription_key(
-            self.client.project_id, params["channel"]
+            "test", params["channel"]
         )
         self.assertTrue(subscription in subs)
 

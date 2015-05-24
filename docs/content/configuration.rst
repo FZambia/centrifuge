@@ -14,19 +14,19 @@ Here is minimal configuration file required:
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
-        "api_secret": "secret"
+      "projects": [
+        {
+          "name": "development",
+          "secret": "secret",
+          "namespaces": []
+        }
+      ]
     }
 
 
 Description:
 
-- **password** - administrator's web interface password.
-
-- **cookie_secret** - used for security purposes, fill it with long random string and keep it in secret.
-
-- **api_secret** - administrator's API secret key.
+- **projects** - array of registered projects
 
 There is also a possibility to override default SockJS-Tornado settings using Centrifuge
 configuration file. Example:
@@ -34,11 +34,9 @@ configuration file. Example:
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
-        "api_secret": "secret",
+        ...,
         "sockjs_settings": {
-            "sockjs_url": "https://centrifuge.example.com/static/libs/sockjs/sockjs-0.3.4.min.js"
+            "sockjs_url": "https://cdn.jsdelivr.net/sockjs/1.0/sockjs.min.js"
         }
     }
 
@@ -50,9 +48,7 @@ Centrifuge runs a `tornado HTTPServer <http://www.tornadoweb.org/en/stable/https
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
-        "api_secret": "secret",
+        ...,
         "tornado_settings": {
             "xheaders": true
         }
@@ -68,11 +64,8 @@ providing prefix, host and port to send metrics via UDP.
 .. code-block:: javascript
 
     {
-        "password": "admin",
-        "cookie_secret": "secret",
-        "api_secret": "secret",
+        ...,
         "metrics": {
-            "admin": true,
             "log": true,
             "graphite": true,
             "graphite_host": "carbon.hostedgraphite.com",
@@ -82,8 +75,7 @@ providing prefix, host and port to send metrics via UDP.
         }
     }
 
-Metrics will be aggregated in a 30 seconds interval and then will be sent into log, into
-admin channel and into Graphite.
+Metrics will be aggregated in a 30 seconds interval and then will be sent into log and into Graphite.
 
 At moment Centrifuge collects for each node:
 
@@ -112,18 +104,15 @@ Centrifuge has several command line arguments.
 
 ``--name`` - unique node name (optional) - will be used in web interface metric table or in graphite data path
 
-Some other command line options come with engine or structure storage backends -
-explore them using ``--help``, for example:
+``--web`` - optional path to serve Centrifuge web interface single-page application
+
+Some other command line options come with engine - explore them using ``--help``, for example:
 
 .. code-block:: bash
 
     CENTRIFUGE_ENGINE=redis centrifuge --help
 
-or
 
-.. code-block:: bash
-
-    CENTRIFUGE_STRUCTURE=sqlite centrifuge --help
 
 
 

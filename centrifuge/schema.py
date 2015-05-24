@@ -1,12 +1,74 @@
 # coding: utf-8
 # Copyright (c) Alexandr Emelin. MIT license.
 
+_channel_options_properties = {
+    "watch": {
+        "type": "boolean"
+    },
+    "publish": {
+        "type": "boolean"
+    },
+    "anonymous": {
+        "type": "boolean"
+    },
+    "presence": {
+        "type": "boolean"
+    },
+    "join_leave": {
+        "type": "boolean"
+    },
+    "history_size": {
+        "type": "integer",
+        "minimum": 0
+    },
+    "history_lifetime": {
+        "type": "integer",
+        "minimum": 0
+    }
+}
+
+_project_properties = {
+    "name": {
+        "type": "string",
+        "pattern": r'^[-a-zA-Z0-9_]{2,}$'
+    },
+    "secret": {
+        "type": "string"
+    },
+    "connection_lifetime": {
+        "type": "integer",
+        "minimum": 0
+    },
+    "namespaces": {
+        "type": "array"
+    }
+}
+
+_project_properties.update(_channel_options_properties)
+
+_namespace_properties = {
+    "name": {
+        "type": "string"
+    }
+}
+
+_namespace_properties.update(_channel_options_properties)
+
+project_schema = {
+    "type": "object",
+    "properties": _project_properties,
+    "required": ["name", "secret"]
+}
+
+namespace_schema = {
+    "type": "object",
+    "properties": _namespace_properties,
+    "required": ["name"]
+}
+
 req_schema = {
     "type": "object",
     "properties": {
-        "id": {
-            "type": "string"
-        },
         "method": {
             "type": "string"
         },
@@ -16,10 +78,6 @@ req_schema = {
     },
     "required": ["method", "params"]
 }
-
-owner_api_methods = [
-    "project_list", "project_create", "dump_structure"
-]
 
 server_api_schema = {
     "publish": {
@@ -72,102 +130,6 @@ server_api_schema = {
             }
         },
         "required": ["user"]
-    },
-    "namespace_list": {
-        "type": "object",
-        "properties": {}
-    },
-    "namespace_by_name": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            },
-            "name": {
-                "type": "string"
-            }
-        },
-        "required": ["name"]
-    },
-    "namespace_get": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        },
-        "required": ["_id"]
-    },
-    "namespace_create": {
-        "type": "object",
-        "properties": {}
-    },
-    "namespace_edit": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        },
-        "required": ["_id"]
-    },
-    "namespace_delete": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        },
-        "required": ["_id"]
-    },
-    "project_list": {
-        "type": "object",
-        "properties": {}
-    },
-    "project_get": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        }
-    },
-    "project_by_name": {
-        "type": "object",
-        "properties": {
-            "name": {
-                "type": "string"
-            }
-        },
-        "required": ["name"]
-    },
-    "project_create": {
-        "type": "object",
-        "properties": {}
-    },
-    "project_edit": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        }
-    },
-    "project_delete": {
-        "type": "object",
-        "properties": {
-            "_id": {
-                "type": "string"
-            }
-        }
-    },
-    "regenerate_secret_key": {
-        "type": "object",
-        "properties": {}
-    },
-    "dump_structure": {
-        "type": "object",
-        "properties": {}
     }
 }
 

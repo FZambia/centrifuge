@@ -1,47 +1,11 @@
 CENTRIFUGE
 ==========
 
-Simple real-time messaging in web applications. [Demo instance on Heroku](https://centrifuge-demo.herokuapp.com) - password `demo`.
+**Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo. Version
+0.8.0 is the last release of Centrifuge with new features. Also, please, see [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) for
+the entire Centrifugal stack.**
 
-# Note!
-
-Centrifuge 0.8.0 [is under active development](https://github.com/centrifugal/centrifuge/tree/0.8.0) at moment. There are lots of changes, including backwards incompatible. Some highlights:
-
-* new ReactJS based admin web interface in its [own repo](https://github.com/centrifugal/centrifuge-web) - so the way to deploy Centrifuge will change to satisfy this fact.
-* structure backends removed - now project and namespaces must be set in configuration file. Old structure can be migrated to new one using [client-side converter on JSFiddle](http://jsfiddle.net/FZambia/17h5p75r/) (be aware of the fact that more changes can appear before final release). Do get current structure go to `/dumps` URL in admin web interface
-* Lots of other fixes will be reflected in changelog for 0.8.0
-
-Quick start
------------
-```bash
-pip install centrifuge
-centrifuge
-```
-
-Go to [http://localhost:8000](http://localhost:8000) - this is an administrative interface of Centrifuge node you just started. More about installation and configuration in [documentation](https://centrifuge.readthedocs.org/en/latest/).
-
-Alternatively you can quickly install Centrifuge on Heroku (administrative password will be `password`):
-
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/centrifugal/heroku-centrifuge)
-
-You can also run Centrifuge in a Docker container by running:
-```bash
-docker build -t centrifuge
-docker run -it -p 8000:8000 centrifuge
-```
-
-If you want to contribute into Centrifuge - some steps below to help you configure development environment:
-```
-mkdir centrifuge
-cd centrifuge
-virtualenv env
-. env/bin/activate
-git clone https://github.com/centrifugal/centrifuge.git src/
-cd src
-pip install -r requirements.txt
-export PYTHONPATH=.
-python centrifuge/node.py
-```
+Simple real-time messaging in web applications.
 
 Overview
 --------
@@ -61,14 +25,6 @@ Centrifuge scales using [Redis](http://redis.io/) PUB/SUB capabilities.
 Single full-featured instance of Centrifuge run by default without extra dependency
 on Redis.
 
-Centrifuge comes with administrative web interface to manage project/namespace
-structure and monitor important messages in real-time.
-
-Persistent data (projects, namespaces) by default stored in [SQLite](http://www.sqlite.org/) database.
-When running Centrifuge instance processes on different machines [MongoDB](https://github.com/centrifugal/centrifuge-mongodb)
-or [PostgreSQL](https://github.com/centrifugal/centrifuge-postgresql) backends can be used instead of SQLite. There is an option
-to hard-code all these settings in JSON file and go without any dependency on database.
-
 There are tons of examples in internet about how to add real-time events on your site. But very few
 of them provide complete, scalable, full-featured, ready to deploy solution. Centrifuge aims to be
 such a solution with simplicity in mind.
@@ -81,7 +37,7 @@ Main features
 * SockJS and pure Websockets connection endpoints
 * Simple javascript client
 * Presence information, message history, join/leave events for channels
-* Web interface to manage your projects
+* Admin web interface
 * Flexible channel settings via namespaces
 * Language agnostic - you can go with Centrifuge even if your site built in Perl, PHP, Ruby etc.
 * Easily integrates with existing web site.
@@ -150,12 +106,6 @@ centrifuge.connect();
 
 For more information about javascript client API see [documentation chapter](https://centrifuge.readthedocs.org/en/latest/content/client_api.html)
 
-Admin web interface
--------------------
-
-![admin_web_interface](https://raw.github.com/centrifugal/centrifuge/master/docs/content/img/centrifuge.gif "admin web interface")
-
-
 Tests
 -----
 
@@ -164,15 +114,6 @@ IMPORTANT! At moment tests require Redis running and clear database on every run
 ```bash
 make test
 ```
-
-Contributing
-------------
-
-Pull requests are welcome! But, please, follow next principles:
-
-* keep things simple
-* pep8 friendly
-* python 2.6, 2.7, 3.3 and 3.4 compatible
 
 LICENSE
 -------

@@ -64,8 +64,7 @@ install_requires = [
     'tornado==4.1',
     'sockjs-tornado==1.0.1',
     'jsonschema==2.4.0',
-    'toro==0.8',
-    'WTForms==2.0.2'
+    'toro==0.8'
 ]
 
 if platform.system() != "Windows":

@@ -1,5 +1,21 @@
 {
-    "password": "123",
-    "cookie_secret": "secret",
-    "api_secret": "secret"
+  "password": "password",
+  "cookie_secret": "cookie_secret",
+  "projects": [
+    {
+      "name": "development",
+      "secret": "secret",
+      "namespaces": [
+        {
+          "name": "public",
+          "publish": true,
+          "watch": true,
+          "presence": true,
+          "join_leave": true,
+          "history_size": 10,
+          "history_lifetime": 30
+        }
+      ]
+    }
+  ]
 }
