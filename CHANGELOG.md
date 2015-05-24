@@ -4,12 +4,12 @@ v0.8.0
 This is a massive release with lots of changes - the goal was to get rid of structure backends to move all
 structure management to configuration file. You don't need SQLite, MongoDB or PostgreSQL anymore.
 
-Changes opened a way for rewriting Centrifuge in Go - [Centrifugo](https://github.com/centrifugal/centrifugo) - it's
-still a work in progress, but already has pre-release available. It will be almost a drop-in replacement
-for Centrifuge 0.8.0 (with some small differences in command-line argument names for logging). Python
-version won't be supported (only bug fixes) - all new changes will be in Centrifugo. I am very sorry
+Changes opened a way for rewriting Centrifuge in Go - [Centrifugo](https://github.com/centrifugal/centrifugo) - it
+already has first release. Centrifugo is almost a drop-in replacement for Centrifuge 0.8.0
+(with some small differences in command-line argument names for logging). Python version most probably
+won't be supported (only bug fixes) - all new changes will be in Centrifugo. I am very sorry
 if you don't like all these global changes - but I personally think that moving Centrifuge to Go is
-right decision. It will be more fast, more robust, will run on several cores, will be much more simple
+right decision. It will be faster, more robust, will run on several cores, will be much more simple
 to deploy.
 
 So the changes are:
@@ -22,9 +22,10 @@ So the changes are:
 * `md5` support for token and signs generation removed. Now only `sha256` algorithm supported.
 * `client_id` and `user_id` renamed to `client` and `user` in `default_info`
 * `client` renamed to `info` in published message meta information.
+* default info is now `""`(empty string) instead of `"{}"`(empty object)
 * SockJS 1.0 instead of 0.3.4
 
-Also I work on [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) – it covers
+Also there is [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) – it covers
 Centrifug**o** as server implementation but can be useful to read as Centrifuge 0.8.0 works mostly
 the same way.
 
@@ -77,11 +78,12 @@ centrifuge --config=config.json --web=/path/to/web/interface/app
 
 update to new versions:
 
-* Centrifuge javascript client
-* Cent
-* Adjacent
+* Centrifuge javascript client >= 0.8.0
+* Cent >= 0.4.0
+* Adjacent >= 0.2.0
 
-If you have any feedback about this release - feel free to write me an email.
+If you have any feedback about this release - feel free to write me an email. Maybe you want some features
+from Centrifugo backported into Python version.
 
 v0.7.0
 ======
