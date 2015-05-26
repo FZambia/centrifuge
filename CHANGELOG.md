@@ -1,3 +1,8 @@
+v0.8.1
+======
+
+* fix total client count
+
 v0.8.0
 ======
 
