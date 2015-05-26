@@ -361,7 +361,7 @@ class Application(tornado.web.Application):
         )
 
     def get_clients_count(self):
-        return sum(len(v) for v in six.itervalues(self.engine.subscriptions))
+        return sum(len(u) for v in six.itervalues(self.connections) for u in six.itervalues(v))
 
     def get_unique_clients_count(self):
         return sum(len(v) for v in six.itervalues(self.connections))
