@@ -55,7 +55,7 @@ class AuthHandler(BaseHandler):
             token = self.create_signed_value("token", "authorized")
             self.set_header("Content-Type", "application/json")
             self.finish(json_encode({
-                "token": token
+                "token": token.decode('utf-8')
             }))
         else:
             raise tornado.web.HTTPError(400)
