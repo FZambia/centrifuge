@@ -1,3 +1,8 @@
+v0.8.2
+======
+
+* fix for Python 3 in web interface AuthHandler - token could not be serialized into json.
+
 v0.8.1
 ======
 
