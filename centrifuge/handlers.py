@@ -50,14 +50,8 @@ class ApiHandler(BaseHandler):
 
         if self.request.headers.get("Content-Type", "").startswith("application/json"):
             # handle JSON requests if corresponding Content-Type specified
-            try:
-                request_data = json_decode(self.request.body)
-            except ValueError:
-                raise tornado.web.HTTPError(400, log_message="malformed json")
-            if not isinstance(request_data, dict):
-                raise tornado.web.HTTPError(400, log_message="object expected")
-            sign = request_data.get("sign")
-            encoded_data = request_data.get("data")
+            encoded_data = self.request.body
+            sign = self.request.headers.get("X-API-Sign")
         else:
             # handle application/x-www-form-urlencoded request
             sign = self.get_argument('sign', None)
