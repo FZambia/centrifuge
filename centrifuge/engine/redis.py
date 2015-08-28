@@ -161,29 +161,49 @@ class Engine(BaseEngine):
 
     def connect(self):
         """
-        Connect from scratch
+        Connect from scratch if connection not established.
         """
+        subscriber_connect = False
+        publisher_connect = False
+        worker_connect = False
+        listener_connect = False
         try:
-            self.subscriber.connect(host=self.host, port=self.port)
-            self.publisher.connect(host=self.host, port=self.port)
-            self.worker.connect(host=self.host, port=self.port)
+            if not self.subscriber.is_connected():
+                subscriber_connect = True
+                self.subscriber.connect(host=self.host, port=self.port)
+            if not self.publisher.is_connected():
+                publisher_connect = True
+                self.publisher.connect(host=self.host, port=self.port)
+            if not self.worker.is_connected():
+                worker_connect = True
+                self.worker.connect(host=self.host, port=self.port)
             if self.options.redis_api:
-                self.listener.connect(host=self.host, port=self.port)
+                if not self.listener.is_connected():
+                    listener_connect = True
+                    self.listener.connect(host=self.host, port=self.port)
         except Exception as e:
             logger.error("error connecting to Redis server: %s" % (str(e)))
         else:
             if self.password:
-                self.subscriber.auth(self.password, callback=self.on_auth)
-                self.publisher.auth(self.password, callback=self.on_auth)
-                self.worker.auth(self.password, callback=self.on_auth)
+                if subscriber_connect:
+                    self.subscriber.auth(self.password, callback=self.on_auth)
+                if publisher_connect:
+                    self.publisher.auth(self.password, callback=self.on_auth)
+                if worker_connect:
+                    self.worker.auth(self.password, callback=self.on_auth)
                 if self.options.redis_api:
-                    self.listener.auth(self.password, callback=self.on_auth)
+                    if listener_connect:
+                        self.listener.auth(self.password, callback=self.on_auth)
 
-            self.subscriber.select(self.db, callback=self.on_subscriber_select)
-            self.publisher.select(self.db, callback=self.on_select)
-            self.worker.select(self.db, callback=self.on_select)
+            if subscriber_connect:
+                self.subscriber.select(self.db, callback=self.on_subscriber_select)
+            if publisher_connect:
+                self.publisher.select(self.db, callback=self.on_select)
+            if worker_connect:
+                self.worker.select(self.db, callback=self.on_select)
             if self.options.redis_api:
-                self.listener.select(self.db, callback=self.on_listener_select)
+                if listener_connect:
+                    self.listener.select(self.db, callback=self.on_listener_select)
 
         self.connection_check.stop()
         self.connection_check.start()
@@ -273,6 +293,9 @@ class Engine(BaseEngine):
         """
         Got message from Redis, dispatch it into right message handler.
         """
+        if not redis_message:
+            return
+
         msg_type = redis_message[0]
         if six.PY3:
             msg_type = msg_type.decode()
