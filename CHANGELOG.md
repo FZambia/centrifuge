@@ -1,3 +1,9 @@
+v0.8.3
+======
+
+* fix file descriptors leak when reconnecting to Redis (can be caused by Redis downtime or some kind of proxy timeout between Centrifuge and Redis)
+* API endpoint now supports JSON requests.
+
 v0.8.2
 ======
 
