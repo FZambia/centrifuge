@@ -144,10 +144,6 @@ def create_centrifuge_application():
             os.path.dirname(__file__),
             os.path.join("web/frontend", "templates")
         ),
-        static_path=os.path.join(
-            os.path.dirname(__file__),
-            os.path.join("web/frontend", "static")
-        ),
         xsrf_cookies=False,
         autoescape="xhtml_escape",
         debug=options.debug,
