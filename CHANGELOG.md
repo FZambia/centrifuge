@@ -1,3 +1,8 @@
+v0.8.4
+======
+
+* fix internal static path
+
 v0.8.3
 ======
 
