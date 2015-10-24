@@ -1,11 +1,24 @@
 CENTRIFUGE
 ==========
 
-**Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo. Version
-0.8.0 is the last release of Centrifuge with new features. Also, please, see [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) for
-the entire Centrifugal stack.**
+**Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo.
 
-Simple real-time messaging in web applications.
+**If someone wants to be Centrifuge maintainer to make it compatible with entire Centrifugal stack – write me email.**
+
+It's not compatible with entire Centrifugal stack so you have to use certain versions of libraries.
+
+Here is a list of libraries versions compatible with Centrifuge:
+
+* centrifuge-js [0.9.0](https://github.com/centrifugal/centrifuge-js/tree/0.9.0)
+* cent [v0.6.0](https://github.com/centrifugal/cent/tree/v0.6.0)
+* adjacent [v0.3.0](https://github.com/centrifugal/adjacent/tree/v0.3.0)
+* web [v0.1.0](https://github.com/centrifugal/web/tree/v0.1.0)
+* examples [v0.1.0](https://github.com/centrifugal/examples/tree/v0.1.0)
+* phpcent [0.6.1](https://github.com/centrifugal/phpcent/tree/0.6.1)
+* centrifuge-ruby [v0.1.0](https://github.com/centrifugal/centrifuge-ruby/tree/v0.1.0)
+
+Please, see [new documentation](http://fzambia.gitbooks.io/centrifugal/content/) for the entire Centrifugal stack.
+
 
 Overview
 --------

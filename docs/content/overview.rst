@@ -5,6 +5,22 @@ Overview
 
 Centrifuge is a server for real-time messaging in web applications.
 
+Centrifuge server migrated to Go language - it's now called `Centrifugo <https://github.com/centrifugal/centrifugo>`_ and lives in another repo.
+
+If someone wants to be Centrifuge maintainer to make it compatible with entire Centrifugal stack – write me email.
+
+Version 0.8 is the last release of Centrifuge with new features. Here is a list of libraries versions compatible with Centrifuge:
+
+* centrifuge-js `0.9.0 <https://github.com/centrifugal/centrifuge-js/tree/0.9.0>`_
+* cent `v0.6.0 <https://github.com/centrifugal/cent/tree/v0.6.0>`_
+* adjacent `v0.3.0 <https://github.com/centrifugal/adjacent/tree/v0.3.0>`_
+* web `v0.1.0 <https://github.com/centrifugal/web/tree/v0.1.0>`_
+* examples `v0.1.0 <https://github.com/centrifugal/examples/tree/v0.1.0>`_
+* phpcent `0.6.1 <https://github.com/centrifugal/phpcent/tree/0.6.1>`_
+* centrifuge-ruby `v0.1.0 <https://github.com/centrifugal/centrifuge-ruby/tree/v0.1.0>`_
+
+Please, see `new documentation <http://fzambia.gitbooks.io/centrifugal/content/>`_ for the entire Centrifugal stack.
+
 In a few words: clients (users of your web application/site) connect to Centrifuge from browser,
 after connecting clients subscribe on channels. Every message which was published into that
 channel will be delivered to all clients which are currently subscribed on that channel.
