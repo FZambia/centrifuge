@@ -1,9 +1,7 @@
 CENTRIFUGE
 ==========
 
-*Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo.*
-
-**If someone wants to be Centrifuge maintainer to make it compatible with entire Centrifugal stack – write me email.**
+**WARNING!!! Centrifuge server migrated to Go language - it's now called [Centrifugo](https://github.com/centrifugal/centrifugo) and lives in another repo. This repo is for history only!**
 
 It's not compatible with entire Centrifugal stack so you have to use certain versions of libraries.
 
