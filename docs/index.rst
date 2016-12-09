@@ -6,6 +6,8 @@
 Centrifuge
 ==========
 
+**WARNING!!! Centrifuge migrated to Go language!!! See new documentation** - https://github.com/centrifugal/centrifugo
+
 Simple real-time messaging in web applications.
 
 .. include:: contents.rst.inc
